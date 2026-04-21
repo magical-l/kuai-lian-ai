@@ -71,6 +71,8 @@ export function renderEndpointList(groups, selectedModelId, onModelSelect, onGro
       <span>${group.name}</span>
       <span class="group-toggle">▼</span>
     `;
+
+    // 单击展开/折叠
     headerEl.addEventListener('click', () => {
       const modelsEl = groupEl.querySelector('.group-models');
       const toggleEl = headerEl.querySelector('.group-toggle');
@@ -83,6 +85,12 @@ export function renderEndpointList(groups, selectedModelId, onModelSelect, onGro
       }
     });
 
+    // 双击编辑组
+    headerEl.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      onGroupEdit(group.id);
+    });
+
     const modelsEl = document.createElement('div');
     modelsEl.className = 'group-models';
 
@@ -93,9 +101,18 @@ export function renderEndpointList(groups, selectedModelId, onModelSelect, onGro
         modelEl.classList.add('selected');
       }
       modelEl.textContent = model.name;
+
+      // 单击选择模型
       modelEl.addEventListener('click', () => {
         onModelSelect(group.id, model.id);
       });
+
+      // 双击编辑模型
+      modelEl.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        onModelEdit(group.id, model.id);
+      });
+
       modelsEl.appendChild(modelEl);
     });
 
@@ -249,4 +266,141 @@ export function setButtonState(sendDisabled, stopDisabled, regenerateDisabled) {
   document.getElementById('btn-send').disabled = sendDisabled;
   document.getElementById('btn-stop').disabled = stopDisabled;
   document.getElementById('btn-regenerate').disabled = regenerateDisabled;
+}
+
+// 显示编辑端点组弹窗
+export function showEditGroupDialog(group = null, onSave, onDelete = null) {
+  const existing = document.getElementById('edit-dialog');
+  if (existing) existing.remove();
+
+  const dialog = document.createElement('div');
+  dialog.id = 'edit-dialog';
+  dialog.style.cssText = `
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 1000; min-width: 300px;
+  `;
+
+  dialog.innerHTML = `
+    <h3 style="margin-bottom: 16px;">${group ? '编辑端点组' : '新增端点组'}</h3>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <label>名称: <input id="dialog-group-name" value="${group?.name || ''}" style="width: 100%; padding: 6px;"></label>
+      <label>Base URL: <input id="dialog-group-url" value="${group?.baseUrl || ''}" style="width: 100%; padding: 6px;"></label>
+      <label>接口风格:
+        <select id="dialog-group-style" style="width: 100%; padding: 6px;">
+          <option value="openai" ${group?.style === 'openai' ? 'selected' : ''}>OpenAI</option>
+          <option value="claude" ${group?.style === 'claude' ? 'selected' : ''}>Claude</option>
+          <option value="gemini" ${group?.style === 'gemini' ? 'selected' : ''}>Gemini</option>
+        </select>
+      </label>
+      <label>API Key: <input id="dialog-group-key" type="password" value="${group?.key || ''}" style="width: 100%; padding: 6px;"></label>
+    </div>
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+      ${group && onDelete ? '<button id="dialog-delete" style="background: #ffebee;">删除</button>' : ''}
+      <button id="dialog-cancel">取消</button>
+      <button id="dialog-save" style="background: #e3f2fd;">保存</button>
+    </div>
+  `;
+
+  document.body.appendChild(dialog);
+
+  document.getElementById('dialog-cancel').onclick = () => dialog.remove();
+  document.getElementById('dialog-save').onclick = () => {
+    const name = document.getElementById('dialog-group-name').value.trim();
+    const baseUrl = document.getElementById('dialog-group-url').value.trim();
+    const style = document.getElementById('dialog-group-style').value;
+    const key = document.getElementById('dialog-group-key').value.trim();
+
+    if (!name || !baseUrl || !key) {
+      alert('请填写完整信息');
+      return;
+    }
+
+    onSave({ name, baseUrl, style, key });
+    dialog.remove();
+  };
+
+  if (group && onDelete) {
+    document.getElementById('dialog-delete').onclick = () => {
+      if (confirm('确定删除该端点组及其所有模型？')) {
+        onDelete();
+        dialog.remove();
+      }
+    };
+  }
+}
+
+// 显示编辑模型弹窗
+export function showEditModelDialog(groupId, model = null, onSave, onDelete = null) {
+  const existing = document.getElementById('edit-dialog');
+  if (existing) existing.remove();
+
+  const dialog = document.createElement('div');
+  dialog.id = 'edit-dialog';
+  dialog.style.cssText = `
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 1000; min-width: 250px;
+  `;
+
+  dialog.innerHTML = `
+    <h3 style="margin-bottom: 16px;">${model ? '编辑模型' : '新增模型'}</h3>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <label>模型名: <input id="dialog-model-name" value="${model?.name || ''}" style="width: 100%; padding: 6px;"></label>
+    </div>
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+      ${model && onDelete ? '<button id="dialog-delete" style="background: #ffebee;">删除</button>' : ''}
+      <button id="dialog-cancel">取消</button>
+      <button id="dialog-save" style="background: #e3f2fd;">保存</button>
+    </div>
+  `;
+
+  document.body.appendChild(dialog);
+
+  document.getElementById('dialog-cancel').onclick = () => dialog.remove();
+  document.getElementById('dialog-save').onclick = () => {
+    const name = document.getElementById('dialog-model-name').value.trim();
+    if (!name) {
+      alert('请输入模型名');
+      return;
+    }
+    onSave(name);
+    dialog.remove();
+  };
+
+  if (model && onDelete) {
+    document.getElementById('dialog-delete').onclick = () => {
+      if (confirm('确定删除该模型？')) {
+        onDelete();
+        dialog.remove();
+      }
+    };
+  }
+}
+
+// 显示选择目录提示
+export function showDirectoryPrompt() {
+  const existing = document.getElementById('directory-prompt');
+  if (existing) existing.remove();
+
+  const prompt = document.createElement('div');
+  prompt.id = 'directory-prompt';
+  prompt.style.cssText = `
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 1000; text-align: center;
+  `;
+  prompt.innerHTML = `
+    <h3 style="margin-bottom: 12px;">选择存储目录</h3>
+    <p style="margin-bottom: 16px; color: #666;">请选择一个目录来存储端点配置和聊天记录</p>
+    <button id="btn-select-dir" style="padding: 10px 20px; background: #e3f2fd;">选择目录</button>
+  `;
+  document.body.appendChild(prompt);
+
+  return prompt;
+}
+
+export function hideDirectoryPrompt() {
+  const prompt = document.getElementById('directory-prompt');
+  if (prompt) prompt.remove();
 }
