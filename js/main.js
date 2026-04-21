@@ -88,7 +88,7 @@ async function handleSessionSelect(sessionId) {
   }
 
   await refreshUI();
-  setButtonState(false, true, currentSession.messages.length > 0);
+  setButtonState(false, true, currentSession.messages.length === 0);
 }
 
 // 新增端点组
@@ -195,17 +195,17 @@ async function handleSend() {
     // 刷新会话标题
     currentSession = await loadSession(currentSession.id);
 
-    setButtonState(false, true, true);
+    setButtonState(false, true, false);
     await refreshUI();
 
   } catch (err) {
     finishStreamingMessage();
     if (err.name === 'AbortError') {
       // 用户停止，不显示错误
-      setButtonState(false, true, true);
+      setButtonState(false, true, false);
     } else {
       alert(`API调用失败: ${err.message}`);
-      setButtonState(false, true, true);
+      setButtonState(false, true, false);
     }
   }
 }
@@ -213,7 +213,7 @@ async function handleSend() {
 // 停止生成
 function handleStop() {
   stopGeneration();
-  setButtonState(false, true, true);
+  setButtonState(false, true, false);
 }
 
 // 重新生成
@@ -258,7 +258,7 @@ async function handleRegenerate() {
     finishStreamingMessage();
     await addMessage(currentSession.id, 'assistant', fullResponse, currentGroupId, currentModelId);
 
-    setButtonState(false, true, true);
+    setButtonState(false, true, false);
     await refreshUI();
 
   } catch (err) {
@@ -266,7 +266,7 @@ async function handleRegenerate() {
     if (err.name !== 'AbortError') {
       alert(`API调用失败: ${err.message}`);
     }
-    setButtonState(false, true, true);
+    setButtonState(false, true, false);
   }
 }
 
