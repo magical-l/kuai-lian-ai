@@ -4,7 +4,7 @@ import { initDividers, renderEndpointList, renderSessionList, renderMessages,
          showEditGroupDialog, showEditModelDialog, showDirectoryPrompt, hideDirectoryPrompt } from './ui.js';
 import { selectDirectory, getGroups, addGroup, updateGroup, deleteGroup,
          addModel, updateModel, deleteModel, getGroup, getModel,
-         getAllSessions, createSession, loadSession, addMessage, hasDirectory } from './store.js';
+         getAllSessions, createSession, loadSession, saveSession, addMessage, hasDirectory } from './store.js';
 import { callAPI, stopGeneration, isGenerating } from './api.js';
 
 // 状态
@@ -220,11 +220,12 @@ function handleStop() {
 async function handleRegenerate() {
   if (!lastUserMessage || !currentGroupId || !currentModelId) return;
 
-  // 删除最后一条助手消息
+  // 删除最后一条助手消息并持久化
   if (currentSession && currentSession.messages.length > 0) {
     const lastMsg = currentSession.messages[currentSession.messages.length - 1];
     if (lastMsg.role === 'assistant') {
       currentSession.messages.pop();
+      await saveSession(currentSession);
     }
   }
 
