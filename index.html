@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>聊天模型端点管理器</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 左侧栏：端点列表 -->
+    <div class="sidebar-left" id="sidebar-left">
+      <div class="sidebar-header">端点列表</div>
+      <div class="sidebar-content" id="endpoint-list"></div>
+      <div class="sidebar-footer">
+        <button id="btn-add-group">+ 新增大组</button>
+        <button id="btn-add-model">+ 新增模型</button>
+      </div>
+    </div>
+    <!-- 左侧拖动分界线 -->
+    <div class="divider-left" id="divider-left"></div>
+
+    <!-- 中间：聊天界面 -->
+    <div class="main-content" id="main-content">
+      <div class="chat-header" id="chat-header">
+        <span id="current-model-name">未选择模型</span>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-area">
+        <textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
+        <div class="chat-controls">
+          <button id="btn-send">发送</button>
+          <button id="btn-stop" disabled>停止</button>
+          <button id="btn-regenerate" disabled>重新生成</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧拖动分界线 -->
+    <div class="divider-right" id="divider-right"></div>
+
+    <!-- 右侧栏：聊天记录 -->
+    <div class="sidebar-right" id="sidebar-right">
+      <div class="sidebar-header">聊天记录</div>
+      <div class="sidebar-content" id="session-list"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
