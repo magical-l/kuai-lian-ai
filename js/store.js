@@ -28,6 +28,7 @@ export async function selectDirectory() {
 
 // 确保目录结构存在
 async function ensureDirectoryStructure() {
+  if (!directoryHandle) return;
   try {
     await directoryHandle.getDirectoryHandle('sessions', { create: true });
   } catch (err) {
@@ -37,6 +38,10 @@ async function ensureDirectoryStructure() {
 
 // 加载端点配置
 export async function loadEndpoints() {
+  if (!directoryHandle) {
+    endpointsData = { groups: [] };
+    return endpointsData;
+  }
   try {
     const fileHandle = await directoryHandle.getFileHandle('endpoints.json', { create: true });
     const file = await fileHandle.getFile();
@@ -52,6 +57,7 @@ export async function loadEndpoints() {
 
 // 保存端点配置
 export async function saveEndpoints() {
+  if (!directoryHandle) return false;
   try {
     const fileHandle = await directoryHandle.getFileHandle('endpoints.json', { create: true });
     const writable = await fileHandle.createWritable();
@@ -155,11 +161,12 @@ export function getModel(groupId, modelId) {
 
 // 获取组信息
 export function getGroup(groupId) {
-  return endpointsData.groups.find(g => g.id === groupId);
+  return endpointsData?.groups?.find(g => g.id === groupId);
 }
 
 // 加载会话索引
 export async function loadSessionsIndex() {
+  if (!directoryHandle) return [];
   try {
     const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
     sessionsCache.clear();
@@ -209,6 +216,7 @@ export async function loadSession(sessionId) {
     return sessionsCache.get(sessionId);
   }
 
+  if (!directoryHandle) return null;
   try {
     const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
     const fileHandle = await sessionsDir.getFileHandle(`${sessionId}.json`);
@@ -225,6 +233,7 @@ export async function loadSession(sessionId) {
 
 // 保存会话
 export async function saveSession(session) {
+  if (!directoryHandle) return false;
   try {
     const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
     const fileHandle = await sessionsDir.getFileHandle(`${session.id}.json`, { create: true });
@@ -267,6 +276,7 @@ export function getSession(sessionId) {
 
 // 删除会话
 export async function deleteSession(sessionId) {
+  if (!directoryHandle) return false;
   try {
     sessionsCache.delete(sessionId);
     const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
