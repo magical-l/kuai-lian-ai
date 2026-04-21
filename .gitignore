@@ -1,0 +1,60 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.stackdump
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build/Dist
+dist/
+build/
+.cache/
+*.min.js
+*.min.css
+
+# Test output
+test_output/
+
+# Claude Code local settings (user-specific)
+.claude/settings.local.json
+
+# User data (endpoint configs, sessions contain API keys and chat history)
+workspace/
+
+# MCP local config (may contain user-specific server settings)
+.mcp.json
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# Environment files (may contain secrets)
+.env
+.env.local
+.env.*.local
