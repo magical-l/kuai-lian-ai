@@ -989,6 +989,35 @@ button.outline:hover:not(:disabled) {
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
+.key-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.key-input-wrapper input {
+  flex: 1;
+}
+
+.btn-toggle-key {
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.btn-toggle-key:hover {
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+}
+
 .dialog-buttons {
   margin-top: var(--space-5);
   display: flex;
