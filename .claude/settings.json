@@ -9,7 +9,9 @@
       "Bash(python -m http.server 8080)",
       "mcp__playwright-parallel__page_browser_console_messages",
       "mcp__playwright-parallel__page_browser_click",
-      "mcp__playwright-parallel__page_browser_handle_dialog"
+      "mcp__playwright-parallel__page_browser_handle_dialog",
+      "mcp__playwright-parallel__browser_connect",
+      "mcp__playwright-parallel__instance_close"
     ]
   }
 }

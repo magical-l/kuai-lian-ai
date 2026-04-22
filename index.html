@@ -8,15 +8,28 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- 顶部工作目录栏 -->
-    <div class="directory-bar" id="directory-bar">
-      <button id="btn-change-dir" class="btn-dir-change" title="更换目录">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-      </button>
-      <span id="directory-path" class="directory-path">未选择目录</span>
+    <!-- 导航栏 -->
+    <div class="navbar" id="navbar">
+      <div class="navbar-left">
+        <div class="navbar-logo-placeholder" id="logo-placeholder">
+          <!-- Logo位置预留，暂不显示 -->
+        </div>
+        <span class="navbar-brand">快连ai</span>
+      </div>
+      <div class="navbar-center">
+        <button id="btn-change-dir" class="btn-navbar" title="更换目录">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <span id="directory-path" class="directory-path">未选择目录</span>
+        <button id="btn-delete-dir" class="btn-navbar btn-delete-dir" title="删除目录">×</button>
+        <button id="btn-wipe-dir" class="btn-navbar btn-wipe-dir" title="清空数据">🗑</button>
+      </div>
+      <div class="navbar-right">
+        <button id="btn-help" class="btn-navbar btn-help-icon" title="帮助">?</button>
+      </div>
     </div>
 
-    <div class="main-row">
+    <div class="main-row" id="main-row">
     <!-- 左侧栏：端点列表 -->
     <div class="sidebar-left" id="sidebar-left">
       <div class="sidebar-header">
@@ -33,7 +46,9 @@
     <!-- 中间：聊天界面 -->
     <div class="main-content" id="main-content">
       <div class="chat-header" id="chat-header">
+        <span class="chat-header-prefix">会话：</span>
         <span id="chat-title">新会话</span>
+        <button id="btn-new-session-header" title="新建会话">新建会话</button>
       </div>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-area">
@@ -41,6 +56,7 @@
         <div class="chat-controls">
           <button id="btn-send">发送</button>
           <button id="btn-stop" disabled>停止</button>
+          <button id="btn-new-session" title="新建会话">新建会话</button>
         </div>
       </div>
     </div>
@@ -65,6 +81,12 @@ function initDividers() {
   const sidebarLeft = document.getElementById('sidebar-left');
   const sidebarRight = document.getElementById('sidebar-right');
 
+  // 恢复保存的侧栏宽度
+  const savedLeftWidth = localStorage.getItem('sidebar-left-width');
+  const savedRightWidth = localStorage.getItem('sidebar-right-width');
+  if (savedLeftWidth) sidebarLeft.style.width = savedLeftWidth;
+  if (savedRightWidth) sidebarRight.style.width = savedRightWidth;
+
   let isDragging = false;
   let currentDivider = null;
   let startX = 0;
@@ -72,7 +94,7 @@ function initDividers() {
 
   function startDrag(e, divider, sidebar, isLeft) {
     isDragging = true;
-    currentDivider = { divider, sidebar, isLeft };
+    currentDivider = { divider, sidebar, isLeft, storageKey: isLeft ? 'sidebar-left-width' : 'sidebar-right-width' };
     startX = e.clientX;
     startWidth = sidebar.offsetWidth;
     document.body.style.cursor = 'col-resize';
@@ -87,15 +109,21 @@ function initDividers() {
       ? startWidth + dx
       : startWidth - dx;
 
-    const minWidth = 150;
-    const maxWidth = 400;
+    // 使用百分比限制到1/3
+    const mainRow = document.getElementById('main-row');
+    if (!mainRow) return; // 防止元素不存在时报错
+    const containerWidth = mainRow.offsetWidth;
+    const minWidth = 180;
+    const maxWidth = containerWidth * 0.333; // 最多1/3
     const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 
     currentDivider.sidebar.style.width = clampedWidth + 'px';
   }
 
   function stopDrag() {
-    if (isDragging) {
+    if (isDragging && currentDivider) {
+      // 保存宽度到localStorage
+      localStorage.setItem(currentDivider.storageKey, currentDivider.sidebar.style.width);
       isDragging = false;
       currentDivider = null;
       document.body.style.cursor = '';
@@ -115,7 +143,7 @@ function initDividers() {
   document.addEventListener('mouseup', stopDrag);
 }
 
-function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSelect, onModelSelect, onGroupEdit, onModelEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups) {
+function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSelect, onModelSelect, onGroupEdit, onModelEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
   const container = document.getElementById('endpoint-list');
   container.innerHTML = '';
 
@@ -223,19 +251,41 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
       groupEl.classList.remove('drag-over');
       const draggedGroupId = e.dataTransfer.getData('text/plain');
       if (draggedGroupId !== group.id) {
-        onReorderGroups(draggedGroupId, group.id);
+        // 根据鼠标位置判断插入到目标之前还是之后
+        const rect = groupEl.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const insertBefore = e.clientY < midY;
+        onReorderGroups(draggedGroupId, group.id, insertBefore);
       }
     });
 
     const modelsEl = document.createElement('div');
     modelsEl.className = 'group-models';
 
-    group.models.forEach(model => {
+    group.models.forEach((model, modelIndex) => {
       const modelEl = document.createElement('div');
       modelEl.className = 'model-item';
+      modelEl.dataset.modelId = model.id;
+      modelEl.dataset.groupId = group.id;
       if (model.id === selectedModelId) {
         modelEl.classList.add('selected');
       }
+
+      // 模型拖动手柄
+      const modelDragHandle = document.createElement('span');
+      modelDragHandle.className = 'drag-handle drag-handle-model';
+      modelDragHandle.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>';
+      modelDragHandle.title = '拖动排序';
+      modelDragHandle.draggable = true;
+      modelDragHandle.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', `${group.id}:${model.id}`);
+        e.dataTransfer.effectAllowed = 'move';
+        modelEl.classList.add('dragging');
+      });
+      modelDragHandle.addEventListener('dragend', () => {
+        modelEl.classList.remove('dragging');
+        modelsEl.querySelectorAll('.model-item').forEach(el => el.classList.remove('drag-over'));
+      });
 
       const modelName = document.createElement('span');
       modelName.className = 'model-name';
@@ -247,6 +297,29 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
       // 模型操作按钮
       const modelActions = document.createElement('div');
       modelActions.className = 'model-actions';
+
+      // 测试连接按钮
+      const statusKey = `${group.id}:${model.id}`;
+      const statusData = connectionStatus.get(statusKey) || { status: 'disconnected' };
+      const status = statusData.status;
+      const testBtn = document.createElement('button');
+      testBtn.className = 'btn-action-small btn-connection-' + status;
+      testBtn.title = getConnectionStatusText(statusKey);
+
+      if (status === 'disconnected') {
+        testBtn.innerHTML = '○';
+      } else if (status === 'testing') {
+        testBtn.innerHTML = '<span class="spin">◐</span>';
+      } else if (status === 'connected') {
+        testBtn.innerHTML = '✓';
+      } else if (status === 'failed') {
+        testBtn.innerHTML = '✗';
+      }
+
+      testBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (onTestConnection) onTestConnection(group.id, model.id);
+      });
 
       const modelEditBtn = document.createElement('button');
       modelEditBtn.className = 'btn-action-small';
@@ -268,11 +341,40 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
         }
       });
 
+      modelActions.appendChild(testBtn);
       modelActions.appendChild(modelEditBtn);
       modelActions.appendChild(modelDeleteBtn);
 
+      modelEl.appendChild(modelDragHandle);
       modelEl.appendChild(modelName);
       modelEl.appendChild(modelActions);
+
+      // 模型拖放目标事件
+      modelEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const draggingEl = modelsEl.querySelector('.dragging');
+        if (draggingEl && draggingEl !== modelEl) {
+          modelEl.classList.add('drag-over');
+        }
+      });
+      modelEl.addEventListener('dragleave', () => {
+        modelEl.classList.remove('drag-over');
+      });
+      modelEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        modelEl.classList.remove('drag-over');
+        const data = e.dataTransfer.getData('text/plain');
+        const [draggedGroupId, draggedModelId] = data.split(':');
+        if (draggedGroupId === group.id && draggedModelId !== model.id && onReorderModels) {
+          const rect = modelEl.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          const insertBefore = e.clientY < midY;
+          onReorderModels(group.id, draggedModelId, model.id, insertBefore);
+        }
+      });
+
       modelsEl.appendChild(modelEl);
     });
 
@@ -282,7 +384,44 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
     addModelBtn.textContent = '+ 添加模型';
     addModelBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      onAddModel(group.id);
+      // 显示内联输入框而非弹窗
+      const existingInput = modelsEl.querySelector('.add-model-inline');
+      if (existingInput) existingInput.remove();
+
+      const inlineInput = document.createElement('div');
+      inlineInput.className = 'add-model-inline';
+      inlineInput.innerHTML = `
+        <input type="text" placeholder="模型名" class="add-model-input">
+        <button class="add-model-confirm btn-action-small">确定</button>
+        <button class="add-model-cancel btn-action-small">取消</button>
+      `;
+      modelsEl.insertBefore(inlineInput, addModelBtn);
+
+      const inputEl = inlineInput.querySelector('.add-model-input');
+      inputEl.focus();
+
+      inlineInput.querySelector('.add-model-confirm').addEventListener('click', async (e2) => {
+        e2.stopPropagation();
+        const name = inputEl.value.trim();
+        if (name) {
+          inlineInput.remove();
+          onAddModel(group.id, name);
+        }
+      });
+
+      inlineInput.querySelector('.add-model-cancel').addEventListener('click', (e2) => {
+        e2.stopPropagation();
+        inlineInput.remove();
+      });
+
+      inputEl.addEventListener('keydown', (e2) => {
+        if (e2.key === 'Enter') {
+          e2.preventDefault();
+          inlineInput.querySelector('.add-model-confirm').click();
+        } else if (e2.key === 'Escape') {
+          inlineInput.remove();
+        }
+      });
     });
     modelsEl.appendChild(addModelBtn);
 
@@ -368,13 +507,26 @@ function renderMessages(messages, groups, onCopy) {
       const metaEl = document.createElement('div');
       metaEl.className = 'message-meta message-meta-user';
       const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
-      metaEl.textContent = timeStr;
+      metaEl.textContent = '我 · ' + timeStr;
       msgEl.appendChild(metaEl);
 
       const userEl = document.createElement('div');
       userEl.className = 'message-user';
       userEl.textContent = msg.content;
       msgEl.appendChild(userEl);
+
+      // 用户消息状态栏：复制按钮
+      const statusBar = document.createElement('div');
+      statusBar.className = 'message-status-bar message-status-bar-user';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'btn-icon';
+      copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+      copyBtn.title = '复制';
+      copyBtn.addEventListener('click', () => onCopy(msg.content));
+
+      statusBar.appendChild(copyBtn);
+      msgEl.appendChild(statusBar);
     } else {
       // 模型名和时间放一起
       const metaEl = document.createElement('div');
@@ -383,8 +535,8 @@ function renderMessages(messages, groups, onCopy) {
         const group = groups.find(g => g.id === msg.endpointGroupId);
         const model = group?.models.find(m => m.id === msg.modelId);
         const modelName = model ? `${group?.name} / ${model.name}` : '未知模型';
-        const timeStr = msg.timestamp ? ` · ${formatDateTime(msg.timestamp)}` : '';
-        metaEl.textContent = modelName + timeStr;
+        const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
+        metaEl.innerHTML = `<span>${modelName}</span><span style="margin-left: var(--space-2)">${timeStr}</span>`;
       }
       msgEl.appendChild(metaEl);
 
@@ -424,17 +576,13 @@ function renderMessages(messages, groups, onCopy) {
 
 function formatDateTime(timestamp) {
   const date = new Date(timestamp);
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  const isYesterday = new Date(now - 86400000).toDateString() === date.toDateString();
-
-  if (isToday) {
-    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  } else if (isYesterday) {
-    return '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  } else {
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  const second = String(date.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 }
 
 function appendMessage(role, content, meta = null) {
@@ -446,7 +594,7 @@ function appendMessage(role, content, meta = null) {
   if (role === 'user') {
     const metaEl = document.createElement('div');
     metaEl.className = 'message-meta message-meta-user';
-    metaEl.textContent = formatDateTime(Date.now());
+    metaEl.textContent = '我 · ' + formatDateTime(Date.now());
     msgEl.appendChild(metaEl);
 
     const userEl = document.createElement('div');
@@ -457,7 +605,7 @@ function appendMessage(role, content, meta = null) {
     if (meta) {
       const metaEl = document.createElement('div');
       metaEl.className = 'message-meta';
-      metaEl.textContent = meta + ' · ' + formatDateTime(Date.now());
+      metaEl.innerHTML = `<span>${meta}</span><span style="margin-left: var(--space-2)">${formatDateTime(Date.now())}</span>`;
       msgEl.appendChild(metaEl);
     }
 
@@ -587,37 +735,250 @@ function showEditModelDialog(groupId, model = null, onSave) {
   };
 }
 
-function updateDirectoryDisplay() {
-  const dirInfo = document.getElementById('directory-info');
-  const dirName = getDirectoryName();
-  if (dirName) {
-    dirInfo.textContent = `[${dirName}]`;
-    dirInfo.style.display = 'inline';
-  } else {
-    dirInfo.textContent = '';
-    dirInfo.style.display = 'none';
-  }
-}
-
 function showDirectoryPrompt() {
-  const existing = document.getElementById('directory-prompt');
-  if (existing) existing.remove();
-
-  const prompt = document.createElement('div');
-  prompt.id = 'directory-prompt';
-  prompt.innerHTML = `
-    <h3>选择存储目录</h3>
-    <p>请选择一个目录来存储端点配置和聊天记录</p>
-    <button id="btn-select-dir">选择目录</button>
-  `;
-  document.body.appendChild(prompt);
-
-  return prompt;
+  // 无目录时调用帮助弹窗，强制选择目录
+  showHelpDialog(true);
 }
 
 function hideDirectoryPrompt() {
-  const prompt = document.getElementById('directory-prompt');
+  const prompt = document.getElementById('help-dialog');
   if (prompt) prompt.remove();
+}
+
+function showHelpDialog(forceSelectDirectory = false) {
+  const existing = document.getElementById('help-dialog');
+  if (existing) existing.remove();
+
+  // 创建遮罩
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  if (forceSelectDirectory) {
+    overlay.style.background = 'rgba(0, 0, 0, 0.5)';
+  }
+  document.body.appendChild(overlay);
+
+  const dialog = document.createElement('div');
+  dialog.id = 'help-dialog';
+
+  const dirName = directoryHandle?.name || '未选择';
+  const hasDir = directoryHandle !== null;
+
+  dialog.innerHTML = `
+    <h3>快连ai 使用帮助</h3>
+    <div class="help-content">
+      <div class="help-section">
+        <h4>基本操作</h4>
+        <ul>
+          <li><b>添加端点</b>：点击左侧栏"+"按钮，输入端点名称、Base URL、接口风格和API Key。</li>
+          <li><b>添加模型</b>：展开端点组后，点击"+ 添加模型"输入模型名称。</li>
+          <li><b>选择模型</b>：单击模型名称选中，然后发送消息即可使用该模型。</li>
+        </ul>
+      </div>
+      <div class="help-section">
+        <h4>聊天功能</h4>
+        <ul>
+          <li><b>发送消息</b>：Enter发送，Shift+Enter换行。</li>
+          <li><b>停止生成</b>：生成过程中可点击"停止"按钮中断。</li>
+          <li><b>新建会话</b>：点击"新建会话"按钮开始新的对话。</li>
+          <li><b>历史记录</b>：右侧栏显示所有会话，点击可恢复对话。</li>
+        </ul>
+      </div>
+      <div class="help-section">
+        <h4>管理操作</h4>
+        <ul>
+          <li><b>编辑</b>：双击端点或模型可编辑，点击编辑图标也可编辑。</li>
+          <li><b>删除</b>：点击删除图标，确认后删除。</li>
+          <li><b>拖动排序</b>：拖动端点或模型左侧的手柄可调整顺序。</li>
+          <li><b>测试连接</b>：点击模型右侧的连接图标，验证API是否可用。</li>
+        </ul>
+      </div>
+      <div class="help-section">
+        <h4>接口风格支持</h4>
+        <ul>
+          <li><b>OpenAI</b>：兼容OpenAI接口的各类服务。</li>
+          <li><b>Claude</b>：Anthropic Claude系列模型。</li>
+          <li><b>Gemini</b>：Google Gemini系列模型。</li>
+        </ul>
+      </div>
+      <div class="help-section help-section-directory">
+        <h4>存储目录</h4>
+        <div class="directory-info">
+          <span id="help-dir-name">当前目录：${dirName}</span>
+          <button id="btn-change-dir-help">${hasDir ? '更换目录' : '选择目录'}</button>
+        </div>
+        ${forceSelectDirectory ? '<p class="directory-warning">请先选择存储目录以保存配置和聊天记录</p>' : ''}
+      </div>
+    </div>
+    <div class="dialog-buttons">
+      ${!forceSelectDirectory ? '<button id="help-close" class="primary">知道了</button>' : ''}
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  // 选择/更换目录按钮
+  document.getElementById('btn-change-dir-help').onclick = async () => {
+    const success = await selectDirectory();
+    if (success) {
+      document.getElementById('help-dir-name').textContent = '当前目录：' + directoryHandle.name;
+      updateDirectoryDisplay();
+      await refreshUI();
+
+      if (forceSelectDirectory) {
+        // 选好目录后可以关闭
+        closeHelpDialog(dialog, overlay, true);
+      }
+    }
+  };
+
+  if (!forceSelectDirectory) {
+    document.getElementById('help-close').onclick = () => closeHelpDialog(dialog, overlay, false);
+    overlay.onclick = () => closeHelpDialog(dialog, overlay, false);
+  }
+}
+
+function closeHelpDialog(dialog, overlay, immediate = false) {
+  const helpBtn = document.getElementById('btn-help');
+  if (!helpBtn) {
+    dialog.remove();
+    overlay.remove();
+    return;
+  }
+
+  const btnRect = helpBtn.getBoundingClientRect();
+  const dialogRect = dialog.getBoundingClientRect();
+
+  if (!immediate) {
+    // 计算按钮中心位置
+    const btnCenterX = btnRect.left + btnRect.width / 2;
+    const btnCenterY = btnRect.top + btnRect.height / 2;
+
+    // 计算对话框中心位置
+    const dialogCenterX = dialogRect.left + dialogRect.width / 2;
+    const dialogCenterY = dialogRect.top + dialogRect.height / 2;
+
+    // 计算需要移动的距离
+    const translateX = btnCenterX - dialogCenterX;
+    const translateY = btnCenterY - dialogCenterY;
+
+    // 设置动画 - 不改变透明度
+    dialog.style.setProperty('transition', 'transform 0.4s ease-in', 'important');
+    dialog.style.setProperty('transform-origin', 'center center', 'important');
+
+    // 强制浏览器重新计算样式
+    dialog.offsetHeight;
+
+    // 设置最终状态 - 缩小到按钮位置
+    dialog.style.setProperty('transform', `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px)) scale(0.05)`, 'important');
+
+    setTimeout(() => {
+      dialog.remove();
+      overlay.remove();
+    }, 400);
+  } else {
+    dialog.remove();
+    overlay.remove();
+  }
+}
+
+// 测试连接状态
+const connectionStatus = new Map(); // groupId:modelId -> { status, timestamp }
+
+function formatTimestamp(ts) {
+  const date = new Date(ts);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  const second = String(date.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+}
+
+function getConnectionStatusText(key) {
+  const data = connectionStatus.get(key);
+  if (!data) return '测试连接：未测试';
+
+  const statusText = {
+    'testing': '测试中...',
+    'connected': '✓',
+    'failed': '✗'
+  };
+
+  const text = statusText[data.status] || '未测试';
+  const timeStr = data.timestamp ? formatTimestamp(data.timestamp) : '';
+
+  return data.status === 'testing'
+    ? '测试连接：测试中...'
+    : `测试连接：${text}（${timeStr}）`;
+}
+
+async function testConnection(groupId, modelId) {
+  const group = getGroup(groupId);
+  const model = getModel(groupId, modelId);
+  if (!group || !model) return;
+
+  const key = `${groupId}:${modelId}`;
+  connectionStatus.set(key, { status: 'testing', timestamp: null });
+  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+
+  try {
+    // 发送一个简单的测试请求
+    const testMessages = [{ role: 'user', content: 'hi' }];
+    let success = false;
+
+    if (group.style === 'openai') {
+      const url = `${group.baseUrl}/v1/chat/completions`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${group.key}`
+        },
+        body: JSON.stringify({
+          model: model.name,
+          messages: testMessages,
+          max_tokens: 1
+        })
+      });
+      success = response.ok;
+    } else if (group.style === 'claude') {
+      const url = `${group.baseUrl}/v1/messages`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': group.key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: model.name,
+          max_tokens: 1,
+          messages: testMessages
+        })
+      });
+      success = response.ok;
+    } else if (group.style === 'gemini') {
+      const url = `${group.baseUrl}/v1beta/models/${model.name}:generateContent?key=${group.key}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: 'hi' }] }]
+        })
+      });
+      success = response.ok;
+    }
+
+    connectionStatus.set(key, {
+      status: success ? 'connected' : 'failed',
+      timestamp: Date.now()
+    });
+  } catch (err) {
+    connectionStatus.set(key, { status: 'failed', timestamp: Date.now() });
+  }
+
+  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 }
 
 // ========== Store Functions ==========
@@ -675,6 +1036,15 @@ async function clearHandleFromIndexedDB() {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+}
+
+async function clearDirectory() {
+  directoryHandle = null;
+  endpointsData = { groups: [] };
+  sessionsCache.clear();
+  await clearHandleFromIndexedDB();
+  updateDirectoryDisplay();
+  await refreshUI();
 }
 
 // 尝试恢复已保存的目录
@@ -735,6 +1105,44 @@ async function selectDirectory() {
 }
 
 // 获取当前目录名称（用于显示）
+async function getDirectoryPath() {
+  if (!directoryHandle) return null;
+
+  // 尝试使用Chrome实验性的resolve()方法获取完整路径
+  try {
+    // Chromium 85+ 支持的实验性API
+    if ('resolve' in directoryHandle) {
+      // resolve需要传入一个子项来获取相对路径，这里用根目录本身
+      const root = await directoryHandle.getDirectoryHandle('', { create: false });
+      const path = await directoryHandle.resolve(root);
+      if (path && path.length > 0) {
+        return path.join('/');
+      }
+    }
+  } catch (e) {
+    // 实验性API可能不存在或失败
+  }
+
+  // 尝试获取完整路径的另一种方式（Chrome特定）
+  try {
+    // 某些Chrome版本支持直接访问路径属性
+    const entries = await directoryHandle.values();
+    for await (const entry of entries) {
+      // 通过resolve获取子项的路径
+      if ('resolve' in directoryHandle) {
+        const relativePath = await directoryHandle.resolve(entry);
+        if (relativePath && relativePath.length > 0) {
+          // 这只能获取相对路径，无法获取完整系统路径
+          break;
+        }
+      }
+    }
+  } catch (e) {}
+
+  // 降级方案：只显示目录名称
+  return directoryHandle.name;
+}
+
 function getDirectoryName() {
   return directoryHandle?.name || null;
 }
@@ -826,13 +1234,21 @@ async function deleteGroup(groupId) {
   return false;
 }
 
-async function reorderGroups(draggedId, targetId) {
+async function reorderGroups(draggedId, targetId, insertBefore = true) {
   if (!endpointsData) endpointsData = { groups: [] };
   const draggedIndex = endpointsData.groups.findIndex(g => g.id === draggedId);
   const targetIndex = endpointsData.groups.findIndex(g => g.id === targetId);
   if (draggedIndex >= 0 && targetIndex >= 0) {
     const [draggedGroup] = endpointsData.groups.splice(draggedIndex, 1);
-    endpointsData.groups.splice(targetIndex, 0, draggedGroup);
+    // 如果从前往后拖且insertBefore为true，需要调整位置
+    // 如果从后往前拖且insertBefore为false，也需要调整
+    let insertIndex = targetIndex;
+    if (draggedIndex < targetIndex) {
+      insertIndex = insertBefore ? targetIndex - 1 : targetIndex;
+    } else if (draggedIndex > targetIndex) {
+      insertIndex = insertBefore ? targetIndex : targetIndex + 1;
+    }
+    endpointsData.groups.splice(insertIndex, 0, draggedGroup);
     await saveEndpoints();
     return true;
   }
@@ -876,6 +1292,29 @@ async function deleteModel(groupId, modelId) {
       await saveEndpoints();
       return true;
     }
+  }
+  return false;
+}
+
+async function reorderModels(groupId, draggedModelId, targetModelId, insertBefore) {
+  if (!endpointsData) endpointsData = { groups: [] };
+  const group = endpointsData.groups.find(g => g.id === groupId);
+  if (!group || !group.models) return false;
+
+  const draggedIndex = group.models.findIndex(m => m.id === draggedModelId);
+  const targetIndex = group.models.findIndex(m => m.id === targetModelId);
+
+  if (draggedIndex >= 0 && targetIndex >= 0) {
+    const [draggedModel] = group.models.splice(draggedIndex, 1);
+    let insertIndex = targetIndex;
+    if (draggedIndex < targetIndex) {
+      insertIndex = insertBefore ? targetIndex - 1 : targetIndex;
+    } else if (draggedIndex > targetIndex) {
+      insertIndex = insertBefore ? targetIndex : targetIndex + 1;
+    }
+    group.models.splice(insertIndex, 0, draggedModel);
+    await saveEndpoints();
+    return true;
   }
   return false;
 }
@@ -1307,15 +1746,7 @@ async function init() {
   const restored = await tryRestoreDirectory();
 
   if (!restored) {
-    const prompt = showDirectoryPrompt();
-    document.getElementById('btn-select-dir').onclick = async () => {
-      const success = await selectDirectory();
-      hideDirectoryPrompt();
-      if (success) {
-        updateDirectoryDisplay();
-        await refreshUI();
-      }
-    };
+    showDirectoryPrompt(); // 强制选择目录
   } else {
     updateDirectoryDisplay();
     await refreshUI();
@@ -1324,6 +1755,11 @@ async function init() {
   document.getElementById('btn-add-group').onclick = handleAddGroup;
   document.getElementById('btn-send').onclick = handleSend;
   document.getElementById('btn-stop').onclick = handleStop;
+  document.getElementById('btn-help').onclick = () => showHelpDialog(false);
+  document.getElementById('btn-new-session').onclick = handleNewSession;
+  document.getElementById('btn-new-session-header').onclick = handleNewSession;
+  document.getElementById('btn-delete-dir').onclick = handleDeleteDirectory;
+  document.getElementById('btn-wipe-dir').onclick = handleWipeDirectory;
 
   // 更换目录按钮
   document.getElementById('btn-change-dir').onclick = async () => {
@@ -1335,10 +1771,64 @@ async function init() {
   };
 }
 
-function updateDirectoryDisplay() {
+async function handleDeleteDirectory() {
+  if (confirm('确定删除当前目录配置？删除后需要重新选择目录。（磁盘上的数据文件不会被删除）')) {
+    await clearDirectory();
+    showDirectoryPrompt(); // 弹出帮助弹窗让用户选择新目录
+  }
+}
+
+async function handleWipeDirectory() {
+  if (!directoryHandle) {
+    alert('请先选择目录');
+    return;
+  }
+
+  if (confirm('确定清空磁盘上的所有数据？\n这将删除 endpoints.json 和 sessions 目录中的所有会话记录。\n此操作不可恢复！')) {
+    if (confirm('再次确认：这将永久删除所有端点配置和聊天记录！')) {
+      try {
+        // 删除endpoints.json
+        try {
+          await directoryHandle.removeEntry('endpoints.json');
+        } catch (e) {
+          // 文件可能不存在
+        }
+
+        // 删除sessions目录
+        try {
+          await directoryHandle.removeEntry('sessions', { recursive: true });
+        } catch (e) {
+          // 目录可能不存在
+        }
+
+        // 清除内存和IndexedDB
+        await clearDirectory();
+
+        alert('数据已清空');
+        showDirectoryPrompt(); // 让用户重新选择目录或使用当前目录
+      } catch (err) {
+        alert('清空失败: ' + err.message);
+      }
+    }
+  }
+}
+
+async function updateDirectoryDisplay() {
   const dirPath = document.getElementById('directory-path');
   if (directoryHandle) {
-    // 尝试获取完整路径（可能需要权限）
+    // 尝试使用resolve()获取路径信息
+    try {
+      // Chrome实验性API：通过创建子目录并resolve来尝试获取更多信息
+      const sessionsDir = await directoryHandle.getDirectoryHandle('sessions', { create: false });
+      if ('resolve' in directoryHandle) {
+        const relativePath = await directoryHandle.resolve(sessionsDir);
+        // resolve返回的是相对于根目录的路径数组，但这不是完整系统路径
+        // 完整系统路径浏览器无法提供（安全限制）
+      }
+    } catch (e) {
+      // sessions目录可能不存在
+    }
+
     dirPath.textContent = directoryHandle.name;
     dirPath.title = '当前目录: ' + directoryHandle.name;
   } else {
@@ -1349,7 +1839,7 @@ function updateDirectoryDisplay() {
 
 async function refreshUI() {
   const groups = getGroups();
-  renderEndpointList(groups, currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups);
+  renderEndpointList(groups, currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 
   const sessions = getAllSessions();
   renderSessionList(sessions, currentSession?.id, handleSessionSelect, handleSessionEdit, handleSessionDelete);
@@ -1374,13 +1864,13 @@ function updateChatTitleDisplay() {
 function handleGroupSelect(groupId) {
   currentGroupId = groupId;
   currentModelId = null;
-  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups);
+  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 }
 
 async function handleModelSelect(groupId, modelId) {
   currentGroupId = groupId;
   currentModelId = modelId;
-  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups);
+  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 }
 
 async function handleSessionSelect(sessionId) {
@@ -1452,11 +1942,17 @@ function handleAddModel() {
   });
 }
 
-function handleAddModelForGroup(groupId) {
-  showEditModelDialog(groupId, null, async (name) => {
-    await addModel(groupId, name);
+async function handleAddModelForGroup(groupId, modelName) {
+  if (modelName) {
+    await addModel(groupId, modelName);
     await refreshUI();
-  });
+  } else {
+    // 如果没有提供名称，仍然使用弹窗（兼容旧调用方式）
+    showEditModelDialog(groupId, null, async (name) => {
+      await addModel(groupId, name);
+      await refreshUI();
+    });
+  }
 }
 
 function handleCopy(content) {
@@ -1481,8 +1977,13 @@ async function handleModelDelete(groupId, modelId) {
   await refreshUI();
 }
 
-async function handleReorderGroups(draggedId, targetId) {
-  await reorderGroups(draggedId, targetId);
+async function handleReorderGroups(draggedId, targetId, insertBefore) {
+  await reorderGroups(draggedId, targetId, insertBefore);
+  await refreshUI();
+}
+
+async function handleReorderModels(groupId, draggedModelId, targetModelId, insertBefore) {
+  await reorderModels(groupId, draggedModelId, targetModelId, insertBefore);
   await refreshUI();
 }
 
@@ -1546,6 +2047,14 @@ async function handleSend() {
 function handleStop() {
   stopGeneration();
   setButtonState(false, true);
+}
+
+async function handleNewSession() {
+  currentSession = null;
+  currentGroupId = null;
+  currentModelId = null;
+  lastUserMessage = null;
+  await refreshUI();
 }
 
 async function handleRegenerate() {
