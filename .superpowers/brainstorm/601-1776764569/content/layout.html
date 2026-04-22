@@ -1,0 +1,80 @@
+<h2>聊天模型端点管理器 - 布局原型</h2>
+<p class="subtitle">三栏布局：左侧端点列表、右侧聊天历史、中间聊天界面</p>
+
+<div class="mockup">
+  <div class="mockup-header">整体布局预览</div>
+  <div class="mockup-body" style="display: flex; height: 400px; gap: 8px;">
+    <!-- 左侧栏：端点列表 -->
+    <div class="mock-sidebar" style="width: 200px; flex-shrink: 0;">
+      <div style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">端点列表</div>
+      <div style="padding: 8px;">
+        <div class="placeholder" style="margin-bottom: 4px;">🔹 Claude Official</div>
+        <div class="placeholder" style="margin-bottom: 4px; background: #e3f2fd;">🔹 OpenAI GPT-4</div>
+        <div class="placeholder" style="margin-bottom: 4px;">🔹 Gemini Pro</div>
+        <div class="placeholder" style="margin-bottom: 4px;">🔹 自定义端点</div>
+      </div>
+      <button class="mock-button" style="margin: 8px;">+ 新增端点</button>
+    </div>
+
+    <!-- 中间：聊天界面 -->
+    <div class="mock-content" style="flex: 1; display: flex; flex-direction: column;">
+      <div style="padding: 8px; border-bottom: 1px solid #ddd;">
+        <span style="font-weight: bold;">与 OpenAI GPT-4 的对话</span>
+      </div>
+      <div style="flex: 1; padding: 8px; overflow-y: auto;">
+        <div style="margin-bottom: 12px;">
+          <div style="background: #f5f5f5; padding: 8px; border-radius: 8px; margin-bottom: 4px;">用户：你好，请介绍一下你自己</div>
+          <div style="background: #e8f5e9; padding: 8px; border-radius: 8px;">助手：我是GPT-4，一个大型语言模型...</div>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <div style="background: #f5f5f5; padding: 8px; border-radius: 8px; margin-bottom: 4px;">用户：你能做什么？</div>
+          <div style="background: #e8f5e9; padding: 8px; border-radius: 8px;">助手：我可以帮助你完成各种任务...</div>
+        </div>
+      </div>
+      <div style="padding: 8px; border-top: 1px solid #ddd; display: flex; gap: 8px;">
+        <input class="mock-input" style="flex: 1;" placeholder="输入消息...">
+        <button class="mock-button">发送</button>
+      </div>
+    </div>
+
+    <!-- 右侧栏：聊天记录 -->
+    <div class="mock-sidebar" style="width: 180px; flex-shrink: 0;">
+      <div style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">聊天记录</div>
+      <div style="padding: 8px;">
+        <div class="placeholder" style="margin-bottom: 4px; background: #e3f2fd;">📝 API测试 (今天)</div>
+        <div class="placeholder" style="margin-bottom: 4px;">📝 模型对比 (昨天)</div>
+        <div class="placeholder" style="margin-bottom: 4px;">📝 代码助手 (周一)</div>
+        <div class="placeholder" style="margin-bottom: 4px;">📝 翻译对话 (上周)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 16px;">
+  <h3>这个布局符合你的预期吗？</h3>
+  <p>请在终端告诉我你的想法，或者点击选择：</p>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="good" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>布局合适</h3>
+      <p>三栏布局符合需求，可以继续细化</p>
+    </div>
+  </div>
+  <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>基本方向对，但有些细节要改</p>
+    </div>
+  </div>
+  <div class="option" data-choice="different" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>换个思路</h3>
+      <p>整体布局思路不太对，需要重新考虑</p>
+    </div>
+  </div>
+</div>

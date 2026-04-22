@@ -46,6 +46,1172 @@
     </div>
   </div>
 
-  <script type="module" src="js/main.js"></script>
+<script>
+// ========== UI Functions ==========
+
+function initDividers() {
+  const dividerLeft = document.getElementById('divider-left');
+  const dividerRight = document.getElementById('divider-right');
+  const sidebarLeft = document.getElementById('sidebar-left');
+  const sidebarRight = document.getElementById('sidebar-right');
+
+  let isDragging = false;
+  let currentDivider = null;
+  let startX = 0;
+  let startWidth = 0;
+
+  function startDrag(e, divider, sidebar, isLeft) {
+    isDragging = true;
+    currentDivider = { divider, sidebar, isLeft };
+    startX = e.clientX;
+    startWidth = sidebar.offsetWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }
+
+  function doDrag(e) {
+    if (!isDragging || !currentDivider) return;
+
+    const dx = e.clientX - startX;
+    const newWidth = currentDivider.isLeft
+      ? startWidth + dx
+      : startWidth - dx;
+
+    const minWidth = 150;
+    const maxWidth = 400;
+    const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+
+    currentDivider.sidebar.style.width = clampedWidth + 'px';
+  }
+
+  function stopDrag() {
+    if (isDragging) {
+      isDragging = false;
+      currentDivider = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  }
+
+  dividerLeft.addEventListener('mousedown', (e) => {
+    startDrag(e, dividerLeft, sidebarLeft, true);
+  });
+
+  dividerRight.addEventListener('mousedown', (e) => {
+    startDrag(e, dividerRight, sidebarRight, false);
+  });
+
+  document.addEventListener('mousemove', doDrag);
+  document.addEventListener('mouseup', stopDrag);
+}
+
+function renderEndpointList(groups, selectedModelId, onModelSelect, onGroupEdit, onModelEdit) {
+  const container = document.getElementById('endpoint-list');
+  container.innerHTML = '';
+
+  groups.forEach(group => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'endpoint-group';
+
+    const headerEl = document.createElement('div');
+    headerEl.className = 'group-header';
+    headerEl.innerHTML = `
+      <span>${group.name}</span>
+      <span class="group-toggle">▼</span>
+    `;
+
+    headerEl.addEventListener('click', () => {
+      const modelsEl = groupEl.querySelector('.group-models');
+      const toggleEl = headerEl.querySelector('.group-toggle');
+      if (modelsEl.style.display === 'none') {
+        modelsEl.style.display = 'block';
+        toggleEl.textContent = '▼';
+      } else {
+        modelsEl.style.display = 'none';
+        toggleEl.textContent = '▶';
+      }
+    });
+
+    headerEl.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      onGroupEdit(group.id);
+    });
+
+    const modelsEl = document.createElement('div');
+    modelsEl.className = 'group-models';
+
+    group.models.forEach(model => {
+      const modelEl = document.createElement('div');
+      modelEl.className = 'model-item';
+      if (model.id === selectedModelId) {
+        modelEl.classList.add('selected');
+      }
+      modelEl.textContent = model.name;
+
+      modelEl.addEventListener('click', () => {
+        onModelSelect(group.id, model.id);
+      });
+
+      modelEl.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        onModelEdit(group.id, model.id);
+      });
+
+      modelsEl.appendChild(modelEl);
+    });
+
+    groupEl.appendChild(headerEl);
+    groupEl.appendChild(modelsEl);
+    container.appendChild(groupEl);
+  });
+}
+
+function renderSessionList(sessions, selectedSessionId, onSessionSelect) {
+  const container = document.getElementById('session-list');
+  container.innerHTML = '';
+
+  sessions.sort((a, b) => b.createdAt - a.createdAt);
+
+  sessions.forEach(session => {
+    const sessionEl = document.createElement('div');
+    sessionEl.className = 'session-item';
+    if (session.id === selectedSessionId) {
+      sessionEl.classList.add('selected');
+    }
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'session-title';
+    titleEl.textContent = session.title || '新会话';
+
+    const timeEl = document.createElement('div');
+    timeEl.className = 'session-time';
+    timeEl.textContent = new Date(session.createdAt).toLocaleString('zh-CN');
+
+    sessionEl.appendChild(titleEl);
+    sessionEl.appendChild(timeEl);
+    sessionEl.addEventListener('click', () => {
+      onSessionSelect(session.id);
+    });
+
+    container.appendChild(sessionEl);
+  });
+}
+
+function renderMessages(messages, groups) {
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = '';
+
+  messages.forEach(msg => {
+    const msgEl = document.createElement('div');
+    msgEl.className = 'message';
+
+    if (msg.role === 'user') {
+      const userEl = document.createElement('div');
+      userEl.className = 'message-user';
+      userEl.textContent = msg.content;
+      msgEl.appendChild(userEl);
+    } else {
+      const metaEl = document.createElement('div');
+      metaEl.className = 'message-meta';
+      if (msg.endpointGroupId && msg.modelId) {
+        const group = groups.find(g => g.id === msg.endpointGroupId);
+        const model = group?.models.find(m => m.id === msg.modelId);
+        metaEl.textContent = model ? `${group?.name} / ${model.name}` : '未知模型';
+      }
+      msgEl.appendChild(metaEl);
+
+      const assistantEl = document.createElement('div');
+      assistantEl.className = 'message-assistant';
+      assistantEl.textContent = msg.content;
+      msgEl.appendChild(assistantEl);
+    }
+
+    container.appendChild(msgEl);
+  });
+
+  container.scrollTop = container.scrollHeight;
+}
+
+function appendMessage(role, content, meta = null) {
+  const container = document.getElementById('chat-messages');
+
+  const msgEl = document.createElement('div');
+  msgEl.className = 'message';
+
+  if (role === 'user') {
+    const userEl = document.createElement('div');
+    userEl.className = 'message-user';
+    userEl.textContent = content;
+    msgEl.appendChild(userEl);
+  } else {
+    if (meta) {
+      const metaEl = document.createElement('div');
+      metaEl.className = 'message-meta';
+      metaEl.textContent = meta;
+      msgEl.appendChild(metaEl);
+    }
+
+    const assistantEl = document.createElement('div');
+    assistantEl.className = 'message-assistant';
+    assistantEl.id = 'streaming-message';
+    assistantEl.textContent = content;
+    msgEl.appendChild(assistantEl);
+  }
+
+  container.appendChild(msgEl);
+  container.scrollTop = container.scrollHeight;
+
+  return msgEl;
+}
+
+function updateStreamingMessage(content) {
+  const el = document.getElementById('streaming-message');
+  if (el) {
+    el.textContent = content;
+    el.parentElement.parentElement.scrollTop = el.parentElement.parentElement.scrollHeight;
+  }
+}
+
+function finishStreamingMessage() {
+  const el = document.getElementById('streaming-message');
+  if (el) {
+    el.removeAttribute('id');
+  }
+}
+
+function updateCurrentModel(groupName, modelName) {
+  const el = document.getElementById('current-model-name');
+  el.textContent = groupName && modelName
+    ? `${groupName} / ${modelName}`
+    : '未选择模型';
+}
+
+function getInputContent() {
+  const input = document.getElementById('chat-input');
+  return input.value.trim();
+}
+
+function clearInput() {
+  const input = document.getElementById('chat-input');
+  input.value = '';
+}
+
+function setButtonState(sendDisabled, stopDisabled, regenerateDisabled) {
+  document.getElementById('btn-send').disabled = sendDisabled;
+  document.getElementById('btn-stop').disabled = stopDisabled;
+  document.getElementById('btn-regenerate').disabled = regenerateDisabled;
+}
+
+function showEditGroupDialog(group = null, onSave, onDelete = null) {
+  const existing = document.getElementById('edit-dialog');
+  if (existing) existing.remove();
+
+  const dialog = document.createElement('div');
+  dialog.id = 'edit-dialog';
+  dialog.style.cssText = `
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 1000; min-width: 300px;
+  `;
+
+  dialog.innerHTML = `
+    <h3 style="margin-bottom: 16px;">${group ? '编辑端点组' : '新增端点组'}</h3>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <label>名称: <input id="dialog-group-name" value="${group?.name || ''}" style="width: 100%; padding: 6px;"></label>
+      <label>Base URL: <input id="dialog-group-url" value="${group?.baseUrl || ''}" style="width: 100%; padding: 6px;"></label>
+      <label>接口风格:
+        <select id="dialog-group-style" style="width: 100%; padding: 6px;">
+          <option value="openai" ${group?.style === 'openai' ? 'selected' : ''}>OpenAI</option>
+          <option value="claude" ${group?.style === 'claude' ? 'selected' : ''}>Claude</option>
+          <option value="gemini" ${group?.style === 'gemini' ? 'selected' : ''}>Gemini</option>
+        </select>
+      </label>
+      <label>API Key: <input id="dialog-group-key" type="password" value="${group?.key || ''}" style="width: 100%; padding: 6px;"></label>
+    </div>
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+      ${group && onDelete ? '<button id="dialog-delete" style="background: #ffebee;">删除</button>' : ''}
+      <button id="dialog-cancel">取消</button>
+      <button id="dialog-save" style="background: #e3f2fd;">保存</button>
+    </div>
+  `;
+
+  document.body.appendChild(dialog);
+
+  document.getElementById('dialog-cancel').onclick = () => dialog.remove();
+  document.getElementById('dialog-save').onclick = () => {
+    const name = document.getElementById('dialog-group-name').value.trim();
+    const baseUrl = document.getElementById('dialog-group-url').value.trim();
+    const style = document.getElementById('dialog-group-style').value;
+    const key = document.getElementById('dialog-group-key').value.trim();
+
+    if (!name || !baseUrl || !key) {
+      alert('请填写完整信息');
+      return;
+    }
+
+    onSave({ name, baseUrl, style, key });
+    dialog.remove();
+  };
+
+  if (group && onDelete) {
+    document.getElementById('dialog-delete').onclick = () => {
+      if (confirm('确定删除该端点组及其所有模型？')) {
+        onDelete();
+        dialog.remove();
+      }
+    };
+  }
+}
+
+function showEditModelDialog(groupId, model = null, onSave, onDelete = null) {
+  const existing = document.getElementById('edit-dialog');
+  if (existing) existing.remove();
+
+  const dialog = document.createElement('div');
+  dialog.id = 'edit-dialog';
+  dialog.style.cssText = `
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 1000; min-width: 250px;
+  `;
+
+  dialog.innerHTML = `
+    <h3 style="margin-bottom: 16px;">${model ? '编辑模型' : '新增模型'}</h3>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <label>模型名: <input id="dialog-model-name" value="${model?.name || ''}" style="width: 100%; padding: 6px;"></label>
+    </div>
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+      ${model && onDelete ? '<button id="dialog-delete" style="background: #ffebee;">删除</button>' : ''}
+      <button id="dialog-cancel">取消</button>
+      <button id="dialog-save" style="background: #e3f2fd;">保存</button>
+    </div>
+  `;
+
+  document.body.appendChild(dialog);
+
+  document.getElementById('dialog-cancel').onclick = () => dialog.remove();
+  document.getElementById('dialog-save').onclick = () => {
+    const name = document.getElementById('dialog-model-name').value.trim();
+    if (!name) {
+      alert('请输入模型名');
+      return;
+    }
+    onSave(name);
+    dialog.remove();
+  };
+
+  if (model && onDelete) {
+    document.getElementById('dialog-delete').onclick = () => {
+      if (confirm('确定删除该模型？')) {
+        onDelete();
+        dialog.remove();
+      }
+    };
+  }
+}
+
+function showDirectoryPrompt() {
+  const existing = document.getElementById('directory-prompt');
+  if (existing) existing.remove();
+
+  const prompt = document.createElement('div');
+  prompt.id = 'directory-prompt';
+  prompt.style.cssText = `
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 1000; text-align: center;
+  `;
+  prompt.innerHTML = `
+    <h3 style="margin-bottom: 12px;">选择存储目录</h3>
+    <p style="margin-bottom: 16px; color: #666;">请选择一个目录来存储端点配置和聊天记录</p>
+    <button id="btn-select-dir" style="padding: 10px 20px; background: #e3f2fd;">选择目录</button>
+  `;
+  document.body.appendChild(prompt);
+
+  return prompt;
+}
+
+function hideDirectoryPrompt() {
+  const prompt = document.getElementById('directory-prompt');
+  if (prompt) prompt.remove();
+}
+
+// ========== Store Functions ==========
+
+let directoryHandle = null;
+let endpointsData = null;
+let sessionsCache = new Map();
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+async function selectDirectory() {
+  try {
+    directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    await ensureDirectoryStructure();
+    await loadEndpoints();
+    await loadSessionsIndex();
+    return true;
+  } catch (err) {
+    console.error('选择目录失败:', err);
+    return false;
+  }
+}
+
+async function ensureDirectoryStructure() {
+  if (!directoryHandle) return;
+  try {
+    await directoryHandle.getDirectoryHandle('sessions', { create: true });
+  } catch (err) {
+    console.error('创建sessions目录失败:', err);
+  }
+}
+
+async function loadEndpoints() {
+  if (!directoryHandle) {
+    endpointsData = { groups: [] };
+    return endpointsData;
+  }
+  try {
+    const fileHandle = await directoryHandle.getFileHandle('endpoints.json', { create: true });
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    endpointsData = text ? JSON.parse(text) : { groups: [] };
+    return endpointsData;
+  } catch (err) {
+    console.error('加载端点配置失败:', err);
+    endpointsData = { groups: [] };
+    return endpointsData;
+  }
+}
+
+async function saveEndpoints() {
+  if (!directoryHandle) return false;
+  try {
+    const fileHandle = await directoryHandle.getFileHandle('endpoints.json', { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(endpointsData, null, 2));
+    await writable.close();
+    return true;
+  } catch (err) {
+    console.error('保存端点配置失败:', err);
+    return false;
+  }
+}
+
+function getGroups() {
+  return endpointsData?.groups || [];
+}
+
+async function addGroup(name, baseUrl, style, key) {
+  const group = {
+    id: generateUUID(),
+    name,
+    baseUrl,
+    style,
+    key,
+    models: []
+  };
+  endpointsData.groups.push(group);
+  await saveEndpoints();
+  return group;
+}
+
+async function updateGroup(groupId, updates) {
+  const group = endpointsData.groups.find(g => g.id === groupId);
+  if (group) {
+    Object.assign(group, updates);
+    await saveEndpoints();
+    return group;
+  }
+  return null;
+}
+
+async function deleteGroup(groupId) {
+  const index = endpointsData.groups.findIndex(g => g.id === groupId);
+  if (index >= 0) {
+    endpointsData.groups.splice(index, 1);
+    await saveEndpoints();
+    return true;
+  }
+  return false;
+}
+
+async function addModel(groupId, modelName) {
+  const group = endpointsData.groups.find(g => g.id === groupId);
+  if (group) {
+    const model = {
+      id: generateUUID(),
+      name: modelName
+    };
+    group.models.push(model);
+    await saveEndpoints();
+    return model;
+  }
+  return null;
+}
+
+async function updateModel(groupId, modelId, newName) {
+  const group = endpointsData.groups.find(g => g.id === groupId);
+  const model = group?.models.find(m => m.id === modelId);
+  if (model) {
+    model.name = newName;
+    await saveEndpoints();
+    return model;
+  }
+  return null;
+}
+
+async function deleteModel(groupId, modelId) {
+  const group = endpointsData.groups.find(g => g.id === groupId);
+  if (group) {
+    const index = group.models.findIndex(m => m.id === modelId);
+    if (index >= 0) {
+      group.models.splice(index, 1);
+      await saveEndpoints();
+      return true;
+    }
+  }
+  return false;
+}
+
+function getModel(groupId, modelId) {
+  const group = endpointsData.groups.find(g => g.id === groupId);
+  return group?.models.find(m => m.id === modelId);
+}
+
+function getGroup(groupId) {
+  return endpointsData?.groups?.find(g => g.id === groupId);
+}
+
+async function loadSessionsIndex() {
+  if (!directoryHandle) return [];
+  try {
+    const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+    sessionsCache.clear();
+
+    for await (const handle of sessionsDir.values()) {
+      if (handle.kind === 'file' && handle.name.endsWith('.json')) {
+        const file = await handle.getFile();
+        const text = await file.text();
+        const session = JSON.parse(text);
+        sessionsCache.set(session.id, session);
+      }
+    }
+
+    return Array.from(sessionsCache.values());
+  } catch (err) {
+    console.error('加载会话索引失败:', err);
+    return [];
+  }
+}
+
+function getAllSessions() {
+  return Array.from(sessionsCache.values());
+}
+
+async function createSession(firstMessage = null) {
+  const session = {
+    id: generateUUID(),
+    title: firstMessage ? firstMessage.slice(0, 20) : '新会话',
+    createdAt: Date.now(),
+    messages: []
+  };
+
+  if (firstMessage) {
+    session.messages.push({ role: 'user', content: firstMessage });
+  }
+
+  sessionsCache.set(session.id, session);
+  await saveSession(session);
+  return session;
+}
+
+async function loadSession(sessionId) {
+  if (sessionsCache.has(sessionId)) {
+    return sessionsCache.get(sessionId);
+  }
+
+  if (!directoryHandle) return null;
+  try {
+    const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+    const fileHandle = await sessionsDir.getFileHandle(`${sessionId}.json`);
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    const session = JSON.parse(text);
+    sessionsCache.set(session.id, session);
+    return session;
+  } catch (err) {
+    console.error('加载会话失败:', err);
+    return null;
+  }
+}
+
+async function saveSession(session) {
+  if (!directoryHandle) return false;
+  try {
+    const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+    const fileHandle = await sessionsDir.getFileHandle(`${session.id}.json`, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(session, null, 2));
+    await writable.close();
+    return true;
+  } catch (err) {
+    console.error('保存会话失败:', err);
+    return false;
+  }
+}
+
+async function addMessage(sessionId, role, content, endpointGroupId = null, modelId = null) {
+  const session = sessionsCache.get(sessionId);
+  if (session) {
+    const message = { role, content };
+    if (role === 'assistant' && endpointGroupId && modelId) {
+      message.endpointGroupId = endpointGroupId;
+      message.modelId = modelId;
+    }
+    session.messages.push(message);
+
+    if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 1) {
+      session.title = content.slice(0, 20);
+    }
+
+    await saveSession(session);
+    return message;
+  }
+  return null;
+}
+
+function getSession(sessionId) {
+  return sessionsCache.get(sessionId);
+}
+
+async function deleteSession(sessionId) {
+  if (!directoryHandle) return false;
+  try {
+    sessionsCache.delete(sessionId);
+    const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+    await sessionsDir.removeEntry(`${sessionId}.json`);
+    return true;
+  } catch (err) {
+    console.error('删除会话失败:', err);
+    return false;
+  }
+}
+
+function hasDirectory() {
+  return directoryHandle !== null;
+}
+
+// ========== API Functions ==========
+
+let currentAbortController = null;
+
+function stopGeneration() {
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+  }
+}
+
+function isGenerating() {
+  return currentAbortController !== null;
+}
+
+async function callOpenAI(baseUrl, apiKey, model, messages, onChunk) {
+  const url = `${baseUrl}/v1/chat/completions`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`
+  };
+  const body = {
+    model,
+    messages,
+    stream: true
+  };
+
+  currentAbortController = new AbortController();
+  let fullContent = '';
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: currentAbortController.signal
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`API错误: ${response.status} - ${error}`);
+    }
+
+    if (!response.body) {
+      throw new Error('Response body is empty');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+
+          try {
+            const json = JSON.parse(data);
+            const content = json.choices?.[0]?.delta?.content;
+            if (content) {
+              fullContent += content;
+              onChunk(fullContent);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    return fullContent;
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      return fullContent || '';
+    }
+    throw e;
+  } finally {
+    currentAbortController = null;
+  }
+}
+
+async function callClaude(baseUrl, apiKey, model, messages, onChunk) {
+  const url = `${baseUrl}/v1/messages`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-api-key': apiKey,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+
+  const claudeMessages = messages.map(m => ({
+    role: m.role,
+    content: m.content
+  }));
+
+  const body = {
+    model,
+    max_tokens: 4096,
+    messages: claudeMessages,
+    stream: true
+  };
+
+  currentAbortController = new AbortController();
+  let fullContent = '';
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: currentAbortController.signal
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`API错误: ${response.status} - ${error}`);
+    }
+
+    if (!response.body) {
+      throw new Error('Response body is empty');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+
+          try {
+            const json = JSON.parse(data);
+            if (json.type === 'content_block_delta' && json.delta?.text) {
+              fullContent += json.delta.text;
+              onChunk(fullContent);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    return fullContent;
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      return fullContent || '';
+    }
+    throw e;
+  } finally {
+    currentAbortController = null;
+  }
+}
+
+async function callGemini(baseUrl, apiKey, model, messages, onChunk) {
+  const url = `${baseUrl}/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
+
+  const contents = [];
+  let currentRole = null;
+  let currentParts = [];
+
+  for (const msg of messages) {
+    const role = msg.role === 'user' ? 'user' : 'model';
+    if (currentRole !== role) {
+      if (currentRole !== null) {
+        contents.push({ role: currentRole, parts: currentParts });
+      }
+      currentRole = role;
+      currentParts = [];
+    }
+    currentParts.push({ text: msg.content });
+  }
+  if (currentRole !== null) {
+    contents.push({ role: currentRole, parts: currentParts });
+  }
+
+  const body = { contents };
+
+  currentAbortController = new AbortController();
+  let fullContent = '';
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: currentAbortController.signal
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`API错误: ${response.status} - ${error}`);
+    }
+
+    if (!response.body) {
+      throw new Error('Response body is empty');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+
+          try {
+            const json = JSON.parse(data);
+            const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              fullContent += text;
+              onChunk(fullContent);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    return fullContent;
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      return fullContent || '';
+    }
+    throw e;
+  } finally {
+    currentAbortController = null;
+  }
+}
+
+async function callAPI(style, baseUrl, apiKey, model, messages, onChunk) {
+  switch (style) {
+    case 'openai':
+      return await callOpenAI(baseUrl, apiKey, model, messages, onChunk);
+    case 'claude':
+      return await callClaude(baseUrl, apiKey, model, messages, onChunk);
+    case 'gemini':
+      return await callGemini(baseUrl, apiKey, model, messages, onChunk);
+    default:
+      throw new Error(`不支持的接口风格: ${style}`);
+  }
+}
+
+// ========== Main Logic ==========
+
+let currentSession = null;
+let currentGroupId = null;
+let currentModelId = null;
+let lastUserMessage = null;
+
+async function init() {
+  initDividers();
+
+  if (!hasDirectory()) {
+    const prompt = showDirectoryPrompt();
+    document.getElementById('btn-select-dir').onclick = async () => {
+      const success = await selectDirectory();
+      hideDirectoryPrompt();
+      if (success) {
+        await refreshUI();
+      }
+    };
+  } else {
+    await refreshUI();
+  }
+
+  document.getElementById('btn-add-group').onclick = handleAddGroup;
+  document.getElementById('btn-add-model').onclick = handleAddModel;
+  document.getElementById('btn-send').onclick = handleSend;
+  document.getElementById('btn-stop').onclick = handleStop;
+  document.getElementById('btn-regenerate').onclick = handleRegenerate;
+}
+
+async function refreshUI() {
+  const groups = getGroups();
+  renderEndpointList(groups, currentModelId, handleModelSelect, handleGroupEdit, handleModelEdit);
+
+  const sessions = getAllSessions();
+  renderSessionList(sessions, currentSession?.id, handleSessionSelect);
+
+  if (currentSession) {
+    renderMessages(currentSession.messages, groups);
+  } else {
+    document.getElementById('chat-messages').innerHTML = '';
+  }
+
+  updateCurrentModelDisplay();
+}
+
+function updateCurrentModelDisplay() {
+  if (currentGroupId && currentModelId) {
+    const group = getGroup(currentGroupId);
+    const model = getModel(currentGroupId, currentModelId);
+    updateCurrentModel(group?.name, model?.name);
+  } else {
+    updateCurrentModel(null, null);
+  }
+}
+
+async function handleModelSelect(groupId, modelId) {
+  currentGroupId = groupId;
+  currentModelId = modelId;
+  updateCurrentModelDisplay();
+  renderEndpointList(getGroups(), currentModelId, handleModelSelect, handleGroupEdit, handleModelEdit);
+}
+
+async function handleSessionSelect(sessionId) {
+  currentSession = await loadSession(sessionId);
+
+  const lastAssistant = currentSession.messages.filter(m => m.role === 'assistant').pop();
+  if (lastAssistant?.endpointGroupId && lastAssistant?.modelId) {
+    currentGroupId = lastAssistant.endpointGroupId;
+    currentModelId = lastAssistant.modelId;
+  }
+
+  // 更新 lastUserMessage 为当前 session 的最后一条用户消息
+  const lastUserMsg = currentSession.messages.filter(m => m.role === 'user').pop();
+  lastUserMessage = lastUserMsg?.content || null;
+
+  await refreshUI();
+  setButtonState(false, true, !lastUserMessage || !currentGroupId || !currentModelId);
+}
+
+function handleAddGroup() {
+  showEditGroupDialog(null, async (data) => {
+    await addGroup(data.name, data.baseUrl, data.style, data.key);
+    await refreshUI();
+  });
+}
+
+function handleGroupEdit(groupId) {
+  const group = getGroup(groupId);
+  showEditGroupDialog(group, async (data) => {
+    await updateGroup(groupId, data);
+    await refreshUI();
+  }, async () => {
+    await deleteGroup(groupId);
+    if (currentGroupId === groupId) {
+      currentGroupId = null;
+      currentModelId = null;
+    }
+    await refreshUI();
+  });
+}
+
+function handleAddModel() {
+  if (!currentGroupId) {
+    alert('请先选择一个端点组');
+    return;
+  }
+  showEditModelDialog(currentGroupId, null, async (name) => {
+    await addModel(currentGroupId, name);
+    await refreshUI();
+  });
+}
+
+function handleModelEdit(groupId, modelId) {
+  const model = getModel(groupId, modelId);
+  showEditModelDialog(groupId, model, async (name) => {
+    await updateModel(groupId, modelId, name);
+    await refreshUI();
+  }, async () => {
+    await deleteModel(groupId, modelId);
+    if (currentModelId === modelId) {
+      currentModelId = null;
+    }
+    await refreshUI();
+  });
+}
+
+async function handleSend() {
+  const content = getInputContent();
+  if (!content) return;
+
+  if (!currentGroupId || !currentModelId) {
+    alert('请先选择一个模型');
+    return;
+  }
+
+  if (!currentSession) {
+    currentSession = await createSession(content);
+  } else {
+    await addMessage(currentSession.id, 'user', content);
+  }
+
+  lastUserMessage = content;
+  clearInput();
+  setButtonState(true, false, true);
+
+  const groups = getGroups();
+  renderMessages(currentSession.messages, groups);
+
+  const group = getGroup(currentGroupId);
+  const model = getModel(currentGroupId, currentModelId);
+
+  appendMessage('assistant', '', `${group.name} / ${model.name}`);
+
+  try {
+    const messages = currentSession.messages.map(m => ({
+      role: m.role,
+      content: m.content
+    }));
+
+    const fullResponse = await callAPI(
+      group.style,
+      group.baseUrl,
+      group.key,
+      model.name,
+      messages,
+      updateStreamingMessage
+    );
+
+    finishStreamingMessage();
+    await addMessage(currentSession.id, 'assistant', fullResponse, currentGroupId, currentModelId);
+
+    currentSession = await loadSession(currentSession.id);
+
+    setButtonState(false, true, false);
+    await refreshUI();
+
+  } catch (err) {
+    finishStreamingMessage();
+    alert(`API调用失败: ${err.message}`);
+    setButtonState(false, true, false);
+  }
+}
+
+function handleStop() {
+  stopGeneration();
+  setButtonState(false, true, false);
+}
+
+async function handleRegenerate() {
+  if (!lastUserMessage || !currentGroupId || !currentModelId) return;
+
+  if (currentSession && currentSession.messages.length > 0) {
+    const lastMsg = currentSession.messages[currentSession.messages.length - 1];
+    if (lastMsg.role === 'assistant') {
+      currentSession.messages.pop();
+      await saveSession(currentSession);
+    }
+  }
+
+  setButtonState(true, false, true);
+
+  const groups = getGroups();
+  renderMessages(currentSession.messages, groups);
+
+  const group = getGroup(currentGroupId);
+  const model = getModel(currentGroupId, currentModelId);
+
+  appendMessage('assistant', '', `${group.name} / ${model.name}`);
+
+  try {
+    const messages = currentSession.messages.map(m => ({
+      role: m.role,
+      content: m.content
+    }));
+
+    const fullResponse = await callAPI(
+      group.style,
+      group.baseUrl,
+      group.key,
+      model.name,
+      messages,
+      updateStreamingMessage
+    );
+
+    finishStreamingMessage();
+    await addMessage(currentSession.id, 'assistant', fullResponse, currentGroupId, currentModelId);
+
+    setButtonState(false, true, false);
+    await refreshUI();
+
+  } catch (err) {
+    finishStreamingMessage();
+    if (err.name !== 'AbortError') {
+      alert(`API调用失败: ${err.message}`);
+    }
+    setButtonState(false, true, false);
+  }
+}
+
+// 启动
+init();
+</script>
 </body>
 </html>

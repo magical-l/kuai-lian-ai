@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test_webapp.py)",
+      "Bash(node test_webapp.js)"
+    ]
+  }
+}

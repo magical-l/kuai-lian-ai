@@ -1,0 +1,85 @@
+<h2>实现方案对比</h2>
+<p class="subtitle">纯HTML/JS/CSS，无框架</p>
+
+<div class="options">
+  <div class="option" data-choice="single-file" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>单文件方案</h3>
+      <p>所有代码放在一个HTML文件，内嵌CSS和JS</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros">
+          <h4>优点</h4>
+          <ul>
+            <li>最简单，直接打开即可运行</li>
+            <li>无需构建工具</li>
+            <li>便于分享和备份</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>缺点</h4>
+          <ul>
+            <li>代码量大时难以维护</li>
+            <li>无法模块化组织</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="multi-file" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>多文件分离方案</h3>
+      <p>HTML、CSS、JS分离为独立文件</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros">
+          <h4>优点</h4>
+          <ul>
+            <li>代码结构清晰</li>
+            <li>样式和逻辑分离</li>
+            <li>仍无需构建工具</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>缺点</h4>
+          <ul>
+            <li>JS文件可能较长</li>
+            <li>多文件管理</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="modular" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>模块化JS方案</h3>
+      <p>HTML + CSS + 多个JS模块文件（按功能拆分）</p>
+      <div class="pros-cons" style="margin-top: 8px;">
+        <div class="pros">
+          <h4>优点</h4>
+          <ul>
+            <li>最佳可维护性</li>
+            <li>各模块职责单一</li>
+            <li>便于后续扩展</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>缺点</h4>
+          <ul>
+            <li>文件数量多</li>
+            <li>需要用ES模块语法</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top: 8px; font-size: 12px;">建议拆分：<br>api.js（API调用）、store.js（数据存储）、ui.js（界面渲染）、main.js（入口）</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 16px;">
+  <h3>推荐</h3>
+  <p>对于这个规模的项目，推荐<b>方案C（模块化JS）</b>——代码量适中，模块化便于后续扩展，且无需构建工具（ES模块原生支持）。</p>
+</div>
