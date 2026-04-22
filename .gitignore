@@ -1,4 +1,7 @@
+.claude/
 .playwright-mcp/
+.superpowers/
+temp/
 
 # IDE
 .vscode/
