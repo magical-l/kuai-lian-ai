@@ -105,7 +105,7 @@ function initDividers() {
   document.addEventListener('mouseup', stopDrag);
 }
 
-function renderEndpointList(groups, selectedModelId, onModelSelect, onGroupEdit, onModelEdit) {
+function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSelect, onModelSelect, onGroupEdit, onModelEdit) {
   const container = document.getElementById('endpoint-list');
   container.innerHTML = '';
 
@@ -115,23 +115,37 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onGroupEdit,
 
     const headerEl = document.createElement('div');
     headerEl.className = 'group-header';
-    headerEl.innerHTML = `
-      <span>${group.name}</span>
-      <span class="group-toggle">▼</span>
-    `;
+    if (group.id === selectedGroupId) {
+      headerEl.classList.add('selected');
+    }
 
-    headerEl.addEventListener('click', () => {
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = group.name;
+    nameSpan.style.cursor = 'pointer';
+    nameSpan.addEventListener('click', () => {
+      onGroupSelect(group.id);
+    });
+
+    const toggleSpan = document.createElement('span');
+    toggleSpan.className = 'group-toggle';
+    toggleSpan.textContent = '▼';
+    toggleSpan.style.cursor = 'pointer';
+    toggleSpan.addEventListener('click', (e) => {
+      e.stopPropagation();
       const modelsEl = groupEl.querySelector('.group-models');
-      const toggleEl = headerEl.querySelector('.group-toggle');
       if (modelsEl.style.display === 'none') {
         modelsEl.style.display = 'block';
-        toggleEl.textContent = '▼';
+        toggleSpan.textContent = '▼';
       } else {
         modelsEl.style.display = 'none';
-        toggleEl.textContent = '▶';
+        toggleSpan.textContent = '▶';
       }
     });
 
+    headerEl.appendChild(nameSpan);
+    headerEl.appendChild(toggleSpan);
+
+    // 双击编辑组
     headerEl.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       onGroupEdit(group.id);
@@ -1002,7 +1016,7 @@ async function init() {
 
 async function refreshUI() {
   const groups = getGroups();
-  renderEndpointList(groups, currentModelId, handleModelSelect, handleGroupEdit, handleModelEdit);
+  renderEndpointList(groups, currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit);
 
   const sessions = getAllSessions();
   renderSessionList(sessions, currentSession?.id, handleSessionSelect);
@@ -1021,16 +1035,26 @@ function updateCurrentModelDisplay() {
     const group = getGroup(currentGroupId);
     const model = getModel(currentGroupId, currentModelId);
     updateCurrentModel(group?.name, model?.name);
+  } else if (currentGroupId) {
+    const group = getGroup(currentGroupId);
+    updateCurrentModel(group?.name, null);
   } else {
     updateCurrentModel(null, null);
   }
+}
+
+function handleGroupSelect(groupId) {
+  currentGroupId = groupId;
+  currentModelId = null;
+  updateCurrentModelDisplay();
+  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit);
 }
 
 async function handleModelSelect(groupId, modelId) {
   currentGroupId = groupId;
   currentModelId = modelId;
   updateCurrentModelDisplay();
-  renderEndpointList(getGroups(), currentModelId, handleModelSelect, handleGroupEdit, handleModelEdit);
+  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit);
 }
 
 async function handleSessionSelect(sessionId) {
