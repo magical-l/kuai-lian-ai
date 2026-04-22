@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(python test_webapp.py)",
-      "Bash(node test_webapp.js)"
+      "Bash(node test_webapp.js)",
+      "mcp__playwright-parallel__instance_create",
+      "mcp__playwright-parallel__page_browser_snapshot",
+      "mcp__playwright-parallel__page_browser_navigate",
+      "Bash(python -m http.server 8080)",
+      "mcp__playwright-parallel__page_browser_console_messages",
+      "mcp__playwright-parallel__page_browser_click",
+      "mcp__playwright-parallel__page_browser_handle_dialog"
     ]
   }
 }

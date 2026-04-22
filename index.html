@@ -8,14 +8,24 @@
 </head>
 <body>
   <div class="app-container">
+    <!-- 顶部工作目录栏 -->
+    <div class="directory-bar" id="directory-bar">
+      <button id="btn-change-dir" class="btn-dir-change" title="更换目录">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <span id="directory-path" class="directory-path">未选择目录</span>
+    </div>
+
+    <div class="main-row">
     <!-- 左侧栏：端点列表 -->
     <div class="sidebar-left" id="sidebar-left">
-      <div class="sidebar-header">端点列表</div>
-      <div class="sidebar-content" id="endpoint-list"></div>
-      <div class="sidebar-footer">
-        <button id="btn-add-group">+ 新增大组</button>
-        <button id="btn-add-model">+ 新增模型</button>
+      <div class="sidebar-header">
+        <span>端点</span>
+        <button id="btn-add-group" class="btn-header-action" title="新增端点">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
       </div>
+      <div class="sidebar-content" id="endpoint-list"></div>
     </div>
     <!-- 左侧拖动分界线 -->
     <div class="divider-left" id="divider-left"></div>
@@ -23,7 +33,7 @@
     <!-- 中间：聊天界面 -->
     <div class="main-content" id="main-content">
       <div class="chat-header" id="chat-header">
-        <span id="current-model-name">未选择模型</span>
+        <span id="chat-title">新会话</span>
       </div>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-area">
@@ -31,7 +41,6 @@
         <div class="chat-controls">
           <button id="btn-send">发送</button>
           <button id="btn-stop" disabled>停止</button>
-          <button id="btn-regenerate" disabled>重新生成</button>
         </div>
       </div>
     </div>
@@ -43,6 +52,7 @@
     <div class="sidebar-right" id="sidebar-right">
       <div class="sidebar-header">聊天记录</div>
       <div class="sidebar-content" id="session-list"></div>
+    </div>
     </div>
   </div>
 
@@ -105,13 +115,16 @@ function initDividers() {
   document.addEventListener('mouseup', stopDrag);
 }
 
-function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSelect, onModelSelect, onGroupEdit, onModelEdit) {
+function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSelect, onModelSelect, onGroupEdit, onModelEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups) {
   const container = document.getElementById('endpoint-list');
   container.innerHTML = '';
 
-  groups.forEach(group => {
+  groups.forEach((group, groupIndex) => {
     const groupEl = document.createElement('div');
     groupEl.className = 'endpoint-group';
+    groupEl.dataset.groupId = group.id;
+    groupEl.dataset.groupIndex = groupIndex;
+    groupEl.draggable = false;
 
     const headerEl = document.createElement('div');
     headerEl.className = 'group-header';
@@ -119,17 +132,26 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
       headerEl.classList.add('selected');
     }
 
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = group.name;
-    nameSpan.style.cursor = 'pointer';
-    nameSpan.addEventListener('click', () => {
-      onGroupSelect(group.id);
+    // 拖动手柄
+    const dragHandle = document.createElement('span');
+    dragHandle.className = 'drag-handle';
+    dragHandle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>';
+    dragHandle.title = '拖动排序';
+    dragHandle.draggable = true;
+    dragHandle.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', group.id);
+      e.dataTransfer.effectAllowed = 'move';
+      groupEl.classList.add('dragging');
+    });
+    dragHandle.addEventListener('dragend', () => {
+      groupEl.classList.remove('dragging');
+      container.querySelectorAll('.endpoint-group').forEach(el => el.classList.remove('drag-over'));
     });
 
+    // 收展三角放前面
     const toggleSpan = document.createElement('span');
     toggleSpan.className = 'group-toggle';
     toggleSpan.textContent = '▼';
-    toggleSpan.style.cursor = 'pointer';
     toggleSpan.addEventListener('click', (e) => {
       e.stopPropagation();
       const modelsEl = groupEl.querySelector('.group-models');
@@ -142,13 +164,67 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
       }
     });
 
-    headerEl.appendChild(nameSpan);
-    headerEl.appendChild(toggleSpan);
+    // 组名
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'group-name';
+    nameSpan.textContent = group.name;
+    nameSpan.addEventListener('click', () => {
+      onGroupSelect(group.id);
+    });
 
-    // 双击编辑组
-    headerEl.addEventListener('dblclick', (e) => {
+    // 操作按钮容器（不再包含添加模型按钮）
+    const actionsEl = document.createElement('div');
+    actionsEl.className = 'group-actions';
+
+    // 编辑按钮
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-action';
+    editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    editBtn.title = '编辑端点';
+    editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       onGroupEdit(group.id);
+    });
+
+    // 删除按钮
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-action btn-action-danger';
+    deleteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    deleteBtn.title = '删除端点';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm('确定删除该端点及其所有模型？')) {
+        onGroupDelete(group.id);
+      }
+    });
+
+    actionsEl.appendChild(editBtn);
+    actionsEl.appendChild(deleteBtn);
+
+    headerEl.appendChild(dragHandle);
+    headerEl.appendChild(toggleSpan);
+    headerEl.appendChild(nameSpan);
+    headerEl.appendChild(actionsEl);
+
+    // 拖放目标事件绑定到整个groupEl
+    groupEl.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const draggingEl = container.querySelector('.dragging');
+      if (draggingEl && draggingEl !== groupEl) {
+        groupEl.classList.add('drag-over');
+      }
+    });
+    groupEl.addEventListener('dragleave', () => {
+      groupEl.classList.remove('drag-over');
+    });
+    groupEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      groupEl.classList.remove('drag-over');
+      const draggedGroupId = e.dataTransfer.getData('text/plain');
+      if (draggedGroupId !== group.id) {
+        onReorderGroups(draggedGroupId, group.id);
+      }
     });
 
     const modelsEl = document.createElement('div');
@@ -160,19 +236,55 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
       if (model.id === selectedModelId) {
         modelEl.classList.add('selected');
       }
-      modelEl.textContent = model.name;
 
-      modelEl.addEventListener('click', () => {
+      const modelName = document.createElement('span');
+      modelName.className = 'model-name';
+      modelName.textContent = model.name;
+      modelName.addEventListener('click', () => {
         onModelSelect(group.id, model.id);
       });
 
-      modelEl.addEventListener('dblclick', (e) => {
+      // 模型操作按钮
+      const modelActions = document.createElement('div');
+      modelActions.className = 'model-actions';
+
+      const modelEditBtn = document.createElement('button');
+      modelEditBtn.className = 'btn-action-small';
+      modelEditBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+      modelEditBtn.title = '编辑模型';
+      modelEditBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         onModelEdit(group.id, model.id);
       });
 
+      const modelDeleteBtn = document.createElement('button');
+      modelDeleteBtn.className = 'btn-action-small btn-action-danger';
+      modelDeleteBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+      modelDeleteBtn.title = '删除模型';
+      modelDeleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm('确定删除该模型？')) {
+          onModelDelete(group.id, model.id);
+        }
+      });
+
+      modelActions.appendChild(modelEditBtn);
+      modelActions.appendChild(modelDeleteBtn);
+
+      modelEl.appendChild(modelName);
+      modelEl.appendChild(modelActions);
       modelsEl.appendChild(modelEl);
     });
+
+    // 添加模型按钮放在模型列表底部
+    const addModelBtn = document.createElement('div');
+    addModelBtn.className = 'add-model-link';
+    addModelBtn.textContent = '+ 添加模型';
+    addModelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onAddModel(group.id);
+    });
+    modelsEl.appendChild(addModelBtn);
 
     groupEl.appendChild(headerEl);
     groupEl.appendChild(modelsEl);
@@ -180,7 +292,7 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
   });
 }
 
-function renderSessionList(sessions, selectedSessionId, onSessionSelect) {
+function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessionEdit, onSessionDelete) {
   const container = document.getElementById('session-list');
   container.innerHTML = '';
 
@@ -197,12 +309,45 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect) {
     titleEl.className = 'session-title';
     titleEl.textContent = session.title || '新会话';
 
-    const timeEl = document.createElement('div');
+    const metaEl = document.createElement('div');
+    metaEl.className = 'session-meta';
+
+    const timeEl = document.createElement('span');
     timeEl.className = 'session-time';
-    timeEl.textContent = new Date(session.createdAt).toLocaleString('zh-CN');
+    timeEl.textContent = new Date(session.createdAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+
+    // 操作按钮
+    const actionsEl = document.createElement('div');
+    actionsEl.className = 'session-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-action-small';
+    editBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    editBtn.title = '编辑标题';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onSessionEdit(session.id);
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-action-small btn-action-danger';
+    deleteBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    deleteBtn.title = '删除会话';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm('确定删除该会话？')) {
+        onSessionDelete(session.id);
+      }
+    });
+
+    actionsEl.appendChild(editBtn);
+    actionsEl.appendChild(deleteBtn);
+
+    metaEl.appendChild(timeEl);
+    metaEl.appendChild(actionsEl);
 
     sessionEl.appendChild(titleEl);
-    sessionEl.appendChild(timeEl);
+    sessionEl.appendChild(metaEl);
     sessionEl.addEventListener('click', () => {
       onSessionSelect(session.id);
     });
@@ -211,26 +356,35 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect) {
   });
 }
 
-function renderMessages(messages, groups) {
+function renderMessages(messages, groups, onCopy) {
   const container = document.getElementById('chat-messages');
   container.innerHTML = '';
 
-  messages.forEach(msg => {
+  messages.forEach((msg, index) => {
     const msgEl = document.createElement('div');
     msgEl.className = 'message';
 
     if (msg.role === 'user') {
+      const metaEl = document.createElement('div');
+      metaEl.className = 'message-meta message-meta-user';
+      const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
+      metaEl.textContent = timeStr;
+      msgEl.appendChild(metaEl);
+
       const userEl = document.createElement('div');
       userEl.className = 'message-user';
       userEl.textContent = msg.content;
       msgEl.appendChild(userEl);
     } else {
+      // 模型名和时间放一起
       const metaEl = document.createElement('div');
       metaEl.className = 'message-meta';
       if (msg.endpointGroupId && msg.modelId) {
         const group = groups.find(g => g.id === msg.endpointGroupId);
         const model = group?.models.find(m => m.id === msg.modelId);
-        metaEl.textContent = model ? `${group?.name} / ${model.name}` : '未知模型';
+        const modelName = model ? `${group?.name} / ${model.name}` : '未知模型';
+        const timeStr = msg.timestamp ? ` · ${formatDateTime(msg.timestamp)}` : '';
+        metaEl.textContent = modelName + timeStr;
       }
       msgEl.appendChild(metaEl);
 
@@ -238,12 +392,49 @@ function renderMessages(messages, groups) {
       assistantEl.className = 'message-assistant';
       assistantEl.textContent = msg.content;
       msgEl.appendChild(assistantEl);
+
+      // 状态栏：复制、元信息
+      const statusBar = document.createElement('div');
+      statusBar.className = 'message-status-bar';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'btn-icon';
+      copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+      copyBtn.title = '复制';
+      copyBtn.addEventListener('click', () => onCopy(msg.content));
+
+      statusBar.appendChild(copyBtn);
+
+      // 元信息（如有）
+      if (msg.usage) {
+        const usageEl = document.createElement('span');
+        usageEl.className = 'message-usage';
+        usageEl.textContent = `${msg.usage.input || 0} → ${msg.usage.output || 0} tokens`;
+        statusBar.appendChild(usageEl);
+      }
+
+      msgEl.appendChild(statusBar);
     }
 
     container.appendChild(msgEl);
   });
 
   container.scrollTop = container.scrollHeight;
+}
+
+function formatDateTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const isYesterday = new Date(now - 86400000).toDateString() === date.toDateString();
+
+  if (isToday) {
+    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  } else if (isYesterday) {
+    return '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  } else {
+    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  }
 }
 
 function appendMessage(role, content, meta = null) {
@@ -253,6 +444,11 @@ function appendMessage(role, content, meta = null) {
   msgEl.className = 'message';
 
   if (role === 'user') {
+    const metaEl = document.createElement('div');
+    metaEl.className = 'message-meta message-meta-user';
+    metaEl.textContent = formatDateTime(Date.now());
+    msgEl.appendChild(metaEl);
+
     const userEl = document.createElement('div');
     userEl.className = 'message-user';
     userEl.textContent = content;
@@ -261,7 +457,7 @@ function appendMessage(role, content, meta = null) {
     if (meta) {
       const metaEl = document.createElement('div');
       metaEl.className = 'message-meta';
-      metaEl.textContent = meta;
+      metaEl.textContent = meta + ' · ' + formatDateTime(Date.now());
       msgEl.appendChild(metaEl);
     }
 
@@ -293,11 +489,9 @@ function finishStreamingMessage() {
   }
 }
 
-function updateCurrentModel(groupName, modelName) {
-  const el = document.getElementById('current-model-name');
-  el.textContent = groupName && modelName
-    ? `${groupName} / ${modelName}`
-    : '未选择模型';
+function updateChatTitle(title) {
+  const el = document.getElementById('chat-title');
+  el.textContent = title || '新会话';
 }
 
 function getInputContent() {
@@ -310,42 +504,35 @@ function clearInput() {
   input.value = '';
 }
 
-function setButtonState(sendDisabled, stopDisabled, regenerateDisabled) {
+function setButtonState(sendDisabled, stopDisabled) {
   document.getElementById('btn-send').disabled = sendDisabled;
   document.getElementById('btn-stop').disabled = stopDisabled;
-  document.getElementById('btn-regenerate').disabled = regenerateDisabled;
 }
 
-function showEditGroupDialog(group = null, onSave, onDelete = null) {
+function showEditGroupDialog(group = null, onSave) {
   const existing = document.getElementById('edit-dialog');
   if (existing) existing.remove();
 
   const dialog = document.createElement('div');
   dialog.id = 'edit-dialog';
-  dialog.style.cssText = `
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    z-index: 1000; min-width: 300px;
-  `;
 
   dialog.innerHTML = `
-    <h3 style="margin-bottom: 16px;">${group ? '编辑端点组' : '新增端点组'}</h3>
-    <div style="display: flex; flex-direction: column; gap: 12px;">
-      <label>名称: <input id="dialog-group-name" value="${group?.name || ''}" style="width: 100%; padding: 6px;"></label>
-      <label>Base URL: <input id="dialog-group-url" value="${group?.baseUrl || ''}" style="width: 100%; padding: 6px;"></label>
+    <h3>${group ? '编辑端点' : '新增端点'}</h3>
+    <div class="dialog-form">
+      <label>名称: <input id="dialog-group-name" value="${group?.name || ''}"></label>
+      <label>Base URL: <input id="dialog-group-url" value="${group?.baseUrl || ''}"></label>
       <label>接口风格:
-        <select id="dialog-group-style" style="width: 100%; padding: 6px;">
+        <select id="dialog-group-style">
           <option value="openai" ${group?.style === 'openai' ? 'selected' : ''}>OpenAI</option>
           <option value="claude" ${group?.style === 'claude' ? 'selected' : ''}>Claude</option>
           <option value="gemini" ${group?.style === 'gemini' ? 'selected' : ''}>Gemini</option>
         </select>
       </label>
-      <label>API Key: <input id="dialog-group-key" type="password" value="${group?.key || ''}" style="width: 100%; padding: 6px;"></label>
+      <label>API Key: <input id="dialog-group-key" type="password" value="${group?.key || ''}"></label>
     </div>
-    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-      ${group && onDelete ? '<button id="dialog-delete" style="background: #ffebee;">删除</button>' : ''}
+    <div class="dialog-buttons">
       <button id="dialog-cancel">取消</button>
-      <button id="dialog-save" style="background: #e3f2fd;">保存</button>
+      <button id="dialog-save" class="primary">保存</button>
     </div>
   `;
 
@@ -358,46 +545,31 @@ function showEditGroupDialog(group = null, onSave, onDelete = null) {
     const style = document.getElementById('dialog-group-style').value;
     const key = document.getElementById('dialog-group-key').value.trim();
 
-    if (!name || !baseUrl || !key) {
-      alert('请填写完整信息');
+    if (!name || !baseUrl) {
+      alert('请填写名称和Base URL');
       return;
     }
 
     onSave({ name, baseUrl, style, key });
     dialog.remove();
   };
-
-  if (group && onDelete) {
-    document.getElementById('dialog-delete').onclick = () => {
-      if (confirm('确定删除该端点组及其所有模型？')) {
-        onDelete();
-        dialog.remove();
-      }
-    };
-  }
 }
 
-function showEditModelDialog(groupId, model = null, onSave, onDelete = null) {
+function showEditModelDialog(groupId, model = null, onSave) {
   const existing = document.getElementById('edit-dialog');
   if (existing) existing.remove();
 
   const dialog = document.createElement('div');
   dialog.id = 'edit-dialog';
-  dialog.style.cssText = `
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    z-index: 1000; min-width: 250px;
-  `;
 
   dialog.innerHTML = `
-    <h3 style="margin-bottom: 16px;">${model ? '编辑模型' : '新增模型'}</h3>
-    <div style="display: flex; flex-direction: column; gap: 12px;">
-      <label>模型名: <input id="dialog-model-name" value="${model?.name || ''}" style="width: 100%; padding: 6px;"></label>
+    <h3>${model ? '编辑模型' : '新增模型'}</h3>
+    <div class="dialog-form">
+      <label>模型名: <input id="dialog-model-name" value="${model?.name || ''}"></label>
     </div>
-    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-      ${model && onDelete ? '<button id="dialog-delete" style="background: #ffebee;">删除</button>' : ''}
+    <div class="dialog-buttons">
       <button id="dialog-cancel">取消</button>
-      <button id="dialog-save" style="background: #e3f2fd;">保存</button>
+      <button id="dialog-save" class="primary">保存</button>
     </div>
   `;
 
@@ -413,14 +585,17 @@ function showEditModelDialog(groupId, model = null, onSave, onDelete = null) {
     onSave(name);
     dialog.remove();
   };
+}
 
-  if (model && onDelete) {
-    document.getElementById('dialog-delete').onclick = () => {
-      if (confirm('确定删除该模型？')) {
-        onDelete();
-        dialog.remove();
-      }
-    };
+function updateDirectoryDisplay() {
+  const dirInfo = document.getElementById('directory-info');
+  const dirName = getDirectoryName();
+  if (dirName) {
+    dirInfo.textContent = `[${dirName}]`;
+    dirInfo.style.display = 'inline';
+  } else {
+    dirInfo.textContent = '';
+    dirInfo.style.display = 'none';
   }
 }
 
@@ -430,15 +605,10 @@ function showDirectoryPrompt() {
 
   const prompt = document.createElement('div');
   prompt.id = 'directory-prompt';
-  prompt.style.cssText = `
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    z-index: 1000; text-align: center;
-  `;
   prompt.innerHTML = `
-    <h3 style="margin-bottom: 12px;">选择存储目录</h3>
-    <p style="margin-bottom: 16px; color: #666;">请选择一个目录来存储端点配置和聊天记录</p>
-    <button id="btn-select-dir" style="padding: 10px 20px; background: #e3f2fd;">选择目录</button>
+    <h3>选择存储目录</h3>
+    <p>请选择一个目录来存储端点配置和聊天记录</p>
+    <button id="btn-select-dir">选择目录</button>
   `;
   document.body.appendChild(prompt);
 
@@ -456,6 +626,92 @@ let directoryHandle = null;
 let endpointsData = null;
 let sessionsCache = new Map();
 
+// IndexedDB 操作
+const DB_NAME = 'endpoint-manager';
+const STORE_NAME = 'handles';
+
+async function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+  });
+}
+
+async function saveHandleToIndexedDB(handle) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.put(handle, 'directory');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadHandleFromIndexedDB() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const request = store.get('directory');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function clearHandleFromIndexedDB() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.delete('directory');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// 尝试恢复已保存的目录
+async function tryRestoreDirectory() {
+  try {
+    const savedHandle = await loadHandleFromIndexedDB();
+    if (!savedHandle) return false;
+
+    // 检查权限
+    const perm = await savedHandle.queryPermission({ mode: 'readwrite' });
+    if (perm === 'granted') {
+      directoryHandle = savedHandle;
+      await ensureDirectoryStructure();
+      await loadEndpoints();
+      await loadSessionsIndex();
+      return true;
+    }
+
+    // 尝试重新请求权限
+    if (perm === 'prompt') {
+      const newPerm = await savedHandle.requestPermission({ mode: 'readwrite' });
+      if (newPerm === 'granted') {
+        directoryHandle = savedHandle;
+        await ensureDirectoryStructure();
+        await loadEndpoints();
+        await loadSessionsIndex();
+        return true;
+      }
+    }
+
+    return false;
+  } catch (err) {
+    console.error('恢复目录失败:', err);
+    return false;
+  }
+}
+
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = Math.random() * 16 | 0;
@@ -467,6 +723,7 @@ function generateUUID() {
 async function selectDirectory() {
   try {
     directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    await saveHandleToIndexedDB(directoryHandle);
     await ensureDirectoryStructure();
     await loadEndpoints();
     await loadSessionsIndex();
@@ -475,6 +732,11 @@ async function selectDirectory() {
     console.error('选择目录失败:', err);
     return false;
   }
+}
+
+// 获取当前目录名称（用于显示）
+function getDirectoryName() {
+  return directoryHandle?.name || null;
 }
 
 async function ensureDirectoryStructure() {
@@ -519,10 +781,16 @@ async function saveEndpoints() {
 }
 
 function getGroups() {
-  return endpointsData?.groups || [];
+  if (!endpointsData) endpointsData = { groups: [] };
+  return endpointsData.groups || [];
 }
 
 async function addGroup(name, baseUrl, style, key) {
+  if (!endpointsData) endpointsData = { groups: [] };
+  if (!directoryHandle) {
+    alert('请先选择存储目录');
+    return null;
+  }
   const group = {
     id: generateUUID(),
     name,
@@ -537,6 +805,7 @@ async function addGroup(name, baseUrl, style, key) {
 }
 
 async function updateGroup(groupId, updates) {
+  if (!endpointsData) endpointsData = { groups: [] };
   const group = endpointsData.groups.find(g => g.id === groupId);
   if (group) {
     Object.assign(group, updates);
@@ -547,6 +816,7 @@ async function updateGroup(groupId, updates) {
 }
 
 async function deleteGroup(groupId) {
+  if (!endpointsData) endpointsData = { groups: [] };
   const index = endpointsData.groups.findIndex(g => g.id === groupId);
   if (index >= 0) {
     endpointsData.groups.splice(index, 1);
@@ -556,7 +826,21 @@ async function deleteGroup(groupId) {
   return false;
 }
 
+async function reorderGroups(draggedId, targetId) {
+  if (!endpointsData) endpointsData = { groups: [] };
+  const draggedIndex = endpointsData.groups.findIndex(g => g.id === draggedId);
+  const targetIndex = endpointsData.groups.findIndex(g => g.id === targetId);
+  if (draggedIndex >= 0 && targetIndex >= 0) {
+    const [draggedGroup] = endpointsData.groups.splice(draggedIndex, 1);
+    endpointsData.groups.splice(targetIndex, 0, draggedGroup);
+    await saveEndpoints();
+    return true;
+  }
+  return false;
+}
+
 async function addModel(groupId, modelName) {
+  if (!endpointsData) endpointsData = { groups: [] };
   const group = endpointsData.groups.find(g => g.id === groupId);
   if (group) {
     const model = {
@@ -571,8 +855,9 @@ async function addModel(groupId, modelName) {
 }
 
 async function updateModel(groupId, modelId, newName) {
+  if (!endpointsData) endpointsData = { groups: [] };
   const group = endpointsData.groups.find(g => g.id === groupId);
-  const model = group?.models.find(m => m.id === modelId);
+  const model = group?.models?.find(m => m.id === modelId);
   if (model) {
     model.name = newName;
     await saveEndpoints();
@@ -582,9 +867,10 @@ async function updateModel(groupId, modelId, newName) {
 }
 
 async function deleteModel(groupId, modelId) {
+  if (!endpointsData) endpointsData = { groups: [] };
   const group = endpointsData.groups.find(g => g.id === groupId);
   if (group) {
-    const index = group.models.findIndex(m => m.id === modelId);
+    const index = group.models?.findIndex(m => m.id === modelId) ?? -1;
     if (index >= 0) {
       group.models.splice(index, 1);
       await saveEndpoints();
@@ -595,12 +881,14 @@ async function deleteModel(groupId, modelId) {
 }
 
 function getModel(groupId, modelId) {
+  if (!endpointsData) endpointsData = { groups: [] };
   const group = endpointsData.groups.find(g => g.id === groupId);
-  return group?.models.find(m => m.id === modelId);
+  return group?.models?.find(m => m.id === modelId);
 }
 
 function getGroup(groupId) {
-  return endpointsData?.groups?.find(g => g.id === groupId);
+  if (!endpointsData) endpointsData = { groups: [] };
+  return endpointsData.groups.find(g => g.id === groupId);
 }
 
 async function loadSessionsIndex() {
@@ -681,13 +969,18 @@ async function saveSession(session) {
   }
 }
 
-async function addMessage(sessionId, role, content, endpointGroupId = null, modelId = null) {
+async function addMessage(sessionId, role, content, endpointGroupId = null, modelId = null, usage = null) {
   const session = sessionsCache.get(sessionId);
   if (session) {
-    const message = { role, content };
-    if (role === 'assistant' && endpointGroupId && modelId) {
-      message.endpointGroupId = endpointGroupId;
-      message.modelId = modelId;
+    const message = { role, content, timestamp: Date.now() };
+    if (role === 'assistant') {
+      if (endpointGroupId && modelId) {
+        message.endpointGroupId = endpointGroupId;
+        message.modelId = modelId;
+      }
+      if (usage) {
+        message.usage = usage;
+      }
     }
     session.messages.push(message);
 
@@ -994,67 +1287,100 @@ let lastUserMessage = null;
 async function init() {
   initDividers();
 
-  if (!hasDirectory()) {
+  // 发送快捷键设置
+  let sendOnEnter = true; // 默认Enter发送
+  const chatInput = document.getElementById('chat-input');
+
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (sendOnEnter && !e.shiftKey && !e.ctrlKey) {
+        e.preventDefault();
+        handleSend();
+      } else if (!sendOnEnter && e.ctrlKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    }
+  });
+
+  // 先尝试恢复已保存的目录
+  const restored = await tryRestoreDirectory();
+
+  if (!restored) {
     const prompt = showDirectoryPrompt();
     document.getElementById('btn-select-dir').onclick = async () => {
       const success = await selectDirectory();
       hideDirectoryPrompt();
       if (success) {
+        updateDirectoryDisplay();
         await refreshUI();
       }
     };
   } else {
+    updateDirectoryDisplay();
     await refreshUI();
   }
 
   document.getElementById('btn-add-group').onclick = handleAddGroup;
-  document.getElementById('btn-add-model').onclick = handleAddModel;
   document.getElementById('btn-send').onclick = handleSend;
   document.getElementById('btn-stop').onclick = handleStop;
-  document.getElementById('btn-regenerate').onclick = handleRegenerate;
+
+  // 更换目录按钮
+  document.getElementById('btn-change-dir').onclick = async () => {
+    const success = await selectDirectory();
+    if (success) {
+      updateDirectoryDisplay();
+      await refreshUI();
+    }
+  };
+}
+
+function updateDirectoryDisplay() {
+  const dirPath = document.getElementById('directory-path');
+  if (directoryHandle) {
+    // 尝试获取完整路径（可能需要权限）
+    dirPath.textContent = directoryHandle.name;
+    dirPath.title = '当前目录: ' + directoryHandle.name;
+  } else {
+    dirPath.textContent = '未选择目录';
+    dirPath.title = '';
+  }
 }
 
 async function refreshUI() {
   const groups = getGroups();
-  renderEndpointList(groups, currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit);
+  renderEndpointList(groups, currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups);
 
   const sessions = getAllSessions();
-  renderSessionList(sessions, currentSession?.id, handleSessionSelect);
+  renderSessionList(sessions, currentSession?.id, handleSessionSelect, handleSessionEdit, handleSessionDelete);
 
   if (currentSession) {
-    renderMessages(currentSession.messages, groups);
+    renderMessages(currentSession.messages, groups, handleCopy);
   } else {
     document.getElementById('chat-messages').innerHTML = '';
   }
 
-  updateCurrentModelDisplay();
+  updateChatTitleDisplay();
 }
 
-function updateCurrentModelDisplay() {
-  if (currentGroupId && currentModelId) {
-    const group = getGroup(currentGroupId);
-    const model = getModel(currentGroupId, currentModelId);
-    updateCurrentModel(group?.name, model?.name);
-  } else if (currentGroupId) {
-    const group = getGroup(currentGroupId);
-    updateCurrentModel(group?.name, null);
+function updateChatTitleDisplay() {
+  if (currentSession) {
+    updateChatTitle(currentSession.title);
   } else {
-    updateCurrentModel(null, null);
+    updateChatTitle(null);
   }
 }
 
 function handleGroupSelect(groupId) {
   currentGroupId = groupId;
   currentModelId = null;
-  updateCurrentModelDisplay();
-  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit);
+  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups);
 }
 
 async function handleModelSelect(groupId, modelId) {
   currentGroupId = groupId;
   currentModelId = modelId;
-  updateCurrentModelDisplay();
-  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit);
+  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups);
 }
 
 async function handleSessionSelect(sessionId) {
@@ -1071,7 +1397,24 @@ async function handleSessionSelect(sessionId) {
   lastUserMessage = lastUserMsg?.content || null;
 
   await refreshUI();
-  setButtonState(false, true, !lastUserMessage || !currentGroupId || !currentModelId);
+}
+
+function handleSessionEdit(sessionId) {
+  const session = getSession(sessionId);
+  const newTitle = prompt('编辑会话标题:', session?.title || '新会话');
+  if (newTitle && newTitle.trim()) {
+    session.title = newTitle.trim();
+    saveSession(session);
+    refreshUI();
+  }
+}
+
+async function handleSessionDelete(sessionId) {
+  await deleteSession(sessionId);
+  if (currentSession?.id === sessionId) {
+    currentSession = null;
+  }
+  await refreshUI();
 }
 
 function handleAddGroup() {
@@ -1086,19 +1429,21 @@ function handleGroupEdit(groupId) {
   showEditGroupDialog(group, async (data) => {
     await updateGroup(groupId, data);
     await refreshUI();
-  }, async () => {
-    await deleteGroup(groupId);
-    if (currentGroupId === groupId) {
-      currentGroupId = null;
-      currentModelId = null;
-    }
-    await refreshUI();
   });
+}
+
+async function handleGroupDelete(groupId) {
+  await deleteGroup(groupId);
+  if (currentGroupId === groupId) {
+    currentGroupId = null;
+    currentModelId = null;
+  }
+  await refreshUI();
 }
 
 function handleAddModel() {
   if (!currentGroupId) {
-    alert('请先选择一个端点组');
+    alert('请先选择一个端点');
     return;
   }
   showEditModelDialog(currentGroupId, null, async (name) => {
@@ -1107,18 +1452,38 @@ function handleAddModel() {
   });
 }
 
+function handleAddModelForGroup(groupId) {
+  showEditModelDialog(groupId, null, async (name) => {
+    await addModel(groupId, name);
+    await refreshUI();
+  });
+}
+
+function handleCopy(content) {
+  navigator.clipboard.writeText(content).then(() => {
+    // 可选：显示复制成功提示
+  });
+}
+
 function handleModelEdit(groupId, modelId) {
   const model = getModel(groupId, modelId);
   showEditModelDialog(groupId, model, async (name) => {
     await updateModel(groupId, modelId, name);
     await refreshUI();
-  }, async () => {
-    await deleteModel(groupId, modelId);
-    if (currentModelId === modelId) {
-      currentModelId = null;
-    }
-    await refreshUI();
   });
+}
+
+async function handleModelDelete(groupId, modelId) {
+  await deleteModel(groupId, modelId);
+  if (currentModelId === modelId) {
+    currentModelId = null;
+  }
+  await refreshUI();
+}
+
+async function handleReorderGroups(draggedId, targetId) {
+  await reorderGroups(draggedId, targetId);
+  await refreshUI();
 }
 
 async function handleSend() {
@@ -1138,10 +1503,10 @@ async function handleSend() {
 
   lastUserMessage = content;
   clearInput();
-  setButtonState(true, false, true);
+  setButtonState(true, false);
 
   const groups = getGroups();
-  renderMessages(currentSession.messages, groups);
+  renderMessages(currentSession.messages, groups, handleCopy);
 
   const group = getGroup(currentGroupId);
   const model = getModel(currentGroupId, currentModelId);
@@ -1168,19 +1533,19 @@ async function handleSend() {
 
     currentSession = await loadSession(currentSession.id);
 
-    setButtonState(false, true, false);
+    setButtonState(false, true);
     await refreshUI();
 
   } catch (err) {
     finishStreamingMessage();
     alert(`API调用失败: ${err.message}`);
-    setButtonState(false, true, false);
+    setButtonState(false, true);
   }
 }
 
 function handleStop() {
   stopGeneration();
-  setButtonState(false, true, false);
+  setButtonState(false, true);
 }
 
 async function handleRegenerate() {
@@ -1194,10 +1559,10 @@ async function handleRegenerate() {
     }
   }
 
-  setButtonState(true, false, true);
+  setButtonState(true, false);
 
   const groups = getGroups();
-  renderMessages(currentSession.messages, groups);
+  renderMessages(currentSession.messages, groups, handleCopy);
 
   const group = getGroup(currentGroupId);
   const model = getModel(currentGroupId, currentModelId);
@@ -1222,7 +1587,7 @@ async function handleRegenerate() {
     finishStreamingMessage();
     await addMessage(currentSession.id, 'assistant', fullResponse, currentGroupId, currentModelId);
 
-    setButtonState(false, true, false);
+    setButtonState(false, true);
     await refreshUI();
 
   } catch (err) {
@@ -1230,7 +1595,7 @@ async function handleRegenerate() {
     if (err.name !== 'AbortError') {
       alert(`API调用失败: ${err.message}`);
     }
-    setButtonState(false, true, false);
+    setButtonState(false, true);
   }
 }
 

@@ -1,0 +1,35 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: 端点列表
+      - button "+ 新增大组" [active] [ref=e6] [cursor=pointer]
+    - generic [ref=e9]:
+      - generic [ref=e11]: 未选择模型
+      - generic [ref=e13]:
+        - textbox "输入消息..." [ref=e14]
+        - generic [ref=e15]:
+          - button "发送" [ref=e16] [cursor=pointer]
+          - button "停止" [disabled] [ref=e17]
+    - generic [ref=e20]: 聊天记录
+  - generic [ref=e26]: 🤖 test-instance
+  - generic [ref=e27]:
+    - heading "新增端点组" [level=3] [ref=e28]
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - text: "名称:"
+        - textbox "名称:" [ref=e31]
+      - generic [ref=e32]:
+        - text: "Base URL:"
+        - textbox "Base URL:" [ref=e33]
+      - generic [ref=e34]:
+        - text: "接口风格:"
+        - combobox "接口风格:" [ref=e35]:
+          - option "OpenAI" [selected]
+          - option "Claude"
+          - option "Gemini"
+      - generic [ref=e36]:
+        - text: "API Key:"
+        - textbox "API Key:" [ref=e37]
+    - generic [ref=e38]:
+      - button "取消" [ref=e39] [cursor=pointer]
+      - button "保存" [ref=e40] [cursor=pointer]
