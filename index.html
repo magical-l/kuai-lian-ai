@@ -1784,7 +1784,7 @@ function isGenerating() {
   return currentAbortController !== null;
 }
 
-async function callOpenAI(baseUrl, apiKey, model, messages, onChunk) {
+async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = null) {
   const url = `${baseUrl}/v1/chat/completions`;
   const headers = {
     'Content-Type': 'application/json',
@@ -1796,7 +1796,8 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk) {
     stream: true
   };
 
-  currentAbortController = new AbortController();
+  // 如果没有传入signal，创建新的AbortController（单模型模式）
+  const useSignal = signal || (currentAbortController = new AbortController()).signal;
   let fullContent = '';
 
   try {
@@ -1804,7 +1805,7 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk) {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
-      signal: currentAbortController.signal
+      signal: useSignal
     });
 
     if (!response.ok) {
@@ -1852,11 +1853,14 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk) {
     }
     throw e;
   } finally {
-    currentAbortController = null;
+    // 只在单模型模式下清理currentAbortController
+    if (!signal) {
+      currentAbortController = null;
+    }
   }
 }
 
-async function callClaude(baseUrl, apiKey, model, messages, onChunk) {
+async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = null) {
   const url = `${baseUrl}/v1/messages`;
   const headers = {
     'Content-Type': 'application/json',
@@ -1877,7 +1881,8 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk) {
     stream: true
   };
 
-  currentAbortController = new AbortController();
+  // 如果没有传入signal，创建新的AbortController（单模型模式）
+  const useSignal = signal || (currentAbortController = new AbortController()).signal;
   let fullContent = '';
 
   try {
@@ -1885,7 +1890,7 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk) {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
-      signal: currentAbortController.signal
+      signal: useSignal
     });
 
     if (!response.ok) {
@@ -1931,11 +1936,14 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk) {
     }
     throw e;
   } finally {
-    currentAbortController = null;
+    // 只在单模型模式下清理currentAbortController
+    if (!signal) {
+      currentAbortController = null;
+    }
   }
 }
 
-async function callGemini(baseUrl, apiKey, model, messages, onChunk) {
+async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = null) {
   const url = `${baseUrl}/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
   const contents = [];
@@ -1959,7 +1967,8 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk) {
 
   const body = { contents };
 
-  currentAbortController = new AbortController();
+  // 如果没有传入signal，创建新的AbortController（单模型模式）
+  const useSignal = signal || (currentAbortController = new AbortController()).signal;
   let fullContent = '';
 
   try {
@@ -1967,7 +1976,7 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: currentAbortController.signal
+      signal: useSignal
     });
 
     if (!response.ok) {
@@ -2014,21 +2023,90 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk) {
     }
     throw e;
   } finally {
-    currentAbortController = null;
+    // 只在单模型模式下清理currentAbortController
+    if (!signal) {
+      currentAbortController = null;
+    }
   }
 }
 
-async function callAPI(style, baseUrl, apiKey, model, messages, onChunk) {
+async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal = null) {
   switch (style) {
     case 'openai':
-      return await callOpenAI(baseUrl, apiKey, model, messages, onChunk);
+      return await callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal);
     case 'claude':
-      return await callClaude(baseUrl, apiKey, model, messages, onChunk);
+      return await callClaude(baseUrl, apiKey, model, messages, onChunk, signal);
     case 'gemini':
-      return await callGemini(baseUrl, apiKey, model, messages, onChunk);
+      return await callGemini(baseUrl, apiKey, model, messages, onChunk, signal);
     default:
       throw new Error(`不支持的接口风格: ${style}`);
   }
+}
+
+// 并行调用所有模型
+async function callAllModels(groups, modelIds, messages, onChunk) {
+  const startTime = Date.now();
+  activeGenerations.clear();
+
+  // 初始化每个模型的状态和AbortController
+  modelIds.forEach(id => {
+    activeGenerations.set(id, {
+      abortController: new AbortController(),
+      status: 'generating',
+      firstTokenTime: null,
+      startTime,
+      content: ''
+    });
+  });
+
+  // 并行调用所有模型
+  const promises = modelIds.map(async id => {
+    const info = findModelById(groups, id);
+    const state = activeGenerations.get(id);
+
+    if (!info) {
+      state.status = 'failed';
+      state.error = '模型不存在';
+      return { modelId: id, status: 'failed', error: '模型不存在', content: null };
+    }
+
+    try {
+      const content = await callAPI(
+        info.group.style,
+        info.group.baseUrl,
+        info.group.key,
+        info.model.name,
+        messages,
+        chunk => {
+          if (state.firstTokenTime === null) {
+            state.firstTokenTime = Date.now() - startTime;
+          }
+          state.content = chunk;
+          onChunk(id, chunk, state.firstTokenTime);
+        },
+        state.abortController.signal
+      );
+
+      state.status = 'completed';
+      return {
+        modelId: id,
+        status: 'completed',
+        content,
+        firstTokenTime: state.firstTokenTime
+      };
+
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        state.status = 'stopped';
+        return { modelId: id, status: 'stopped', content: state.content || '' };
+      }
+      state.status = 'failed';
+      state.error = err.message;
+      return { modelId: id, status: 'failed', error: err.message, content: null };
+    }
+  });
+
+  return Promise.all(promises);
 }
 
 // ========== Main Logic ==========
