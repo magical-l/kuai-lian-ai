@@ -163,6 +163,20 @@ function initDividers() {
   document.addEventListener('mouseup', stopDrag);
 }
 
+// ========== Thinking Block Toggle ==========
+
+function toggleThinking(headerEl) {
+  const block = headerEl.closest('.thinking-block');
+  if (!block) return;
+
+  const isCollapsed = block.classList.contains('collapsed');
+  if (isCollapsed) {
+    block.classList.remove('collapsed');
+  } else {
+    block.classList.add('collapsed');
+  }
+}
+
 // ========== Model Selector Functions ==========
 
 let selectorExpanded = false;
