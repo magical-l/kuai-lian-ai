@@ -161,6 +161,140 @@ function initDividers() {
   document.addEventListener('mouseup', stopDrag);
 }
 
+// ========== Model Selector Functions ==========
+
+let selectorExpanded = false;
+
+function renderModelSelector(groups, selectedModels, isGenerating) {
+  const container = document.getElementById('model-selector');
+  const summaryEl = document.getElementById('selector-summary');
+  const listEl = document.getElementById('selector-list');
+  const expandBtnText = document.getElementById('expand-btn-text');
+
+  if (!container) return;
+
+  // 更新容器状态
+  container.classList.toggle('collapsed', !selectorExpanded);
+  container.classList.toggle('generating', isGenerating);
+
+  // 收起状态摘要
+  if (selectedModels.length === 0) {
+    summaryEl.innerHTML = '<span class="selector-empty-hint">请选择模型</span>';
+    expandBtnText.textContent = '▼ 展开选择';
+    selectorExpanded = true;
+  } else {
+    summaryEl.innerHTML = selectedModels.map(id => {
+      const info = findModelById(groups, id);
+      if (!info) return '';
+      const statusClass = getTagStatusClass(id);
+      const icon = getStatusIcon(id);
+      const btn = isGenerating ? '' : `<span class="model-tag-btn remove-btn" data-model="${id}">✕</span>`;
+      return `<span class="model-tag ${statusClass}" data-model="${id}"><span class="model-status-icon">${icon}</span>${info.model.name}${btn}</span>`;
+    }).join('');
+    expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
+  }
+
+  // 展开状态列表
+  if (selectorExpanded) {
+    listEl.style.display = 'block';
+    listEl.innerHTML = groups.map(g => {
+      const tags = g.models.map(m => {
+        const isSelected = selectedModels.includes(`${g.id}:${m.id}`);
+        const cls = isSelected ? (getTagStatusClass(`${g.id}:${m.id}`) || 'selected') : 'unselected';
+        const icon = isSelected ? getStatusIcon(`${g.id}:${m.id}`) : '';
+        const btn = isSelected ? '<span class="model-tag-btn remove-btn">✕</span>' : '<span class="model-tag-btn add-btn">+</span>';
+        return `<span class="model-tag ${cls}" data-model="${g.id}:${m.id}"><span class="model-status-icon">${icon}</span>${m.name}${btn}</span>`;
+      }).join('');
+      return `<div class="selector-group-label">${g.name}</div><div class="selector-models-row">${tags}</div>`;
+    }).join('');
+  } else {
+    listEl.style.display = 'none';
+  }
+
+  bindSelectorEvents(groups, isGenerating);
+}
+
+function findModelById(groups, modelId) {
+  for (const g of groups) {
+    const m = g.models.find(x => `${g.id}:${x.id}` === modelId);
+    if (m) return { group: g, model: m };
+  }
+  return null;
+}
+
+function getTagStatusClass(modelId) {
+  const gen = activeGenerations.get(modelId);
+  if (!gen) return '';
+  if (gen.status === 'generating') {
+    const t = gen.firstTokenTime;
+    if (t == null) return '';
+    if (t < 1000) return 'fast';
+    if (t < 2000) return 'medium';
+    return 'slow';
+  }
+  if (gen.status === 'completed') {
+    const t = gen.firstTokenTime;
+    if (t < 1000) return 'fast';
+    if (t < 2000) return 'medium';
+    return 'slow';
+  }
+  if (gen.status === 'failed') return 'failed';
+  if (gen.status === 'stopped') return 'stopped';
+  return '';
+}
+
+function getStatusIcon(modelId) {
+  const gen = activeGenerations.get(modelId);
+  if (!gen) return '✓';
+  if (gen.status === 'generating') {
+    return gen.firstTokenTime == null
+      ? '<span class="model-status-icon spinning">◐</span>'
+      : '<span class="model-status-icon">◐</span>';
+  }
+  if (gen.status === 'completed') return '✓';
+  if (gen.status === 'failed') return '⚠';
+  if (gen.status === 'stopped') return '■';
+  return '';
+}
+
+function bindSelectorEvents(groups, isGenerating) {
+  const expandBtn = document.getElementById('selector-expand-btn');
+  if (expandBtn) {
+    expandBtn.onclick = () => {
+      if (!isGenerating) {
+        selectorExpanded = !selectorExpanded;
+        renderModelSelector(groups, selectedModels, false);
+      }
+    };
+  }
+
+  if (isGenerating) return;
+
+  // 添加选择
+  document.querySelectorAll('.model-tag-btn.add-btn').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();
+      const id = btn.closest('.model-tag').dataset.model;
+      if (!selectedModels.includes(id)) {
+        selectedModels.push(id);
+        saveDefaultSelectedModels(selectedModels);
+        renderModelSelector(groups, selectedModels, false);
+      }
+    };
+  });
+
+  // 移除选择
+  document.querySelectorAll('.model-tag-btn.remove-btn').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();
+      const id = btn.closest('.model-tag').dataset.model;
+      selectedModels = selectedModels.filter(x => x !== id);
+      saveDefaultSelectedModels(selectedModels);
+      renderModelSelector(groups, selectedModels, false);
+    };
+  });
+}
+
 function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit, onGroupEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
   const container = document.getElementById('endpoint-list');
   container.innerHTML = '';
