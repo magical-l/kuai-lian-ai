@@ -2628,31 +2628,44 @@ function showThinkingCards(modelIds, groups) {
   container.scrollTop = container.scrollHeight;
 }
 
-function updateStreamingCard(modelId, content, firstTokenTime, groups) {
-  // Use requestAnimationFrame for non-blocking DOM updates
+function updateStreamingCard(modelId, state, firstTokenTime, groups) {
   requestAnimationFrame(() => {
     const card = document.querySelector(`.response-card[data-model-id="${modelId}"]`);
     if (!card) return;
 
-    const contentEl = card.querySelector('.response-card-content');
-    if (contentEl) {
-      contentEl.textContent = content;
-      contentEl.classList.remove('thinking-content');
+    // thinking区块处理
+    const thinkingBlock = card.querySelector('.thinking-block');
+    if (thinkingBlock) {
+      if (state.thinking) {
+        thinkingBlock.style.display = 'block';
+        const thinkingContent = thinkingBlock.querySelector('.thinking-content');
+        if (thinkingContent) {
+          thinkingContent.textContent = state.thinking;
+        }
+      } else {
+        thinkingBlock.style.display = 'none';
+      }
     }
 
+    // content区块处理
+    const contentEl = card.querySelector('.response-card-content');
+    if (contentEl) {
+      contentEl.textContent = state.content || '';
+    }
+
+    // meta信息处理（duration等）
     const metaEl = card.querySelector('.response-meta');
-    if (metaEl) {
+    if (metaEl && firstTokenTime !== null) {
       const icon = metaEl.querySelector('.model-status-icon');
-      if (icon && firstTokenTime !== null) {
+      if (icon) {
         icon.classList.remove('spinning');
       }
 
-      // Add duration text if not present
-      if (firstTokenTime !== null && !metaEl.querySelector('.response-duration')) {
+      // 添加duration显示（如果不存在）
+      if (!metaEl.querySelector('.response-duration')) {
         const durationEl = document.createElement('span');
         durationEl.className = `response-duration ${getSpeedClass(firstTokenTime)}`;
         durationEl.textContent = `${(firstTokenTime/1000).toFixed(1)}s回应`;
-        // Insert after model name
         const modelNameEl = metaEl.querySelector('.response-model-name');
         if (modelNameEl) {
           modelNameEl.insertAdjacentElement('afterend', durationEl);
