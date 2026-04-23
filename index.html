@@ -1904,8 +1904,8 @@ function saveDefaultSelectedModels(models) {
 let defaultSelectedModels = loadDefaultSelectedModels();
 
 let currentSession = null;
-let currentGroupId = null;
-let currentModelId = null;
+let selectedModels = [];          // 当前选中模型ID数组
+let activeGenerations = new Map(); // 生成中状态跟踪
 let lastUserMessage = null;
 
 async function init() {
@@ -2055,9 +2055,8 @@ function updateChatTitleDisplay() {
 }
 
 async function handleModelSelect(groupId, modelId) {
-  currentGroupId = groupId;
-  currentModelId = modelId;
-  renderEndpointList(getGroups(), currentModelId, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  // 左侧栏点击不再触发选中，选择器负责选中
+  // 此函数保留用于编辑弹窗上下文，或可删除
 }
 
 async function handleSessionSelect(sessionId) {
@@ -2238,8 +2237,8 @@ function handleStop() {
 
 async function handleNewSession() {
   currentSession = null;
-  currentGroupId = null;
-  currentModelId = null;
+  selectedModels = [...defaultSelectedModels]; // 新会话继承全局默认
+  activeGenerations.clear();
   lastUserMessage = null;
   await refreshUI();
 }
