@@ -1567,29 +1567,38 @@ async function saveSession(session) {
   }
 }
 
-async function addMessage(sessionId, role, content, endpointGroupId = null, modelId = null, usage = null) {
+async function addMessage(sessionId, role, content, options = {}) {
   const session = sessionsCache.get(sessionId);
-  if (session) {
-    const message = { role, content, timestamp: Date.now() };
-    if (role === 'assistant') {
-      if (endpointGroupId && modelId) {
-        message.endpointGroupId = endpointGroupId;
-        message.modelId = modelId;
-      }
-      if (usage) {
-        message.usage = usage;
-      }
-    }
-    session.messages.push(message);
+  if (!session) return null;
 
-    if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 1) {
-      session.title = content.slice(0, 20);
-    }
+  const message = { role, content, timestamp: Date.now() };
 
-    await saveSession(session);
-    return message;
+  if (role === 'user') {
+    // 用户消息：记录targetModels
+    if (options.targetModels) {
+      message.targetModels = options.targetModels;
+    }
+  } else if (role === 'assistant') {
+    // 助手消息：多模型responses数组
+    if (options.responses) {
+      message.responses = options.responses;
+    }
+    // 兼容旧格式：单模型消息
+    if (options.modelId && !options.responses) {
+      message.modelId = options.modelId;
+      message.endpointGroupId = options.endpointGroupId;
+      if (options.usage) message.usage = options.usage;
+    }
   }
-  return null;
+
+  // 更新标题逻辑保持不变
+  if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 1) {
+    session.title = content.slice(0, 20);
+  }
+
+  session.messages.push(message);
+  await saveSession(session);
+  return message;
 }
 
 function getSession(sessionId) {
@@ -2187,7 +2196,7 @@ async function handleSend() {
     );
 
     finishStreamingMessage();
-    await addMessage(currentSession.id, 'assistant', fullResponse, currentGroupId, currentModelId);
+    await addMessage(currentSession.id, 'assistant', fullResponse, { endpointGroupId: currentGroupId, modelId: currentModelId });
 
     currentSession = await loadSession(currentSession.id);
 
@@ -2251,7 +2260,7 @@ async function handleRegenerate() {
     );
 
     finishStreamingMessage();
-    await addMessage(currentSession.id, 'assistant', fullResponse, currentGroupId, currentModelId);
+    await addMessage(currentSession.id, 'assistant', fullResponse, { endpointGroupId: currentGroupId, modelId: currentModelId });
 
     setButtonState(false, true);
     await refreshUI();
