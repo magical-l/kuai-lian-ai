@@ -935,11 +935,11 @@ function clearInput() {
   input.value = '';
 }
 
-function setButtonState(sendDisabled, stopDisabled) {
+function setButtonState(sendDisabled, stopEnabled) {
   document.getElementById('btn-send').disabled = sendDisabled;
   const stopBtn = document.getElementById('btn-stop');
-  stopBtn.disabled = stopDisabled;
-  stopBtn.textContent = stopDisabled ? '停止' : '全部停止';
+  stopBtn.disabled = !stopEnabled;
+  stopBtn.textContent = stopEnabled ? '全部停止' : '停止';
 }
 
 function showEditGroupDialog(group = null, onSave) {
@@ -2248,7 +2248,7 @@ async function init() {
   document.getElementById('btn-send').onclick = handleSend;
   document.getElementById('btn-stop').onclick = () => {
     stopAllGenerations();
-    setButtonState(false, true);
+    setButtonState(false, false);
     renderModelSelector(getGroups(), selectedModels, false);
   };
   document.getElementById('btn-help').onclick = () => showHelpDialog(false, pendingDirectoryHandle !== null);
@@ -2419,12 +2419,14 @@ function handleGroupEdit(groupId) {
 }
 
 async function handleGroupDelete(groupId) {
+  // 清理 selectedModels 中属于该组的模型
+  selectedModels = selectedModels.filter(id => {
+    const parts = id.split(':');
+    return parts[0] !== groupId;
+  });
+  saveDefaultSelectedModels(selectedModels);
+
   await deleteGroup(groupId);
-  // TODO: Check if any selected model belongs to this group and remove it
-  // if (currentGroupId === groupId) {
-  //   currentGroupId = null;
-  //   currentModelId = null;
-  // }
   await refreshUI();
 }
 
@@ -2462,11 +2464,11 @@ function handleModelEdit(groupId, modelId) {
 }
 
 async function handleModelDelete(groupId, modelId) {
+  // 清理 selectedModels 中的该模型
+  selectedModels = selectedModels.filter(id => id !== `${groupId}:${modelId}`);
+  saveDefaultSelectedModels(selectedModels);
+
   await deleteModel(groupId, modelId);
-  // TODO: Check if this model is in selectedModels and remove it
-  // if (currentModelId === modelId) {
-  //   currentModelId = null;
-  // }
   await refreshUI();
 }
 
@@ -2502,7 +2504,7 @@ async function handleSend() {
 
   lastUserMessage = content;
   clearInput();
-  setButtonState(true, false);
+  setButtonState(true, true);
 
   const groups = getGroups();
   const messages = currentSession.messages.map(m => ({
@@ -2528,7 +2530,7 @@ async function handleSend() {
 
   currentSession = await loadSession(currentSession.id);
 
-  setButtonState(false, true);
+  setButtonState(false, false);
   activeGenerations.clear();
   renderModelSelector(groups, selectedModels, false);
   await refreshUI();
@@ -2615,7 +2617,7 @@ function reorderCardsBySpeed() {
 
 function handleStop() {
   stopGeneration();
-  setButtonState(false, true);
+  setButtonState(false, false);
 }
 
 async function handleNewSession() {
@@ -2638,7 +2640,7 @@ async function handleRegenerate() {
     }
   }
 
-  setButtonState(true, false);
+  setButtonState(true, true);
 
   const groups = getGroups();
   renderMessages(currentSession.messages, groups, handleCopy);
@@ -2669,7 +2671,7 @@ async function handleRegenerate() {
     finishStreamingMessage();
     await addMessage(currentSession.id, 'assistant', fullResponse, { endpointGroupId: groupId, modelId: modelId });
 
-    setButtonState(false, true);
+    setButtonState(false, false);
     await refreshUI();
 
   } catch (err) {
@@ -2677,7 +2679,7 @@ async function handleRegenerate() {
     if (err.name !== 'AbortError') {
       alert(`API调用失败: ${err.message}`);
     }
-    setButtonState(false, true);
+    setButtonState(false, false);
   }
 }
 
