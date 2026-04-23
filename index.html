@@ -201,7 +201,11 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
     listEl.innerHTML = groups.map(g => {
       const tags = g.models.map(m => {
         const isSelected = selectedModels.includes(`${g.id}:${m.id}`);
-        const cls = isSelected ? (getTagStatusClass(`${g.id}:${m.id}`) || 'selected') : 'unselected';
+        const statusClass = getTagStatusClass(`${g.id}:${m.id}`);
+        // Build class list: always include 'selected' if selected, plus status class if present
+        const cls = isSelected
+          ? (statusClass ? `selected ${statusClass}` : 'selected')
+          : 'unselected';
         const icon = isSelected ? getStatusIcon(`${g.id}:${m.id}`) : '';
         return `<span class="model-tag ${cls}" data-model="${g.id}:${m.id}"><span class="model-status-icon">${icon}</span>${m.name}</span>`;
       }).join('');
@@ -2567,7 +2571,8 @@ async function handleSend() {
   currentSession = await loadSession(currentSession.id);
 
   setButtonState(false, false);
-  activeGenerations.clear();
+  // Don't clear activeGenerations here - keep status colors for completed models
+  // Entries will be cleared when next generation starts (line 2139) or new session starts (line 2714)
   renderModelSelector(groups, selectedModels, false);
   await refreshUI();
 }
