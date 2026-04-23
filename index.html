@@ -229,15 +229,8 @@ function findModelById(groups, modelId) {
 function getTagStatusClass(modelId) {
   const gen = activeGenerations.get(modelId);
   if (!gen) return '';
-
-  // For both 'generating' and 'completed', use firstTokenTime to determine color
-  if (gen.status === 'generating' || gen.status === 'completed') {
-    const t = gen.firstTokenTime;
-    if (t == null) return gen.status === 'completed' ? 'fast' : '';  // Default to fast if completed without timing
-    if (t < 1000) return 'fast';
-    if (t < 2000) return 'medium';
-    return 'slow';
-  }
+  // Only show color for failed/stopped status, not for generating/completed
+  // Speed colors are shown on "x秒回应" text in message cards instead
   if (gen.status === 'failed') return 'failed';
   if (gen.status === 'stopped') return 'stopped';
   return '';
@@ -825,6 +818,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const statusText = getStatusText(r.status);
     const responseTimeStr = r.timestamp ? formatDateTime(r.timestamp) : '';
     const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
+    const speedClass = getSpeedClass(r.firstTokenTime);
 
     // Only add copy button for completed responses with content
     const copyBtnHtml = (r.status === 'completed' && r.content) ? `
@@ -836,7 +830,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     metaEl.innerHTML = `
       <span class="response-model-name">${name}</span>
       <span class="response-time">${responseTimeStr}</span>
-      <span class="response-duration">${durationStr}</span>
+      <span class="response-duration ${speedClass}">${durationStr}</span>
       <span class="response-total">${totalStr}</span>
       <span class="response-status ${r.status}">${statusText}</span>
       ${errorText ? `<span class="response-error">${errorText}</span>` : ''}
@@ -868,6 +862,13 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 
 function getStatusText(status) {
   return { completed: '✓', failed: '✗', stopped: '■' }[status] || status;
+}
+
+function getSpeedClass(firstTokenTime) {
+  if (firstTokenTime == null) return '';
+  if (firstTokenTime < 1000) return 'fast';
+  if (firstTokenTime < 2000) return 'medium';
+  return 'slow';
 }
 
 function formatDateTime(timestamp) {
@@ -2638,7 +2639,7 @@ function updateStreamingCard(modelId, content, firstTokenTime, groups) {
       // Add duration text if not present
       if (firstTokenTime !== null && !metaEl.querySelector('.response-duration')) {
         const durationEl = document.createElement('span');
-        durationEl.className = 'response-duration';
+        durationEl.className = `response-duration ${getSpeedClass(firstTokenTime)}`;
         durationEl.textContent = `${(firstTokenTime/1000).toFixed(1)}s回应`;
         // Insert after model name
         const modelNameEl = metaEl.querySelector('.response-model-name');
