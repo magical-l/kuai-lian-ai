@@ -618,13 +618,85 @@ button.outline:hover:not(:disabled) {
   background: var(--bg-muted);
 }
 
-.group-header.selected {
-  background: var(--accent-light);
+/* 组名容器（包含 tooltip） */
+.group-name-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
-.group-header.selected .group-name {
+.group-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+/* hover tooltip */
+.group-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-md);
+  min-width: 200px;
+  max-width: 300px;
+  display: none;
+  font-size: 12px;
+}
+
+.group-name-wrapper:hover .group-tooltip {
+  display: block;
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px 0;
+}
+
+.tooltip-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  width: 40px;
+}
+
+.tooltip-value {
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-tooltip-copy {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 0;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn-tooltip-copy:hover {
+  opacity: 1;
   color: var(--accent-primary);
-  font-weight: 600;
 }
 
 .group-toggle {
@@ -634,16 +706,6 @@ button.outline:hover:not(:disabled) {
   flex-shrink: 0;
   width: 12px;
   text-align: center;
-}
-
-.group-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .group-actions {
@@ -682,6 +744,26 @@ button.outline:hover:not(:disabled) {
 .btn-action-danger:hover {
   background: var(--danger);
   color: white;
+}
+
+/* 批量测试按钮 */
+.btn-batch-test {
+  color: var(--text-muted);
+}
+
+.btn-batch-test:hover {
+  background: var(--accent-light);
+  color: var(--accent-primary);
+}
+
+.btn-batch-test.testing {
+  background: var(--accent-light);
+  color: var(--accent-primary);
+}
+
+.btn-batch-test.testing .spin {
+  animation: spin 2s linear infinite !important;
+  display: inline-block;
 }
 
 .group-models {
@@ -754,6 +836,28 @@ button.outline:hover:not(:disabled) {
   background: var(--bg-muted);
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-1);
+}
+
+.add-model-confirm.btn-action-small {
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid transparent;
+}
+
+.add-model-confirm.btn-action-small:hover {
+  background: var(--success);
+  color: white;
+}
+
+.add-model-cancel.btn-action-small {
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.add-model-cancel.btn-action-small:hover {
+  background: var(--bg-active);
+  color: var(--text-secondary);
 }
 
 .add-model-input {
@@ -839,14 +943,20 @@ button.outline:hover:not(:disabled) {
 }
 
 .btn-connection-failed {
-  background: rgba(217, 119, 6, 0.15);
-  color: var(--warning);
+  background: var(--danger-light);
+  color: var(--danger);
 }
 
 .btn-connection-connected:hover,
 .btn-connection-failed:hover,
-.btn-connection-testing:hover {
+.btn-connection-testing:hover,
+.btn-connection-cors_blocked:hover {
   transform: none;
+}
+
+.btn-connection-cors_blocked {
+  background: rgba(217, 119, 6, 0.15);
+  color: var(--warning);
 }
 
 /* 用户消息状态栏 */
@@ -1083,6 +1193,28 @@ button.outline:hover:not(:disabled) {
   align-items: center;
   gap: var(--space-3);
   justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+#help-dialog .directory-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+#btn-restore-dir {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  font-weight: 500;
+  height: 28px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+#btn-restore-dir:hover {
+  background: #047857;
 }
 
 #btn-change-dir-help {

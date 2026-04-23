@@ -38,7 +38,7 @@
     <!-- 左侧栏：端点列表 -->
     <div class="sidebar-left" id="sidebar-left">
       <div class="sidebar-header">
-        <span>端点</span>
+        <span>ai服务端点</span>
         <button id="btn-add-group" class="btn-header-action" title="新增端点">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
@@ -148,7 +148,7 @@ function initDividers() {
   document.addEventListener('mouseup', stopDrag);
 }
 
-function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSelect, onModelSelect, onGroupEdit, onModelEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
+function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit, onGroupEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
   const container = document.getElementById('endpoint-list');
   container.innerHTML = '';
 
@@ -161,9 +161,6 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
 
     const headerEl = document.createElement('div');
     headerEl.className = 'group-header';
-    if (group.id === selectedGroupId) {
-      headerEl.classList.add('selected');
-    }
 
     // 拖动手柄
     const dragHandle = document.createElement('span');
@@ -201,13 +198,90 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
     const nameSpan = document.createElement('span');
     nameSpan.className = 'group-name';
     nameSpan.textContent = group.name;
-    nameSpan.addEventListener('click', () => {
-      onGroupSelect(group.id);
+
+    // hover tooltip 容器
+    const tooltipEl = document.createElement('div');
+    tooltipEl.className = 'group-tooltip';
+
+    const styleLabels = {
+      'openai': 'OpenAI',
+      'claude': 'Claude',
+      'gemini': 'Gemini'
+    };
+
+    // tooltip 内容：三行信息
+    tooltipEl.innerHTML = `
+      <div class="tooltip-row">
+        <span class="tooltip-label">名称：</span>
+        <span class="tooltip-value">${group.name}</span>
+        <button class="btn-tooltip-copy" data-copy="${group.name}" title="复制">⧉</button>
+      </div>
+      <div class="tooltip-row">
+        <span class="tooltip-label">地址：</span>
+        <span class="tooltip-value">${group.baseUrl}</span>
+        <button class="btn-tooltip-copy" data-copy="${group.baseUrl}" title="复制">⧉</button>
+      </div>
+      <div class="tooltip-row">
+        <span class="tooltip-label">格式：</span>
+        <span class="tooltip-value">${styleLabels[group.style] || group.style}</span>
+        <button class="btn-tooltip-copy" data-copy="${group.style}" title="复制">⧉</button>
+      </div>
+    `;
+
+    // tooltip 复制按钮事件
+    tooltipEl.querySelectorAll('.btn-tooltip-copy').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(btn.dataset.copy);
+      });
+    });
+
+    // 组名容器（名称 + tooltip）
+    const nameContainer = document.createElement('div');
+    nameContainer.className = 'group-name-wrapper';
+    nameContainer.appendChild(nameSpan);
+    nameContainer.appendChild(tooltipEl);
+    // 点击展开/收起模型列表
+    nameContainer.addEventListener('click', () => {
+      const modelsEl = groupEl.querySelector('.group-models');
+      if (modelsEl) {
+        if (modelsEl.style.display === 'none') {
+          modelsEl.style.display = 'block';
+          toggleSpan.textContent = '▼';
+        } else {
+          modelsEl.style.display = 'none';
+          toggleSpan.textContent = '▶';
+        }
+      }
     });
 
     // 操作按钮容器（不再包含添加模型按钮）
     const actionsEl = document.createElement('div');
     actionsEl.className = 'group-actions';
+
+    // 批量测试连接按钮
+    // 检查该端点下是否有模型正在测试中
+    const hasTesting = group.models.some(model => {
+      const statusKey = `${group.id}:${model.id}`;
+      const statusData = connectionStatus.get(statusKey);
+      return statusData && statusData.status === 'testing';
+    });
+
+    const batchTestBtn = document.createElement('button');
+    batchTestBtn.className = 'btn-action btn-batch-test' + (hasTesting ? ' testing' : '');
+    batchTestBtn.innerHTML = hasTesting
+      ? '<span class="spin">◐</span>'
+      : '○';
+    batchTestBtn.title = hasTesting ? '测试中...' : '批量测试连接';
+    batchTestBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (onTestConnection) {
+        // 测试该端点下所有模型
+        group.models.forEach(model => {
+          onTestConnection(group.id, model.id);
+        });
+      }
+    });
 
     // 编辑按钮
     const editBtn = document.createElement('button');
@@ -231,12 +305,13 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
       }
     });
 
+    actionsEl.appendChild(batchTestBtn);
     actionsEl.appendChild(editBtn);
     actionsEl.appendChild(deleteBtn);
 
     headerEl.appendChild(dragHandle);
     headerEl.appendChild(toggleSpan);
-    headerEl.appendChild(nameSpan);
+    headerEl.appendChild(nameContainer);
     headerEl.appendChild(actionsEl);
 
     // 拖放目标事件绑定到整个groupEl
@@ -311,14 +386,10 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
       testBtn.className = 'btn-action-small btn-connection-' + status;
       testBtn.title = getConnectionStatusText(statusKey);
 
-      if (status === 'disconnected') {
-        testBtn.innerHTML = '○';
-      } else if (status === 'testing') {
+      if (status === 'testing') {
         testBtn.innerHTML = '<span class="spin">◐</span>';
-      } else if (status === 'connected') {
-        testBtn.innerHTML = '✓';
-      } else if (status === 'failed') {
-        testBtn.innerHTML = '✗';
+      } else {
+        testBtn.innerHTML = '○';
       }
 
       testBtn.addEventListener('click', (e) => {
@@ -397,8 +468,8 @@ function renderEndpointList(groups, selectedGroupId, selectedModelId, onGroupSel
       inlineInput.className = 'add-model-inline';
       inlineInput.innerHTML = `
         <input type="text" placeholder="模型名" class="add-model-input">
-        <button class="add-model-confirm btn-action-small">确定</button>
-        <button class="add-model-cancel btn-action-small">取消</button>
+        <button class="add-model-confirm btn-action-small">✓</button>
+        <button class="add-model-cancel btn-action-small">✗</button>
       `;
       modelsEl.insertBefore(inlineInput, addModelBtn);
 
@@ -752,9 +823,9 @@ function showEditModelDialog(groupId, model = null, onSave) {
   };
 }
 
-function showDirectoryPrompt() {
+function showDirectoryPrompt(hasPendingHandle = false) {
   // 无目录时调用帮助弹窗，强制选择目录
-  showHelpDialog(true);
+  showHelpDialog(true, hasPendingHandle);
 }
 
 function hideDirectoryPrompt() {
@@ -762,7 +833,7 @@ function hideDirectoryPrompt() {
   if (prompt) prompt.remove();
 }
 
-function showHelpDialog(forceSelectDirectory = false) {
+function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
   const existing = document.getElementById('help-dialog');
   if (existing) existing.remove();
 
@@ -777,7 +848,7 @@ function showHelpDialog(forceSelectDirectory = false) {
   const dialog = document.createElement('div');
   dialog.id = 'help-dialog';
 
-  const dirName = directoryHandle?.name || '未选择';
+  const dirName = pendingDirectoryHandle?.name || directoryHandle?.name || '未选择';
   const hasDir = directoryHandle !== null;
 
   dialog.innerHTML = `
@@ -820,10 +891,13 @@ function showHelpDialog(forceSelectDirectory = false) {
       <div class="help-section help-section-directory">
         <h4>存储目录</h4>
         <div class="directory-info">
-          <span id="help-dir-name">当前目录：${dirName}</span>
-          <button id="btn-change-dir-help">${hasDir ? '更换目录' : '选择目录'}</button>
+          <span id="help-dir-name">上次目录：${dirName}</span>
+          <div class="directory-buttons">
+            ${hasPendingHandle ? '<button id="btn-restore-dir" class="btn-restore">恢复目录</button>' : ''}
+            <button id="btn-change-dir-help">${hasDir ? '更换目录' : '选择新目录'}</button>
+          </div>
         </div>
-        ${forceSelectDirectory ? '<p class="directory-warning">请先选择存储目录以保存配置和聊天记录</p>' : ''}
+        ${forceSelectDirectory ? '<p class="directory-warning">请选择存储目录以保存配置和聊天记录</p>' : ''}
       </div>
     </div>
     <div class="dialog-buttons">
@@ -832,16 +906,32 @@ function showHelpDialog(forceSelectDirectory = false) {
   `;
   document.body.appendChild(dialog);
 
+  // 恢复目录按钮（如果有待恢复的 handle）
+  const restoreBtn = document.getElementById('btn-restore-dir');
+  if (restoreBtn) {
+    restoreBtn.onclick = async () => {
+      const success = await requestPermissionAndRestore();
+      if (success) {
+        document.getElementById('help-dir-name').textContent = '当前目录：' + directoryHandle.name;
+        updateDirectoryDisplay();
+        await refreshUI();
+        closeHelpDialog(dialog, overlay, true);
+      } else {
+        alert('权限请求失败，请选择新目录');
+      }
+    };
+  }
+
   // 选择/更换目录按钮
   document.getElementById('btn-change-dir-help').onclick = async () => {
     const success = await selectDirectory();
     if (success) {
+      pendingDirectoryHandle = null; // 清除待恢复的 handle
       document.getElementById('help-dir-name').textContent = '当前目录：' + directoryHandle.name;
       updateDirectoryDisplay();
       await refreshUI();
 
       if (forceSelectDirectory) {
-        // 选好目录后可以关闭
         closeHelpDialog(dialog, overlay, true);
       }
     }
@@ -917,16 +1007,18 @@ function getConnectionStatusText(key) {
 
   const statusText = {
     'testing': '测试中...',
-    'connected': '✓',
-    'failed': '✗'
+    'connected': '✓ 连接成功',
+    'failed': '✗',
+    'cors_blocked': '⚠ 该端点禁止浏览器直连'
   };
 
   const text = statusText[data.status] || '未测试';
   const timeStr = data.timestamp ? formatTimestamp(data.timestamp) : '';
+  const errorInfo = data.error ? ` (${data.error})` : '';
 
   return data.status === 'testing'
     ? '测试连接：测试中...'
-    : `测试连接：${text}（${timeStr}）`;
+    : `测试连接：${text}${errorInfo}（${timeStr}）`;
 }
 
 async function testConnection(groupId, modelId) {
@@ -936,16 +1028,17 @@ async function testConnection(groupId, modelId) {
 
   const key = `${groupId}:${modelId}`;
   connectionStatus.set(key, { status: 'testing', timestamp: null });
-  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  renderEndpointList(getGroups(), currentModelId, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 
   try {
     // 发送一个简单的测试请求
     const testMessages = [{ role: 'user', content: 'hi' }];
-    let success = false;
+    let response = null;
+    let styleType = group.style;
 
     if (group.style === 'openai') {
       const url = `${group.baseUrl}/v1/chat/completions`;
-      const response = await fetch(url, {
+      response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -957,10 +1050,9 @@ async function testConnection(groupId, modelId) {
           max_tokens: 1
         })
       });
-      success = response.ok;
     } else if (group.style === 'claude') {
       const url = `${group.baseUrl}/v1/messages`;
-      const response = await fetch(url, {
+      response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -974,28 +1066,64 @@ async function testConnection(groupId, modelId) {
           messages: testMessages
         })
       });
-      success = response.ok;
     } else if (group.style === 'gemini') {
       const url = `${group.baseUrl}/v1beta/models/${model.name}:generateContent?key=${group.key}`;
-      const response = await fetch(url, {
+      response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: 'hi' }] }]
         })
       });
-      success = response.ok;
     }
 
-    connectionStatus.set(key, {
-      status: success ? 'connected' : 'failed',
-      timestamp: Date.now()
-    });
+    if (response && response.ok) {
+      connectionStatus.set(key, {
+        status: 'connected',
+        timestamp: Date.now()
+      });
+    } else if (response) {
+      // 尝试读取错误信息
+      let errorMsg = `HTTP ${response.status}`;
+      try {
+        const errorBody = await response.text();
+        // 尝试解析 JSON 获取更详细的错误
+        try {
+          const errorJson = JSON.parse(errorBody);
+          if (errorJson.error?.message) {
+            errorMsg = errorJson.error.message;
+          } else if (errorJson.message) {
+            errorMsg = errorJson.message;
+          }
+        } catch (e) {
+          // 非 JSON，截取前 100 字符
+          if (errorBody && errorBody.length < 100) {
+            errorMsg = errorBody;
+          }
+        }
+      } catch (e) {}
+
+      connectionStatus.set(key, {
+        status: 'failed',
+        timestamp: Date.now(),
+        error: errorMsg
+      });
+    }
   } catch (err) {
-    connectionStatus.set(key, { status: 'failed', timestamp: Date.now() });
+    // CORS 错误表现为 TypeError: Failed to fetch，没有 response
+    const isCorsError = err instanceof TypeError && (
+      err.message.includes('Failed to fetch') ||
+      err.message.includes('NetworkError') ||
+      err.name === 'TypeError'
+    );
+    connectionStatus.set(key, {
+      status: isCorsError ? 'cors_blocked' : 'failed',
+      timestamp: Date.now(),
+      error: isCorsError ? null : err.message
+    });
   }
 
-  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  renderEndpointList(getGroups(), currentModelId, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 }
 
 // ========== Store Functions ==========
@@ -1068,33 +1196,47 @@ async function clearDirectory() {
 async function tryRestoreDirectory() {
   try {
     const savedHandle = await loadHandleFromIndexedDB();
-    if (!savedHandle) return false;
+    if (!savedHandle) return { success: false, needUserAction: false };
 
-    // 检查权限
+    // 检查当前权限状态
     const perm = await savedHandle.queryPermission({ mode: 'readwrite' });
     if (perm === 'granted') {
       directoryHandle = savedHandle;
       await ensureDirectoryStructure();
       await loadEndpoints();
       await loadSessionsIndex();
-      return true;
+      return { success: true, needUserAction: false };
     }
 
-    // 尝试重新请求权限
-    if (perm === 'prompt') {
-      const newPerm = await savedHandle.requestPermission({ mode: 'readwrite' });
-      if (newPerm === 'granted') {
-        directoryHandle = savedHandle;
-        await ensureDirectoryStructure();
-        await loadEndpoints();
-        await loadSessionsIndex();
-        return true;
-      }
-    }
-
-    return false;
+    // 权限不足，需要用户点击来请求权限
+    // 保存 handle 供后续使用
+    pendingDirectoryHandle = savedHandle;
+    return { success: false, needUserAction: true };
   } catch (err) {
     console.error('恢复目录失败:', err);
+    return { success: false, needUserAction: false };
+  }
+}
+
+// 待恢复的目录 handle（需要用户点击后才能请求权限）
+let pendingDirectoryHandle = null;
+
+// 用户点击后请求权限并恢复目录
+async function requestPermissionAndRestore() {
+  if (!pendingDirectoryHandle) return false;
+  try {
+    const perm = await pendingDirectoryHandle.requestPermission({ mode: 'readwrite' });
+    if (perm === 'granted') {
+      directoryHandle = pendingDirectoryHandle;
+      pendingDirectoryHandle = null;
+      await ensureDirectoryStructure();
+      await loadEndpoints();
+      await loadSessionsIndex();
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error('请求权限失败:', err);
     return false;
   }
 }
@@ -1760,10 +1902,11 @@ async function init() {
   });
 
   // 先尝试恢复已保存的目录
-  const restored = await tryRestoreDirectory();
+  const result = await tryRestoreDirectory();
 
-  if (!restored) {
-    showDirectoryPrompt(); // 强制选择目录
+  if (!result.success) {
+    // 显示选择目录弹窗，如果有待恢复的 handle 则显示"恢复目录"按钮
+    showDirectoryPrompt(result.needUserAction);
   } else {
     updateDirectoryDisplay();
     await refreshUI();
@@ -1772,7 +1915,7 @@ async function init() {
   document.getElementById('btn-add-group').onclick = handleAddGroup;
   document.getElementById('btn-send').onclick = handleSend;
   document.getElementById('btn-stop').onclick = handleStop;
-  document.getElementById('btn-help').onclick = () => showHelpDialog(false);
+  document.getElementById('btn-help').onclick = () => showHelpDialog(false, pendingDirectoryHandle !== null);
   document.getElementById('btn-new-session').onclick = handleNewSession;
   document.getElementById('btn-new-session-header').onclick = handleNewSession;
   document.getElementById('btn-delete-dir').onclick = handleDeleteDirectory;
@@ -1782,6 +1925,7 @@ async function init() {
   document.getElementById('btn-change-dir').onclick = async () => {
     const success = await selectDirectory();
     if (success) {
+      pendingDirectoryHandle = null; // 清除待恢复的 handle
       updateDirectoryDisplay();
       await refreshUI();
     }
@@ -1791,7 +1935,8 @@ async function init() {
 async function handleDeleteDirectory() {
   if (confirm('确定删除当前目录配置？删除后需要重新选择目录。（磁盘上的数据文件不会被删除）')) {
     await clearDirectory();
-    showDirectoryPrompt(); // 弹出帮助弹窗让用户选择新目录
+    pendingDirectoryHandle = null;
+    showDirectoryPrompt(false); // 弹出帮助弹窗让用户选择新目录
   }
 }
 
@@ -1820,9 +1965,10 @@ async function handleWipeDirectory() {
 
         // 清除内存和IndexedDB
         await clearDirectory();
+        pendingDirectoryHandle = null;
 
         alert('数据已清空');
-        showDirectoryPrompt(); // 让用户重新选择目录或使用当前目录
+        showDirectoryPrompt(false); // 让用户重新选择目录或使用当前目录
       } catch (err) {
         alert('清空失败: ' + err.message);
       }
@@ -1856,7 +2002,7 @@ async function updateDirectoryDisplay() {
 
 async function refreshUI() {
   const groups = getGroups();
-  renderEndpointList(groups, currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  renderEndpointList(groups, currentModelId, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 
   const sessions = getAllSessions();
   renderSessionList(sessions, currentSession?.id, handleSessionSelect, handleSessionEdit, handleSessionDelete);
@@ -1878,16 +2024,10 @@ function updateChatTitleDisplay() {
   }
 }
 
-function handleGroupSelect(groupId) {
-  currentGroupId = groupId;
-  currentModelId = null;
-  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
-}
-
 async function handleModelSelect(groupId, modelId) {
   currentGroupId = groupId;
   currentModelId = modelId;
-  renderEndpointList(getGroups(), currentGroupId, currentModelId, handleGroupSelect, handleModelSelect, handleGroupEdit, handleModelEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  renderEndpointList(getGroups(), currentModelId, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 }
 
 async function handleSessionSelect(sessionId) {
