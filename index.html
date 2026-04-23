@@ -2342,7 +2342,9 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
       status: 'generating',
       firstTokenTime: null,
       startTime,
-      content: ''
+      content: '',
+      thinking: '',
+      thinkingDuration: null
     });
   });
 
@@ -2358,31 +2360,51 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
     }
 
     try {
-      const content = await callAPI(
+      const resultState = await callAPI(
         info.group.style,
         info.group.baseUrl,
         info.group.key,
         info.model.name,
         messages,
-        chunk => {
-          if (state.firstTokenTime === null) {
-            state.firstTokenTime = Date.now() - startTime;
+        chunkState => {
+          const genState = activeGenerations.get(id);
+          if (genState) {
+            genState.content = chunkState.content;
+            genState.thinking = chunkState.thinking;
+
+            if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
+              genState.firstTokenTime = Date.now() - startTime;
+            } else if (chunkState.phase === 'content' && genState.firstTokenTime === null) {
+              genState.firstTokenTime = chunkState.firstContentTokenTime
+                ? chunkState.firstContentTokenTime - startTime
+                : Date.now() - startTime;
+            }
+
+            if (chunkState.thinkingDuration) {
+              genState.thinkingDuration = chunkState.thinkingDuration;
+            }
           }
-          state.content = chunk;
-          onChunk(id, chunk, state.firstTokenTime);
+
+          const firstTokenTime = genState?.firstTokenTime;
+          onChunk(id, chunkState, firstTokenTime);
         },
         state.abortController.signal
       );
 
       state.status = 'completed';
+      state.content = resultState.content;
+      state.thinking = resultState.thinking;
+      state.thinkingDuration = resultState.thinkingDuration;
       // Immediately update UI for this specific model
       renderModelSelector(groups, selectedModels, true);
-      updateCardStatus(id, 'completed', null);
+      updateCardStatus(id, 'completed', null, state);
       const completionTime = Date.now();
       return {
         modelId: id,
         status: 'completed',
-        content,
+        thinking: resultState.thinking,
+        content: resultState.content,
+        thinkingDuration: resultState.thinkingDuration,
         firstTokenTime: state.firstTokenTime,
         totalDuration: completionTime - startTime,
         timestamp: completionTime
@@ -2390,18 +2412,28 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
 
     } catch (err) {
       const completionTime = Date.now();
+      const genState = activeGenerations.get(id);
       if (err.name === 'AbortError') {
         state.status = 'stopped';
         // Immediately update UI for this specific model
         renderModelSelector(groups, selectedModels, true);
-        updateCardStatus(id, 'stopped', null);
-        return { modelId: id, status: 'stopped', content: state.content || '', totalDuration: completionTime - startTime, timestamp: completionTime };
+        updateCardStatus(id, 'stopped', null, genState);
+        return {
+          modelId: id,
+          status: 'stopped',
+          thinking: genState?.thinking || '',
+          content: genState?.content || '',
+          thinkingDuration: genState?.thinkingDuration,
+          firstTokenTime: genState?.firstTokenTime,
+          totalDuration: completionTime - startTime,
+          timestamp: completionTime
+        };
       }
       state.status = 'failed';
       state.error = err.message;
       // Immediately update UI for this specific model
       renderModelSelector(groups, selectedModels, true);
-      updateCardStatus(id, 'failed', err.message);
+      updateCardStatus(id, 'failed', err.message, genState);
       return { modelId: id, status: 'failed', error: err.message, content: '', totalDuration: completionTime - startTime, timestamp: completionTime };
     }
   });
