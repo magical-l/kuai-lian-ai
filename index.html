@@ -851,6 +851,34 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 
     card.appendChild(metaEl);
 
+    // Thinking block（如果有thinking内容）
+    if (r.thinking) {
+      const thinkingBlock = document.createElement('div');
+      thinkingBlock.className = 'thinking-block collapsed';
+
+      const thinkingHeader = document.createElement('div');
+      thinkingHeader.className = 'thinking-header';
+      thinkingHeader.onclick = function() { toggleThinking(this); };
+
+      const thinkingDurationStr = r.thinkingDuration
+        ? `${(r.thinkingDuration/1000).toFixed(1)}s`
+        : '';
+
+      thinkingHeader.innerHTML = `
+        <span class="thinking-icon"></span>
+        <span class="thinking-label">思考过程</span>
+        <span class="thinking-duration">${thinkingDurationStr}</span>
+      `;
+
+      const thinkingContent = document.createElement('div');
+      thinkingContent.className = 'thinking-content';
+      thinkingContent.textContent = r.thinking;
+
+      thinkingBlock.appendChild(thinkingHeader);
+      thinkingBlock.appendChild(thinkingContent);
+      card.appendChild(thinkingBlock);
+    }
+
     const content = document.createElement('div');
     content.className = 'response-card-content';
     if (r.status === 'failed') {
