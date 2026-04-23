@@ -2676,7 +2676,7 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
 }
 
 // Update streaming card status (for failed/stopped/completed models)
-function updateCardStatus(modelId, status, error) {
+function updateCardStatus(modelId, status, error, state = null) {
   requestAnimationFrame(() => {
     const card = document.querySelector(`.response-card[data-model-id="${modelId}"]`);
     if (!card) return;
@@ -2699,7 +2699,6 @@ function updateCardStatus(modelId, status, error) {
       if (contentEl) {
         contentEl.textContent = '';  // Empty content for failed
       }
-      // Add error message after status icon in meta row
       if (metaEl && error && !metaEl.querySelector('.response-error')) {
         const errorEl = document.createElement('span');
         errorEl.className = 'response-error';
@@ -2713,6 +2712,40 @@ function updateCardStatus(modelId, status, error) {
       // Keep partial content if exists
     } else if (status === 'completed') {
       // Content already updated via updateStreamingCard
+
+      // 处理thinking区块折叠
+      if (state && state.thinking) {
+        const thinkingBlock = card.querySelector('.thinking-block');
+        if (thinkingBlock) {
+          thinkingBlock.classList.remove('streaming');
+          thinkingBlock.classList.add('collapsed');
+
+          // 添加折叠header（如果不存在）
+          if (!thinkingBlock.querySelector('.thinking-header')) {
+            const header = document.createElement('div');
+            header.className = 'thinking-header';
+            header.onclick = function() { toggleThinking(this); };
+
+            const durationStr = state.thinkingDuration
+              ? `${(state.thinkingDuration/1000).toFixed(1)}s`
+              : '';
+
+            header.innerHTML = `
+              <span class="thinking-icon"></span>
+              <span class="thinking-label">思考过程</span>
+              <span class="thinking-duration">${durationStr}</span>
+            `;
+
+            thinkingBlock.insertBefore(header, thinkingBlock.firstChild);
+          }
+        }
+      } else {
+        // 无thinking内容，隐藏thinking区块
+        const thinkingBlock = card.querySelector('.thinking-block');
+        if (thinkingBlock) {
+          thinkingBlock.style.display = 'none';
+        }
+      }
     }
   });
 }
