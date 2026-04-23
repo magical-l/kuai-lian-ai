@@ -120,6 +120,12 @@ body {
   color: var(--text-primary);
 }
 
+.navbar-version {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: var(--space-1);
+}
+
 .navbar-center {
   display: flex;
   align-items: center;
