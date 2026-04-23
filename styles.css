@@ -485,11 +485,11 @@ button.outline:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  max-width: 85%;
 }
 
 .message-user {
   align-self: flex-end;
+  margin-left: 15%;
   background: var(--user-msg-bg);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
@@ -499,6 +499,7 @@ button.outline:hover:not(:disabled) {
 
 .message-assistant {
   align-self: flex-start;
+  margin-right: 15%;
   background: var(--bg-base);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
@@ -1307,8 +1308,12 @@ button.outline:hover:not(:disabled) {
     padding: var(--space-4);
   }
 
-  .message {
-    max-width: 92%;
+  .message-user {
+    margin-left: 8%;
+  }
+
+  .message-assistant {
+    margin-right: 8%;
   }
 }
 
