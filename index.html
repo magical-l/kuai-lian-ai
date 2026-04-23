@@ -2166,9 +2166,20 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
 
   const body = { contents };
 
-  // 如果没有传入signal，创建新的AbortController（单模型模式）
   const useSignal = signal || (currentAbortController = new AbortController()).signal;
-  let fullContent = '';
+
+  const state = {
+    thinking: '',
+    content: '',
+    phase: 'content',
+    thinkingStartTime: null,
+    firstContentTokenTime: null
+  };
+
+  let inThinking = false;
+  let buffer = '';
+  const THINKING_START = '<thinking>';
+  const THINKING_END = '</thinking>';
 
   try {
     const response = await fetch(url, {
@@ -2189,15 +2200,15 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let buffer = '';
+    let streamBuffer = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+      streamBuffer += decoder.decode(value, { stream: true });
+      const lines = streamBuffer.split('\n');
+      streamBuffer = lines.pop() || '';
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
@@ -2205,24 +2216,73 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
 
           try {
             const json = JSON.parse(data);
-            const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) {
-              fullContent += text;
-              onChunk(fullContent);
+            const chunk = json.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (chunk) {
+              buffer += chunk;
+
+              if (!inThinking) {
+                const startIdx = buffer.indexOf(THINKING_START);
+                if (startIdx !== -1) {
+                  inThinking = true;
+                  state.thinkingStartTime = Date.now();
+                  state.phase = 'thinking';
+                  state.content += buffer.slice(0, startIdx);
+                  buffer = buffer.slice(startIdx + THINKING_START.length);
+                }
+              }
+
+              if (inThinking) {
+                const endIdx = buffer.indexOf(THINKING_END);
+                if (endIdx !== -1) {
+                  inThinking = false;
+                  state.thinking += buffer.slice(0, endIdx);
+                  buffer = buffer.slice(endIdx + THINKING_END.length);
+                  state.phase = 'content';
+
+                  if (state.firstContentTokenTime === null) {
+                    state.firstContentTokenTime = Date.now();
+                  }
+                  if (state.thinkingStartTime) {
+                    state.thinkingDuration = state.firstContentTokenTime - state.thinkingStartTime;
+                  }
+                } else {
+                  state.thinking += buffer;
+                  buffer = '';
+                }
+              }
+
+              if (!inThinking && buffer) {
+                if (state.firstContentTokenTime === null) {
+                  state.firstContentTokenTime = Date.now();
+                }
+                state.content += buffer;
+                buffer = '';
+              }
+
+              onChunk(state);
             }
           } catch (e) {}
         }
       }
     }
 
-    return fullContent;
+    if (inThinking) {
+      state.thinking += buffer;
+    } else if (buffer) {
+      state.content += buffer;
+    }
+
+    if (state.thinkingStartTime && state.thinkingDuration === undefined) {
+      state.thinkingDuration = Date.now() - state.thinkingStartTime;
+    }
+
+    return state;
   } catch (e) {
     if (e.name === 'AbortError') {
-      return fullContent || '';
+      return state;
     }
     throw e;
   } finally {
-    // 只在单模型模式下清理currentAbortController
     if (!signal) {
       currentAbortController = null;
     }
