@@ -72,12 +72,12 @@
           </div>
         </div>
 
-        <textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
-        <div class="chat-controls">
-          <button id="btn-send">发送</button>
-          <button id="btn-stop" disabled>停止</button>
-          <button id="btn-new-session" title="新建会话">新建会话</button>
+        <div class="input-wrapper">
+          <textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
+          <button id="btn-send" class="send-btn-inline" title="发送">发送</button>
         </div>
+        <!-- 隐藏的controls，保留btn-stop供JS引用 -->
+        <button id="btn-stop" style="display:none;" disabled>停止</button>
       </div>
     </div>
 
@@ -2764,6 +2764,14 @@ async function handleSend() {
   clearInput();
   setButtonState(true, true);
 
+  // 发送后自动收起模型选择区
+  selectorExpanded = false;
+  const selectorList = document.getElementById('selector-list');
+  if (selectorList) selectorList.style.display = 'none';
+  const expandBtnText = document.getElementById('expand-btn-text');
+  if (expandBtnText) expandBtnText.textContent = '▼ 展开';
+  document.getElementById('model-selector').classList.add('collapsed');
+
   const groups = getGroups();
   const messages = currentSession.messages.map(m => {
     if (m.role === 'assistant' && m.responses) {
@@ -2796,6 +2804,18 @@ async function handleSend() {
   currentSession = await loadSession(currentSession.id);
 
   setButtonState(false, false);
+
+  // 隐藏停止按钮，更新hint文字
+  const stopBtnInline = document.getElementById('btn-stop-inline');
+  if (stopBtnInline) {
+    stopBtnInline.style.display = 'none';
+  }
+  const hintText = document.querySelector('.multi-response-hint .hint-text');
+  if (hintText) {
+    const completedCount = responses.filter(r => r.status === 'completed').length;
+    hintText.textContent = `${completedCount}/${responses.length}个模型已回复`;
+  }
+
   // Don't clear activeGenerations here - keep status colors for completed models
   // Entries will be cleared when next generation starts (line 2139) or new session starts (line 2714)
   renderModelSelector(groups, selectedModels, false);
@@ -2811,8 +2831,19 @@ function showThinkingCards(modelIds, groups) {
 
   const hint = document.createElement('div');
   hint.className = 'multi-response-hint';
-  hint.textContent = `${modelIds.length}个模型正在思考...`;
+  hint.innerHTML = `<span class="hint-text">${modelIds.length}个模型正在思考...</span><button class="btn-stop-all" id="btn-stop-inline">全部停止</button>`;
   msgEl.appendChild(hint);
+
+  // 绑定停止按钮事件
+  const stopBtn = hint.querySelector('#btn-stop-inline');
+  if (stopBtn) {
+    stopBtn.onclick = () => {
+      stopAllGenerations();
+      stopBtn.disabled = true;
+      stopBtn.textContent = '已停止';
+      hint.querySelector('.hint-text').textContent = `${modelIds.length}个模型（部分已停止）`;
+    };
+  }
 
   const cards = document.createElement('div');
   cards.className = 'multi-response-cards';
@@ -2845,33 +2876,32 @@ function showThinkingCards(modelIds, groups) {
 }
 
 function updateStreamingCard(modelId, state, firstTokenTime, groups) {
-  requestAnimationFrame(() => {
-    const card = document.querySelector(`.response-card[data-model-id="${modelId}"]`);
-    if (!card) return;
+  // 直接更新DOM，不用requestAnimationFrame（避免并行时排队显示）
+  const card = document.querySelector(`.response-card[data-model-id="${modelId}"]`);
+  if (!card) return;
 
-    // thinking区块处理
-    const thinkingBlock = card.querySelector('.thinking-block');
-    if (thinkingBlock) {
-      if (state.thinking) {
-        thinkingBlock.style.display = 'block';
-        const thinkingContent = thinkingBlock.querySelector('.thinking-content');
-        if (thinkingContent) {
-          thinkingContent.textContent = state.thinking;
-        }
-      } else {
-        thinkingBlock.style.display = 'none';
+  // thinking区块处理
+  const thinkingBlock = card.querySelector('.thinking-block');
+  if (thinkingBlock) {
+    if (state.thinking) {
+      thinkingBlock.style.display = 'block';
+      const thinkingContent = thinkingBlock.querySelector('.thinking-content');
+      if (thinkingContent) {
+        thinkingContent.textContent = state.thinking;
       }
     }
+  }
 
-    // content区块处理
-    const contentEl = card.querySelector('.response-card-content');
-    if (contentEl) {
-      contentEl.textContent = state.content || '';
-    }
+  // content区块处理
+  const contentEl = card.querySelector('.response-card-content');
+  if (contentEl) {
+    contentEl.textContent = state.content || '';
+  }
 
-    // meta信息处理（duration等）
+  // meta信息处理（duration等）
+  if (firstTokenTime !== null) {
     const metaEl = card.querySelector('.response-meta');
-    if (metaEl && firstTokenTime !== null) {
+    if (metaEl) {
       const icon = metaEl.querySelector('.model-status-icon');
       if (icon) {
         icon.classList.remove('spinning');
@@ -2888,7 +2918,7 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
         }
       }
     }
-  });
+  }
 }
 
 // Update streaming card status (for failed/stopped/completed models)
