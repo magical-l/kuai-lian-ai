@@ -1984,9 +1984,17 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = nu
     stream: true
   };
 
-  // 如果没有传入signal，创建新的AbortController（单模型模式）
   const useSignal = signal || (currentAbortController = new AbortController()).signal;
-  let fullContent = '';
+
+  const state = {
+    thinking: '',
+    content: '',
+    phase: 'content',
+    thinkingStartTime: null,
+    firstContentTokenTime: null
+  };
+
+  const startTime = Date.now();
 
   try {
     const response = await fetch(url, {
@@ -2023,23 +2031,49 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = nu
 
           try {
             const json = JSON.parse(data);
-            if (json.type === 'content_block_delta' && json.delta?.text) {
-              fullContent += json.delta.text;
-              onChunk(fullContent);
+
+            if (json.type === 'content_block_start' && json.content_block?.type === 'thinking') {
+              state.phase = 'thinking';
+              state.thinkingStartTime = Date.now();
+            }
+            else if (json.type === 'content_block_delta' && json.delta?.type === 'thinking_delta') {
+              state.thinking += json.delta.thinking || '';
+              state.phase = 'thinking';
+              onChunk(state);
+            }
+            else if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta') {
+              if (state.firstContentTokenTime === null) {
+                state.firstContentTokenTime = Date.now();
+                if (state.thinkingStartTime) {
+                  state.thinkingDuration = state.firstContentTokenTime - state.thinkingStartTime;
+                }
+              }
+              state.content += json.delta.text || '';
+              state.phase = 'content';
+              onChunk(state);
+            }
+            else if (json.type === 'content_block_start' && json.content_block?.type === 'text') {
+              state.phase = 'content';
+              if (state.firstContentTokenTime === null) {
+                state.firstContentTokenTime = Date.now();
+              }
             }
           } catch (e) {}
         }
       }
     }
 
-    return fullContent;
+    if (state.thinkingStartTime && state.thinkingDuration === undefined) {
+      state.thinkingDuration = Date.now() - state.thinkingStartTime;
+    }
+
+    return state;
   } catch (e) {
     if (e.name === 'AbortError') {
-      return fullContent || '';
+      return state;
     }
     throw e;
   } finally {
-    // 只在单模型模式下清理currentAbortController
     if (!signal) {
       currentAbortController = null;
     }
