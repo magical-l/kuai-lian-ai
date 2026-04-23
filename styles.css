@@ -1521,6 +1521,12 @@ button.outline:hover:not(:disabled) {
 .response-status.failed { color: var(--danger); }
 .response-status.stopped { color: var(--text-muted); }
 
+.response-error {
+  color: var(--danger);
+  font-size: 12px;
+  margin-left: 4px;
+}
+
 .response-card-content {
   font-size: 13px;
   line-height: 1.5;

@@ -824,6 +824,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const totalStr = r.totalDuration ? `${(r.totalDuration/1000).toFixed(1)}s耗时` : '';
     const statusText = getStatusText(r.status);
     const responseTimeStr = r.timestamp ? formatDateTime(r.timestamp) : '';
+    const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
 
     metaEl.innerHTML = `
       <span class="response-model-name">${name}</span>
@@ -831,6 +832,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
       <span class="response-duration">${durationStr}</span>
       <span class="response-total">${totalStr}</span>
       <span class="response-status ${r.status}">${statusText}</span>
+      ${errorText ? `<span class="response-error">${errorText}</span>` : ''}
       <button class="btn-icon copy-btn" title="复制">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
@@ -842,10 +844,9 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const content = document.createElement('div');
     content.className = 'response-card-content';
     if (r.status === 'failed') {
-      content.innerHTML = `<span style="color:var(--danger)">✗</span> ${r.error || '未知'}`;
+      content.textContent = '';  // Error shown in meta row, content area empty
     } else if (r.status === 'stopped') {
-      content.innerHTML = `<span style="color:var(--text-muted)">已停止</span>`;
-      if (r.content) content.innerHTML += `<br>${r.content}`;
+      content.textContent = r.content || '';  // Show partial content if available
     } else {
       content.textContent = r.content || '';
     }
@@ -2173,6 +2174,9 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
       );
 
       state.status = 'completed';
+      // Immediately update UI for this specific model
+      renderModelSelector(groups, selectedModels, true);
+      updateCardStatus(id, 'completed', null);
       const completionTime = Date.now();
       return {
         modelId: id,
@@ -2187,10 +2191,16 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
       const completionTime = Date.now();
       if (err.name === 'AbortError') {
         state.status = 'stopped';
+        // Immediately update UI for this specific model
+        renderModelSelector(groups, selectedModels, true);
+        updateCardStatus(id, 'stopped', null);
         return { modelId: id, status: 'stopped', content: state.content || '', totalDuration: completionTime - startTime, timestamp: completionTime };
       }
       state.status = 'failed';
       state.error = err.message;
+      // Immediately update UI for this specific model
+      renderModelSelector(groups, selectedModels, true);
+      updateCardStatus(id, 'failed', err.message);
       return { modelId: id, status: 'failed', error: err.message, content: '', totalDuration: completionTime - startTime, timestamp: completionTime };
     }
   });
@@ -2598,48 +2608,95 @@ function showThinkingCards(modelIds, groups) {
 }
 
 function updateStreamingCard(modelId, content, firstTokenTime, groups) {
-  const card = document.querySelector(`.response-card[data-model-id="${modelId}"]`);
-  if (!card) return;
+  // Use requestAnimationFrame for non-blocking DOM updates
+  requestAnimationFrame(() => {
+    const card = document.querySelector(`.response-card[data-model-id="${modelId}"]`);
+    if (!card) return;
 
-  const contentEl = card.querySelector('.response-card-content');
-  if (contentEl) {
-    contentEl.textContent = content;
-    contentEl.classList.remove('thinking-content');
-  }
-
-  const metaEl = card.querySelector('.response-meta');
-  if (metaEl) {
-    const icon = metaEl.querySelector('.model-status-icon');
-    if (icon && firstTokenTime !== null) {
-      icon.classList.remove('spinning');
+    const contentEl = card.querySelector('.response-card-content');
+    if (contentEl) {
+      contentEl.textContent = content;
+      contentEl.classList.remove('thinking-content');
     }
 
-    // Add duration text if not present
-    if (firstTokenTime !== null && !metaEl.querySelector('.response-duration')) {
-      const durationEl = document.createElement('span');
-      durationEl.className = 'response-duration';
-      durationEl.textContent = `${(firstTokenTime/1000).toFixed(1)}s回应`;
-      // Insert after model name
-      const modelNameEl = metaEl.querySelector('.response-model-name');
-      if (modelNameEl) {
-        modelNameEl.insertAdjacentElement('afterend', durationEl);
+    const metaEl = card.querySelector('.response-meta');
+    if (metaEl) {
+      const icon = metaEl.querySelector('.model-status-icon');
+      if (icon && firstTokenTime !== null) {
+        icon.classList.remove('spinning');
+      }
+
+      // Add duration text if not present
+      if (firstTokenTime !== null && !metaEl.querySelector('.response-duration')) {
+        const durationEl = document.createElement('span');
+        durationEl.className = 'response-duration';
+        durationEl.textContent = `${(firstTokenTime/1000).toFixed(1)}s回应`;
+        // Insert after model name
+        const modelNameEl = metaEl.querySelector('.response-model-name');
+        if (modelNameEl) {
+          modelNameEl.insertAdjacentElement('afterend', durationEl);
+        }
       }
     }
-  }
+  });
+}
+
+// Update streaming card status (for failed/stopped/completed models)
+function updateCardStatus(modelId, status, error) {
+  requestAnimationFrame(() => {
+    const card = document.querySelector(`.response-card[data-model-id="${modelId}"]`);
+    if (!card) return;
+
+    card.classList.remove('thinking');
+
+    const contentEl = card.querySelector('.response-card-content');
+    const metaEl = card.querySelector('.response-meta');
+
+    // Update status icon
+    const icon = metaEl?.querySelector('.model-status-icon');
+    if (icon) {
+      icon.classList.remove('spinning');
+      icon.textContent = getStatusText(status);
+    }
+
+    // Update content and add error message for failed models
+    if (status === 'failed') {
+      if (contentEl) {
+        contentEl.textContent = '';  // Empty content for failed
+      }
+      // Add error message after status icon in meta row
+      if (metaEl && error && !metaEl.querySelector('.response-error')) {
+        const errorEl = document.createElement('span');
+        errorEl.className = 'response-error';
+        errorEl.textContent = error;
+        const statusEl = metaEl.querySelector('.response-status') || icon;
+        if (statusEl) {
+          statusEl.insertAdjacentElement('afterend', errorEl);
+        }
+      }
+    } else if (status === 'stopped') {
+      // Keep partial content if exists
+    } else if (status === 'completed') {
+      // Content already updated via updateStreamingCard
+    }
+  });
 }
 
 function reorderCardsBySpeed() {
-  const container = document.querySelector('#streaming-multi-response .multi-response-cards');
-  if (!container) return;
+  // Use requestAnimationFrame for non-blocking DOM updates
+  requestAnimationFrame(() => {
+    const container = document.querySelector('#streaming-multi-response .multi-response-cards');
+    if (!container) return;
 
-  const cards = Array.from(container.querySelectorAll('.response-card'));
-  cards.sort((a, b) => {
-    const stateA = activeGenerations.get(a.dataset.modelId);
-    const stateB = activeGenerations.get(b.dataset.modelId);
-    return (stateA?.firstTokenTime ?? Infinity) - (stateB?.firstTokenTime ?? Infinity);
+    const cards = Array.from(container.querySelectorAll('.response-card'));
+    cards.sort((a, b) => {
+      const stateA = activeGenerations.get(a.dataset.modelId);
+      const stateB = activeGenerations.get(b.dataset.modelId);
+      return (stateA?.firstTokenTime ?? Infinity) - (stateB?.firstTokenTime ?? Infinity);
+    });
+
+    cards.forEach(c => container.appendChild(c));
   });
-
-  cards.forEach(c => container.appendChild(c));
 }
 
 function handleStop() {
