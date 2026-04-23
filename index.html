@@ -1028,7 +1028,7 @@ async function testConnection(groupId, modelId) {
 
   const key = `${groupId}:${modelId}`;
   connectionStatus.set(key, { status: 'testing', timestamp: null });
-  renderEndpointList(getGroups(), currentModelId, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  renderEndpointList(getGroups(), null, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 
   try {
     // 发送一个简单的测试请求
@@ -1123,7 +1123,7 @@ async function testConnection(groupId, modelId) {
     });
   }
 
-  renderEndpointList(getGroups(), currentModelId, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  renderEndpointList(getGroups(), null, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 }
 
 // ========== Store Functions ==========
@@ -2032,7 +2032,7 @@ async function updateDirectoryDisplay() {
 
 async function refreshUI() {
   const groups = getGroups();
-  renderEndpointList(groups, currentModelId, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  renderEndpointList(groups, null, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 
   const sessions = getAllSessions();
   renderSessionList(sessions, currentSession?.id, handleSessionSelect, handleSessionEdit, handleSessionDelete);
@@ -2062,11 +2062,12 @@ async function handleModelSelect(groupId, modelId) {
 async function handleSessionSelect(sessionId) {
   currentSession = await loadSession(sessionId);
 
-  const lastAssistant = currentSession.messages.filter(m => m.role === 'assistant').pop();
-  if (lastAssistant?.endpointGroupId && lastAssistant?.modelId) {
-    currentGroupId = lastAssistant.endpointGroupId;
-    currentModelId = lastAssistant.modelId;
-  }
+  // TODO: Multi-model selection is now handled via selectedModels array
+  // const lastAssistant = currentSession.messages.filter(m => m.role === 'assistant').pop();
+  // if (lastAssistant?.endpointGroupId && lastAssistant?.modelId) {
+  //   currentGroupId = lastAssistant.endpointGroupId;
+  //   currentModelId = lastAssistant.modelId;
+  // }
 
   // 更新 lastUserMessage 为当前 session 的最后一条用户消息
   const lastUserMsg = currentSession.messages.filter(m => m.role === 'user').pop();
@@ -2110,22 +2111,18 @@ function handleGroupEdit(groupId) {
 
 async function handleGroupDelete(groupId) {
   await deleteGroup(groupId);
-  if (currentGroupId === groupId) {
-    currentGroupId = null;
-    currentModelId = null;
-  }
+  // TODO: Check if any selected model belongs to this group and remove it
+  // if (currentGroupId === groupId) {
+  //   currentGroupId = null;
+  //   currentModelId = null;
+  // }
   await refreshUI();
 }
 
 function handleAddModel() {
-  if (!currentGroupId) {
-    alert('请先选择一个端点');
-    return;
-  }
-  showEditModelDialog(currentGroupId, null, async (name) => {
-    await addModel(currentGroupId, name);
-    await refreshUI();
-  });
+  // TODO: This function requires group context which is no longer available
+  // Users should use the add model button within each group instead
+  alert('请在端点组内添加模型');
 }
 
 async function handleAddModelForGroup(groupId, modelName) {
@@ -2157,9 +2154,10 @@ function handleModelEdit(groupId, modelId) {
 
 async function handleModelDelete(groupId, modelId) {
   await deleteModel(groupId, modelId);
-  if (currentModelId === modelId) {
-    currentModelId = null;
-  }
+  // TODO: Check if this model is in selectedModels and remove it
+  // if (currentModelId === modelId) {
+  //   currentModelId = null;
+  // }
   await refreshUI();
 }
 
@@ -2177,7 +2175,9 @@ async function handleSend() {
   const content = getInputContent();
   if (!content) return;
 
-  if (!currentGroupId || !currentModelId) {
+  // TODO: Multi-model selection - use selectedModels array
+  // For now, check if any model is selected
+  if (selectedModels.length === 0) {
     alert('请先选择一个模型');
     return;
   }
@@ -2195,8 +2195,11 @@ async function handleSend() {
   const groups = getGroups();
   renderMessages(currentSession.messages, groups, handleCopy);
 
-  const group = getGroup(currentGroupId);
-  const model = getModel(currentGroupId, currentModelId);
+  // TODO: Handle multiple selected models - for now use the first one
+  const firstSelected = selectedModels[0];
+  const [groupId, modelId] = firstSelected.split(':');
+  const group = getGroup(groupId);
+  const model = getModel(groupId, modelId);
 
   appendMessage('assistant', '', `${group.name} / ${model.name}`);
 
@@ -2216,7 +2219,7 @@ async function handleSend() {
     );
 
     finishStreamingMessage();
-    await addMessage(currentSession.id, 'assistant', fullResponse, { endpointGroupId: currentGroupId, modelId: currentModelId });
+    await addMessage(currentSession.id, 'assistant', fullResponse, { endpointGroupId: groupId, modelId: modelId });
 
     currentSession = await loadSession(currentSession.id);
 
@@ -2244,7 +2247,8 @@ async function handleNewSession() {
 }
 
 async function handleRegenerate() {
-  if (!lastUserMessage || !currentGroupId || !currentModelId) return;
+  // TODO: Multi-model selection - use selectedModels array
+  if (!lastUserMessage || selectedModels.length === 0) return;
 
   if (currentSession && currentSession.messages.length > 0) {
     const lastMsg = currentSession.messages[currentSession.messages.length - 1];
@@ -2259,8 +2263,11 @@ async function handleRegenerate() {
   const groups = getGroups();
   renderMessages(currentSession.messages, groups, handleCopy);
 
-  const group = getGroup(currentGroupId);
-  const model = getModel(currentGroupId, currentModelId);
+  // TODO: Handle multiple selected models - for now use the first one
+  const firstSelected = selectedModels[0];
+  const [groupId, modelId] = firstSelected.split(':');
+  const group = getGroup(groupId);
+  const model = getModel(groupId, modelId);
 
   appendMessage('assistant', '', `${group.name} / ${model.name}`);
 
@@ -2280,7 +2287,7 @@ async function handleRegenerate() {
     );
 
     finishStreamingMessage();
-    await addMessage(currentSession.id, 'assistant', fullResponse, { endpointGroupId: currentGroupId, modelId: currentModelId });
+    await addMessage(currentSession.id, 'assistant', fullResponse, { endpointGroupId: groupId, modelId: modelId });
 
     setButtonState(false, true);
     await refreshUI();
