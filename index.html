@@ -1886,6 +1886,23 @@ async function callAPI(style, baseUrl, apiKey, model, messages, onChunk) {
 
 // ========== Main Logic ==========
 
+// 全局默认模型集管理
+function loadDefaultSelectedModels() {
+  try {
+    const saved = localStorage.getItem('defaultSelectedModels');
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDefaultSelectedModels(models) {
+  localStorage.setItem('defaultSelectedModels', JSON.stringify(models));
+}
+
+// 初始化时加载
+let defaultSelectedModels = loadDefaultSelectedModels();
+
 let currentSession = null;
 let currentGroupId = null;
 let currentModelId = null;
@@ -1917,6 +1934,10 @@ async function init() {
     // 显示选择目录弹窗，如果有待恢复的 handle 则显示"恢复目录"按钮
     showDirectoryPrompt(result.needUserAction);
   } else {
+    // 如果有全局默认，设为当前选中
+    if (defaultSelectedModels.length > 0) {
+      selectedModels = [...defaultSelectedModels];
+    }
     updateDirectoryDisplay();
     await refreshUI();
   }
