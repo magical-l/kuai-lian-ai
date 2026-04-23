@@ -937,7 +937,9 @@ function clearInput() {
 
 function setButtonState(sendDisabled, stopDisabled) {
   document.getElementById('btn-send').disabled = sendDisabled;
-  document.getElementById('btn-stop').disabled = stopDisabled;
+  const stopBtn = document.getElementById('btn-stop');
+  stopBtn.disabled = stopDisabled;
+  stopBtn.textContent = stopDisabled ? '停止' : '全部停止';
 }
 
 function showEditGroupDialog(group = null, onSave) {
@@ -2244,7 +2246,11 @@ async function init() {
 
   document.getElementById('btn-add-group').onclick = handleAddGroup;
   document.getElementById('btn-send').onclick = handleSend;
-  document.getElementById('btn-stop').onclick = handleStop;
+  document.getElementById('btn-stop').onclick = () => {
+    stopAllGenerations();
+    setButtonState(false, true);
+    renderModelSelector(getGroups(), selectedModels, false);
+  };
   document.getElementById('btn-help').onclick = () => showHelpDialog(false, pendingDirectoryHandle !== null);
   document.getElementById('btn-new-session').onclick = handleNewSession;
   document.getElementById('btn-new-session-header').onclick = handleNewSession;
@@ -2332,7 +2338,12 @@ async function updateDirectoryDisplay() {
 
 async function refreshUI() {
   const groups = getGroups();
-  renderEndpointList(groups, null, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  const isGenerating = activeGenerations.size > 0 &&
+    Array.from(activeGenerations.values()).some(s => s.status === 'generating');
+
+  renderModelSelector(groups, selectedModels, isGenerating);
+
+  renderEndpointList(groups, null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 
   const sessions = getAllSessions();
   renderSessionList(sessions, currentSession?.id, handleSessionSelect, handleSessionEdit, handleSessionDelete);
@@ -2362,17 +2373,15 @@ async function handleModelSelect(groupId, modelId) {
 async function handleSessionSelect(sessionId) {
   currentSession = await loadSession(sessionId);
 
-  // TODO: Multi-model selection is now handled via selectedModels array
-  // const lastAssistant = currentSession.messages.filter(m => m.role === 'assistant').pop();
-  // if (lastAssistant?.endpointGroupId && lastAssistant?.modelId) {
-  //   currentGroupId = lastAssistant.endpointGroupId;
-  //   currentModelId = lastAssistant.modelId;
-  // }
-
-  // 更新 lastUserMessage 为当前 session 的最后一条用户消息
+  // 从会话的最后用户消息恢复模型集
   const lastUserMsg = currentSession.messages.filter(m => m.role === 'user').pop();
-  lastUserMessage = lastUserMsg?.content || null;
+  if (lastUserMsg?.targetModels) {
+    selectedModels = [...lastUserMsg.targetModels];
+  } else {
+    selectedModels = [...defaultSelectedModels];
+  }
 
+  lastUserMessage = lastUserMsg?.content || null;
   await refreshUI();
 }
 
