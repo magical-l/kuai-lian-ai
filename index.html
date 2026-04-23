@@ -168,13 +168,7 @@ function initDividers() {
 function toggleThinking(headerEl) {
   const block = headerEl.closest('.thinking-block');
   if (!block) return;
-
-  const isCollapsed = block.classList.contains('collapsed');
-  if (isCollapsed) {
-    block.classList.remove('collapsed');
-  } else {
-    block.classList.add('collapsed');
-  }
+  block.classList.toggle('collapsed');
 }
 
 // ========== Model Selector Functions ==========
