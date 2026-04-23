@@ -225,15 +225,11 @@ function findModelById(groups, modelId) {
 function getTagStatusClass(modelId) {
   const gen = activeGenerations.get(modelId);
   if (!gen) return '';
-  if (gen.status === 'generating') {
+
+  // For both 'generating' and 'completed', use firstTokenTime to determine color
+  if (gen.status === 'generating' || gen.status === 'completed') {
     const t = gen.firstTokenTime;
-    if (t == null) return '';
-    if (t < 1000) return 'fast';
-    if (t < 2000) return 'medium';
-    return 'slow';
-  }
-  if (gen.status === 'completed') {
-    const t = gen.firstTokenTime;
+    if (t == null) return gen.status === 'completed' ? 'fast' : '';  // Default to fast if completed without timing
     if (t < 1000) return 'fast';
     if (t < 2000) return 'medium';
     return 'slow';
@@ -826,6 +822,13 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const responseTimeStr = r.timestamp ? formatDateTime(r.timestamp) : '';
     const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
 
+    // Only add copy button for completed responses with content
+    const copyBtnHtml = (r.status === 'completed' && r.content) ? `
+      <button class="btn-icon copy-btn" title="复制">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+    ` : '';
+
     metaEl.innerHTML = `
       <span class="response-model-name">${name}</span>
       <span class="response-time">${responseTimeStr}</span>
@@ -833,11 +836,12 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
       <span class="response-total">${totalStr}</span>
       <span class="response-status ${r.status}">${statusText}</span>
       ${errorText ? `<span class="response-error">${errorText}</span>` : ''}
-      <button class="btn-icon copy-btn" title="复制">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-      </button>
+      ${copyBtnHtml}
     `;
-    metaEl.querySelector('.copy-btn').addEventListener('click', () => onCopy(r.content || ''));
+    const copyBtn = metaEl.querySelector('.copy-btn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => onCopy(r.content || ''));
+    }
 
     card.appendChild(metaEl);
 
