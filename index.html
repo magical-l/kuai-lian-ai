@@ -2475,62 +2475,133 @@ async function handleSend() {
   const content = getInputContent();
   if (!content) return;
 
-  // TODO: Multi-model selection - use selectedModels array
-  // For now, check if any model is selected
   if (selectedModels.length === 0) {
-    alert('请先选择一个模型');
+    selectorExpanded = true;
+    renderModelSelector(getGroups(), selectedModels, false);
     return;
   }
 
+  // 创建或获取会话
   if (!currentSession) {
     currentSession = await createSession(content);
-  } else {
-    await addMessage(currentSession.id, 'user', content);
   }
+
+  // 添加用户消息（含targetModels）
+  await addMessage(currentSession.id, 'user', content, {
+    targetModels: [...selectedModels]
+  });
 
   lastUserMessage = content;
   clearInput();
   setButtonState(true, false);
 
   const groups = getGroups();
+  const messages = currentSession.messages.map(m => ({
+    role: m.role,
+    content: m.content
+  }));
+
+  // 渲染用户消息
   renderMessages(currentSession.messages, groups, handleCopy);
 
-  // TODO: Handle multiple selected models - for now use the first one
-  const firstSelected = selectedModels[0];
-  const [groupId, modelId] = firstSelected.split(':');
-  const group = getGroup(groupId);
-  const model = getModel(groupId, modelId);
+  // 显示"思考中"状态卡片
+  showThinkingCards(selectedModels, groups);
 
-  appendMessage('assistant', '', `${group.name} / ${model.name}`);
+  // 并行调用所有模型
+  const responses = await callAllModels(groups, selectedModels, messages, (modelId, partialContent, firstTokenTime) => {
+    updateStreamingCard(modelId, partialContent, firstTokenTime, groups);
+    reorderCardsBySpeed();
+    renderModelSelector(groups, selectedModels, true);
+  });
 
-  try {
-    const messages = currentSession.messages.map(m => ({
-      role: m.role,
-      content: m.content
-    }));
+  // 全部完成后保存助手消息
+  await addMessage(currentSession.id, 'assistant', null, { responses });
 
-    const fullResponse = await callAPI(
-      group.style,
-      group.baseUrl,
-      group.key,
-      model.name,
-      messages,
-      updateStreamingMessage
-    );
+  currentSession = await loadSession(currentSession.id);
 
-    finishStreamingMessage();
-    await addMessage(currentSession.id, 'assistant', fullResponse, { endpointGroupId: groupId, modelId: modelId });
+  setButtonState(false, true);
+  activeGenerations.clear();
+  renderModelSelector(groups, selectedModels, false);
+  await refreshUI();
+}
 
-    currentSession = await loadSession(currentSession.id);
+function showThinkingCards(modelIds, groups) {
+  const container = document.getElementById('chat-messages');
 
-    setButtonState(false, true);
-    await refreshUI();
+  const msgEl = document.createElement('div');
+  msgEl.className = 'message';
+  msgEl.id = 'streaming-multi-response';
 
-  } catch (err) {
-    finishStreamingMessage();
-    alert(`API调用失败: ${err.message}`);
-    setButtonState(false, true);
+  const hint = document.createElement('div');
+  hint.className = 'multi-response-hint';
+  hint.textContent = `${modelIds.length}个模型正在思考...`;
+  msgEl.appendChild(hint);
+
+  const cards = document.createElement('div');
+  cards.className = 'multi-response-cards';
+
+  modelIds.forEach(id => {
+    const card = document.createElement('div');
+    card.className = 'response-card thinking';
+    card.dataset.modelId = id;
+
+    const info = findModelById(groups, id);
+    const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
+
+    card.innerHTML = `
+      <div class="response-card-header">
+        <span class="response-model-name">${name}</span>
+        <span class="model-status-icon spinning">◐</span>
+      </div>
+      <div class="response-card-content thinking-content">等待回复...</div>
+    `;
+
+    cards.appendChild(card);
+  });
+
+  msgEl.appendChild(cards);
+  container.appendChild(msgEl);
+  container.scrollTop = container.scrollHeight;
+}
+
+function updateStreamingCard(modelId, content, firstTokenTime, groups) {
+  const card = document.querySelector(`.response-card[data-model-id="${modelId}"]`);
+  if (!card) return;
+
+  const contentEl = card.querySelector('.response-card-content');
+  if (contentEl) {
+    contentEl.textContent = content;
+    contentEl.classList.remove('thinking-content');
   }
+
+  const icon = card.querySelector('.model-status-icon');
+  if (icon && firstTokenTime !== null) {
+    icon.classList.remove('spinning');
+  }
+
+  if (firstTokenTime !== null) {
+    const header = card.querySelector('.response-card-header');
+    if (!header.querySelector('.response-first-token')) {
+      const timeEl = document.createElement('span');
+      timeEl.className = 'response-first-token';
+      timeEl.textContent = `${(firstTokenTime/1000).toFixed(1)}s`;
+      header.appendChild(timeEl);
+    }
+  }
+}
+
+function reorderCardsBySpeed() {
+  const container = document.querySelector('#streaming-multi-response .multi-response-cards');
+  if (!container) return;
+
+  const cards = Array.from(container.querySelectorAll('.response-card'));
+  cards.sort((a, b) => {
+    const stateA = activeGenerations.get(a.dataset.modelId);
+    const stateB = activeGenerations.get(b.dataset.modelId);
+    return (stateA?.firstTokenTime ?? Infinity) - (stateB?.firstTokenTime ?? Infinity);
+  });
+
+  cards.forEach(c => container.appendChild(c));
 }
 
 function handleStop() {
