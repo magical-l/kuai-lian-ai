@@ -57,6 +57,19 @@
       </div>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-area">
+        <!-- 新增：模型选择器 -->
+        <div id="model-selector" class="model-selector collapsed">
+          <div class="selector-summary" id="selector-summary">
+            <!-- 收起时显示已选模型标签 -->
+          </div>
+          <div class="selector-expand-btn" id="selector-expand-btn">
+            <span id="expand-btn-text">▼ 展开</span>
+          </div>
+          <div class="selector-list" id="selector-list" style="display:none;">
+            <!-- 展开时显示按端点分组的模型列表 -->
+          </div>
+        </div>
+
         <textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
         <div class="chat-controls">
           <button id="btn-send">发送</button>
