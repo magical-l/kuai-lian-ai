@@ -2661,10 +2661,11 @@ function updateCardStatus(modelId, status, error) {
     const contentEl = card.querySelector('.response-card-content');
     const metaEl = card.querySelector('.response-meta');
 
-    // Update status icon
+    // Update status icon with color class
     const icon = metaEl?.querySelector('.model-status-icon');
     if (icon) {
-      icon.classList.remove('spinning');
+      icon.classList.remove('spinning', 'completed', 'failed', 'stopped');
+      icon.classList.add(status);
       icon.textContent = getStatusText(status);
     }
 

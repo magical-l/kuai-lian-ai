@@ -1417,32 +1417,37 @@ button.outline:hover:not(:disabled) {
   background: var(--accent-muted);
 }
 
-/* 状态颜色 */
-.model-tag.fast {
+/* 状态颜色 - combined selectors ensure status colors always override .selected */
+.model-tag.fast,
+.model-tag.selected.fast {
   background: rgba(5, 150, 105, 0.1);
   color: var(--success);
   border-color: var(--success);
 }
 
-.model-tag.medium {
+.model-tag.medium,
+.model-tag.selected.medium {
   background: rgba(217, 119, 6, 0.1);
   color: var(--warning);
   border-color: var(--warning);
 }
 
-.model-tag.slow {
+.model-tag.slow,
+.model-tag.selected.slow {
   background: rgba(234, 88, 12, 0.1);
   color: #ea580c;
   border-color: #ea580c;
 }
 
-.model-tag.failed {
+.model-tag.failed,
+.model-tag.selected.failed {
   background: var(--danger-light);
   color: var(--danger);
   border-color: var(--danger);
 }
 
-.model-tag.stopped {
+.model-tag.stopped,
+.model-tag.selected.stopped {
   background: var(--bg-muted);
   color: var(--text-muted);
   border-color: var(--border-subtle);
@@ -1520,6 +1525,11 @@ button.outline:hover:not(:disabled) {
 .response-status.completed { color: var(--success); }
 .response-status.failed { color: var(--danger); }
 .response-status.stopped { color: var(--text-muted); }
+
+/* Model status icon in cards - same colors */
+.model-status-icon.completed { color: var(--success); }
+.model-status-icon.failed { color: var(--danger); }
+.model-status-icon.stopped { color: var(--text-muted); }
 
 .response-error {
   color: var(--danger);
