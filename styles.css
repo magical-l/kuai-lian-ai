@@ -1505,6 +1505,10 @@ button.outline:hover:not(:disabled) {
   color: var(--text-secondary);
 }
 
+.response-total {
+  color: var(--text-secondary);
+}
+
 .response-model-name {
   font-weight: 500;
 }

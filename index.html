@@ -821,6 +821,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     metaEl.className = 'response-meta';
 
     const durationStr = r.firstTokenTime ? `${(r.firstTokenTime/1000).toFixed(1)}s回应` : '';
+    const totalStr = r.totalDuration ? `${(r.totalDuration/1000).toFixed(1)}s耗时` : '';
     const statusText = getStatusText(r.status);
     const responseTimeStr = r.timestamp ? formatDateTime(r.timestamp) : '';
 
@@ -828,6 +829,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
       <span class="response-model-name">${name}</span>
       <span class="response-time">${responseTimeStr}</span>
       <span class="response-duration">${durationStr}</span>
+      <span class="response-total">${totalStr}</span>
       <span class="response-status ${r.status}">${statusText}</span>
       <button class="btn-icon copy-btn" title="复制">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -1726,7 +1728,7 @@ function getAllSessions() {
   return Array.from(sessionsCache.values());
 }
 
-async function createSession(firstMessage = null) {
+async function createSession(firstMessage = null, targetModels = null) {
   const session = {
     id: generateUUID(),
     title: firstMessage ? firstMessage.slice(0, 20) : '新会话',
@@ -1735,7 +1737,11 @@ async function createSession(firstMessage = null) {
   };
 
   if (firstMessage) {
-    session.messages.push({ role: 'user', content: firstMessage });
+    const msg = { role: 'user', content: firstMessage, timestamp: Date.now() };
+    if (targetModels) {
+      msg.targetModels = targetModels;
+    }
+    session.messages.push(msg);
   }
 
   sessionsCache.set(session.id, session);
@@ -2146,7 +2152,7 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
     if (!info) {
       state.status = 'failed';
       state.error = '模型不存在';
-      return { modelId: id, status: 'failed', error: '模型不存在', content: '' };
+      return { modelId: id, status: 'failed', error: '模型不存在', content: '', timestamp: Date.now() };
     }
 
     try {
@@ -2167,22 +2173,25 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
       );
 
       state.status = 'completed';
+      const completionTime = Date.now();
       return {
         modelId: id,
         status: 'completed',
         content,
         firstTokenTime: state.firstTokenTime,
-        timestamp: Date.now()
+        totalDuration: completionTime - startTime,
+        timestamp: completionTime
       };
 
     } catch (err) {
+      const completionTime = Date.now();
       if (err.name === 'AbortError') {
         state.status = 'stopped';
-        return { modelId: id, status: 'stopped', content: state.content || '', timestamp: Date.now() };
+        return { modelId: id, status: 'stopped', content: state.content || '', totalDuration: completionTime - startTime, timestamp: completionTime };
       }
       state.status = 'failed';
       state.error = err.message;
-      return { modelId: id, status: 'failed', error: err.message, content: '', timestamp: Date.now() };
+      return { modelId: id, status: 'failed', error: err.message, content: '', totalDuration: completionTime - startTime, timestamp: completionTime };
     }
   });
 
@@ -2495,15 +2504,18 @@ async function handleSend() {
     return;
   }
 
-  // 创建或获取会话
+  let isNewSession = false;
   if (!currentSession) {
-    currentSession = await createSession(content);
+    currentSession = await createSession(content, [...selectedModels]);
+    isNewSession = true;
   }
 
-  // 添加用户消息（含targetModels）
-  await addMessage(currentSession.id, 'user', content, {
-    targetModels: [...selectedModels]
-  });
+  // Only addMessage if NOT a new session (createSession already added first message)
+  if (!isNewSession) {
+    await addMessage(currentSession.id, 'user', content, {
+      targetModels: [...selectedModels]
+    });
+  }
 
   lastUserMessage = content;
   clearInput();
