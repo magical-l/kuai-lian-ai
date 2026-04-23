@@ -2614,7 +2614,10 @@ function showThinkingCards(modelIds, groups) {
         <span class="response-model-name">${name}</span>
         <span class="model-status-icon spinning">◐</span>
       </div>
-      <div class="response-card-content thinking-content">等待回复...</div>
+      <div class="thinking-block streaming" style="display:none;">
+        <div class="thinking-content">等待思考...</div>
+      </div>
+      <div class="response-card-content">等待回复...</div>
     `;
 
     cards.appendChild(card);
