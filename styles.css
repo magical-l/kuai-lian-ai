@@ -937,6 +937,12 @@ button.outline:hover:not(:disabled) {
   to { transform: rotate(360deg); }
 }
 
+/* Unique animation for model status icon to avoid conflicts */
+@keyframes spin-model-status {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .btn-connection-connected {
   background: var(--success-light);
   color: var(--success);
@@ -1324,23 +1330,32 @@ button.outline:hover:not(:disabled) {
   pointer-events: none;
 }
 
+.selector-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .selector-summary {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
+  flex: 1;
 }
 
 .selector-expand-btn {
-  margin-left: auto;
   font-size: 11px;
   color: var(--text-muted);
   cursor: pointer;
-  padding: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
 }
 
 .selector-expand-btn:hover {
   color: var(--accent-primary);
+  background: var(--accent-light);
 }
 
 .selector-list {
@@ -1393,7 +1408,9 @@ button.outline:hover:not(:disabled) {
 .model-tag.selected {
   background: var(--accent-light);
   color: var(--accent-primary);
-  border-color: var(--accent-primary);
+  border: 1px solid var(--accent-primary);
+  padding: var(--space-1) var(--space-3);
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
 }
 
 .model-tag.selected:hover {
@@ -1431,30 +1448,13 @@ button.outline:hover:not(:disabled) {
   border-color: var(--border-subtle);
 }
 
-/* 标签内按钮 */
-.model-tag-btn {
-  width: 16px;
-  height: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  border-radius: 3px;
-  cursor: pointer;
-  margin-left: 2px;
-}
-
-.model-tag-btn:hover {
-  background: rgba(0,0,0,0.1);
-}
-
 /* 状态图标 */
 .model-status-icon {
   font-size: 10px;
 }
 
 .model-status-icon.spinning {
-  animation: spin 1s linear infinite;
+  animation: spin-model-status 1s linear infinite !important;
 }
 
 /* 选择器空状态提示 */
@@ -1484,12 +1484,25 @@ button.outline:hover:not(:disabled) {
   padding: var(--space-3);
 }
 
-.response-card-header {
+.response-meta {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-2);
-  font-size: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-bottom: var(--space-2);
+}
+
+.response-meta .copy-btn {
+  margin-left: auto;
+}
+
+.response-time {
+  color: var(--text-muted);
+}
+
+.response-duration {
+  color: var(--text-secondary);
 }
 
 .response-model-name {
@@ -1503,12 +1516,6 @@ button.outline:hover:not(:disabled) {
 .response-status.completed { color: var(--success); }
 .response-status.failed { color: var(--danger); }
 .response-status.stopped { color: var(--text-muted); }
-
-.response-first-token {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-left: auto;
-}
 
 .response-card-content {
   font-size: 13px;

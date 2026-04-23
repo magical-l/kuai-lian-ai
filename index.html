@@ -59,11 +59,13 @@
       <div class="chat-input-area">
         <!-- 新增：模型选择器 -->
         <div id="model-selector" class="model-selector collapsed">
-          <div class="selector-summary" id="selector-summary">
-            <!-- 收起时显示已选模型标签 -->
-          </div>
-          <div class="selector-expand-btn" id="selector-expand-btn">
-            <span id="expand-btn-text">▼ 展开</span>
+          <div class="selector-header">
+            <div class="selector-summary" id="selector-summary">
+              <!-- 收起时显示已选模型标签 -->
+            </div>
+            <div class="selector-expand-btn" id="selector-expand-btn">
+              <span id="expand-btn-text">▼ 展开</span>
+            </div>
           </div>
           <div class="selector-list" id="selector-list" style="display:none;">
             <!-- 展开时显示按端点分组的模型列表 -->
@@ -188,8 +190,7 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
       if (!info) return '';
       const statusClass = getTagStatusClass(id);
       const icon = getStatusIcon(id);
-      const btn = isGenerating ? '' : `<span class="model-tag-btn remove-btn" data-model="${id}">✕</span>`;
-      return `<span class="model-tag ${statusClass}" data-model="${id}"><span class="model-status-icon">${icon}</span>${info.model.name}${btn}</span>`;
+      return `<span class="model-tag ${statusClass} selected" data-model="${id}"><span class="model-status-icon">${icon}</span>${info.model.name}</span>`;
     }).join('');
     expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
   }
@@ -202,8 +203,7 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
         const isSelected = selectedModels.includes(`${g.id}:${m.id}`);
         const cls = isSelected ? (getTagStatusClass(`${g.id}:${m.id}`) || 'selected') : 'unselected';
         const icon = isSelected ? getStatusIcon(`${g.id}:${m.id}`) : '';
-        const btn = isSelected ? '<span class="model-tag-btn remove-btn">✕</span>' : '<span class="model-tag-btn add-btn">+</span>';
-        return `<span class="model-tag ${cls}" data-model="${g.id}:${m.id}"><span class="model-status-icon">${icon}</span>${m.name}${btn}</span>`;
+        return `<span class="model-tag ${cls}" data-model="${g.id}:${m.id}"><span class="model-status-icon">${icon}</span>${m.name}</span>`;
       }).join('');
       return `<div class="selector-group-label">${g.name}</div><div class="selector-models-row">${tags}</div>`;
     }).join('');
@@ -270,25 +270,21 @@ function bindSelectorEvents(groups, isGenerating) {
 
   if (isGenerating) return;
 
-  // 添加选择
-  document.querySelectorAll('.model-tag-btn.add-btn').forEach(btn => {
-    btn.onclick = e => {
-      e.stopPropagation();
-      const id = btn.closest('.model-tag').dataset.model;
-      if (!selectedModels.includes(id)) {
-        selectedModels.push(id);
-        saveDefaultSelectedModels(selectedModels);
-        renderModelSelector(groups, selectedModels, false);
-      }
-    };
-  });
+  // Make entire model tag clickable for toggle selection
+  document.querySelectorAll('.model-tag').forEach(tag => {
+    tag.onclick = e => {
+      const id = tag.dataset.model;
+      if (!id) return;
 
-  // 移除选择
-  document.querySelectorAll('.model-tag-btn.remove-btn').forEach(btn => {
-    btn.onclick = e => {
-      e.stopPropagation();
-      const id = btn.closest('.model-tag').dataset.model;
-      selectedModels = selectedModels.filter(x => x !== id);
+      if (selectedModels.includes(id)) {
+        // Deselect
+        selectedModels = selectedModels.filter(x => x !== id);
+      } else {
+        // Select
+        if (!selectedModels.includes(id)) {
+          selectedModels.push(id);
+        }
+      }
       saveDefaultSelectedModels(selectedModels);
       renderModelSelector(groups, selectedModels, false);
     };
@@ -766,44 +762,38 @@ function renderMessages(messages, groups, onCopy) {
 }
 
 function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
-  // 模型名和时间放一起
+  const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
+  const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
+  const modelName = info ? `${info.group.name} / ${info.model.name}` : '未知模型';
+
+  // Response meta row with name, time, copy button
   const metaEl = document.createElement('div');
-  metaEl.className = 'message-meta';
-  if (msg.endpointGroupId && msg.modelId) {
-    const group = groups.find(g => g.id === msg.endpointGroupId);
-    const model = group?.models.find(m => m.id === msg.modelId);
-    const modelName = model ? `${group?.name} / ${model.name}` : '未知模型';
-    const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
-    metaEl.innerHTML = `<span>${modelName}</span><span style="margin-left: var(--space-2)">${timeStr}</span>`;
-  }
+  metaEl.className = 'response-meta';
+  metaEl.innerHTML = `
+    <span class="response-model-name">${modelName}</span>
+    <span class="response-time">${timeStr}</span>
+    <button class="btn-icon copy-btn" title="复制">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
+  `;
+  metaEl.querySelector('.copy-btn').addEventListener('click', () => onCopy(msg.content || ''));
   msgEl.appendChild(metaEl);
 
   const assistantEl = document.createElement('div');
   assistantEl.className = 'message-assistant';
-  assistantEl.textContent = msg.content;
+  assistantEl.textContent = msg.content || '';
   msgEl.appendChild(assistantEl);
 
-  // 状态栏：复制、元信息
-  const statusBar = document.createElement('div');
-  statusBar.className = 'message-status-bar';
-
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'btn-icon';
-  copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-  copyBtn.title = '复制';
-  copyBtn.addEventListener('click', () => onCopy(msg.content));
-
-  statusBar.appendChild(copyBtn);
-
-  // 元信息（如有）
+  // Status bar: usage info if available
   if (msg.usage) {
+    const statusBar = document.createElement('div');
+    statusBar.className = 'message-status-bar';
     const usageEl = document.createElement('span');
     usageEl.className = 'message-usage';
     usageEl.textContent = `${msg.usage.input || 0} → ${msg.usage.output || 0} tokens`;
     statusBar.appendChild(usageEl);
+    msgEl.appendChild(statusBar);
   }
-
-  msgEl.appendChild(statusBar);
 }
 
 function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
@@ -811,9 +801,11 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity)
   );
 
+  const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
+
   const hint = document.createElement('div');
   hint.className = 'multi-response-hint';
-  hint.textContent = `${sorted.length}个模型回复`;
+  hint.textContent = `${sorted.length}个模型回复 · ${timeStr}`;
   msgEl.appendChild(hint);
 
   const cards = document.createElement('div');
@@ -826,14 +818,24 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const info = findModelById(groups, r.modelId);
     const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
 
-    const header = document.createElement('div');
-    header.className = 'response-card-header';
-    header.innerHTML = `<span class="response-model-name">${name}</span>
-      <span class="response-status ${r.status}">${getStatusText(r.status)}</span>`;
-    if (r.firstTokenTime) {
-      header.innerHTML += `<span class="response-first-token">${(r.firstTokenTime/1000).toFixed(1)}s</span>`;
-    }
-    card.appendChild(header);
+    // Response meta row with model name, time, duration, copy button
+    const metaEl = document.createElement('div');
+    metaEl.className = 'response-meta';
+
+    const durationStr = r.firstTokenTime ? `${(r.firstTokenTime/1000).toFixed(1)}s首字` : '';
+    const statusText = getStatusText(r.status);
+
+    metaEl.innerHTML = `
+      <span class="response-model-name">${name}</span>
+      <span class="response-duration">${durationStr}</span>
+      <span class="response-status ${r.status}">${statusText}</span>
+      <button class="btn-icon copy-btn" title="复制">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+    `;
+    metaEl.querySelector('.copy-btn').addEventListener('click', () => onCopy(r.content || ''));
+
+    card.appendChild(metaEl);
 
     const content = document.createElement('div');
     content.className = 'response-card-content';
@@ -2144,7 +2146,7 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
     if (!info) {
       state.status = 'failed';
       state.error = '模型不存在';
-      return { modelId: id, status: 'failed', error: '模型不存在', content: null };
+      return { modelId: id, status: 'failed', error: '模型不存在', content: '' };
     }
 
     try {
@@ -2179,7 +2181,7 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
       }
       state.status = 'failed';
       state.error = err.message;
-      return { modelId: id, status: 'failed', error: err.message, content: null };
+      return { modelId: id, status: 'failed', error: err.message, content: '' };
     }
   });
 
@@ -2509,7 +2511,7 @@ async function handleSend() {
   const groups = getGroups();
   const messages = currentSession.messages.map(m => ({
     role: m.role,
-    content: m.content
+    content: m.content || ''  // Ensure content is never null
   }));
 
   // 渲染用户消息
@@ -2560,7 +2562,7 @@ function showThinkingCards(modelIds, groups) {
     const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
 
     card.innerHTML = `
-      <div class="response-card-header">
+      <div class="response-meta">
         <span class="response-model-name">${name}</span>
         <span class="model-status-icon spinning">◐</span>
       </div>
@@ -2585,18 +2587,23 @@ function updateStreamingCard(modelId, content, firstTokenTime, groups) {
     contentEl.classList.remove('thinking-content');
   }
 
-  const icon = card.querySelector('.model-status-icon');
-  if (icon && firstTokenTime !== null) {
-    icon.classList.remove('spinning');
-  }
+  const metaEl = card.querySelector('.response-meta');
+  if (metaEl) {
+    const icon = metaEl.querySelector('.model-status-icon');
+    if (icon && firstTokenTime !== null) {
+      icon.classList.remove('spinning');
+    }
 
-  if (firstTokenTime !== null) {
-    const header = card.querySelector('.response-card-header');
-    if (!header.querySelector('.response-first-token')) {
-      const timeEl = document.createElement('span');
-      timeEl.className = 'response-first-token';
-      timeEl.textContent = `${(firstTokenTime/1000).toFixed(1)}s`;
-      header.appendChild(timeEl);
+    // Add duration text if not present
+    if (firstTokenTime !== null && !metaEl.querySelector('.response-duration')) {
+      const durationEl = document.createElement('span');
+      durationEl.className = 'response-duration';
+      durationEl.textContent = `${(firstTokenTime/1000).toFixed(1)}s首字`;
+      // Insert after model name
+      const modelNameEl = metaEl.querySelector('.response-model-name');
+      if (modelNameEl) {
+        modelNameEl.insertAdjacentElement('afterend', durationEl);
+      }
     }
   }
 }
