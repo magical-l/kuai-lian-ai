@@ -1305,3 +1305,161 @@ button.outline:hover:not(:disabled) {
     max-width: 92%;
   }
 }
+
+/* ========== Model Selector ========== */
+.model-selector {
+  background: var(--bg-muted);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--border-subtle);
+}
+
+.model-selector.collapsed {
+  background: var(--bg-base);
+}
+
+.model-selector.generating {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.selector-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.selector-expand-btn {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-1);
+}
+
+.selector-expand-btn:hover {
+  color: var(--accent-primary);
+}
+
+.selector-list {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.selector-group-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.selector-group-label:first-child {
+  margin-top: 0;
+}
+
+.selector-models-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* 模型标签样式 */
+.model-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.model-tag.unselected {
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+
+.model-tag.unselected:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.model-tag.selected {
+  background: var(--accent-light);
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.model-tag.selected:hover {
+  background: var(--accent-muted);
+}
+
+/* 状态颜色 */
+.model-tag.fast {
+  background: rgba(5, 150, 105, 0.1);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.model-tag.medium {
+  background: rgba(217, 119, 6, 0.1);
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.model-tag.slow {
+  background: rgba(234, 88, 12, 0.1);
+  color: #ea580c;
+  border-color: #ea580c;
+}
+
+.model-tag.failed {
+  background: var(--danger-light);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.model-tag.stopped {
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+
+/* 标签内按钮 */
+.model-tag-btn {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-left: 2px;
+}
+
+.model-tag-btn:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+/* 状态图标 */
+.model-status-icon {
+  font-size: 10px;
+}
+
+.model-status-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* 选择器空状态提示 */
+.selector-empty-hint {
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 500;
+}
