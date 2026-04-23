@@ -751,50 +751,110 @@ function renderMessages(messages, groups, onCopy) {
       statusBar.appendChild(copyBtn);
       msgEl.appendChild(statusBar);
     } else {
-      // 模型名和时间放一起
-      const metaEl = document.createElement('div');
-      metaEl.className = 'message-meta';
-      if (msg.endpointGroupId && msg.modelId) {
-        const group = groups.find(g => g.id === msg.endpointGroupId);
-        const model = group?.models.find(m => m.id === msg.modelId);
-        const modelName = model ? `${group?.name} / ${model.name}` : '未知模型';
-        const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
-        metaEl.innerHTML = `<span>${modelName}</span><span style="margin-left: var(--space-2)">${timeStr}</span>`;
+      // 检测消息格式
+      if (msg.responses && Array.isArray(msg.responses)) {
+        renderMultiModelResponse(msgEl, msg, groups, onCopy);
+      } else {
+        renderSingleModelResponse(msgEl, msg, groups, onCopy);  // 向后兼容
       }
-      msgEl.appendChild(metaEl);
-
-      const assistantEl = document.createElement('div');
-      assistantEl.className = 'message-assistant';
-      assistantEl.textContent = msg.content;
-      msgEl.appendChild(assistantEl);
-
-      // 状态栏：复制、元信息
-      const statusBar = document.createElement('div');
-      statusBar.className = 'message-status-bar';
-
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'btn-icon';
-      copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-      copyBtn.title = '复制';
-      copyBtn.addEventListener('click', () => onCopy(msg.content));
-
-      statusBar.appendChild(copyBtn);
-
-      // 元信息（如有）
-      if (msg.usage) {
-        const usageEl = document.createElement('span');
-        usageEl.className = 'message-usage';
-        usageEl.textContent = `${msg.usage.input || 0} → ${msg.usage.output || 0} tokens`;
-        statusBar.appendChild(usageEl);
-      }
-
-      msgEl.appendChild(statusBar);
     }
 
     container.appendChild(msgEl);
   });
 
   container.scrollTop = container.scrollHeight;
+}
+
+function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
+  // 模型名和时间放一起
+  const metaEl = document.createElement('div');
+  metaEl.className = 'message-meta';
+  if (msg.endpointGroupId && msg.modelId) {
+    const group = groups.find(g => g.id === msg.endpointGroupId);
+    const model = group?.models.find(m => m.id === msg.modelId);
+    const modelName = model ? `${group?.name} / ${model.name}` : '未知模型';
+    const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
+    metaEl.innerHTML = `<span>${modelName}</span><span style="margin-left: var(--space-2)">${timeStr}</span>`;
+  }
+  msgEl.appendChild(metaEl);
+
+  const assistantEl = document.createElement('div');
+  assistantEl.className = 'message-assistant';
+  assistantEl.textContent = msg.content;
+  msgEl.appendChild(assistantEl);
+
+  // 状态栏：复制、元信息
+  const statusBar = document.createElement('div');
+  statusBar.className = 'message-status-bar';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'btn-icon';
+  copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  copyBtn.title = '复制';
+  copyBtn.addEventListener('click', () => onCopy(msg.content));
+
+  statusBar.appendChild(copyBtn);
+
+  // 元信息（如有）
+  if (msg.usage) {
+    const usageEl = document.createElement('span');
+    usageEl.className = 'message-usage';
+    usageEl.textContent = `${msg.usage.input || 0} → ${msg.usage.output || 0} tokens`;
+    statusBar.appendChild(usageEl);
+  }
+
+  msgEl.appendChild(statusBar);
+}
+
+function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
+  const sorted = [...msg.responses].sort((a, b) =>
+    (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity)
+  );
+
+  const hint = document.createElement('div');
+  hint.className = 'multi-response-hint';
+  hint.textContent = `${sorted.length}个模型回复`;
+  msgEl.appendChild(hint);
+
+  const cards = document.createElement('div');
+  cards.className = 'multi-response-cards';
+
+  sorted.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'response-card';
+
+    const info = findModelById(groups, r.modelId);
+    const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
+
+    const header = document.createElement('div');
+    header.className = 'response-card-header';
+    header.innerHTML = `<span class="response-model-name">${name}</span>
+      <span class="response-status ${r.status}">${getStatusText(r.status)}</span>`;
+    if (r.firstTokenTime) {
+      header.innerHTML += `<span class="response-first-token">${(r.firstTokenTime/1000).toFixed(1)}s</span>`;
+    }
+    card.appendChild(header);
+
+    const content = document.createElement('div');
+    content.className = 'response-card-content';
+    if (r.status === 'failed') {
+      content.innerHTML = `<span style="color:var(--danger)">错误: ${r.error || '未知'}</span>`;
+    } else if (r.status === 'stopped') {
+      content.innerHTML = `<span style="color:var(--text-muted)">已停止</span>`;
+      if (r.content) content.innerHTML += `<br>${r.content}`;
+    } else {
+      content.textContent = r.content || '';
+    }
+    card.appendChild(content);
+
+    cards.appendChild(card);
+  });
+
+  msgEl.appendChild(cards);
+}
+
+function getStatusText(status) {
+  return { completed: '✓', failed: '⚠', stopped: '■' }[status] || status;
 }
 
 function formatDateTime(timestamp) {
@@ -1778,6 +1838,21 @@ function stopGeneration() {
     currentAbortController.abort();
     currentAbortController = null;
   }
+}
+
+function stopSingleGeneration(modelId) {
+  const state = activeGenerations.get(modelId);
+  if (state && state.abortController) {
+    state.abortController.abort();
+  }
+}
+
+function stopAllGenerations() {
+  activeGenerations.forEach((state, id) => {
+    if (state.abortController && state.status === 'generating') {
+      state.abortController.abort();
+    }
+  });
 }
 
 function isGenerating() {

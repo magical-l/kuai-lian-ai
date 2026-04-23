@@ -1463,3 +1463,54 @@ button.outline:hover:not(:disabled) {
   font-size: 12px;
   font-weight: 500;
 }
+
+/* ========== Multi-Model Response Cards ========== */
+.multi-response-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.multi-response-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.response-card {
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.response-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: 12px;
+}
+
+.response-model-name {
+  font-weight: 500;
+}
+
+.response-status {
+  font-size: 10px;
+}
+
+.response-status.completed { color: var(--success); }
+.response-status.failed { color: var(--danger); }
+.response-status.stopped { color: var(--text-muted); }
+
+.response-first-token {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.response-card-content {
+  font-size: 13px;
+  line-height: 1.5;
+}
