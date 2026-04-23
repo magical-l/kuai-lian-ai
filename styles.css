@@ -1535,3 +1535,75 @@ button.outline:hover:not(:disabled) {
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* ========== Thinking Block ========== */
+.thinking-block {
+  background: var(--bg-muted);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-2);
+}
+
+.thinking-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.thinking-header:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.thinking-icon {
+  font-size: 10px;
+  transition: transform var(--transition-fast);
+  width: 12px;
+  text-align: center;
+}
+
+.thinking-block.collapsed .thinking-icon::before {
+  content: "▶";
+}
+
+.thinking-block:not(.collapsed) .thinking-icon::before {
+  content: "▼";
+}
+
+.thinking-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.thinking-duration {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-left: auto;
+}
+
+.thinking-content {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.thinking-block.collapsed .thinking-content {
+  display: none;
+}
+
+/* 流式思考状态 - 实时显示时不折叠 */
+.thinking-block.streaming {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+}
+
+.thinking-block.streaming .thinking-content {
+  display: block;
+  border-top: none;
+}
