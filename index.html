@@ -1943,8 +1943,10 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
   let rawContent = '';  // 保存原始完整内容
   let inThinking = false;
   let thinkingBuffer = '';  // 用于提取thinking内容
-  const THINKING_START = '<thinking>';
-  const THINKING_END = '</thinking>';
+  let currentThinkingTag = null;  // 当前匹配的标签类型
+  const THINKING_TAGS = [
+    { start: '<thinking>', end: '</thinking>' }
+  ];
 
   try {
     const response = await fetch(url, {
@@ -1982,32 +1984,49 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
 
           try {
             const json = JSON.parse(data);
-            const chunk = json.choices?.[0]?.delta?.content;
+            const delta = json.choices?.[0]?.delta;
+
+            // DeepSeek格式：reasoning_content是独立字段
+            if (delta?.reasoning_content) {
+              if (!state.thinkingStartTime) {
+                state.thinkingStartTime = Date.now();
+                state.phase = 'thinking';
+              }
+              state.thinking += delta.reasoning_content;
+            }
+
+            // 普通content字段
+            const chunk = delta?.content;
             if (chunk) {
               // 保存原始内容
               rawContent += chunk;
               state.content = rawContent;  // content始终是原始内容
 
-              // 解析thinking标签（用于单独显示）
+              // 解析thinking标签（多标签支持）
               thinkingBuffer += chunk;
 
               if (!inThinking) {
-                const startIdx = thinkingBuffer.indexOf(THINKING_START);
-                if (startIdx !== -1) {
-                  inThinking = true;
-                  state.thinkingStartTime = Date.now();
-                  state.phase = 'thinking';
-                  thinkingBuffer = thinkingBuffer.slice(startIdx + THINKING_START.length);
+                for (const tag of THINKING_TAGS) {
+                  const startIdx = thinkingBuffer.indexOf(tag.start);
+                  if (startIdx !== -1) {
+                    inThinking = true;
+                    currentThinkingTag = tag;
+                    state.thinkingStartTime = Date.now();
+                    state.phase = 'thinking';
+                    thinkingBuffer = thinkingBuffer.slice(startIdx + tag.start.length);
+                    break;
+                  }
                 }
               }
 
-              if (inThinking) {
-                const endIdx = thinkingBuffer.indexOf(THINKING_END);
+              if (inThinking && currentThinkingTag) {
+                const endIdx = thinkingBuffer.indexOf(currentThinkingTag.end);
                 if (endIdx !== -1) {
                   // thinking内容不含标签
                   state.thinking += thinkingBuffer.slice(0, endIdx);
-                  thinkingBuffer = thinkingBuffer.slice(endIdx + THINKING_END.length);
+                  thinkingBuffer = thinkingBuffer.slice(endIdx + currentThinkingTag.end.length);
                   inThinking = false;
+                  currentThinkingTag = null;
                   state.phase = 'content';
 
                   if (state.firstContentTokenTime === null) {
@@ -2212,8 +2231,10 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
   let rawContent = '';
   let inThinking = false;
   let thinkingBuffer = '';
-  const THINKING_START = '<thinking>';
-  const THINKING_END = '</thinking>';
+  let currentThinkingTag = null;
+  const THINKING_TAGS = [
+    { start: '<thinking>', end: '</thinking>' }
+  ];
 
   try {
     const response = await fetch(url, {
@@ -2256,25 +2277,30 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
               rawContent += chunk;
               state.content = rawContent;
 
-              // 解析thinking标签
+              // 解析thinking标签（多标签支持）
               thinkingBuffer += chunk;
 
               if (!inThinking) {
-                const startIdx = thinkingBuffer.indexOf(THINKING_START);
-                if (startIdx !== -1) {
-                  inThinking = true;
-                  state.thinkingStartTime = Date.now();
-                  state.phase = 'thinking';
-                  thinkingBuffer = thinkingBuffer.slice(startIdx + THINKING_START.length);
+                for (const tag of THINKING_TAGS) {
+                  const startIdx = thinkingBuffer.indexOf(tag.start);
+                  if (startIdx !== -1) {
+                    inThinking = true;
+                    currentThinkingTag = tag;
+                    state.thinkingStartTime = Date.now();
+                    state.phase = 'thinking';
+                    thinkingBuffer = thinkingBuffer.slice(startIdx + tag.start.length);
+                    break;
+                  }
                 }
               }
 
-              if (inThinking) {
-                const endIdx = thinkingBuffer.indexOf(THINKING_END);
+              if (inThinking && currentThinkingTag) {
+                const endIdx = thinkingBuffer.indexOf(currentThinkingTag.end);
                 if (endIdx !== -1) {
                   state.thinking += thinkingBuffer.slice(0, endIdx);
-                  thinkingBuffer = thinkingBuffer.slice(endIdx + THINKING_END.length);
+                  thinkingBuffer = thinkingBuffer.slice(endIdx + currentThinkingTag.end.length);
                   inThinking = false;
+                  currentThinkingTag = null;
                   state.phase = 'content';
 
                   if (state.firstContentTokenTime === null) {
