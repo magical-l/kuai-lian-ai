@@ -14,7 +14,7 @@
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo位置预留，暂不显示 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.4.2</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.4.3</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -2114,8 +2114,8 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
             // 普通content字段
             const chunk = delta?.content;
             if (chunk) {
-              // DeepSeek格式：收到content时，thinking结束，计算thinkingDuration
-              if (state.thinkingStartTime && state.thinkingDuration === null && delta?.reasoning_content === undefined) {
+              // DeepSeek格式：收到content时（reasoning_content结束后），计算thinkingDuration
+              if (state.thinkingStartTime && state.thinkingDuration === null && delta?.reasoning_content !== undefined) {
                 state.thinkingDuration = Date.now() - state.thinkingStartTime;
                 state.phase = 'content';
               }
