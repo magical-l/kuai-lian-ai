@@ -147,21 +147,40 @@ body {
   gap: var(--space-2);
 }
 
-.btn-navbar {
+/* ========== Base Icon Button ========== */
+.btn-base,
+.btn-navbar,
+.btn-header-action,
+.btn-scroll-nav,
+.btn-icon,
+.btn-action,
+.btn-action-small {
   background: transparent;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
-  padding: var(--space-1);
-  height: 24px;
-  min-width: 24px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  color: var(--text-muted);
+}
+.btn-base:hover:not(:disabled),
+.btn-navbar:hover:not(:disabled),
+.btn-header-action:hover:not(:disabled),
+.btn-scroll-nav:hover:not(:disabled),
+.btn-icon:hover:not(:disabled),
+.btn-action:hover:not(:disabled),
+.btn-action-small:hover:not(:disabled) {
+  background: var(--bg-muted);
+  color: var(--text-secondary);
 }
 
+.btn-navbar {
+  border: 1px solid var(--border-subtle);
+  padding: var(--space-1);
+  height: 24px;
+  min-width: 24px;
+}
 .btn-navbar:hover:not(:disabled),
 button.btn-navbar:hover:not(:disabled) {
   background: var(--accent-light);
@@ -258,17 +277,11 @@ button.btn-navbar:hover:not(:disabled) {
 }
 
 .btn-header-action {
-  background: transparent;
   border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
   padding: 0;
   height: 24px;
   min-width: 24px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition-fast);
 }
-
 .btn-header-action:hover {
   background: var(--accent-light);
   border-color: var(--accent-primary);
@@ -440,9 +453,6 @@ button.btn-navbar:hover:not(:disabled) {
   color: var(--text-placeholder);
 }
 
-.chat-controls {
-  display: none;
-}
 
 /* 停止按钮样式（在hint中） */
 .btn-stop-all {
@@ -558,23 +568,6 @@ button.outline:hover:not(:disabled) {
   color: white;
 }
 
-#btn-regenerate {
-  background: transparent;
-  border: 1px solid var(--border-default);
-  color: var(--text-muted);
-}
-
-#btn-regenerate:hover:not(:disabled) {
-  background: var(--bg-muted);
-  color: var(--text-primary);
-}
-
-/* 侧边栏工具栏按钮 */
-.sidebar-toolbar {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-}
 
 /* ========== Scroll Navigation Buttons ========== */
 .scroll-nav-buttons {
@@ -592,26 +585,17 @@ button.outline:hover:not(:disabled) {
 .btn-scroll-nav {
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
   width: 24px;
   height: 24px;
   padding: 0;
   font-size: 12px;
   font-weight: 600;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
-
 .btn-scroll-nav:hover:not(:disabled) {
   background: var(--accent-light);
   color: var(--accent-primary);
   border-color: var(--accent-primary);
 }
-
 .btn-scroll-nav:active {
   transform: scale(0.95);
 }
@@ -678,26 +662,14 @@ button.outline:hover:not(:disabled) {
 }
 
 .btn-icon {
-  background: transparent;
   border: 1px solid transparent;
-  color: var(--text-muted);
   padding: var(--space-1);
   height: 24px;
   min-width: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
 }
-
 .btn-icon:hover {
-  background: var(--bg-muted);
-  color: var(--text-secondary);
   border-color: var(--border-subtle);
 }
-
 .btn-icon svg {
   display: block;
 }
@@ -861,26 +833,14 @@ button.outline:hover:not(:disabled) {
 }
 
 .btn-action {
-  background: transparent;
   border: 1px solid transparent;
-  color: var(--text-muted);
   padding: var(--space-1);
   height: 22px;
   min-width: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
 }
-
 .btn-action:hover {
-  background: var(--bg-muted);
-  color: var(--text-secondary);
   border-color: var(--border-subtle);
 }
-
 .btn-action-danger {
   background: var(--danger-light);
   color: var(--danger);
@@ -1033,30 +993,15 @@ button.outline:hover:not(:disabled) {
 }
 
 .btn-action-small {
-  background: transparent;
   border: none;
-  color: var(--text-muted);
   padding: 2px;
   height: 18px;
   min-width: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
 }
-
-.btn-action-small:hover {
-  background: var(--bg-muted);
-  color: var(--text-secondary);
-}
-
 .btn-action-small.btn-action-danger {
   background: var(--danger-light);
   color: var(--danger);
 }
-
 .btn-action-small.btn-action-danger:hover {
   background: var(--danger);
   color: white;
@@ -1078,16 +1023,6 @@ button.outline:hover:not(:disabled) {
   display: inline-block;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Unique animation for model status icon to avoid conflicts */
-@keyframes spin-model-status {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
 
 .btn-connection-connected {
   background: var(--success-light);
@@ -1609,7 +1544,7 @@ button.outline:hover:not(:disabled) {
 }
 
 .model-status-icon.spinning {
-  animation: spin-model-status 1s linear infinite !important;
+  animation: spin 1s linear infinite !important;
 }
 
 /* 选择器空状态提示 */
@@ -1778,7 +1713,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.6.1</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.6.2</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -1874,6 +1809,19 @@ button.outline:hover:not(:disabled) {
     { start: '<thinking>', end: '</thinking>' },
     { start: '<think>', end: '</think>' }
   ];
+  const SVG = {
+    edit: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+    del: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+    drag: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`,
+    copy: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+    folder: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+    close: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    wipe: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>',
+    plus: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    chevron: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>',
+    eye: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    eyeOff: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+  };
 // ========== UI Functions ==========
 
 function initDividers() {
@@ -2206,7 +2154,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     // 拖动手柄
     const dragHandle = document.createElement('span');
     dragHandle.className = 'drag-handle';
-    dragHandle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>';
+    dragHandle.innerHTML = SVG.drag(12);
     dragHandle.title = '拖动排序';
     dragHandle.draggable = true;
     dragHandle.addEventListener('dragstart', (e) => {
@@ -2327,7 +2275,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     // 编辑按钮
     const editBtn = document.createElement('button');
     editBtn.className = 'btn-action';
-    editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    editBtn.innerHTML = SVG.edit(12);
     editBtn.title = '编辑端点';
     editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2337,7 +2285,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     // 删除按钮
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-action btn-action-danger';
-    deleteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    deleteBtn.innerHTML = SVG.del(12);
     deleteBtn.title = '删除端点';
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2395,7 +2343,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       // 模型拖动手柄
       const modelDragHandle = document.createElement('span');
       modelDragHandle.className = 'drag-handle drag-handle-model';
-      modelDragHandle.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>';
+      modelDragHandle.innerHTML = SVG.drag(10);
       modelDragHandle.title = '拖动排序';
       modelDragHandle.draggable = true;
       modelDragHandle.addEventListener('dragstart', (e) => {
@@ -2440,7 +2388,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 
       const modelEditBtn = document.createElement('button');
       modelEditBtn.className = 'btn-action-small';
-      modelEditBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+      modelEditBtn.innerHTML = SVG.edit(10);
       modelEditBtn.title = '编辑模型';
       modelEditBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -2449,7 +2397,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 
       const modelDeleteBtn = document.createElement('button');
       modelDeleteBtn.className = 'btn-action-small btn-action-danger';
-      modelDeleteBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+      modelDeleteBtn.innerHTML = SVG.del(10);
       modelDeleteBtn.title = '删除模型';
       modelDeleteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -2578,7 +2526,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn-action-small';
-    editBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    editBtn.innerHTML = SVG.edit(10);
     editBtn.title = '编辑标题';
     editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2587,7 +2535,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-action-small btn-action-danger';
-    deleteBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    deleteBtn.innerHTML = SVG.del(10);
     deleteBtn.title = '删除会话';
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2638,7 +2586,7 @@ function renderMessages(messages, groups, onCopy) {
 
       const copyBtn = document.createElement('button');
       copyBtn.className = 'btn-icon';
-      copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+      copyBtn.innerHTML = SVG.copy;
       copyBtn.title = '复制';
       copyBtn.addEventListener('click', () => onCopy(msg.content));
 
@@ -2813,58 +2761,6 @@ function formatDateTime(timestamp) {
   const minute = String(date.getMinutes()).padStart(2, '0');
   const second = String(date.getSeconds()).padStart(2, '0');
   return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
-}
-
-function appendMessage(role, content, meta = null) {
-  const container = document.getElementById('chat-messages');
-
-  const msgEl = document.createElement('div');
-  msgEl.className = 'message';
-
-  if (role === 'user') {
-    const metaEl = document.createElement('div');
-    metaEl.className = 'message-meta message-meta-user';
-    metaEl.textContent = '我 · ' + formatDateTime(Date.now());
-    msgEl.appendChild(metaEl);
-
-    const userEl = document.createElement('div');
-    userEl.className = 'message-user';
-    userEl.textContent = content;
-    msgEl.appendChild(userEl);
-  } else {
-    if (meta) {
-      const metaEl = document.createElement('div');
-      metaEl.className = 'message-meta';
-      metaEl.innerHTML = `<span>${meta}</span><span style="margin-left: var(--space-2)">${formatDateTime(Date.now())}</span>`;
-      msgEl.appendChild(metaEl);
-    }
-
-    const assistantEl = document.createElement('div');
-    assistantEl.className = 'message-assistant';
-    assistantEl.id = 'streaming-message';
-    assistantEl.textContent = content;
-    msgEl.appendChild(assistantEl);
-  }
-
-  container.appendChild(msgEl);
-  scrollToBottom();
-
-  return msgEl;
-}
-
-function updateStreamingMessage(content) {
-  const el = document.getElementById('streaming-message');
-  if (el) {
-    el.textContent = content;
-    scrollToBottom();
-  }
-}
-
-function finishStreamingMessage() {
-  const el = document.getElementById('streaming-message');
-  if (el) {
-    el.removeAttribute('id');
-  }
 }
 
 function updateChatTitle(title) {
@@ -3408,49 +3304,6 @@ async function selectDirectory() {
   }
 }
 
-// 获取当前目录名称（用于显示）
-async function getDirectoryPath() {
-  if (!directoryHandle) return null;
-
-  // 尝试使用Chrome实验性的resolve()方法获取完整路径
-  try {
-    // Chromium 85+ 支持的实验性API
-    if ('resolve' in directoryHandle) {
-      // resolve需要传入一个子项来获取相对路径，这里用根目录本身
-      const root = await directoryHandle.getDirectoryHandle('', { create: false });
-      const path = await directoryHandle.resolve(root);
-      if (path && path.length > 0) {
-        return path.join('/');
-      }
-    }
-  } catch (e) {
-    // 实验性API可能不存在或失败
-  }
-
-  // 尝试获取完整路径的另一种方式（Chrome特定）
-  try {
-    // 某些Chrome版本支持直接访问路径属性
-    const entries = await directoryHandle.values();
-    for await (const entry of entries) {
-      // 通过resolve获取子项的路径
-      if ('resolve' in directoryHandle) {
-        const relativePath = await directoryHandle.resolve(entry);
-        if (relativePath && relativePath.length > 0) {
-          // 这只能获取相对路径，无法获取完整系统路径
-          break;
-        }
-      }
-    }
-  } catch (e) {}
-
-  // 降级方案：只显示目录名称
-  return directoryHandle.name;
-}
-
-function getDirectoryName() {
-  return directoryHandle?.name || null;
-}
-
 async function ensureDirectoryStructure() {
   if (!directoryHandle) return;
   try {
@@ -3767,20 +3620,9 @@ async function deleteSession(sessionId) {
   }
 }
 
-function hasDirectory() {
-  return directoryHandle !== null;
-}
-
 // ========== API Functions ==========
 
 let currentAbortController = null;
-
-function stopGeneration() {
-  if (currentAbortController) {
-    currentAbortController.abort();
-    currentAbortController = null;
-  }
-}
 
 function stopSingleGeneration(modelId) {
   const state = activeGenerations.get(modelId);
@@ -3795,10 +3637,6 @@ function stopAllGenerations() {
       state.abortController.abort();
     }
   });
-}
-
-function isGenerating() {
-  return currentAbortController !== null;
 }
 
 async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = null) {
@@ -4561,11 +4399,6 @@ function updateChatTitleDisplay() {
   }
 }
 
-async function handleModelSelect(groupId, modelId) {
-  // 左侧栏点击不再触发选中，选择器负责选中
-  // 此函数保留用于编辑弹窗上下文，或可删除
-}
-
 async function handleSessionSelect(sessionId) {
   currentSession = await loadSession(sessionId);
 
@@ -4624,12 +4457,6 @@ async function handleGroupDelete(groupId) {
 
   await deleteGroup(groupId);
   await refreshUI();
-}
-
-function handleAddModel() {
-  // TODO: This function requires group context which is no longer available
-  // Users should use the add model button within each group instead
-  alert('请在端点组内添加模型');
 }
 
 async function handleAddModelForGroup(groupId, modelName) {
@@ -4976,72 +4803,12 @@ function reorderCardsBySpeed() {
   });
 }
 
-function handleStop() {
-  stopGeneration();
-  setButtonState(false, false);
-}
-
 async function handleNewSession() {
   currentSession = null;
   selectedModels = [...defaultSelectedModels]; // 新会话继承全局默认
   activeGenerations.clear();
   lastUserMessage = null;
   await refreshUI();
-}
-
-async function handleRegenerate() {
-  // TODO: Multi-model selection - use selectedModels array
-  if (!lastUserMessage || selectedModels.length === 0) return;
-
-  if (currentSession && currentSession.messages.length > 0) {
-    const lastMsg = currentSession.messages[currentSession.messages.length - 1];
-    if (lastMsg.role === 'assistant') {
-      currentSession.messages.pop();
-      await saveSession(currentSession);
-    }
-  }
-
-  setButtonState(true, true);
-
-  const groups = getGroups();
-  renderMessages(currentSession.messages, groups, handleCopy);
-
-  // TODO: Handle multiple selected models - for now use the first one
-  const firstSelected = selectedModels[0];
-  const [groupId, modelId] = firstSelected.split(':');
-  const group = getGroup(groupId);
-  const model = getModel(groupId, modelId);
-
-  appendMessage('assistant', '', `${group.name} / ${model.name}`);
-
-  try {
-    const messages = currentSession.messages.map(m => ({
-      role: m.role,
-      content: m.content
-    }));
-
-    const fullResponse = await callAPI(
-      group.style,
-      group.baseUrl,
-      group.key,
-      model.name,
-      messages,
-      updateStreamingMessage
-    );
-
-    finishStreamingMessage();
-    await addMessage(currentSession.id, 'assistant', fullResponse, { endpointGroupId: groupId, modelId: modelId });
-
-    setButtonState(false, false);
-    await refreshUI();
-
-  } catch (err) {
-    finishStreamingMessage();
-    if (err.name !== 'AbortError') {
-      alert(`API调用失败: ${err.message}`);
-    }
-    setButtonState(false, false);
-  }
 }
 
 // 启动
