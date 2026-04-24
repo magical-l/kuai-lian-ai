@@ -14,7 +14,7 @@
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo位置预留，暂不显示 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.5.5</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.5.7</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -106,6 +106,10 @@
   </div>
 
 <script>
+  const THINKING_TAGS = [
+    { start: '<thinking>', end: '</thinking>' },
+    { start: '<think>', end: '</think>' }
+  ];
 // ========== UI Functions ==========
 
 function initDividers() {
@@ -245,11 +249,16 @@ function initDividers() {
 
 // ========== Scroll Navigation ==========
 
+function scrollToBottom() {
+  const el = document.getElementById('chat-messages');
+  if (el) el.scrollTop = el.scrollHeight;
+}
+
 function initScrollNav() {
   const btnScrollTop = document.getElementById('btn-scroll-top');
   const btnScrollBottom = document.getElementById('btn-scroll-bottom');
   const navButtons = document.getElementById('scroll-nav-buttons');
-  const scrollContainer = document.getElementById('chat-messages'); // 滚动容器
+  const scrollContainer = document.getElementById('chat-messages');
 
   if (!btnScrollTop || !btnScrollBottom || !navButtons || !scrollContainer) return;
 
@@ -406,17 +415,15 @@ function bindSelectorEvents() {
   });
 }
 
-// 点击外部自动收起模型选择器（只注册一次）
-if (!window._selectorBlurHandlerAdded) {
-  document.addEventListener('click', (e) => {
-    const selector = document.getElementById('model-selector');
-    if (selector && selectorExpanded && !selector.contains(e.target)) {
-      selectorExpanded = false;
-      renderModelSelector(getGroups(), selectedModels, false);
-    }
-  });
-  window._selectorBlurHandlerAdded = true;
-}
+// 收起展开的模型选择器（用户点击外部区域时）
+document.addEventListener('click', (e) => {
+  if (!selectorExpanded) return;
+  const selector = document.getElementById('model-selector');
+  if (selector && !selector.contains(e.target)) {
+    selectorExpanded = false;
+    renderModelSelector(getGroups(), selectedModels, false);
+  }
+});
 
 function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit, onGroupEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
   const container = document.getElementById('endpoint-list');
@@ -1076,7 +1083,7 @@ function appendMessage(role, content, meta = null) {
   }
 
   container.appendChild(msgEl);
-  document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+  scrollToBottom();
 
   return msgEl;
 }
@@ -1085,7 +1092,7 @@ function updateStreamingMessage(content) {
   const el = document.getElementById('streaming-message');
   if (el) {
     el.textContent = content;
-    document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+    scrollToBottom();
   }
 }
 
@@ -1375,17 +1382,6 @@ function closeHelpDialog(dialog, overlay, immediate = false) {
 // 测试连接状态
 const connectionStatus = new Map(); // groupId:modelId -> { status, timestamp }
 
-function formatTimestamp(ts) {
-  const date = new Date(ts);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hour = String(date.getHours()).padStart(2, '0');
-  const minute = String(date.getMinutes()).padStart(2, '0');
-  const second = String(date.getSeconds()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
-}
-
 function getConnectionStatusText(key) {
   const data = connectionStatus.get(key);
   if (!data) return '测试连接：未测试';
@@ -1398,7 +1394,7 @@ function getConnectionStatusText(key) {
   };
 
   const text = statusText[data.status] || '未测试';
-  const timeStr = data.timestamp ? formatTimestamp(data.timestamp) : '';
+  const timeStr = data.timestamp ? formatDateTime(data.timestamp) : '';
   const errorInfo = data.error ? ` (${data.error})` : '';
 
   return data.status === 'testing'
@@ -2071,10 +2067,6 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
   let inThinking = false;
   let thinkingBuffer = '';  // 用于提取thinking内容
   let currentThinkingTag = null;  // 当前匹配的标签类型
-  const THINKING_TAGS = [
-    { start: '<thinking>', end: '</thinking>' },
-    { start: '<think>', end: '</think>' }
-  ];
 
   try {
     const response = await fetch(url, {
@@ -2381,10 +2373,6 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
   let inThinking = false;
   let thinkingBuffer = '';
   let currentThinkingTag = null;
-  const THINKING_TAGS = [
-    { start: '<thinking>', end: '</thinking>' },
-    { start: '<think>', end: '</think>' }
-  ];
 
   try {
     const response = await fetch(url, {
@@ -3057,7 +3045,7 @@ function showThinkingCards(modelIds, groups) {
 
   msgEl.appendChild(cards);
   container.appendChild(msgEl);
-  document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+  scrollToBottom();
 }
 
 function updateStreamingCard(modelId, state, firstTokenTime, groups) {

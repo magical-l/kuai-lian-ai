@@ -336,10 +336,6 @@ button.btn-navbar:hover:not(:disabled) {
   color: var(--text-primary);
 }
 
-#btn-new-session-header {
-  /* margin-left: auto 已移到父容器 .header-right-area */
-}
-
 .model-badge {
   display: inline-flex;
   align-items: center;
