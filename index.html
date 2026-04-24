@@ -14,7 +14,7 @@
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo位置预留，暂不显示 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.1.0</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.2.0</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -867,7 +867,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
       thinkingHeader.innerHTML = `
         <span class="thinking-icon"></span>
         <span class="thinking-label">思考过程</span>
-        <span class="thinking-duration">${thinkingDurationStr}</span>
+        <span class="thinking-duration">耗时 ${thinkingDurationStr}</span>
       `;
 
       const thinkingContent = document.createElement('div');
@@ -1998,9 +1998,8 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
             // 普通content字段
             const chunk = delta?.content;
             if (chunk) {
-              // 保存原始内容
+              // 保存原始内容（含标签，用于调试）
               rawContent += chunk;
-              state.content = rawContent;  // content始终是原始内容
 
               // 解析thinking标签（多标签支持）
               thinkingBuffer += chunk;
@@ -2013,6 +2012,10 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
                     currentThinkingTag = tag;
                     state.thinkingStartTime = Date.now();
                     state.phase = 'thinking';
+                    // 标签前的内容归入content
+                    if (startIdx > 0) {
+                      state.content += thinkingBuffer.slice(0, startIdx);
+                    }
                     thinkingBuffer = thinkingBuffer.slice(startIdx + tag.start.length);
                     break;
                   }
@@ -2040,6 +2043,10 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
                   state.thinking += thinkingBuffer;
                   thinkingBuffer = '';
                 }
+              } else if (!inThinking) {
+                // 非thinking阶段的内容归入content
+                state.content += thinkingBuffer;
+                thinkingBuffer = '';
               }
 
               // firstContentTokenTime：第一个chunk的时间
@@ -2273,9 +2280,8 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
             const json = JSON.parse(data);
             const chunk = json.candidates?.[0]?.content?.parts?.[0]?.text;
             if (chunk) {
-              // 保存原始内容
+              // 保存原始内容（含标签，用于调试）
               rawContent += chunk;
-              state.content = rawContent;
 
               // 解析thinking标签（多标签支持）
               thinkingBuffer += chunk;
@@ -2288,6 +2294,10 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
                     currentThinkingTag = tag;
                     state.thinkingStartTime = Date.now();
                     state.phase = 'thinking';
+                    // 标签前的内容归入content
+                    if (startIdx > 0) {
+                      state.content += thinkingBuffer.slice(0, startIdx);
+                    }
                     thinkingBuffer = thinkingBuffer.slice(startIdx + tag.start.length);
                     break;
                   }
@@ -2313,6 +2323,10 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
                   state.thinking += thinkingBuffer;
                   thinkingBuffer = '';
                 }
+              } else if (!inThinking) {
+                // 非thinking阶段的内容归入content
+                state.content += thinkingBuffer;
+                thinkingBuffer = '';
               }
 
               if (state.firstContentTokenTime === null && rawContent.length > 0) {
