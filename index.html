@@ -14,7 +14,7 @@
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo位置预留，暂不显示 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.3.8</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.3.9</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -92,10 +92,10 @@
     <!-- 右侧拖动分界线 -->
     <div class="divider-right" id="divider-right"></div>
 
-    <!-- 右侧栏：聊天记录 -->
+    <!-- 右侧栏：会话记录 -->
     <div class="sidebar-right" id="sidebar-right">
       <div class="sidebar-header">
-        <span>聊天记录</span>
+        <span>会话记录</span>
         <button id="btn-collapse-right" class="btn-header-action" title="收起侧边栏">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
@@ -349,9 +349,7 @@ function getStatusIcon(modelId) {
       ? '<span class="model-status-icon spinning">◐</span>'
       : '<span class="model-status-icon">◐</span>';
   }
-  if (gen.status === 'completed') return '✓';
-  if (gen.status === 'failed') return '✗';
-  if (gen.status === 'stopped') return '■';
+  // completed、failed、stopped的状态图标在消息卡片里显示，选择器里不显示
   return '';
 }
 
@@ -1253,7 +1251,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
             <button id="btn-change-dir-help">${hasDir ? '更换目录' : '选择新目录'}</button>
           </div>
         </div>
-        ${forceSelectDirectory ? '<p class="directory-warning">请选择存储目录以保存配置和聊天记录</p>' : ''}
+        ${forceSelectDirectory ? '<p class="directory-warning">请选择存储目录以保存配置和会话记录</p>' : ''}
       </div>
     </div>
     <div class="dialog-buttons">
@@ -2696,7 +2694,7 @@ async function handleWipeDirectory() {
   }
 
   if (confirm('确定清空磁盘上的所有数据？\n这将删除 endpoints.json 和 sessions 目录中的所有会话记录。\n此操作不可恢复！')) {
-    if (confirm('再次确认：这将永久删除所有端点配置和聊天记录！')) {
+    if (confirm('再次确认：这将永久删除所有端点配置和会话记录！')) {
       try {
         // 删除endpoints.json
         try {
