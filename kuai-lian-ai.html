@@ -1713,7 +1713,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.6.4</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.6.6</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -1804,6 +1804,167 @@ button.outline:hover:not(:disabled) {
     </div>
   </div>
 
+  <!-- ========== Templates ========== -->
+  <!-- 编辑端点对话框 -->
+  <template id="tpl-edit-group-dialog">
+    <div id="edit-dialog">
+      <h3></h3>
+      <div class="dialog-form">
+        <label>名称: <input id="dialog-group-name"></label>
+        <label>Base URL: <input id="dialog-group-url"></label>
+        <label>接口风格:
+          <select id="dialog-group-style">
+            <option value="openai">OpenAI</option>
+            <option value="claude">Claude</option>
+            <option value="gemini">Gemini</option>
+          </select>
+        </label>
+        <label>API Key: <div class="key-input-wrapper"><input id="dialog-group-key" type="password"><button class="btn-toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+      </div>
+      <div class="dialog-buttons">
+        <button id="dialog-cancel">取消</button>
+        <button id="dialog-save" class="primary">保存</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- 编辑模型对话框 -->
+  <template id="tpl-edit-model-dialog">
+    <div id="edit-dialog">
+      <h3></h3>
+      <div class="dialog-form">
+        <label>模型名: <input id="dialog-model-name"></label>
+      </div>
+      <div class="dialog-buttons">
+        <button id="dialog-cancel">取消</button>
+        <button id="dialog-save" class="primary">保存</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- 添加模型内联输入 -->
+  <template id="tpl-add-model-inline">
+    <div class="add-model-inline">
+      <input type="text" placeholder="模型名" class="add-model-input">
+      <button class="add-model-confirm btn-action-small">✓</button>
+      <button class="add-model-cancel btn-action-small">✗</button>
+    </div>
+  </template>
+
+  <!-- 响应消息 meta 行 -->
+  <template id="tpl-response-meta">
+    <div class="response-meta">
+      <span class="response-model-name"></span>
+      <span class="response-time"></span>
+      <button class="btn-icon copy-btn" title="复制">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+    </div>
+  </template>
+
+  <!-- 多模型响应 meta 行 -->
+  <template id="tpl-multi-response-meta">
+    <div class="response-meta">
+      <span class="response-model-name"></span>
+      <span class="response-time"></span>
+      <span class="response-duration"></span>
+      <span class="response-total"></span>
+      <span class="response-status"></span>
+      <span class="response-error"></span>
+      <button class="btn-icon copy-btn" title="复制">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+    </div>
+  </template>
+
+  <!-- 流式响应卡片 -->
+  <template id="tpl-response-card-streaming">
+    <div class="response-card thinking">
+      <div class="response-meta">
+        <span class="response-model-name"></span>
+        <span class="model-status-icon spinning">◐</span>
+      </div>
+      <div class="thinking-block streaming" style="display:none;">
+        <div class="thinking-content">等待思考...</div>
+      </div>
+      <div class="response-card-content">等待回复...</div>
+    </div>
+  </template>
+
+  <!-- thinking header -->
+  <template id="tpl-thinking-header">
+    <div class="thinking-header">
+      <span class="thinking-icon"></span>
+      <span class="thinking-label">思考</span>
+      <span class="thinking-duration"></span>
+    </div>
+  </template>
+
+  <!-- 多响应提示（生成中） -->
+  <template id="tpl-multi-response-hint">
+    <div class="multi-response-hint">
+      <span class="hint-text"></span>
+      <button class="btn-stop-all" id="btn-stop-inline">全部停止</button>
+    </div>
+  </template>
+
+  <!-- 帮助对话框 -->
+  <template id="tpl-help-dialog">
+    <div id="help-dialog">
+      <h3>快连ai 使用帮助</h3>
+      <div class="help-content">
+        <div class="help-section">
+          <h4>基本操作</h4>
+          <ul>
+            <li><b>添加端点</b>：点击左侧栏"+"按钮，输入端点名称、Base URL、接口风格和API Key。</li>
+            <li><b>添加模型</b>：展开端点组后，点击"+ 添加模型"输入模型名称。</li>
+            <li><b>选择模型</b>：单击模型名称选中，然后发送消息即可使用该模型。</li>
+          </ul>
+        </div>
+        <div class="help-section">
+          <h4>聊天功能</h4>
+          <ul>
+            <li><b>发送消息</b>：Enter发送，Shift+Enter换行。</li>
+            <li><b>停止生成</b>：生成过程中可点击"停止"按钮中断。</li>
+            <li><b>新建会话</b>：点击"新建会话"按钮开始新的对话。</li>
+            <li><b>历史记录</b>：右侧栏显示所有会话，点击可恢复对话。</li>
+          </ul>
+        </div>
+        <div class="help-section">
+          <h4>管理操作</h4>
+          <ul>
+            <li><b>编辑</b>：双击端点或模型可编辑，点击编辑图标也可编辑。</li>
+            <li><b>删除</b>：点击删除图标，确认后删除。</li>
+            <li><b>拖动排序</b>：拖动端点或模型左侧的手柄可调整顺序。</li>
+            <li><b>测试连接</b>：点击模型右侧的连接图标，验证API是否可用。</li>
+          </ul>
+        </div>
+        <div class="help-section">
+          <h4>接口风格支持</h4>
+          <ul>
+            <li><b>OpenAI</b>：兼容OpenAI接口的各类服务。</li>
+            <li><b>Claude</b>：Anthropic Claude系列模型。</li>
+            <li><b>Gemini</b>：Google Gemini系列模型。</li>
+          </ul>
+        </div>
+        <div class="help-section help-section-directory">
+          <h4>存储目录</h4>
+          <div class="directory-info">
+            <span id="help-dir-name"></span>
+            <div class="directory-buttons" id="help-directory-buttons">
+              <button id="btn-restore-dir" class="btn-restore">恢复目录</button>
+              <button id="btn-change-dir-help"></button>
+            </div>
+          </div>
+          <p class="directory-warning" id="help-directory-warning">请选择存储目录以保存配置和会话记录</p>
+        </div>
+      </div>
+      <div class="dialog-buttons" id="help-dialog-buttons">
+        <button id="help-close" class="primary">知道了</button>
+      </div>
+    </div>
+  </template>
+
 <script>
   const THINKING_TAGS = [
     { start: '<thinking>', end: '</thinking>' },
@@ -1822,6 +1983,13 @@ button.outline:hover:not(:disabled) {
     eye: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
     eyeOff: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
   };
+
+  // 从模板克隆元素
+  function fromTemplate(templateId, selector) {
+    const tpl = document.getElementById(templateId);
+    return tpl.content.cloneNode(true).querySelector(selector);
+  }
+
 // ========== UI Functions ==========
 
 function initDividers() {
@@ -2650,13 +2818,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       const existingInput = modelsEl.querySelector('.add-model-inline');
       if (existingInput) existingInput.remove();
 
-      const inlineInput = document.createElement('div');
-      inlineInput.className = 'add-model-inline';
-      inlineInput.innerHTML = `
-        <input type="text" placeholder="模型名" class="add-model-input">
-        <button class="add-model-confirm btn-action-small">✓</button>
-        <button class="add-model-cancel btn-action-small">✗</button>
-      `;
+      const inlineInput = fromTemplate('tpl-add-model-inline', '.add-model-inline');
       modelsEl.insertBefore(inlineInput, addModelBtn);
 
       const inputEl = inlineInput.querySelector('.add-model-input');
@@ -2810,15 +2972,9 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
   const modelName = info ? `${info.group.name} / ${info.model.name}` : '未知模型';
 
   // Response meta row with name, time, copy button
-  const metaEl = document.createElement('div');
-  metaEl.className = 'response-meta';
-  metaEl.innerHTML = `
-    <span class="response-model-name">${modelName}</span>
-    <span class="response-time">${timeStr}</span>
-    <button class="btn-icon copy-btn" title="复制">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-    </button>
-  `;
+  const metaEl = fromTemplate('tpl-response-meta', '.response-meta');
+  metaEl.querySelector('.response-model-name').textContent = modelName;
+  metaEl.querySelector('.response-time').textContent = timeStr;
   metaEl.querySelector('.copy-btn').addEventListener('click', () => onCopy(msg.content || ''));
   msgEl.appendChild(metaEl);
 
@@ -2860,8 +3016,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
 
     // Response meta row with model name, time, duration, copy button
-    const metaEl = document.createElement('div');
-    metaEl.className = 'response-meta';
+    const metaEl = fromTemplate('tpl-multi-response-meta', '.response-meta');
 
     const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
     const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
@@ -2870,25 +3025,32 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
     const speedClass = getSpeedClass(r.firstTokenTime);
 
-    // Only add copy button for completed responses with content
-    const copyBtnHtml = (r.status === 'completed' && r.content) ? `
-      <button class="btn-icon copy-btn" title="复制">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-      </button>
-    ` : '';
+    metaEl.querySelector('.response-model-name').textContent = name;
+    metaEl.querySelector('.response-time').textContent = responseTimeStr;
 
-    metaEl.innerHTML = `
-      <span class="response-model-name">${name}</span>
-      <span class="response-time">${responseTimeStr}</span>
-      <span class="response-duration ${speedClass}">${durationStr}</span>
-      <span class="response-total">${totalStr}</span>
-      <span class="response-status ${r.status}">${statusText}</span>
-      ${errorText ? `<span class="response-error">${errorText}</span>` : ''}
-      ${copyBtnHtml}
-    `;
+    const durationEl = metaEl.querySelector('.response-duration');
+    durationEl.textContent = durationStr;
+    if (speedClass) durationEl.classList.add(speedClass);
+
+    metaEl.querySelector('.response-total').textContent = totalStr;
+
+    const statusEl = metaEl.querySelector('.response-status');
+    statusEl.textContent = statusText;
+    statusEl.classList.add(r.status);
+
+    const errorEl = metaEl.querySelector('.response-error');
+    if (errorText) {
+      errorEl.textContent = errorText;
+    } else {
+      errorEl.remove();
+    }
+
+    // Only add copy button for completed responses with content
     const copyBtn = metaEl.querySelector('.copy-btn');
-    if (copyBtn) {
+    if (r.status === 'completed' && r.content) {
       copyBtn.addEventListener('click', () => onCopy(r.content || ''));
+    } else {
+      copyBtn.remove();
     }
 
     card.appendChild(metaEl);
@@ -2898,19 +3060,14 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
       const thinkingBlock = document.createElement('div');
       thinkingBlock.className = 'thinking-block collapsed';
 
-      const thinkingHeader = document.createElement('div');
-      thinkingHeader.className = 'thinking-header';
+      const thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
       thinkingHeader.onclick = function() { toggleThinking(this); };
 
       const thinkingDurationStr = r.thinkingDuration
         ? `耗时 ${(r.thinkingDuration/1000).toFixed(1)}s`
         : '';
 
-      thinkingHeader.innerHTML = `
-        <span class="thinking-icon"></span>
-        <span class="thinking-label">思考</span>
-        <span class="thinking-duration">${thinkingDurationStr}</span>
-      `;
+      thinkingHeader.querySelector('.thinking-duration').textContent = thinkingDurationStr;
 
       const thinkingContent = document.createElement('div');
       thinkingContent.className = 'thinking-content';
@@ -2986,33 +3143,24 @@ function showEditGroupDialog(group = null, onSave) {
   const existing = document.getElementById('edit-dialog');
   if (existing) existing.remove();
 
-  const dialog = document.createElement('div');
-  dialog.id = 'edit-dialog';
+  const dialog = fromTemplate('tpl-edit-group-dialog', '#edit-dialog');
 
-  dialog.innerHTML = `
-    <h3>${group ? '编辑端点' : '新增端点'}</h3>
-    <div class="dialog-form">
-      <label>名称: <input id="dialog-group-name" value="${group?.name || ''}"></label>
-      <label>Base URL: <input id="dialog-group-url" value="${group?.baseUrl || ''}"></label>
-      <label>接口风格:
-        <select id="dialog-group-style">
-          <option value="openai" ${group?.style === 'openai' ? 'selected' : ''}>OpenAI</option>
-          <option value="claude" ${group?.style === 'claude' ? 'selected' : ''}>Claude</option>
-          <option value="gemini" ${group?.style === 'gemini' ? 'selected' : ''}>Gemini</option>
-        </select>
-      </label>
-      <label>API Key: <div class="key-input-wrapper"><input id="dialog-group-key" type="password" value="${group?.key || ''}"><button class="btn-toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
-    </div>
-    <div class="dialog-buttons">
-      <button id="dialog-cancel">取消</button>
-      <button id="dialog-save" class="primary">保存</button>
-    </div>
-  `;
+  dialog.querySelector('h3').textContent = group ? '编辑端点' : '新增端点';
+
+  const nameInput = dialog.querySelector('#dialog-group-name');
+  nameInput.value = group?.name || '';
+
+  const urlInput = dialog.querySelector('#dialog-group-url');
+  urlInput.value = group?.baseUrl || '';
+
+  const styleSelect = dialog.querySelector('#dialog-group-style');
+  styleSelect.value = group?.style || 'openai';
+
+  const keyInput = dialog.querySelector('#dialog-group-key');
+  keyInput.value = group?.key || '';
 
   document.body.appendChild(dialog);
 
-  // API Key 显示/隐藏切换
-  const keyInput = document.getElementById('dialog-group-key');
   const toggleBtn = dialog.querySelector('.btn-toggle-key');
   toggleBtn.onclick = (e) => {
     e.preventDefault();
@@ -3044,25 +3192,18 @@ function showEditModelDialog(groupId, model = null, onSave) {
   const existing = document.getElementById('edit-dialog');
   if (existing) existing.remove();
 
-  const dialog = document.createElement('div');
-  dialog.id = 'edit-dialog';
+  const dialog = fromTemplate('tpl-edit-model-dialog', '#edit-dialog');
 
-  dialog.innerHTML = `
-    <h3>${model ? '编辑模型' : '新增模型'}</h3>
-    <div class="dialog-form">
-      <label>模型名: <input id="dialog-model-name" value="${model?.name || ''}"></label>
-    </div>
-    <div class="dialog-buttons">
-      <button id="dialog-cancel">取消</button>
-      <button id="dialog-save" class="primary">保存</button>
-    </div>
-  `;
+  dialog.querySelector('h3').textContent = model ? '编辑模型' : '新增模型';
+
+  const nameInput = dialog.querySelector('#dialog-model-name');
+  nameInput.value = model?.name || '';
 
   document.body.appendChild(dialog);
 
-  document.getElementById('dialog-cancel').onclick = () => dialog.remove();
-  document.getElementById('dialog-save').onclick = () => {
-    const name = document.getElementById('dialog-model-name').value.trim();
+  dialog.querySelector('#dialog-cancel').onclick = () => dialog.remove();
+  dialog.querySelector('#dialog-save').onclick = () => {
+    const name = nameInput.value.trim();
     if (!name) {
       alert('请输入模型名');
       return;
@@ -3094,74 +3235,22 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
   }
   document.body.appendChild(overlay);
 
-  const dialog = document.createElement('div');
-  dialog.id = 'help-dialog';
+  const dialog = fromTemplate('tpl-help-dialog', '#help-dialog');
 
   const dirName = pendingDirectoryHandle?.name || directoryHandle?.name || '未选择';
   const hasDir = directoryHandle !== null;
 
-  dialog.innerHTML = `
-    <h3>快连ai 使用帮助</h3>
-    <div class="help-content">
-      <div class="help-section">
-        <h4>基本操作</h4>
-        <ul>
-          <li><b>添加端点</b>：点击左侧栏"+"按钮，输入端点名称、Base URL、接口风格和API Key。</li>
-          <li><b>添加模型</b>：展开端点组后，点击"+ 添加模型"输入模型名称。</li>
-          <li><b>选择模型</b>：单击模型名称选中，然后发送消息即可使用该模型。</li>
-        </ul>
-      </div>
-      <div class="help-section">
-        <h4>聊天功能</h4>
-        <ul>
-          <li><b>发送消息</b>：Enter发送，Shift+Enter换行。</li>
-          <li><b>停止生成</b>：生成过程中可点击"停止"按钮中断。</li>
-          <li><b>新建会话</b>：点击"新建会话"按钮开始新的对话。</li>
-          <li><b>历史记录</b>：右侧栏显示所有会话，点击可恢复对话。</li>
-        </ul>
-      </div>
-      <div class="help-section">
-        <h4>管理操作</h4>
-        <ul>
-          <li><b>编辑</b>：双击端点或模型可编辑，点击编辑图标也可编辑。</li>
-          <li><b>删除</b>：点击删除图标，确认后删除。</li>
-          <li><b>拖动排序</b>：拖动端点或模型左侧的手柄可调整顺序。</li>
-          <li><b>测试连接</b>：点击模型右侧的连接图标，验证API是否可用。</li>
-        </ul>
-      </div>
-      <div class="help-section">
-        <h4>接口风格支持</h4>
-        <ul>
-          <li><b>OpenAI</b>：兼容OpenAI接口的各类服务。</li>
-          <li><b>Claude</b>：Anthropic Claude系列模型。</li>
-          <li><b>Gemini</b>：Google Gemini系列模型。</li>
-        </ul>
-      </div>
-      <div class="help-section help-section-directory">
-        <h4>存储目录</h4>
-        <div class="directory-info">
-          <span id="help-dir-name">上次目录：${dirName}</span>
-          <div class="directory-buttons">
-            ${hasPendingHandle ? '<button id="btn-restore-dir" class="btn-restore">恢复目录</button>' : ''}
-            <button id="btn-change-dir-help">${hasDir ? '更换目录' : '选择新目录'}</button>
-          </div>
-        </div>
-        ${forceSelectDirectory ? '<p class="directory-warning">请选择存储目录以保存配置和会话记录</p>' : ''}
-      </div>
-    </div>
-    <div class="dialog-buttons">
-      ${!forceSelectDirectory ? '<button id="help-close" class="primary">知道了</button>' : ''}
-    </div>
-  `;
-  document.body.appendChild(dialog);
+  dialog.querySelector('#help-dir-name').textContent = '上次目录：' + dirName;
 
-  // 恢复目录按钮（如果有待恢复的 handle）
-  const restoreBtn = document.getElementById('btn-restore-dir');
+  const changeDirBtn = dialog.querySelector('#btn-change-dir-help');
+  changeDirBtn.textContent = hasDir ? '更换目录' : '选择新目录';
+
+  const restoreBtn = dialog.querySelector('#btn-restore-dir');
   if (restoreBtn) {
     restoreBtn.onclick = async () => {
       const success = await requestPermissionAndRestore();
       if (success) {
-        document.getElementById('help-dir-name').textContent = '当前目录：' + directoryHandle.name;
+        dialog.querySelector('#help-dir-name').textContent = '当前目录：' + directoryHandle.name;
         updateDirectoryDisplay();
         await refreshUI();
         closeHelpDialog(dialog, overlay, true);
@@ -3169,14 +3258,27 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
         alert('权限请求失败，请选择新目录');
       }
     };
+    if (!hasPendingHandle) restoreBtn.remove();
   }
 
+  const warningEl = dialog.querySelector('#help-directory-warning');
+  if (!forceSelectDirectory) warningEl.remove();
+
+  const closeBtn = dialog.querySelector('#help-close');
+  if (closeBtn) {
+    closeBtn.onclick = () => closeHelpDialog(dialog, overlay, false);
+    overlay.onclick = () => closeHelpDialog(dialog, overlay, false);
+    if (forceSelectDirectory) closeBtn.remove();
+  }
+
+  document.body.appendChild(dialog);
+
   // 选择/更换目录按钮
-  document.getElementById('btn-change-dir-help').onclick = async () => {
+  changeDirBtn.onclick = async () => {
     const success = await selectDirectory();
     if (success) {
-      pendingDirectoryHandle = null; // 清除待恢复的 handle
-      document.getElementById('help-dir-name').textContent = '当前目录：' + directoryHandle.name;
+      pendingDirectoryHandle = null;
+      dialog.querySelector('#help-dir-name').textContent = '当前目录：' + directoryHandle.name;
       updateDirectoryDisplay();
       await refreshUI();
 
@@ -3185,11 +3287,6 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
       }
     }
   };
-
-  if (!forceSelectDirectory) {
-    document.getElementById('help-close').onclick = () => closeHelpDialog(dialog, overlay, false);
-    overlay.onclick = () => closeHelpDialog(dialog, overlay, false);
-  }
 }
 
 function closeHelpDialog(dialog, overlay, immediate = false) {
@@ -4790,9 +4887,8 @@ function showThinkingCards(modelIds, groups) {
   msgEl.className = 'message';
   msgEl.id = 'streaming-multi-response';
 
-  const hint = document.createElement('div');
-  hint.className = 'multi-response-hint';
-  hint.innerHTML = `<span class="hint-text">${modelIds.length}个模型正在思考...</span><button class="btn-stop-all" id="btn-stop-inline">全部停止</button>`;
+  const hint = fromTemplate('tpl-multi-response-hint', '.multi-response-hint');
+  hint.querySelector('.hint-text').textContent = `${modelIds.length}个模型正在思考...`;
   msgEl.appendChild(hint);
 
   // 绑定停止按钮事件
@@ -4810,23 +4906,13 @@ function showThinkingCards(modelIds, groups) {
   cards.className = 'multi-response-cards';
 
   modelIds.forEach(id => {
-    const card = document.createElement('div');
-    card.className = 'response-card thinking';
+    const card = fromTemplate('tpl-response-card-streaming', '.response-card');
     card.dataset.modelId = id;
 
     const info = findModelById(groups, id);
     const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
 
-    card.innerHTML = `
-      <div class="response-meta">
-        <span class="response-model-name">${name}</span>
-        <span class="model-status-icon spinning">◐</span>
-      </div>
-      <div class="thinking-block streaming" style="display:none;">
-        <div class="thinking-content">等待思考...</div>
-      </div>
-      <div class="response-card-content">等待回复...</div>
-    `;
+    card.querySelector('.response-model-name').textContent = name;
 
     cards.appendChild(card);
   });
@@ -4856,16 +4942,10 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
       // 创建thinking header（如果不存在）
       let thinkingHeader = thinkingBlock.querySelector('.thinking-header');
       if (!thinkingHeader) {
-        thinkingHeader = document.createElement('div');
-        thinkingHeader.className = 'thinking-header';
+        thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
         thinkingHeader.onclick = function() { toggleThinking(this); };
-        // 只有在有thinkingDuration时才显示耗时
         const durationText = state.thinkingDuration ? `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s` : '';
-        thinkingHeader.innerHTML = `
-          <span class="thinking-icon"></span>
-          <span class="thinking-label">思考</span>
-          <span class="thinking-duration">${durationText}</span>
-        `;
+        thinkingHeader.querySelector('.thinking-duration').textContent = durationText;
         thinkingBlock.insertBefore(thinkingHeader, thinkingBlock.firstChild);
       }
 
