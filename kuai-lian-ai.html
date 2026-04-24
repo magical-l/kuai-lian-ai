@@ -1713,7 +1713,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.7.2</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.7.3</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -2094,7 +2094,7 @@ function initDividers() {
 
   // 水平分隔线
   const dividerHorizontal = $('#divider-horizontal');
-  const chatMessages = $('#chat-messages');
+  const chatMsg = $('#chat-messages');
   const mainContent = $('#main-content');
   const chatInputArea = $('.chat-input-area');
   const chatHeader = $('.chat-header');
@@ -2110,12 +2110,12 @@ function initDividers() {
   // 恢复保存的消息区高度（像素值）
   const savedMessagesHeight = localStorage.getItem('chat-messages-height');
   if (savedMessagesHeight) {
-    chatMessages.style.height = savedMessagesHeight;
-    chatMessages.style.flex = '0 0 auto';
+    chatMsg.style.height = savedMessagesHeight;
+    chatMsg.style.flex = '0 0 auto';
   }
 
   let isDragging = false;
-  let currentDivider = null;
+  let curDiv = null;
   let startX = 0;
   let startWidth = 0;
   let startY = 0;
@@ -2124,7 +2124,7 @@ function initDividers() {
 
   function startDrag(e, divider, sidebar, isLeft) {
     isDragging = true;
-    currentDivider = { divider, sidebar, isLeft, storageKey: isLeft ? 'sidebar-left-width' : 'sidebar-right-width', type: 'horizontal' };
+    curDiv = { divider, sidebar, isLeft, storageKey: isLeft ? 'sidebar-left-width' : 'sidebar-right-width', type: 'horizontal' };
     startX = e.clientX;
     startWidth = sidebar.offsetWidth;
     doc.body.style.cursor = 'col-resize';
@@ -2133,9 +2133,9 @@ function initDividers() {
 
   function startDragVertical(e) {
     isDragging = true;
-    currentDivider = { divider: dividerHorizontal, type: 'vertical' };
+    curDiv = { divider: dividerHorizontal, type: 'vertical' };
     startY = e.clientY;
-    startMessagesHeight = chatMessages.offsetHeight;
+    startMessagesHeight = chatMsg.offsetHeight;
     // 记录消息区和输入区的总可用高度（不含header和divider）
     startMainHeight = mainContent.offsetHeight - dividerHorizontal.offsetHeight - chatHeader.offsetHeight;
     doc.body.style.cursor = 'row-resize';
@@ -2143,21 +2143,21 @@ function initDividers() {
   }
 
   function doDrag(e) {
-    if (!isDragging || !currentDivider) return;
+    if (!isDragging || !curDiv) return;
 
-    if (currentDivider.type === 'vertical') {
+    if (curDiv.type === 'vertical') {
       const dy = e.clientY - startY;
       const newHeight = startMessagesHeight + dy;
       const minMessages = 100;
       const minInput = 120;
       const maxMessages = startMainHeight - minInput;
       const clamped = Math.max(minMessages, Math.min(maxMessages, newHeight));
-      chatMessages.style.height = clamped + 'px';
-      chatMessages.style.flex = '0 0 auto';
+      chatMsg.style.height = clamped + 'px';
+      chatMsg.style.flex = '0 0 auto';
     } else {
       // 水平方向拖动（调整侧栏宽度）
       const dx = e.clientX - startX;
-      const newWidth = currentDivider.isLeft
+      const newWidth = curDiv.isLeft
         ? startWidth + dx
         : startWidth - dx;
 
@@ -2169,37 +2169,31 @@ function initDividers() {
       const maxWidth = containerWidth * 0.333; // 最多1/3
       const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 
-      currentDivider.sidebar.style.width = clampedWidth + 'px';
+      curDiv.sidebar.style.width = clampedWidth + 'px';
     }
   }
 
   function stopDrag() {
-    if (isDragging && currentDivider) {
-      if (currentDivider.type === 'vertical') {
-        localStorage.setItem('chat-messages-height', chatMessages.style.height);
+    if (isDragging && curDiv) {
+      if (curDiv.type === 'vertical') {
+        localStorage.setItem('chat-messages-height', chatMsg.style.height);
       } else {
         // 保存宽度到localStorage
-        localStorage.setItem(currentDivider.storageKey, currentDivider.sidebar.style.width);
+        localStorage.setItem(curDiv.storageKey, curDiv.sidebar.style.width);
       }
       isDragging = false;
-      currentDivider = null;
+      curDiv = null;
       doc.body.style.cursor = '';
       doc.body.style.userSelect = '';
     }
   }
 
-  dividerLeft.on('mousedown', e => {
-    startDrag(e, dividerLeft, sidebarLeft, true);
-  });
+  dividerLeft.on('mousedown', e => startDrag(e, dividerLeft, sidebarLeft, true));
 
-  dividerRight.on('mousedown', e => {
-    startDrag(e, dividerRight, sidebarRight, false);
-  });
+  dividerRight.on('mousedown', e => startDrag(e, dividerRight, sidebarRight, false));
 
   if (dividerHorizontal) {
-    dividerHorizontal.on('mousedown', e => {
-      startDragVertical(e);
-    });
+    dividerHorizontal.on('mousedown', e => startDragVertical(e));
   }
 
   doc.on('mousemove', doDrag);
@@ -2570,9 +2564,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         groupEl.classList.add('drag-over');
       }
     });
-    groupEl.on('dragleave', () => {
-      groupEl.classList.remove('drag-over');
-    });
+    groupEl.on('dragleave', () => groupEl.classList.remove('drag-over'));
     groupEl.on('drop', e => {
       e.preventDefault();
       groupEl.classList.remove('drag-over');
@@ -2687,9 +2679,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
           modelEl.classList.add('drag-over');
         }
       });
-      modelEl.on('dragleave', () => {
-        modelEl.classList.remove('drag-over');
-      });
+      modelEl.on('dragleave', () => modelEl.classList.remove('drag-over'));
       modelEl.on('drop', e => {
         e.preventDefault();
         e.stopPropagation();
@@ -2800,9 +2790,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 
     sessionEl.addChild(titleEl);
     sessionEl.addChild(meta);
-    sessionEl.on('click', () => {
-      onSessionSelect(session.id);
-    });
+    sessionEl.on('click', () => onSessionSelect(session.id));
 
     container.addChild(sessionEl);
   });
