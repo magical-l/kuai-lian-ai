@@ -14,7 +14,7 @@
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo位置预留，暂不显示 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.4.5</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.5.4</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -53,15 +53,16 @@
       <div class="chat-header" id="chat-header">
         <span class="chat-header-prefix">会话：</span>
         <span id="chat-title">新会话</span>
-        <button id="btn-new-session-header" title="新建会话">新建会话</button>
-      </div>
-      <div class="chat-messages-wrapper" id="chat-messages">
-        <div class="messages-content" id="messages-content"></div>
-        <div class="scroll-nav-buttons" id="scroll-nav-buttons">
-          <button id="btn-scroll-top" class="btn-scroll-nav" title="到顶部">↑</button>
-          <button id="btn-scroll-bottom" class="btn-scroll-nav" title="到底部">↓</button>
+        <!-- 右侧区域：滚动按钮 + 新建会话 -->
+        <div class="header-right-area">
+          <div class="scroll-nav-buttons" id="scroll-nav-buttons">
+            <button id="btn-scroll-top" class="btn-scroll-nav" title="到顶部">↑</button>
+            <button id="btn-scroll-bottom" class="btn-scroll-nav" title="到底部">↓</button>
+          </div>
+          <button id="btn-new-session-header" title="新建会话">新建会话</button>
         </div>
       </div>
+      <div class="chat-messages" id="chat-messages"></div>
       <div class="divider-horizontal" id="divider-horizontal"></div>
       <div class="chat-input-area">
         <!-- 新增：模型选择器 -->
@@ -248,7 +249,7 @@ function initScrollNav() {
   const btnScrollTop = document.getElementById('btn-scroll-top');
   const btnScrollBottom = document.getElementById('btn-scroll-bottom');
   const navButtons = document.getElementById('scroll-nav-buttons');
-  const scrollContainer = document.getElementById('messages-content'); // 滚动容器
+  const scrollContainer = document.getElementById('chat-messages'); // 滚动容器
 
   if (!btnScrollTop || !btnScrollBottom || !navButtons || !scrollContainer) return;
 
@@ -829,7 +830,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 }
 
 function renderMessages(messages, groups, onCopy) {
-  const container = document.getElementById('messages-content');
+  const container = document.getElementById('chat-messages');
   container.innerHTML = '';
 
   messages.forEach((msg, index) => {
@@ -1032,7 +1033,7 @@ function formatDateTime(timestamp) {
 }
 
 function appendMessage(role, content, meta = null) {
-  const container = document.getElementById('messages-content');
+  const container = document.getElementById('chat-messages');
 
   const msgEl = document.createElement('div');
   msgEl.className = 'message';
@@ -1063,7 +1064,7 @@ function appendMessage(role, content, meta = null) {
   }
 
   container.appendChild(msgEl);
-  document.getElementById('messages-content').scrollTop = document.getElementById('messages-content').scrollHeight;
+  document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
 
   return msgEl;
 }
@@ -1072,7 +1073,7 @@ function updateStreamingMessage(content) {
   const el = document.getElementById('streaming-message');
   if (el) {
     el.textContent = content;
-    document.getElementById('messages-content').scrollTop = document.getElementById('messages-content').scrollHeight;
+    document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
   }
 }
 
@@ -2782,7 +2783,7 @@ async function refreshUI() {
   if (currentSession) {
     renderMessages(currentSession.messages, groups, handleCopy);
   } else {
-    document.getElementById('messages-content').innerHTML = '';
+    document.getElementById('chat-messages').innerHTML = '';
   }
 
   updateChatTitleDisplay();
@@ -2995,7 +2996,7 @@ async function handleSend() {
 }
 
 function showThinkingCards(modelIds, groups) {
-  const container = document.getElementById('messages-content');
+  const container = document.getElementById('chat-messages');
 
   const msgEl = document.createElement('div');
   msgEl.className = 'message';
@@ -3044,7 +3045,7 @@ function showThinkingCards(modelIds, groups) {
 
   msgEl.appendChild(cards);
   container.appendChild(msgEl);
-  document.getElementById('messages-content').scrollTop = document.getElementById('messages-content').scrollHeight;
+  document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
 }
 
 function updateStreamingCard(modelId, state, firstTokenTime, groups) {

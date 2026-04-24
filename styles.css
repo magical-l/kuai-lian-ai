@@ -318,6 +318,13 @@ button.btn-navbar:hover:not(:disabled) {
   height: 56px;
 }
 
+.header-right-area {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
 .chat-header-prefix {
   color: var(--text-muted);
   font-size: 13px;
@@ -330,7 +337,7 @@ button.btn-navbar:hover:not(:disabled) {
 }
 
 #btn-new-session-header {
-  margin-left: auto;
+  /* margin-left: auto 已移到父容器 .header-right-area */
 }
 
 .model-badge {
@@ -351,22 +358,15 @@ button.btn-navbar:hover:not(:disabled) {
 }
 
 /* ========== Chat Messages ========== */
-.chat-messages-wrapper {
+.chat-messages {
   flex: 1 1 auto;
-  min-height: 100px;
-  display: flex; /* 横向布局：滚动容器 + 按钮区 */
-  flex-direction: row;
-  background: var(--bg-subtle);
-  padding: var(--space-2); /* wrapper的padding */
-}
-
-.messages-content {
-  flex: 1;
-  overflow-y: auto; /* 滚动容器 */
-  padding: var(--space-4);
+  overflow-y: auto;
+  padding: var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  background: var(--bg-subtle);
+  min-height: 100px;
 }
 
 .chat-input-area {
@@ -575,12 +575,9 @@ button.outline:hover:not(:disabled) {
 
 /* ========== Scroll Navigation Buttons ========== */
 .scroll-nav-buttons {
-  width: 32px;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end; /* 按钮靠底部 */
+  flex-direction: row;
   gap: var(--space-1);
-  padding-bottom: var(--space-2);
   opacity: 0;
   transition: opacity var(--transition-normal);
 }
@@ -593,10 +590,10 @@ button.outline:hover:not(:disabled) {
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   color: var(--text-muted);
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   padding: 0;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -604,11 +601,6 @@ button.outline:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md);
-}
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-md);
 }
 
 .btn-scroll-nav:hover:not(:disabled) {
