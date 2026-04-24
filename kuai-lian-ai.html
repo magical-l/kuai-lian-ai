@@ -753,25 +753,25 @@ button.outline:hover:not(:disabled) {
   cursor: pointer;
 }
 
-/* hover tooltip */
+/* tooltip弹层（使用fixed定位，脱离sidebar的overflow） */
 .group-tooltip {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 100;
+  position: fixed;
+  z-index: 1000;
   background: var(--bg-base);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   padding: var(--space-2);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   min-width: 200px;
   max-width: 300px;
   display: none;
   font-size: 12px;
 }
 
-.group-name-wrapper:hover .group-tooltip {
-  display: block;
+/* 复制按钮成功状态 */
+.btn-tooltip-copy.copied {
+  color: var(--accent-success);
+  opacity: 1;
 }
 
 .tooltip-row {
@@ -1713,7 +1713,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.6.2</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.6.4</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -2109,6 +2109,7 @@ function bindSelectorEvents() {
   // Make entire model tag clickable for toggle selection
   document.querySelectorAll('.model-tag').forEach(tag => {
     tag.onclick = e => {
+      e.stopPropagation(); // 阻止冒泡，避免触发document的click监听器导致收起
       const id = tag.dataset.model;
       if (!id) return;
 
@@ -2137,8 +2138,23 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// 收起状态存储（端点ID -> 是否收起）
+const collapsedEndpoints = new Set();
+
 function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit, onGroupEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
   const container = document.getElementById('endpoint-list');
+
+  // 保存当前收起状态
+  container.querySelectorAll('.endpoint-group').forEach(el => {
+    const groupId = el.dataset.groupId;
+    const modelsEl = el.querySelector('.group-models');
+    if (modelsEl && modelsEl.style.display === 'none') {
+      collapsedEndpoints.add(groupId);
+    } else {
+      collapsedEndpoints.delete(groupId);
+    }
+  });
+
   container.innerHTML = '';
 
   groups.forEach((group, groupIndex) => {
@@ -2170,7 +2186,9 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     // 收展三角放前面
     const toggleSpan = document.createElement('span');
     toggleSpan.className = 'group-toggle';
-    toggleSpan.textContent = '▼';
+    // 恢复收起状态
+    const isCollapsed = collapsedEndpoints.has(group.id);
+    toggleSpan.textContent = isCollapsed ? '▶' : '▼';
     toggleSpan.addEventListener('click', (e) => {
       e.stopPropagation();
       const modelsEl = groupEl.querySelector('.group-models');
@@ -2188,9 +2206,9 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     nameSpan.className = 'group-name';
     nameSpan.textContent = group.name;
 
-    // hover tooltip 容器
-    const tooltipEl = document.createElement('div');
-    tooltipEl.className = 'group-tooltip';
+    // tooltip内容（创建但不添加到DOM，hover时动态定位）
+    const tooltipId = `tooltip-${group.id}`;
+    let tooltipHideTimer = null;
 
     const styleLabels = {
       'openai': 'OpenAI',
@@ -2199,7 +2217,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     };
 
     // tooltip 内容：三行信息
-    tooltipEl.innerHTML = `
+    const tooltipHTML = `
       <div class="tooltip-row">
         <span class="tooltip-label">名称：</span>
         <span class="tooltip-value">${group.name}</span>
@@ -2217,21 +2235,104 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       </div>
     `;
 
-    // tooltip 复制按钮事件
-    tooltipEl.querySelectorAll('.btn-tooltip-copy').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(btn.dataset.copy);
-      });
-    });
-
-    // 组名容器（名称 + tooltip）
+    // 组名容器
     const nameContainer = document.createElement('div');
     nameContainer.className = 'group-name-wrapper';
     nameContainer.appendChild(nameSpan);
-    nameContainer.appendChild(tooltipEl);
-    // 点击展开/收起模型列表
+
+    // 显示tooltip的函数
+    const showTooltip = (triggerEl) => {
+      // 取消隐藏定时器
+      if (tooltipHideTimer) {
+        clearTimeout(tooltipHideTimer);
+        tooltipHideTimer = null;
+      }
+
+      // 创建或获取tooltip元素
+      let tooltipEl = document.getElementById(tooltipId);
+      if (!tooltipEl) {
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = tooltipId;
+        tooltipEl.className = 'group-tooltip';
+        tooltipEl.innerHTML = tooltipHTML;
+        document.body.appendChild(tooltipEl);
+
+        // tooltip 复制按钮事件
+        tooltipEl.querySelectorAll('.btn-tooltip-copy').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(btn.dataset.copy);
+            // 显示成功状态
+            btn.textContent = '✓';
+            btn.classList.add('copied');
+            setTimeout(() => {
+              btn.textContent = '⧉';
+              btn.classList.remove('copied');
+            }, 1500);
+          });
+        });
+
+        // 鼠标进入tooltip时取消隐藏
+        tooltipEl.addEventListener('mouseenter', () => {
+          if (tooltipHideTimer) {
+            clearTimeout(tooltipHideTimer);
+            tooltipHideTimer = null;
+          }
+        });
+
+        // 鼠标离开tooltip时隐藏
+        tooltipEl.addEventListener('mouseleave', () => {
+          tooltipEl.style.display = 'none';
+        });
+      }
+
+      // 计算tooltip位置
+      const rect = triggerEl.getBoundingClientRect();
+      const tooltipWidth = 200; // min-width
+      const tooltipHeight = tooltipEl.offsetHeight || 80; // 预估高度
+
+      // 优先在下方显示，如果空间不够则在上方
+      let top = rect.bottom + 4;
+      let left = rect.left;
+
+      // 检查是否超出视口底部
+      if (top + tooltipHeight > window.innerHeight) {
+        top = rect.top - tooltipHeight - 4;
+      }
+
+      // 检查是否超出视口右侧
+      if (left + tooltipWidth > window.innerWidth) {
+        left = window.innerWidth - tooltipWidth - 10;
+      }
+
+      // 确保不超出视口左侧
+      if (left < 10) {
+        left = 10;
+      }
+
+      tooltipEl.style.top = `${top}px`;
+      tooltipEl.style.left = `${left}px`;
+      tooltipEl.style.display = 'block';
+    };
+
+    // 延迟隐藏tooltip的函数
+    const hideTooltipDelayed = () => {
+      tooltipHideTimer = setTimeout(() => {
+        const el = document.getElementById(tooltipId);
+        if (el) el.style.display = 'none';
+        tooltipHideTimer = null;
+      }, 100);
+    };
+
+    // hover事件
+    nameContainer.addEventListener('mouseenter', () => showTooltip(nameContainer));
+    nameContainer.addEventListener('mouseleave', hideTooltipDelayed);
+    // 点击展开/收起模型列表，同时隐藏tooltip
     nameContainer.addEventListener('click', () => {
+      if (tooltipHideTimer) clearTimeout(tooltipHideTimer);
+      const tooltipEl = document.getElementById(tooltipId);
+      if (tooltipEl) tooltipEl.style.display = 'none';
+
       const modelsEl = groupEl.querySelector('.group-models');
       if (modelsEl) {
         if (modelsEl.style.display === 'none') {
@@ -2330,6 +2431,10 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 
     const modelsEl = document.createElement('div');
     modelsEl.className = 'group-models';
+    // 恢复收起状态
+    if (isCollapsed) {
+      modelsEl.style.display = 'none';
+    }
 
     group.models.forEach((model, modelIndex) => {
       const modelEl = document.createElement('div');
@@ -2359,8 +2464,100 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       const modelName = document.createElement('span');
       modelName.className = 'model-name';
       modelName.textContent = model.name;
+
+      // 模型名tooltip
+      const modelTooltipId = `tooltip-model-${group.id}-${model.id}`;
+      const modelTooltipHTML = `
+        <div class="tooltip-row">
+          <span class="tooltip-label">模型：</span>
+          <span class="tooltip-value">${model.name}</span>
+          <button class="btn-tooltip-copy" data-copy="${model.name}" title="复制">⧉</button>
+        </div>
+      `;
+
+      // 用于延迟隐藏的定时器
+      let modelTooltipHideTimer = null;
+
+      const showModelTooltip = (triggerEl) => {
+        // 取消隐藏定时器
+        if (modelTooltipHideTimer) {
+          clearTimeout(modelTooltipHideTimer);
+          modelTooltipHideTimer = null;
+        }
+
+        let modelTooltipEl = document.getElementById(modelTooltipId);
+        if (!modelTooltipEl) {
+          modelTooltipEl = document.createElement('div');
+          modelTooltipEl.id = modelTooltipId;
+          modelTooltipEl.className = 'group-tooltip';
+          modelTooltipEl.innerHTML = modelTooltipHTML;
+          document.body.appendChild(modelTooltipEl);
+
+          modelTooltipEl.querySelectorAll('.btn-tooltip-copy').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(btn.dataset.copy);
+              btn.textContent = '✓';
+              btn.classList.add('copied');
+              setTimeout(() => {
+                btn.textContent = '⧉';
+                btn.classList.remove('copied');
+              }, 1500);
+            });
+          });
+
+          // 鼠标进入tooltip时取消隐藏
+          modelTooltipEl.addEventListener('mouseenter', () => {
+            if (modelTooltipHideTimer) {
+              clearTimeout(modelTooltipHideTimer);
+              modelTooltipHideTimer = null;
+            }
+          });
+
+          // 鼠标离开tooltip时隐藏
+          modelTooltipEl.addEventListener('mouseleave', () => {
+            modelTooltipEl.style.display = 'none';
+          });
+        }
+
+        const rect = triggerEl.getBoundingClientRect();
+        const tooltipWidth = 150;
+        const tooltipHeight = modelTooltipEl.offsetHeight || 40;
+
+        let top = rect.bottom + 4;
+        let left = rect.left;
+
+        if (top + tooltipHeight > window.innerHeight) {
+          top = rect.top - tooltipHeight - 4;
+        }
+        if (left + tooltipWidth > window.innerWidth) {
+          left = window.innerWidth - tooltipWidth - 10;
+        }
+        if (left < 10) {
+          left = 10;
+        }
+
+        modelTooltipEl.style.top = `${top}px`;
+        modelTooltipEl.style.left = `${left}px`;
+        modelTooltipEl.style.display = 'block';
+      };
+
+      const hideModelTooltipDelayed = () => {
+        modelTooltipHideTimer = setTimeout(() => {
+          const el = document.getElementById(modelTooltipId);
+          if (el) el.style.display = 'none';
+          modelTooltipHideTimer = null;
+        }, 100);
+      };
+
+      modelName.addEventListener('mouseenter', () => showModelTooltip(modelName));
+      modelName.addEventListener('mouseleave', hideModelTooltipDelayed);
+
       modelName.addEventListener('click', () => {
-        onModelSelect(group.id, model.id);
+        if (modelTooltipHideTimer) clearTimeout(modelTooltipHideTimer);
+        const el = document.getElementById(modelTooltipId);
+        if (el) el.style.display = 'none';
+        if (onModelSelect) onModelSelect(group.id, model.id);
       });
 
       // 模型操作按钮
