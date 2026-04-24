@@ -14,7 +14,7 @@
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo位置预留，暂不显示 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.5.4</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.5.5</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -404,6 +404,18 @@ function bindSelectorEvents() {
       renderModelSelector(getGroups(), selectedModels, false);
     };
   });
+}
+
+// 点击外部自动收起模型选择器（只注册一次）
+if (!window._selectorBlurHandlerAdded) {
+  document.addEventListener('click', (e) => {
+    const selector = document.getElementById('model-selector');
+    if (selector && selectorExpanded && !selector.contains(e.target)) {
+      selectorExpanded = false;
+      renderModelSelector(getGroups(), selectedModels, false);
+    }
+  });
+  window._selectorBlurHandlerAdded = true;
 }
 
 function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit, onGroupEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
