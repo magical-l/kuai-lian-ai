@@ -1713,7 +1713,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.7.0</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.7.2</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -1991,24 +1991,24 @@ button.outline:hover:not(:disabled) {
   }
 
   // DOM查询辅助函数（类似jQuery）
-  function $(selector, context = document) {
-    return context.querySelector(selector);
+  function $(selector, ctx = doc) {
+    return ctx.querySelector(selector);
   }
-  function $$(selector, context = document) {
-    return context.querySelectorAll(selector);
+  function $$(selector, ctx = doc) {
+    return ctx.querySelectorAll(selector);
   }
 
   // 批量设置表单值
-  function setValues(context, values) {
-    for (const [sel, val] of Object.entries(values)) {
-      $(sel, context).value = val ?? '';
+  function setValues(ctx, vals) {
+    for (const [sel, val] of Object.entries(vals)) {
+      $(sel, ctx).value = val ?? '';
     }
   }
 
   // 批量绑定click事件
-  function onClick(handlers, context = document) {
+  function onClick(handlers, ctx = doc) {
     for (const [sel, fn] of Object.entries(handlers)) {
-      $(sel, context).onclick = fn;
+      $(sel, ctx).onclick = fn;
     }
   }
 
@@ -2023,11 +2023,12 @@ button.outline:hover:not(:disabled) {
   }
 
   // DOM操作辅助
-  HTMLElement.prototype.addChild = function(child) { return this.appendChild(child); };
-  HTMLElement.prototype.on = function(event, handler) { this.addEventListener(event, handler); return this; };
-  Document.prototype.on = function(event, handler) { this.addEventListener(event, handler); return this; };
+  const doc = document;
+  const H = HTMLElement.prototype, D = Document.prototype;
+  H.addChild = function(child) { return this.appendChild(child); };
+  H.on = D.on = function(event, handler) { this.addEventListener(event, handler); return this; };
   function mk(tag, className) {
-    const el = document.createElement(tag);
+    const el = doc.createElement(tag);
     if (className) el.className = className;
     return el;
   }
@@ -2042,11 +2043,11 @@ button.outline:hover:not(:disabled) {
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       el = $('#' + id);
       if (!el) {
-        el = document.createElement('div');
+        el = doc.createElement('div');
         el.id = id;
         el.className = 'group-tooltip';
         el.innerHTML = html;
-        document.body.appendChild(el);
+        doc.body.appendChild(el);
         $$('.btn-tooltip-copy', el).forEach(btn => {
           btn.onclick = e => {
             e.stopPropagation();
@@ -2126,8 +2127,8 @@ function initDividers() {
     currentDivider = { divider, sidebar, isLeft, storageKey: isLeft ? 'sidebar-left-width' : 'sidebar-right-width', type: 'horizontal' };
     startX = e.clientX;
     startWidth = sidebar.offsetWidth;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
+    doc.body.style.cursor = 'col-resize';
+    doc.body.style.userSelect = 'none';
   }
 
   function startDragVertical(e) {
@@ -2137,8 +2138,8 @@ function initDividers() {
     startMessagesHeight = chatMessages.offsetHeight;
     // 记录消息区和输入区的总可用高度（不含header和divider）
     startMainHeight = mainContent.offsetHeight - dividerHorizontal.offsetHeight - chatHeader.offsetHeight;
-    document.body.style.cursor = 'row-resize';
-    document.body.style.userSelect = 'none';
+    doc.body.style.cursor = 'row-resize';
+    doc.body.style.userSelect = 'none';
   }
 
   function doDrag(e) {
@@ -2182,8 +2183,8 @@ function initDividers() {
       }
       isDragging = false;
       currentDivider = null;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+      doc.body.style.cursor = '';
+      doc.body.style.userSelect = '';
     }
   }
 
@@ -2201,8 +2202,8 @@ function initDividers() {
     });
   }
 
-  document.on('mousemove', doDrag);
-  document.on('mouseup', stopDrag);
+  doc.on('mousemove', doDrag);
+  doc.on('mouseup', stopDrag);
 
   // 右侧栏收起/展开
   const btnCollapseRight = $('#btn-collapse-right');
@@ -2390,7 +2391,7 @@ function bindSelectorEvents() {
 }
 
 // 收起展开的模型选择器（用户点击外部区域时）
-document.on('click', e => {
+doc.on('click', e => {
   if (!selectorExpanded) return;
   const selector = $('#model-selector');
   if (selector && !selector.contains(e.target)) {
@@ -2408,8 +2409,8 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
   // 保存当前收起状态
   $$('.endpoint-group', container).forEach(el => {
     const groupId = el.dataset.groupId;
-    const modelsEl = $('.group-models', el);
-    if (modelsEl && modelsEl.style.display === 'none') {
+    const models = $('.group-models', el);
+    if (models && models.style.display === 'none') {
       collapsedEndpoints.add(groupId);
     } else {
       collapsedEndpoints.delete(groupId);
@@ -2448,12 +2449,12 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     toggleSpan.textContent = isCollapsed ? '▶' : '▼';
     toggleSpan.on('click', e => {
       e.stopPropagation();
-      const modelsEl = $('.group-models', groupEl);
-      if (modelsEl.style.display === 'none') {
-        modelsEl.style.display = 'block';
+      const models = $('.group-models', groupEl);
+      if (models.style.display === 'none') {
+        models.style.display = 'block';
         toggleSpan.textContent = '▼';
       } else {
-        modelsEl.style.display = 'none';
+        models.style.display = 'none';
         toggleSpan.textContent = '▶';
       }
     });
@@ -2496,13 +2497,13 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     // 点击展开/收起模型列表，同时隐藏tooltip
     nameContainer.on('click', () => {
       tooltip.hide();
-      const modelsEl = $('.group-models', groupEl);
-      if (modelsEl) {
-        if (modelsEl.style.display === 'none') {
-          modelsEl.style.display = 'block';
+      const models = $('.group-models', groupEl);
+      if (models) {
+        if (models.style.display === 'none') {
+          models.style.display = 'block';
           toggleSpan.textContent = '▼';
         } else {
-          modelsEl.style.display = 'none';
+          models.style.display = 'none';
           toggleSpan.textContent = '▶';
         }
       }
@@ -2585,10 +2586,10 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       }
     });
 
-    const modelsEl = mk('div', 'group-models');
+    const models = mk('div', 'group-models');
     // 恢复收起状态
     if (isCollapsed) {
-      modelsEl.style.display = 'none';
+      models.style.display = 'none';
     }
 
     group.models.forEach((model, modelIndex) => {
@@ -2611,7 +2612,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       });
       modelDragHandle.on('dragend', () => {
         modelEl.classList.remove('dragging');
-        $$('.model-item', modelsEl).forEach(el => el.classList.remove('drag-over'));
+        $$('.model-item', models).forEach(el => el.classList.remove('drag-over'));
       });
 
       const modelName = mk('span', 'model-name');
@@ -2681,7 +2682,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       modelEl.on('dragover', e => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        const draggingEl = $('.dragging', modelsEl);
+        const draggingEl = $('.dragging', models);
         if (draggingEl && draggingEl !== modelEl) {
           modelEl.classList.add('drag-over');
         }
@@ -2703,7 +2704,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         }
       });
 
-      modelsEl.addChild(modelEl);
+      models.addChild(modelEl);
     });
 
     // 添加模型按钮放在模型列表底部
@@ -2712,11 +2713,11 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     addModelBtn.on('click', e => {
       e.stopPropagation();
       // 显示内联输入框而非弹窗
-      const existingInput = $('.add-model-inline', modelsEl);
-      if (existingInput) existingInput.remove();
+      const existInput = $('.add-model-inline', models);
+      if (existInput) existInput.remove();
 
       const inlineInput = fromTemplate('tpl-add-model-inline', '.add-model-inline');
-      modelsEl.insertBefore(inlineInput, addModelBtn);
+      models.insertBefore(inlineInput, addModelBtn);
 
       const inputEl = $('.add-model-input', inlineInput);
       inputEl.focus();
@@ -2744,10 +2745,10 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         }
       });
     });
-    modelsEl.addChild(addModelBtn);
+    models.addChild(addModelBtn);
 
     groupEl.addChild(headerEl);
-    groupEl.addChild(modelsEl);
+    groupEl.addChild(models);
     container.addChild(groupEl);
   });
 }
@@ -2767,7 +2768,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
     const titleEl = mk('div', 'session-title');
     titleEl.textContent = session.title || '新会话';
 
-    const metaEl = mk('div', 'session-meta');
+    const meta = mk('div', 'session-meta');
 
     const timeEl = mk('span', 'session-time');
     timeEl.textContent = new Date(session.createdAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
@@ -2794,11 +2795,11 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
     actionsEl.addChild(editBtn);
     actionsEl.addChild(deleteBtn);
 
-    metaEl.addChild(timeEl);
-    metaEl.addChild(actionsEl);
+    meta.addChild(timeEl);
+    meta.addChild(actionsEl);
 
     sessionEl.addChild(titleEl);
-    sessionEl.addChild(metaEl);
+    sessionEl.addChild(meta);
     sessionEl.on('click', () => {
       onSessionSelect(session.id);
     });
@@ -2815,10 +2816,10 @@ function renderMessages(messages, groups, onCopy) {
     const msgEl = mk('div', 'message');
 
     if (msg.role === 'user') {
-      const metaEl = mk('div', 'message-meta message-meta-user');
+      const meta = mk('div', 'message-meta message-meta-user');
       const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
-      metaEl.textContent = '我 · ' + timeStr;
-      msgEl.addChild(metaEl);
+      meta.textContent = '我 · ' + timeStr;
+      msgEl.addChild(meta);
 
       const userEl = mk('div', 'message-user');
       userEl.textContent = msg.content;
@@ -2855,11 +2856,11 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
   const modelName = info ? `${info.group.name} / ${info.model.name}` : '未知模型';
 
   // Response meta row with name, time, copy button
-  const metaEl = fromTemplate('tpl-response-meta', '.response-meta');
-  $('.response-model-name', metaEl).textContent = modelName;
-  $('.response-time', metaEl).textContent = timeStr;
-  $('.copy-btn', metaEl).onclick = () => onCopy(msg.content || '');
-  msgEl.addChild(metaEl);
+  const meta = fromTemplate('tpl-response-meta', '.response-meta');
+  $('.response-model-name', meta).textContent = modelName;
+  $('.response-time', meta).textContent = timeStr;
+  $('.copy-btn', meta).onclick = () => onCopy(msg.content || '');
+  msgEl.addChild(meta);
 
   const assistantEl = mk('div', 'message-assistant');
   assistantEl.textContent = msg.content || '';
@@ -2893,7 +2894,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
 
     // Response meta row with model name, time, duration, copy button
-    const metaEl = fromTemplate('tpl-multi-response-meta', '.response-meta');
+    const meta = fromTemplate('tpl-multi-response-meta', '.response-meta');
 
     const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
     const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
@@ -2902,20 +2903,20 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
     const speedClass = getSpeedClass(r.firstTokenTime);
 
-    $('.response-model-name', metaEl).textContent = name;
-    $('.response-time', metaEl).textContent = responseTimeStr;
+    $('.response-model-name', meta).textContent = name;
+    $('.response-time', meta).textContent = responseTimeStr;
 
-    const durationEl = $('.response-duration', metaEl);
+    const durationEl = $('.response-duration', meta);
     durationEl.textContent = durationStr;
     if (speedClass) durationEl.classList.add(speedClass);
 
-    $('.response-total', metaEl).textContent = totalStr;
+    $('.response-total', meta).textContent = totalStr;
 
-    const statusEl = $('.response-status', metaEl);
+    const statusEl = $('.response-status', meta);
     statusEl.textContent = statusText;
     statusEl.classList.add(r.status);
 
-    const errorEl = $('.response-error', metaEl);
+    const errorEl = $('.response-error', meta);
     if (errorText) {
       errorEl.textContent = errorText;
     } else {
@@ -2923,14 +2924,14 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     }
 
     // Only add copy button for completed responses with content
-    const copyBtn = $('.copy-btn', metaEl);
+    const copyBtn = $('.copy-btn', meta);
     if (r.status === 'completed' && r.content) {
       copyBtn.onclick = () => onCopy(r.content || '');
     } else {
       copyBtn.remove();
     }
 
-    card.addChild(metaEl);
+    card.addChild(meta);
 
     // Thinking block（如果有thinking内容）
     if (r.thinking && r.thinking.trim()) {
@@ -3014,8 +3015,8 @@ function setButtonState(sendDisabled, stopEnabled) {
 }
 
 function showEditGroupDialog(group = null, onSave) {
-  const existing = $('#edit-dialog');
-  if (existing) existing.remove();
+  const exist = $('#edit-dialog');
+  if (exist) exist.remove();
 
   const dialog = fromTemplate('tpl-edit-group-dialog', '#edit-dialog');
   $('h3', dialog).textContent = group ? '编辑端点' : '新增端点';
@@ -3028,7 +3029,7 @@ function showEditGroupDialog(group = null, onSave) {
   });
 
   const keyInput = $('#dialog-group-key', dialog);
-  document.body.addChild(dialog);
+  doc.body.addChild(dialog);
 
   const toggleBtn = $('.btn-toggle-key', dialog);
   toggleBtn.onclick = e => {
@@ -3053,14 +3054,14 @@ function showEditGroupDialog(group = null, onSave) {
 }
 
 function showEditModelDialog(groupId, model = null, onSave) {
-  const existing = $('#edit-dialog');
-  if (existing) existing.remove();
+  const exist = $('#edit-dialog');
+  if (exist) exist.remove();
 
   const dialog = fromTemplate('tpl-edit-model-dialog', '#edit-dialog');
   $('h3', dialog).textContent = model ? '编辑模型' : '新增模型';
   setValues(dialog, { '#dialog-model-name': model?.name });
 
-  document.body.addChild(dialog);
+  doc.body.addChild(dialog);
 
   onClick({
     '#dialog-cancel': () => dialog.remove(),
@@ -3084,15 +3085,15 @@ function hideDirectoryPrompt() {
 }
 
 function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
-  const existing = $('#help-dialog');
-  if (existing) existing.remove();
+  const exist = $('#help-dialog');
+  if (exist) exist.remove();
 
   // 创建遮罩
   const overlay = mk('div', 'dialog-overlay');
   if (forceSelectDirectory) {
     overlay.style.background = 'rgba(0, 0, 0, 0.5)';
   }
-  document.body.addChild(overlay);
+  doc.body.addChild(overlay);
 
   const dialog = fromTemplate('tpl-help-dialog', '#help-dialog');
 
@@ -3130,7 +3131,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
     if (forceSelectDirectory) closeBtn.remove();
   }
 
-  document.body.addChild(dialog);
+  doc.body.addChild(dialog);
 
   // 选择/更换目录按钮
   changeDirBtn.onclick = async () => {
@@ -3227,12 +3228,12 @@ async function testConnection(groupId, modelId) {
   try {
     // 发送一个简单的测试请求
     const testMessages = [{ role: 'user', content: 'hi' }];
-    let response = null;
+    let res = null;
     let styleType = group.style;
 
     if (group.style === 'openai') {
       const url = `${group.baseUrl}/v1/chat/completions`;
-      response = await fetch(url, {
+      res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3246,7 +3247,7 @@ async function testConnection(groupId, modelId) {
       });
     } else if (group.style === 'claude') {
       const url = `${group.baseUrl}/v1/messages`;
-      response = await fetch(url, {
+      res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3262,7 +3263,7 @@ async function testConnection(groupId, modelId) {
       });
     } else if (group.style === 'gemini') {
       const url = `${group.baseUrl}/v1beta/models/${model.name}:generateContent?key=${group.key}`;
-      response = await fetch(url, {
+      res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3271,16 +3272,16 @@ async function testConnection(groupId, modelId) {
       });
     }
 
-    if (response && response.ok) {
+    if (res && res.ok) {
       connectionStatus.set(key, {
         status: 'connected',
         timestamp: Date.now()
       });
     } else if (response) {
       // 尝试读取错误信息
-      let errorMsg = `HTTP ${response.status}`;
+      let errorMsg = `HTTP ${res.status}`;
       try {
-        const errorBody = await response.text();
+        const errorBody = await res.text();
         // 尝试解析 JSON 获取更详细的错误
         try {
           const errorJson = JSON.parse(errorBody);
@@ -3824,23 +3825,23 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
   let currentThinkingTag = null;  // 当前匹配的标签类型
 
   try {
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
       signal: useSignal
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API错误: ${response.status} - ${error}`);
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`API错误: ${res.status} - ${error}`);
     }
 
-    if (!response.body) {
+    if (!res.body) {
       throw new Error('Response body is empty');
     }
 
-    const reader = response.body.getReader();
+    const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let streamBuffer = '';
 
@@ -4001,23 +4002,23 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = nu
   const startTime = Date.now();
 
   try {
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
       signal: useSignal
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API错误: ${response.status} - ${error}`);
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`API错误: ${res.status} - ${error}`);
     }
 
-    if (!response.body) {
+    if (!res.body) {
       throw new Error('Response body is empty');
     }
 
-    const reader = response.body.getReader();
+    const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
 
@@ -4130,23 +4131,23 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
   let currentThinkingTag = null;
 
   try {
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
       signal: useSignal
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API错误: ${response.status} - ${error}`);
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`API错误: ${res.status} - ${error}`);
     }
 
-    if (!response.body) {
+    if (!res.body) {
       throw new Error('Response body is empty');
     }
 
-    const reader = response.body.getReader();
+    const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let streamBuffer = '';
 
@@ -4824,18 +4825,18 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
 
   // meta信息处理（duration等）
   if (firstTokenTime !== null) {
-    const metaEl = $('.response-meta', card);
-    if (metaEl) {
-      const icon = $('.model-status-icon', metaEl);
+    const meta = $('.response-meta', card);
+    if (meta) {
+      const icon = $('.model-status-icon', meta);
       if (icon) {
         icon.classList.remove('spinning');
       }
 
       // 添加duration显示（如果不存在）
-      if (!$('.response-duration', metaEl)) {
+      if (!$('.response-duration', meta)) {
         const durationEl = mk('span', `response-duration ${getSpeedClass(firstTokenTime)}`);
         durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
-        const modelNameEl = $('.response-model-name', metaEl);
+        const modelNameEl = $('.response-model-name', meta);
         if (modelNameEl) {
           modelNameEl.insertAdjacentElement('afterend', durationEl);
         }
@@ -4853,10 +4854,10 @@ function updateCardStatus(modelId, status, error, state = null) {
     card.classList.remove('thinking');
 
     const contentEl = $('.response-card-content', card);
-    const metaEl = $('.response-meta', card);
+    const meta = $('.response-meta', card);
 
     // Update status icon with color class
-    const icon = metaEl ? $('.model-status-icon', metaEl) : null;
+    const icon = meta ? $('.model-status-icon', meta) : null;
     if (icon) {
       icon.classList.remove('spinning', 'completed', 'failed', 'stopped');
       icon.classList.add(status);
@@ -4868,10 +4869,10 @@ function updateCardStatus(modelId, status, error, state = null) {
       if (contentEl) {
         contentEl.textContent = '';  // Empty content for failed
       }
-      if (metaEl && error && !$('.response-error', metaEl)) {
+      if (meta && error && !$('.response-error', meta)) {
         const errorEl = mk('span', 'response-error');
         errorEl.textContent = error;
-        const statusEl = $('.response-status', metaEl) || icon;
+        const statusEl = $('.response-status', meta) || icon;
         if (statusEl) {
           statusEl.insertAdjacentElement('afterend', errorEl);
         }
@@ -4897,15 +4898,15 @@ function updateCardStatus(modelId, status, error, state = null) {
 
       // 更新totalDuration显示
       if (state && state.totalDuration) {
-        let totalEl = $('.response-total', metaEl);
+        let totalEl = $('.response-total', meta);
         if (!totalEl) {
           totalEl = mk('span', 'response-total');
-          // 插入到metaEl末尾或icon后面
-          const insertAfter = $('.response-status', metaEl) || $('.model-status-icon', metaEl);
+          // 插入到meta末尾或icon后面
+          const insertAfter = $('.response-status', meta) || $('.model-status-icon', meta);
           if (insertAfter) {
             insertAfter.insertAdjacentElement('afterend', totalEl);
           } else {
-            metaEl.addChild(totalEl);
+            meta.addChild(totalEl);
           }
         }
         totalEl.textContent = `耗时${(state.totalDuration/1000).toFixed(1)}s`;
