@@ -1939,8 +1939,10 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
 
   const startTime = Date.now();
 
+  // 原始内容（含标签）和thinking解析状态
+  let rawContent = '';  // 保存原始完整内容
   let inThinking = false;
-  let buffer = '';
+  let thinkingBuffer = '';  // 用于提取thinking内容
   const THINKING_START = '<thinking>';
   const THINKING_END = '</thinking>';
 
@@ -1982,25 +1984,30 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
             const json = JSON.parse(data);
             const chunk = json.choices?.[0]?.delta?.content;
             if (chunk) {
-              buffer += chunk;
+              // 保存原始内容
+              rawContent += chunk;
+              state.content = rawContent;  // content始终是原始内容
+
+              // 解析thinking标签（用于单独显示）
+              thinkingBuffer += chunk;
 
               if (!inThinking) {
-                const startIdx = buffer.indexOf(THINKING_START);
+                const startIdx = thinkingBuffer.indexOf(THINKING_START);
                 if (startIdx !== -1) {
                   inThinking = true;
                   state.thinkingStartTime = Date.now();
                   state.phase = 'thinking';
-                  state.content += buffer.slice(0, startIdx);
-                  buffer = buffer.slice(startIdx + THINKING_START.length);
+                  thinkingBuffer = thinkingBuffer.slice(startIdx + THINKING_START.length);
                 }
               }
 
               if (inThinking) {
-                const endIdx = buffer.indexOf(THINKING_END);
+                const endIdx = thinkingBuffer.indexOf(THINKING_END);
                 if (endIdx !== -1) {
+                  // thinking内容不含标签
+                  state.thinking += thinkingBuffer.slice(0, endIdx);
+                  thinkingBuffer = thinkingBuffer.slice(endIdx + THINKING_END.length);
                   inThinking = false;
-                  state.thinking += buffer.slice(0, endIdx);
-                  buffer = buffer.slice(endIdx + THINKING_END.length);
                   state.phase = 'content';
 
                   if (state.firstContentTokenTime === null) {
@@ -2010,17 +2017,15 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
                     state.thinkingDuration = state.firstContentTokenTime - state.thinkingStartTime;
                   }
                 } else {
-                  state.thinking += buffer;
-                  buffer = '';
+                  // 还在thinking阶段，继续累积（不含标签）
+                  state.thinking += thinkingBuffer;
+                  thinkingBuffer = '';
                 }
               }
 
-              if (!inThinking && buffer) {
-                if (state.firstContentTokenTime === null) {
-                  state.firstContentTokenTime = Date.now();
-                }
-                state.content += buffer;
-                buffer = '';
+              // firstContentTokenTime：第一个chunk的时间
+              if (state.firstContentTokenTime === null && rawContent.length > 0) {
+                state.firstContentTokenTime = Date.now();
               }
 
               onChunk(state);
@@ -2030,10 +2035,9 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
       }
     }
 
-    if (inThinking) {
-      state.thinking += buffer;
-    } else if (buffer) {
-      state.content += buffer;
+    // 处理未结束的thinking
+    if (inThinking && thinkingBuffer) {
+      state.thinking += thinkingBuffer;
     }
 
     if (state.thinkingStartTime && state.thinkingDuration === undefined) {
@@ -2204,8 +2208,10 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
     firstContentTokenTime: null
   };
 
+  // 原始内容（含标签）和thinking解析状态
+  let rawContent = '';
   let inThinking = false;
-  let buffer = '';
+  let thinkingBuffer = '';
   const THINKING_START = '<thinking>';
   const THINKING_END = '</thinking>';
 
@@ -2246,25 +2252,29 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
             const json = JSON.parse(data);
             const chunk = json.candidates?.[0]?.content?.parts?.[0]?.text;
             if (chunk) {
-              buffer += chunk;
+              // 保存原始内容
+              rawContent += chunk;
+              state.content = rawContent;
+
+              // 解析thinking标签
+              thinkingBuffer += chunk;
 
               if (!inThinking) {
-                const startIdx = buffer.indexOf(THINKING_START);
+                const startIdx = thinkingBuffer.indexOf(THINKING_START);
                 if (startIdx !== -1) {
                   inThinking = true;
                   state.thinkingStartTime = Date.now();
                   state.phase = 'thinking';
-                  state.content += buffer.slice(0, startIdx);
-                  buffer = buffer.slice(startIdx + THINKING_START.length);
+                  thinkingBuffer = thinkingBuffer.slice(startIdx + THINKING_START.length);
                 }
               }
 
               if (inThinking) {
-                const endIdx = buffer.indexOf(THINKING_END);
+                const endIdx = thinkingBuffer.indexOf(THINKING_END);
                 if (endIdx !== -1) {
+                  state.thinking += thinkingBuffer.slice(0, endIdx);
+                  thinkingBuffer = thinkingBuffer.slice(endIdx + THINKING_END.length);
                   inThinking = false;
-                  state.thinking += buffer.slice(0, endIdx);
-                  buffer = buffer.slice(endIdx + THINKING_END.length);
                   state.phase = 'content';
 
                   if (state.firstContentTokenTime === null) {
@@ -2274,17 +2284,13 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
                     state.thinkingDuration = state.firstContentTokenTime - state.thinkingStartTime;
                   }
                 } else {
-                  state.thinking += buffer;
-                  buffer = '';
+                  state.thinking += thinkingBuffer;
+                  thinkingBuffer = '';
                 }
               }
 
-              if (!inThinking && buffer) {
-                if (state.firstContentTokenTime === null) {
-                  state.firstContentTokenTime = Date.now();
-                }
-                state.content += buffer;
-                buffer = '';
+              if (state.firstContentTokenTime === null && rawContent.length > 0) {
+                state.firstContentTokenTime = Date.now();
               }
 
               onChunk(state);
@@ -2294,10 +2300,8 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
       }
     }
 
-    if (inThinking) {
-      state.thinking += buffer;
-    } else if (buffer) {
-      state.content += buffer;
+    if (inThinking && thinkingBuffer) {
+      state.thinking += thinkingBuffer;
     }
 
     if (state.thinkingStartTime && state.thinkingDuration === undefined) {
@@ -2507,7 +2511,6 @@ async function init() {
     renderModelSelector(getGroups(), selectedModels, false);
   };
   document.getElementById('btn-help').onclick = () => showHelpDialog(false, pendingDirectoryHandle !== null);
-  document.getElementById('btn-new-session').onclick = handleNewSession;
   document.getElementById('btn-new-session-header').onclick = handleNewSession;
   document.getElementById('btn-delete-dir').onclick = handleDeleteDirectory;
   document.getElementById('btn-wipe-dir').onclick = handleWipeDirectory;
