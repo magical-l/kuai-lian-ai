@@ -14,7 +14,7 @@
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo位置预留，暂不显示 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.4.4</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.4.5</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -2942,11 +2942,7 @@ async function handleSend() {
 
   // 发送后自动收起模型选择区
   selectorExpanded = false;
-  const selectorList = document.getElementById('selector-list');
-  if (selectorList) selectorList.style.display = 'none';
-  const expandBtnText = document.getElementById('expand-btn-text');
-  if (expandBtnText) expandBtnText.textContent = '▼ 展开';
-  document.getElementById('model-selector').classList.add('collapsed');
+  renderModelSelector(getGroups(), selectedModels, true);
 
   const groups = getGroups();
   const messages = currentSession.messages.map(m => {
