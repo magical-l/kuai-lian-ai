@@ -14,7 +14,7 @@
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo位置预留，暂不显示 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.4.3</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.4.4</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -965,7 +965,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     card.appendChild(metaEl);
 
     // Thinking block（如果有thinking内容）
-    if (r.thinking) {
+    if (r.thinking && r.thinking.trim()) {
       const thinkingBlock = document.createElement('div');
       thinkingBlock.className = 'thinking-block collapsed';
 
@@ -974,13 +974,13 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
       thinkingHeader.onclick = function() { toggleThinking(this); };
 
       const thinkingDurationStr = r.thinkingDuration
-        ? `${(r.thinkingDuration/1000).toFixed(1)}s`
+        ? `耗时 ${(r.thinkingDuration/1000).toFixed(1)}s`
         : '';
 
       thinkingHeader.innerHTML = `
         <span class="thinking-icon"></span>
         <span class="thinking-label">思考</span>
-        <span class="thinking-duration">耗时 ${thinkingDurationStr}</span>
+        <span class="thinking-duration">${thinkingDurationStr}</span>
       `;
 
       const thinkingContent = document.createElement('div');
@@ -2157,8 +2157,9 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
                   if (state.firstContentTokenTime === null) {
                     state.firstContentTokenTime = Date.now();
                   }
+                  // thinking结束，计算thinkingDuration（thinking结束时间 - 开始时间）
                   if (state.thinkingStartTime) {
-                    state.thinkingDuration = state.firstContentTokenTime - state.thinkingStartTime;
+                    state.thinkingDuration = Date.now() - state.thinkingStartTime;
                   }
                 } else {
                   // 还在thinking阶段，继续累积（不含标签）
@@ -2445,8 +2446,9 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
                   if (state.firstContentTokenTime === null) {
                     state.firstContentTokenTime = Date.now();
                   }
+                  // thinking结束，计算thinkingDuration（thinking结束时间 - 开始时间）
                   if (state.thinkingStartTime) {
-                    state.thinkingDuration = state.firstContentTokenTime - state.thinkingStartTime;
+                    state.thinkingDuration = Date.now() - state.thinkingStartTime;
                   }
                 } else {
                   state.thinking += thinkingBuffer;
@@ -3057,7 +3059,7 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
   // thinking区块处理
   const thinkingBlock = card.querySelector('.thinking-block');
   if (thinkingBlock) {
-    if (state.thinking && state.thinking.length > 0) {
+    if (state.thinking && state.thinking.trim()) {
       thinkingBlock.style.display = 'block';
       thinkingBlock.classList.add('streaming');
 
@@ -3072,10 +3074,12 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
         thinkingHeader = document.createElement('div');
         thinkingHeader.className = 'thinking-header';
         thinkingHeader.onclick = function() { toggleThinking(this); };
+        // 只有在有thinkingDuration时才显示耗时
+        const durationText = state.thinkingDuration ? `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s` : '';
         thinkingHeader.innerHTML = `
           <span class="thinking-icon"></span>
           <span class="thinking-label">思考</span>
-          <span class="thinking-duration">耗时 0.0s</span>
+          <span class="thinking-duration">${durationText}</span>
         `;
         thinkingBlock.insertBefore(thinkingHeader, thinkingBlock.firstChild);
       }
