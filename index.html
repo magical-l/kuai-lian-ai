@@ -14,7 +14,7 @@
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo位置预留，暂不显示 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.2.0</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.2.11</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -56,6 +56,7 @@
         <button id="btn-new-session-header" title="新建会话">新建会话</button>
       </div>
       <div class="chat-messages" id="chat-messages"></div>
+      <div class="divider-horizontal" id="divider-horizontal"></div>
       <div class="chat-input-area">
         <!-- 新增：模型选择器 -->
         <div id="model-selector" class="model-selector collapsed">
@@ -67,7 +68,7 @@
               <span id="expand-btn-text">▼ 展开</span>
             </div>
           </div>
-          <div class="selector-list" id="selector-list" style="display:none;">
+          <div class="selector-list" id="selector-list">
             <!-- 展开时显示按端点分组的模型列表 -->
           </div>
         </div>
@@ -86,7 +87,12 @@
 
     <!-- 右侧栏：聊天记录 -->
     <div class="sidebar-right" id="sidebar-right">
-      <div class="sidebar-header">聊天记录</div>
+      <div class="sidebar-header">
+        <span>聊天记录</span>
+        <button id="btn-collapse-right" class="btn-header-action" title="收起侧边栏">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
       <div class="sidebar-content" id="session-list"></div>
     </div>
     </div>
@@ -101,49 +107,95 @@ function initDividers() {
   const sidebarLeft = document.getElementById('sidebar-left');
   const sidebarRight = document.getElementById('sidebar-right');
 
+  // 水平分隔线
+  const dividerHorizontal = document.getElementById('divider-horizontal');
+  const chatMessages = document.getElementById('chat-messages');
+  const mainContent = document.getElementById('main-content');
+  const chatInputArea = document.querySelector('.chat-input-area');
+  const chatHeader = document.querySelector('.chat-header');
+
   // 恢复保存的侧栏宽度
   const savedLeftWidth = localStorage.getItem('sidebar-left-width');
   const savedRightWidth = localStorage.getItem('sidebar-right-width');
   if (savedLeftWidth) sidebarLeft.style.width = savedLeftWidth;
   if (savedRightWidth) sidebarRight.style.width = savedRightWidth;
 
+  // 清理旧格式存储，重新初始化布局
+  localStorage.removeItem('chat-messages-flex');
+  // 恢复保存的消息区高度（像素值）
+  const savedMessagesHeight = localStorage.getItem('chat-messages-height');
+  if (savedMessagesHeight) {
+    chatMessages.style.height = savedMessagesHeight;
+    chatMessages.style.flex = '0 0 auto';
+  }
+
   let isDragging = false;
   let currentDivider = null;
   let startX = 0;
   let startWidth = 0;
+  let startY = 0;
+  let startMessagesHeight = 0;
+  let startMainHeight = 0;
 
   function startDrag(e, divider, sidebar, isLeft) {
     isDragging = true;
-    currentDivider = { divider, sidebar, isLeft, storageKey: isLeft ? 'sidebar-left-width' : 'sidebar-right-width' };
+    currentDivider = { divider, sidebar, isLeft, storageKey: isLeft ? 'sidebar-left-width' : 'sidebar-right-width', type: 'horizontal' };
     startX = e.clientX;
     startWidth = sidebar.offsetWidth;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   }
 
+  function startDragVertical(e) {
+    isDragging = true;
+    currentDivider = { divider: dividerHorizontal, type: 'vertical' };
+    startY = e.clientY;
+    startMessagesHeight = chatMessages.offsetHeight;
+    // 记录消息区和输入区的总可用高度（不含header和divider）
+    startMainHeight = mainContent.offsetHeight - dividerHorizontal.offsetHeight - chatHeader.offsetHeight;
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+  }
+
   function doDrag(e) {
     if (!isDragging || !currentDivider) return;
 
-    const dx = e.clientX - startX;
-    const newWidth = currentDivider.isLeft
-      ? startWidth + dx
-      : startWidth - dx;
+    if (currentDivider.type === 'vertical') {
+      const dy = e.clientY - startY;
+      const newHeight = startMessagesHeight + dy;
+      const minMessages = 100;
+      const minInput = 120;
+      const maxMessages = startMainHeight - minInput;
+      const clamped = Math.max(minMessages, Math.min(maxMessages, newHeight));
+      chatMessages.style.height = clamped + 'px';
+      chatMessages.style.flex = '0 0 auto';
+    } else {
+      // 水平方向拖动（调整侧栏宽度）
+      const dx = e.clientX - startX;
+      const newWidth = currentDivider.isLeft
+        ? startWidth + dx
+        : startWidth - dx;
 
-    // 使用百分比限制到1/3
-    const mainRow = document.getElementById('main-row');
-    if (!mainRow) return; // 防止元素不存在时报错
-    const containerWidth = mainRow.offsetWidth;
-    const minWidth = 180;
-    const maxWidth = containerWidth * 0.333; // 最多1/3
-    const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+      // 使用百分比限制到1/3
+      const mainRow = document.getElementById('main-row');
+      if (!mainRow) return; // 防止元素不存在时报错
+      const containerWidth = mainRow.offsetWidth;
+      const minWidth = 180;
+      const maxWidth = containerWidth * 0.333; // 最多1/3
+      const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 
-    currentDivider.sidebar.style.width = clampedWidth + 'px';
+      currentDivider.sidebar.style.width = clampedWidth + 'px';
+    }
   }
 
   function stopDrag() {
     if (isDragging && currentDivider) {
-      // 保存宽度到localStorage
-      localStorage.setItem(currentDivider.storageKey, currentDivider.sidebar.style.width);
+      if (currentDivider.type === 'vertical') {
+        localStorage.setItem('chat-messages-height', chatMessages.style.height);
+      } else {
+        // 保存宽度到localStorage
+        localStorage.setItem(currentDivider.storageKey, currentDivider.sidebar.style.width);
+      }
       isDragging = false;
       currentDivider = null;
       document.body.style.cursor = '';
@@ -159,8 +211,29 @@ function initDividers() {
     startDrag(e, dividerRight, sidebarRight, false);
   });
 
+  if (dividerHorizontal) {
+    dividerHorizontal.addEventListener('mousedown', (e) => {
+      startDragVertical(e);
+    });
+  }
+
   document.addEventListener('mousemove', doDrag);
   document.addEventListener('mouseup', stopDrag);
+
+  // 右侧栏收起/展开
+  const btnCollapseRight = document.getElementById('btn-collapse-right');
+  if (btnCollapseRight) {
+    // 恢复保存的收起状态
+    const savedCollapsed = localStorage.getItem('sidebar-right-collapsed') === 'true';
+    if (savedCollapsed) {
+      sidebarRight.classList.add('collapsed');
+    }
+
+    btnCollapseRight.addEventListener('click', () => {
+      sidebarRight.classList.toggle('collapsed');
+      localStorage.setItem('sidebar-right-collapsed', sidebarRight.classList.contains('collapsed'));
+    });
+  }
 }
 
 // ========== Thinking Block Toggle ==========
@@ -198,14 +271,13 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
       if (!info) return '';
       const statusClass = getTagStatusClass(id);
       const icon = getStatusIcon(id);
-      return `<span class="model-tag ${statusClass} selected" data-model="${id}"><span class="model-status-icon">${icon}</span>${info.model.name}</span>`;
+      return `<span class="model-tag ${statusClass} selected" data-model="${id}"><span class="model-status-icon">${icon}</span><span class="endpoint-name-color">${info.group.name}</span> ${info.model.name}</span>`;
     }).join('');
     expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
   }
 
   // 展开状态列表
   if (selectorExpanded) {
-    listEl.style.display = 'block';
     listEl.innerHTML = groups.map(g => {
       const tags = g.models.map(m => {
         const isSelected = selectedModels.includes(`${g.id}:${m.id}`);
@@ -219,8 +291,6 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
       }).join('');
       return `<div class="selector-group-label">${g.name}</div><div class="selector-models-row">${tags}</div>`;
     }).join('');
-  } else {
-    listEl.style.display = 'none';
   }
 
   bindSelectorEvents(groups, isGenerating);
@@ -821,8 +891,8 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const metaEl = document.createElement('div');
     metaEl.className = 'response-meta';
 
-    const durationStr = r.firstTokenTime ? `${(r.firstTokenTime/1000).toFixed(1)}s回应` : '';
-    const totalStr = r.totalDuration ? `${(r.totalDuration/1000).toFixed(1)}s耗时` : '';
+    const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
+    const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
     const statusText = getStatusText(r.status);
     const responseTimeStr = r.timestamp ? formatDateTime(r.timestamp) : '';
     const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
@@ -866,7 +936,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 
       thinkingHeader.innerHTML = `
         <span class="thinking-icon"></span>
-        <span class="thinking-label">思考过程</span>
+        <span class="thinking-label">思考</span>
         <span class="thinking-duration">耗时 ${thinkingDurationStr}</span>
       `;
 
@@ -1934,7 +2004,8 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
     content: '',
     phase: 'content',
     thinkingStartTime: null,
-    firstContentTokenTime: null
+    firstContentTokenTime: null,
+    thinkingDuration: null
   };
 
   const startTime = Date.now();
@@ -1945,7 +2016,8 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
   let thinkingBuffer = '';  // 用于提取thinking内容
   let currentThinkingTag = null;  // 当前匹配的标签类型
   const THINKING_TAGS = [
-    { start: '<thinking>', end: '</thinking>' }
+    { start: '<thinking>', end: '</thinking>' },
+    { start: '<think>', end: '</think>' }
   ];
 
   try {
@@ -1993,11 +2065,18 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
                 state.phase = 'thinking';
               }
               state.thinking += delta.reasoning_content;
+              onChunk(state);
             }
 
             // 普通content字段
             const chunk = delta?.content;
             if (chunk) {
+              // DeepSeek格式：收到content时，thinking结束，计算thinkingDuration
+              if (state.thinkingStartTime && state.thinkingDuration === null && delta?.reasoning_content === undefined) {
+                state.thinkingDuration = Date.now() - state.thinkingStartTime;
+                state.phase = 'content';
+              }
+
               // 保存原始内容（含标签，用于调试）
               rawContent += chunk;
 
@@ -2066,7 +2145,7 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
       state.thinking += thinkingBuffer;
     }
 
-    if (state.thinkingStartTime && state.thinkingDuration === undefined) {
+    if (state.thinkingStartTime && state.thinkingDuration === null) {
       state.thinkingDuration = Date.now() - state.thinkingStartTime;
     }
 
@@ -2111,7 +2190,8 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = nu
     content: '',
     phase: 'content',
     thinkingStartTime: null,
-    firstContentTokenTime: null
+    firstContentTokenTime: null,
+    thinkingDuration: null
   };
 
   const startTime = Date.now();
@@ -2159,6 +2239,10 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = nu
             else if (json.type === 'content_block_delta' && json.delta?.type === 'thinking_delta') {
               state.thinking += json.delta.thinking || '';
               state.phase = 'thinking';
+              // 实时计算thinkingDuration
+              if (state.thinkingStartTime && state.thinkingDuration === null) {
+                state.thinkingDuration = Date.now() - state.thinkingStartTime;
+              }
               onChunk(state);
             }
             else if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta') {
@@ -2183,7 +2267,7 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = nu
       }
     }
 
-    if (state.thinkingStartTime && state.thinkingDuration === undefined) {
+    if (state.thinkingStartTime && state.thinkingDuration === null) {
       state.thinkingDuration = Date.now() - state.thinkingStartTime;
     }
 
@@ -2231,7 +2315,8 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
     content: '',
     phase: 'content',
     thinkingStartTime: null,
-    firstContentTokenTime: null
+    firstContentTokenTime: null,
+    thinkingDuration: null
   };
 
   // 原始内容（含标签）和thinking解析状态
@@ -2240,7 +2325,8 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
   let thinkingBuffer = '';
   let currentThinkingTag = null;
   const THINKING_TAGS = [
-    { start: '<thinking>', end: '</thinking>' }
+    { start: '<thinking>', end: '</thinking>' },
+    { start: '<think>', end: '</think>' }
   ];
 
   try {
@@ -2344,7 +2430,7 @@ async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = nu
       state.thinking += thinkingBuffer;
     }
 
-    if (state.thinkingStartTime && state.thinkingDuration === undefined) {
+    if (state.thinkingStartTime && state.thinkingDuration === null) {
       state.thinkingDuration = Date.now() - state.thinkingStartTime;
     }
 
@@ -2439,10 +2525,11 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
       state.content = resultState.content;
       state.thinking = resultState.thinking;
       state.thinkingDuration = resultState.thinkingDuration;
+      const completionTime = Date.now();
+      state.totalDuration = completionTime - startTime;
       // Immediately update UI for this specific model
       renderModelSelector(groups, selectedModels, true);
       updateCardStatus(id, 'completed', null, state);
-      const completionTime = Date.now();
       return {
         modelId: id,
         status: 'completed',
@@ -2450,7 +2537,7 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
         content: resultState.content,
         thinkingDuration: resultState.thinkingDuration,
         firstTokenTime: state.firstTokenTime,
-        totalDuration: completionTime - startTime,
+        totalDuration: state.totalDuration,
         timestamp: completionTime
       };
 
@@ -2926,12 +3013,39 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
   // thinking区块处理
   const thinkingBlock = card.querySelector('.thinking-block');
   if (thinkingBlock) {
-    if (state.thinking) {
+    if (state.thinking && state.thinking.length > 0) {
       thinkingBlock.style.display = 'block';
+      thinkingBlock.classList.add('streaming');
+
       const thinkingContent = thinkingBlock.querySelector('.thinking-content');
       if (thinkingContent) {
         thinkingContent.textContent = state.thinking;
       }
+
+      // 创建thinking header（如果不存在）
+      let thinkingHeader = thinkingBlock.querySelector('.thinking-header');
+      if (!thinkingHeader) {
+        thinkingHeader = document.createElement('div');
+        thinkingHeader.className = 'thinking-header';
+        thinkingHeader.onclick = function() { toggleThinking(this); };
+        thinkingHeader.innerHTML = `
+          <span class="thinking-icon"></span>
+          <span class="thinking-label">思考</span>
+          <span class="thinking-duration">耗时 0.0s</span>
+        `;
+        thinkingBlock.insertBefore(thinkingHeader, thinkingBlock.firstChild);
+      }
+
+      // 更新thinkingDuration
+      if (state.thinkingDuration) {
+        const thinkingDurationEl = thinkingHeader.querySelector('.thinking-duration');
+        if (thinkingDurationEl) {
+          thinkingDurationEl.textContent = `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s`;
+        }
+      }
+    } else {
+      // thinking为空，隐藏思考块
+      thinkingBlock.style.display = 'none';
     }
   }
 
@@ -2954,7 +3068,7 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
       if (!metaEl.querySelector('.response-duration')) {
         const durationEl = document.createElement('span');
         durationEl.className = `response-duration ${getSpeedClass(firstTokenTime)}`;
-        durationEl.textContent = `${(firstTokenTime/1000).toFixed(1)}s回应`;
+        durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
         const modelNameEl = metaEl.querySelector('.response-model-name');
         if (modelNameEl) {
           modelNameEl.insertAdjacentElement('afterend', durationEl);
@@ -3002,38 +3116,35 @@ function updateCardStatus(modelId, status, error, state = null) {
     } else if (status === 'completed') {
       // Content already updated via updateStreamingCard
 
-      // 处理thinking区块折叠
-      if (state && state.thinking) {
+      // 更新thinking区块的duration显示
+      if (state && state.thinkingDuration) {
         const thinkingBlock = card.querySelector('.thinking-block');
         if (thinkingBlock) {
           thinkingBlock.classList.remove('streaming');
           thinkingBlock.classList.add('collapsed');
 
-          // 添加折叠header（如果不存在）
-          if (!thinkingBlock.querySelector('.thinking-header')) {
-            const header = document.createElement('div');
-            header.className = 'thinking-header';
-            header.onclick = function() { toggleThinking(this); };
-
-            const durationStr = state.thinkingDuration
-              ? `${(state.thinkingDuration/1000).toFixed(1)}s`
-              : '';
-
-            header.innerHTML = `
-              <span class="thinking-icon"></span>
-              <span class="thinking-label">思考过程</span>
-              <span class="thinking-duration">${durationStr}</span>
-            `;
-
-            thinkingBlock.insertBefore(header, thinkingBlock.firstChild);
+          const durationEl = thinkingBlock.querySelector('.thinking-duration');
+          if (durationEl) {
+            durationEl.textContent = `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s`;
           }
         }
-      } else {
-        // 无thinking内容，隐藏thinking区块
-        const thinkingBlock = card.querySelector('.thinking-block');
-        if (thinkingBlock) {
-          thinkingBlock.style.display = 'none';
+      }
+
+      // 更新totalDuration显示
+      if (state && state.totalDuration) {
+        let totalEl = metaEl.querySelector('.response-total');
+        if (!totalEl) {
+          totalEl = document.createElement('span');
+          totalEl.className = 'response-total';
+          // 插入到metaEl末尾或icon后面
+          const insertAfter = metaEl.querySelector('.response-status') || metaEl.querySelector('.model-status-icon');
+          if (insertAfter) {
+            insertAfter.insertAdjacentElement('afterend', totalEl);
+          } else {
+            metaEl.appendChild(totalEl);
+          }
         }
+        totalEl.textContent = `耗时${(state.totalDuration/1000).toFixed(1)}s`;
       }
     }
   });
