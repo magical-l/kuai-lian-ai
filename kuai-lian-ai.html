@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>快连ai</title>
+  <title>快连AI</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
@@ -1237,7 +1237,7 @@ button.outline:hover:not(:disabled) {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--border-subtle);
   z-index: 1001;
-  max-width: 600px;
+  max-width: 800px;
   width: 90%;
 }
 
@@ -1713,7 +1713,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.7.3</span>
+        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.7.3</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -1737,7 +1737,7 @@ button.outline:hover:not(:disabled) {
     <!-- 左侧栏：端点列表 -->
     <div class="sidebar-left" id="sidebar-left">
       <div class="sidebar-header">
-        <span>ai服务端点</span>
+        <span>AI服务端点</span>
         <button id="btn-add-group" class="btn-header-action" title="新增端点">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
@@ -1911,41 +1911,15 @@ button.outline:hover:not(:disabled) {
   <!-- 帮助对话框 -->
   <template id="tpl-help-dialog">
     <div id="help-dialog">
-      <h3>快连ai 使用帮助</h3>
+      <h3>快连AI 使用帮助</h3>
       <div class="help-content">
         <div class="help-section">
-          <h4>基本操作</h4>
-          <ul>
-            <li><b>添加端点</b>：点击左侧栏"+"按钮，输入端点名称、Base URL、接口风格和API Key。</li>
-            <li><b>添加模型</b>：展开端点组后，点击"+ 添加模型"输入模型名称。</li>
-            <li><b>选择模型</b>：单击模型名称选中，然后发送消息即可使用该模型。</li>
-          </ul>
+          快连AI是一款极致小巧的小工具，主要用于快速添加和管理大模型服务端点、快速测试连接、简单对话。端点信息、会话记录完全存于你电脑本地，不会翻本地文件（由浏览器严格把关），也不会联网泄漏。
         </div>
         <div class="help-section">
-          <h4>聊天功能</h4>
-          <ul>
-            <li><b>发送消息</b>：Enter发送，Shift+Enter换行。</li>
-            <li><b>停止生成</b>：生成过程中可点击"停止"按钮中断。</li>
-            <li><b>新建会话</b>：点击"新建会话"按钮开始新的对话。</li>
-            <li><b>历史记录</b>：右侧栏显示所有会话，点击可恢复对话。</li>
-          </ul>
-        </div>
-        <div class="help-section">
-          <h4>管理操作</h4>
-          <ul>
-            <li><b>编辑</b>：双击端点或模型可编辑，点击编辑图标也可编辑。</li>
-            <li><b>删除</b>：点击删除图标，确认后删除。</li>
-            <li><b>拖动排序</b>：拖动端点或模型左侧的手柄可调整顺序。</li>
-            <li><b>测试连接</b>：点击模型右侧的连接图标，验证API是否可用。</li>
-          </ul>
-        </div>
-        <div class="help-section">
-          <h4>接口风格支持</h4>
-          <ul>
-            <li><b>OpenAI</b>：兼容OpenAI接口的各类服务。</li>
-            <li><b>Claude</b>：Anthropic Claude系列模型。</li>
-            <li><b>Gemini</b>：Google Gemini系列模型。</li>
-          </ul>
+          <h4>选目录</h4>
+          <p>第一次打开页面需选择一个本地文件夹做工作目录，端点信息、会话记录会保存于该目录。建议直接建个空目录。随时可以换一个目录。</p>
+          <p>后续重新打开页面可能会需要重新确认一下该目录（浏览器干的）。</p>
         </div>
         <div class="help-section help-section-directory">
           <h4>存储目录</h4>
@@ -1957,6 +1931,26 @@ button.outline:hover:not(:disabled) {
             </div>
           </div>
           <p class="directory-warning" id="help-directory-warning">请选择存储目录以保存配置和会话记录</p>
+        </div>
+        <div class="help-section">
+          <h4>左侧栏：管理端点</h4>
+          <p>端点是线上部署的大模型服务。不同端点有不同地址，同一模型可部署在多个地址，成为不同端点。一个端点可以提供多个模型。</p>
+          <p>* 目前支持OpenAI、Claude、Gemini三种接口格式。国产大模型基本都是OpenAI格式。</p>
+          <p>* 不支持的格式快来贡献代码呀！</p>
+          <p>可以测试连接模型，也可以测试一个端点下添加的所有模型。</p>
+          <p>* 有些服务端点没开CORS，浏览器访问会被拒。我们区分了这种情况，免得以为是服务挂了。</p>
+        </div>
+        <div class="help-section">
+          <h4>中间：聊天</h4>
+          <p>可以选择一个或多个模型舌战群儒。</p>
+          <p>* Enter发送，Shift+Enter换行。</p>
+          <p>交谈中可以随时加入未选模型，或移除已选模型（踢出群！）。</p>
+          <p>* 目前，多轮对话只会把你的话和该模型之前的回复作为上下文，不搭理其他模型。</p>
+          <p>* 暂不支持其他模态。</p>
+        </div>
+        <div class="help-section">
+          <h4>右侧栏：会话记录</h4>
+          <p>可收起，眼不见为净。点击旧会话可再续前缘。</p>
         </div>
       </div>
       <div class="dialog-buttons" id="help-dialog-buttons">
