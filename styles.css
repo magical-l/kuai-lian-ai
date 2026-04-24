@@ -350,22 +350,23 @@ button.btn-navbar:hover:not(:disabled) {
   color: var(--text-muted);
 }
 
-.chat-messages {
+/* ========== Chat Messages ========== */
+.chat-messages-wrapper {
   flex: 1 1 auto;
-  overflow-y: auto;
-  padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  background: var(--bg-subtle);
   min-height: 100px;
+  display: flex; /* 横向布局：滚动容器 + 按钮区 */
+  flex-direction: row;
+  background: var(--bg-subtle);
+  padding: var(--space-2); /* wrapper的padding */
 }
 
 .messages-content {
+  flex: 1;
+  overflow-y: auto; /* 滚动容器 */
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  padding-right: 44px; /* 为滚动导航按钮留空间 */
 }
 
 .chat-input-area {
@@ -574,15 +575,18 @@ button.outline:hover:not(:disabled) {
 
 /* ========== Scroll Navigation Buttons ========== */
 .scroll-nav-buttons {
-  position: sticky;
-  bottom: 0;
-  margin-top: auto;
-  margin-left: auto;
+  width: 32px;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end; /* 按钮靠底部 */
   gap: var(--space-1);
-  z-index: 10;
-  padding: var(--space-2);
+  padding-bottom: var(--space-2);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.scroll-nav-buttons.visible {
+  opacity: 1;
 }
 
 .btn-scroll-nav {
@@ -598,6 +602,10 @@ button.outline:hover:not(:disabled) {
   cursor: pointer;
   transition: all var(--transition-fast);
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+}
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-md);
