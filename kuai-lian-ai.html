@@ -1713,7 +1713,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.6.8</span>
+        <span class="navbar-brand">快连ai</span><span class="navbar-version">v1.7.0</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -2022,6 +2022,17 @@ button.outline:hover:not(:disabled) {
     if (confirm(msg)) action();
   }
 
+  // DOM操作辅助
+  HTMLElement.prototype.addChild = function(child) { return this.appendChild(child); };
+  HTMLElement.prototype.on = function(event, handler) { this.addEventListener(event, handler); return this; };
+  Document.prototype.on = function(event, handler) { this.addEventListener(event, handler); return this; };
+  function mk(tag, className) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    return el;
+  }
+  function text(el, txt) { el.textContent = txt; return el; }
+
   // Tooltip通用组件
   function createTooltip(id, html) {
     let el = null;
@@ -2037,7 +2048,7 @@ button.outline:hover:not(:disabled) {
         el.innerHTML = html;
         document.body.appendChild(el);
         $$('.btn-tooltip-copy', el).forEach(btn => {
-          btn.onclick = (e) => {
+          btn.onclick = e => {
             e.stopPropagation();
             navigator.clipboard.writeText(btn.dataset.copy);
             btn.textContent = '✓';
@@ -2176,22 +2187,22 @@ function initDividers() {
     }
   }
 
-  dividerLeft.addEventListener('mousedown', (e) => {
+  dividerLeft.on('mousedown', e => {
     startDrag(e, dividerLeft, sidebarLeft, true);
   });
 
-  dividerRight.addEventListener('mousedown', (e) => {
+  dividerRight.on('mousedown', e => {
     startDrag(e, dividerRight, sidebarRight, false);
   });
 
   if (dividerHorizontal) {
-    dividerHorizontal.addEventListener('mousedown', (e) => {
+    dividerHorizontal.on('mousedown', e => {
       startDragVertical(e);
     });
   }
 
-  document.addEventListener('mousemove', doDrag);
-  document.addEventListener('mouseup', stopDrag);
+  document.on('mousemove', doDrag);
+  document.on('mouseup', stopDrag);
 
   // 右侧栏收起/展开
   const btnCollapseRight = $('#btn-collapse-right');
@@ -2202,7 +2213,7 @@ function initDividers() {
       sidebarRight.classList.add('collapsed');
     }
 
-    btnCollapseRight.addEventListener('click', () => {
+    btnCollapseRight.on('click', () => {
       sidebarRight.classList.toggle('collapsed');
       localStorage.setItem('sidebar-right-collapsed', sidebarRight.classList.contains('collapsed'));
     });
@@ -2241,7 +2252,7 @@ function initScrollNav() {
   };
 
   // 监听滚动和内容变化
-  scrollContainer.addEventListener('scroll', checkScrollable);
+  scrollContainer.on('scroll', checkScrollable);
   const observer = new MutationObserver(checkScrollable);
   observer.observe(scrollContainer, { childList: true, subtree: true });
 
@@ -2379,7 +2390,7 @@ function bindSelectorEvents() {
 }
 
 // 收起展开的模型选择器（用户点击外部区域时）
-document.addEventListener('click', (e) => {
+document.on('click', e => {
   if (!selectorExpanded) return;
   const selector = $('#model-selector');
   if (selector && !selector.contains(e.target)) {
@@ -2408,38 +2419,34 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
   container.innerHTML = '';
 
   groups.forEach((group, groupIndex) => {
-    const groupEl = document.createElement('div');
-    groupEl.className = 'endpoint-group';
+    const groupEl = mk('div', 'endpoint-group');
     groupEl.dataset.groupId = group.id;
     groupEl.dataset.groupIndex = groupIndex;
     groupEl.draggable = false;
 
-    const headerEl = document.createElement('div');
-    headerEl.className = 'group-header';
+    const headerEl = mk('div', 'group-header');
 
     // 拖动手柄
-    const dragHandle = document.createElement('span');
-    dragHandle.className = 'drag-handle';
+    const dragHandle = mk('span', 'drag-handle');
     dragHandle.innerHTML = SVG.drag(12);
     dragHandle.title = '拖动排序';
     dragHandle.draggable = true;
-    dragHandle.addEventListener('dragstart', (e) => {
+    dragHandle.on('dragstart', e => {
       e.dataTransfer.setData('text/plain', group.id);
       e.dataTransfer.effectAllowed = 'move';
       groupEl.classList.add('dragging');
     });
-    dragHandle.addEventListener('dragend', () => {
+    dragHandle.on('dragend', () => {
       groupEl.classList.remove('dragging');
       $$('.endpoint-group', container).forEach(el => el.classList.remove('drag-over'));
     });
 
     // 收展三角放前面
-    const toggleSpan = document.createElement('span');
-    toggleSpan.className = 'group-toggle';
+    const toggleSpan = mk('span', 'group-toggle');
     // 恢复收起状态
     const isCollapsed = collapsedEndpoints.has(group.id);
     toggleSpan.textContent = isCollapsed ? '▶' : '▼';
-    toggleSpan.addEventListener('click', (e) => {
+    toggleSpan.on('click', e => {
       e.stopPropagation();
       const modelsEl = $('.group-models', groupEl);
       if (modelsEl.style.display === 'none') {
@@ -2452,8 +2459,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     });
 
     // 组名
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'group-name';
+    const nameSpan = mk('span', 'group-name');
     nameSpan.textContent = group.name;
 
     // tooltip内容（创建但不添加到DOM，hover时动态定位）
@@ -2478,18 +2484,17 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     `;
 
     // 组名容器
-    const nameContainer = document.createElement('div');
-    nameContainer.className = 'group-name-wrapper';
-    nameContainer.appendChild(nameSpan);
+    const nameContainer = mk('div', 'group-name-wrapper');
+    nameContainer.addChild(nameSpan);
 
     // 使用createTooltip
     const tooltip = createTooltip(tooltipId, tooltipHTML);
 
     // hover事件
-    nameContainer.addEventListener('mouseenter', () => tooltip.show(nameContainer));
-    nameContainer.addEventListener('mouseleave', () => tooltip.hide());
+    nameContainer.on('mouseenter', () => tooltip.show(nameContainer));
+    nameContainer.on('mouseleave', () => tooltip.hide());
     // 点击展开/收起模型列表，同时隐藏tooltip
-    nameContainer.addEventListener('click', () => {
+    nameContainer.on('click', () => {
       tooltip.hide();
       const modelsEl = $('.group-models', groupEl);
       if (modelsEl) {
@@ -2504,8 +2509,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     });
 
     // 操作按钮容器（不再包含添加模型按钮）
-    const actionsEl = document.createElement('div');
-    actionsEl.className = 'group-actions';
+    const actionsEl = mk('div', 'group-actions');
 
     // 批量测试连接按钮
     // 检查该端点下是否有模型正在测试中
@@ -2515,13 +2519,11 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       return statusData && statusData.status === 'testing';
     });
 
-    const batchTestBtn = document.createElement('button');
+    const batchTestBtn = mk('button');
     batchTestBtn.className = 'btn-action btn-batch-test' + (hasTesting ? ' testing' : '');
-    batchTestBtn.innerHTML = hasTesting
-      ? '<span class="spin">◐</span>'
-      : '○';
+    batchTestBtn.innerHTML = hasTesting ? '<span class="spin">◐</span>' : '○';
     batchTestBtn.title = hasTesting ? '测试中...' : '批量测试连接';
-    batchTestBtn.addEventListener('click', (e) => {
+    batchTestBtn.on('click', e => {
       e.stopPropagation();
       if (onTestConnection) {
         // 测试该端点下所有模型
@@ -2532,36 +2534,34 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     });
 
     // 编辑按钮
-    const editBtn = document.createElement('button');
-    editBtn.className = 'btn-action';
+    const editBtn = mk('button', 'btn-action');
     editBtn.innerHTML = SVG.edit(12);
     editBtn.title = '编辑端点';
-    editBtn.addEventListener('click', (e) => {
+    editBtn.on('click', e => {
       e.stopPropagation();
       onGroupEdit(group.id);
     });
 
     // 删除按钮
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn-action btn-action-danger';
+    const deleteBtn = mk('button', 'btn-action btn-action-danger');
     deleteBtn.innerHTML = SVG.del(12);
     deleteBtn.title = '删除端点';
-    deleteBtn.addEventListener('click', (e) => {
+    deleteBtn.on('click', e => {
       e.stopPropagation();
       confirmAction('确定删除该端点及其所有模型？', () => onGroupDelete(group.id));
     });
 
-    actionsEl.appendChild(batchTestBtn);
-    actionsEl.appendChild(editBtn);
-    actionsEl.appendChild(deleteBtn);
+    actionsEl.addChild(batchTestBtn);
+    actionsEl.addChild(editBtn);
+    actionsEl.addChild(deleteBtn);
 
-    headerEl.appendChild(dragHandle);
-    headerEl.appendChild(toggleSpan);
-    headerEl.appendChild(nameContainer);
-    headerEl.appendChild(actionsEl);
+    headerEl.addChild(dragHandle);
+    headerEl.addChild(toggleSpan);
+    headerEl.addChild(nameContainer);
+    headerEl.addChild(actionsEl);
 
     // 拖放目标事件绑定到整个groupEl
-    groupEl.addEventListener('dragover', (e) => {
+    groupEl.on('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       const draggingEl = $('.dragging', container);
@@ -2569,10 +2569,10 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         groupEl.classList.add('drag-over');
       }
     });
-    groupEl.addEventListener('dragleave', () => {
+    groupEl.on('dragleave', () => {
       groupEl.classList.remove('drag-over');
     });
-    groupEl.addEventListener('drop', (e) => {
+    groupEl.on('drop', e => {
       e.preventDefault();
       groupEl.classList.remove('drag-over');
       const draggedGroupId = e.dataTransfer.getData('text/plain');
@@ -2585,16 +2585,14 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       }
     });
 
-    const modelsEl = document.createElement('div');
-    modelsEl.className = 'group-models';
+    const modelsEl = mk('div', 'group-models');
     // 恢复收起状态
     if (isCollapsed) {
       modelsEl.style.display = 'none';
     }
 
     group.models.forEach((model, modelIndex) => {
-      const modelEl = document.createElement('div');
-      modelEl.className = 'model-item';
+      const modelEl = mk('div', 'model-item');
       modelEl.dataset.modelId = model.id;
       modelEl.dataset.groupId = group.id;
       if (model.id === selectedModelId) {
@@ -2602,23 +2600,21 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       }
 
       // 模型拖动手柄
-      const modelDragHandle = document.createElement('span');
-      modelDragHandle.className = 'drag-handle drag-handle-model';
+      const modelDragHandle = mk('span', 'drag-handle drag-handle-model');
       modelDragHandle.innerHTML = SVG.drag(10);
       modelDragHandle.title = '拖动排序';
       modelDragHandle.draggable = true;
-      modelDragHandle.addEventListener('dragstart', (e) => {
+      modelDragHandle.on('dragstart', e => {
         e.dataTransfer.setData('text/plain', `${group.id}:${model.id}`);
         e.dataTransfer.effectAllowed = 'move';
         modelEl.classList.add('dragging');
       });
-      modelDragHandle.addEventListener('dragend', () => {
+      modelDragHandle.on('dragend', () => {
         modelEl.classList.remove('dragging');
         $$('.model-item', modelsEl).forEach(el => el.classList.remove('drag-over'));
       });
 
-      const modelName = document.createElement('span');
-      modelName.className = 'model-name';
+      const modelName = mk('span', 'model-name');
       modelName.textContent = model.name;
 
       // 模型名tooltip
@@ -2633,65 +2629,56 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 
       const modelTooltip = createTooltip(modelTooltipId, modelTooltipHTML);
 
-      modelName.addEventListener('mouseenter', () => modelTooltip.show(modelName));
-      modelName.addEventListener('mouseleave', () => modelTooltip.hide());
+      modelName.on('mouseenter', () => modelTooltip.show(modelName));
+      modelName.on('mouseleave', () => modelTooltip.hide());
 
-      modelName.addEventListener('click', () => {
+      modelName.on('click', () => {
         modelTooltip.hide();
         if (onModelSelect) onModelSelect(group.id, model.id);
       });
 
       // 模型操作按钮
-      const modelActions = document.createElement('div');
-      modelActions.className = 'model-actions';
+      const modelActions = mk('div', 'model-actions');
 
       // 测试连接按钮
       const statusKey = `${group.id}:${model.id}`;
       const statusData = connectionStatus.get(statusKey) || { status: 'disconnected' };
       const status = statusData.status;
-      const testBtn = document.createElement('button');
+      const testBtn = mk('button');
       testBtn.className = 'btn-action-small btn-connection-' + status;
       testBtn.title = getConnectionStatusText(statusKey);
-
-      if (status === 'testing') {
-        testBtn.innerHTML = '<span class="spin">◐</span>';
-      } else {
-        testBtn.innerHTML = '○';
-      }
-
-      testBtn.addEventListener('click', (e) => {
+      testBtn.innerHTML = status === 'testing' ? '<span class="spin">◐</span>' : '○';
+      testBtn.on('click', e => {
         e.stopPropagation();
         if (onTestConnection) onTestConnection(group.id, model.id);
       });
 
-      const modelEditBtn = document.createElement('button');
-      modelEditBtn.className = 'btn-action-small';
+      const modelEditBtn = mk('button', 'btn-action-small');
       modelEditBtn.innerHTML = SVG.edit(10);
       modelEditBtn.title = '编辑模型';
-      modelEditBtn.addEventListener('click', (e) => {
+      modelEditBtn.on('click', e => {
         e.stopPropagation();
         onModelEdit(group.id, model.id);
       });
 
-      const modelDeleteBtn = document.createElement('button');
-      modelDeleteBtn.className = 'btn-action-small btn-action-danger';
+      const modelDeleteBtn = mk('button', 'btn-action-small btn-action-danger');
       modelDeleteBtn.innerHTML = SVG.del(10);
       modelDeleteBtn.title = '删除模型';
-      modelDeleteBtn.addEventListener('click', (e) => {
+      modelDeleteBtn.on('click', e => {
         e.stopPropagation();
         confirmAction('确定删除该模型？', () => onModelDelete(group.id, model.id));
       });
 
-      modelActions.appendChild(testBtn);
-      modelActions.appendChild(modelEditBtn);
-      modelActions.appendChild(modelDeleteBtn);
+      modelActions.addChild(testBtn);
+      modelActions.addChild(modelEditBtn);
+      modelActions.addChild(modelDeleteBtn);
 
-      modelEl.appendChild(modelDragHandle);
-      modelEl.appendChild(modelName);
-      modelEl.appendChild(modelActions);
+      modelEl.addChild(modelDragHandle);
+      modelEl.addChild(modelName);
+      modelEl.addChild(modelActions);
 
       // 模型拖放目标事件
-      modelEl.addEventListener('dragover', (e) => {
+      modelEl.on('dragover', e => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         const draggingEl = $('.dragging', modelsEl);
@@ -2699,10 +2686,10 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
           modelEl.classList.add('drag-over');
         }
       });
-      modelEl.addEventListener('dragleave', () => {
+      modelEl.on('dragleave', () => {
         modelEl.classList.remove('drag-over');
       });
-      modelEl.addEventListener('drop', (e) => {
+      modelEl.on('drop', e => {
         e.preventDefault();
         e.stopPropagation();
         modelEl.classList.remove('drag-over');
@@ -2716,14 +2703,13 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         }
       });
 
-      modelsEl.appendChild(modelEl);
+      modelsEl.addChild(modelEl);
     });
 
     // 添加模型按钮放在模型列表底部
-    const addModelBtn = document.createElement('div');
-    addModelBtn.className = 'add-model-link';
+    const addModelBtn = mk('div', 'add-model-link');
     addModelBtn.textContent = '+ 添加模型';
-    addModelBtn.addEventListener('click', (e) => {
+    addModelBtn.on('click', e => {
       e.stopPropagation();
       // 显示内联输入框而非弹窗
       const existingInput = $('.add-model-inline', modelsEl);
@@ -2735,7 +2721,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       const inputEl = $('.add-model-input', inlineInput);
       inputEl.focus();
 
-      $('.add-model-confirm', inlineInput).addEventListener('click', async (e2) => {
+      $('.add-model-confirm', inlineInput).on('click', async e2 => {
         e2.stopPropagation();
         const name = inputEl.value.trim();
         if (name) {
@@ -2744,12 +2730,12 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         }
       });
 
-      $('.add-model-cancel', inlineInput).addEventListener('click', (e2) => {
+      $('.add-model-cancel', inlineInput).on('click', e2 => {
         e2.stopPropagation();
         inlineInput.remove();
       });
 
-      inputEl.addEventListener('keydown', (e2) => {
+      inputEl.on('keydown', e2 => {
         if (e2.key === 'Enter') {
           e2.preventDefault();
           $('.add-model-confirm', inlineInput).click();
@@ -2758,11 +2744,11 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         }
       });
     });
-    modelsEl.appendChild(addModelBtn);
+    modelsEl.addChild(addModelBtn);
 
-    groupEl.appendChild(headerEl);
-    groupEl.appendChild(modelsEl);
-    container.appendChild(groupEl);
+    groupEl.addChild(headerEl);
+    groupEl.addChild(modelsEl);
+    container.addChild(groupEl);
   });
 }
 
@@ -2773,58 +2759,51 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
   sessions.sort((a, b) => b.createdAt - a.createdAt);
 
   sessions.forEach(session => {
-    const sessionEl = document.createElement('div');
-    sessionEl.className = 'session-item';
+    const sessionEl = mk('div', 'session-item');
     if (session.id === selectedSessionId) {
       sessionEl.classList.add('selected');
     }
 
-    const titleEl = document.createElement('div');
-    titleEl.className = 'session-title';
+    const titleEl = mk('div', 'session-title');
     titleEl.textContent = session.title || '新会话';
 
-    const metaEl = document.createElement('div');
-    metaEl.className = 'session-meta';
+    const metaEl = mk('div', 'session-meta');
 
-    const timeEl = document.createElement('span');
-    timeEl.className = 'session-time';
+    const timeEl = mk('span', 'session-time');
     timeEl.textContent = new Date(session.createdAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
 
     // 操作按钮
-    const actionsEl = document.createElement('div');
-    actionsEl.className = 'session-actions';
+    const actionsEl = mk('div', 'session-actions');
 
-    const editBtn = document.createElement('button');
-    editBtn.className = 'btn-action-small';
+    const editBtn = mk('button', 'btn-action-small');
     editBtn.innerHTML = SVG.edit(10);
     editBtn.title = '编辑标题';
-    editBtn.addEventListener('click', (e) => {
+    editBtn.on('click', e => {
       e.stopPropagation();
       onSessionEdit(session.id);
     });
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn-action-small btn-action-danger';
+    const deleteBtn = mk('button', 'btn-action-small btn-action-danger');
     deleteBtn.innerHTML = SVG.del(10);
     deleteBtn.title = '删除会话';
-    deleteBtn.addEventListener('click', (e) => {
+    deleteBtn.on('click', e => {
       e.stopPropagation();
       confirmAction('确定删除该会话？', () => onSessionDelete(session.id));
     });
 
-    actionsEl.appendChild(editBtn);
-    actionsEl.appendChild(deleteBtn);
+    actionsEl.addChild(editBtn);
+    actionsEl.addChild(deleteBtn);
 
-    metaEl.appendChild(timeEl);
-    metaEl.appendChild(actionsEl);
+    metaEl.addChild(timeEl);
+    metaEl.addChild(actionsEl);
 
-    sessionEl.appendChild(titleEl);
-    sessionEl.appendChild(metaEl);
-    sessionEl.addEventListener('click', () => {
+    sessionEl.addChild(titleEl);
+    sessionEl.addChild(metaEl);
+    sessionEl.on('click', () => {
       onSessionSelect(session.id);
     });
 
-    container.appendChild(sessionEl);
+    container.addChild(sessionEl);
   });
 }
 
@@ -2833,33 +2812,28 @@ function renderMessages(messages, groups, onCopy) {
   container.innerHTML = '';
 
   messages.forEach((msg, index) => {
-    const msgEl = document.createElement('div');
-    msgEl.className = 'message';
+    const msgEl = mk('div', 'message');
 
     if (msg.role === 'user') {
-      const metaEl = document.createElement('div');
-      metaEl.className = 'message-meta message-meta-user';
+      const metaEl = mk('div', 'message-meta message-meta-user');
       const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
       metaEl.textContent = '我 · ' + timeStr;
-      msgEl.appendChild(metaEl);
+      msgEl.addChild(metaEl);
 
-      const userEl = document.createElement('div');
-      userEl.className = 'message-user';
+      const userEl = mk('div', 'message-user');
       userEl.textContent = msg.content;
-      msgEl.appendChild(userEl);
+      msgEl.addChild(userEl);
 
       // 用户消息状态栏：复制按钮
-      const statusBar = document.createElement('div');
-      statusBar.className = 'message-status-bar message-status-bar-user';
+      const statusBar = mk('div', 'message-status-bar message-status-bar-user');
 
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'btn-icon';
+      const copyBtn = mk('button', 'btn-icon');
       copyBtn.innerHTML = SVG.copy;
       copyBtn.title = '复制';
-      copyBtn.addEventListener('click', () => onCopy(msg.content));
+      copyBtn.onclick = () => onCopy(msg.content);
 
-      statusBar.appendChild(copyBtn);
-      msgEl.appendChild(statusBar);
+      statusBar.addChild(copyBtn);
+      msgEl.addChild(statusBar);
     } else {
       // 检测消息格式
       if (msg.responses && Array.isArray(msg.responses)) {
@@ -2869,7 +2843,7 @@ function renderMessages(messages, groups, onCopy) {
       }
     }
 
-    container.appendChild(msgEl);
+    container.addChild(msgEl);
   });
 
   container.scrollTop = container.scrollHeight;
@@ -2884,23 +2858,20 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
   const metaEl = fromTemplate('tpl-response-meta', '.response-meta');
   $('.response-model-name', metaEl).textContent = modelName;
   $('.response-time', metaEl).textContent = timeStr;
-  $('.copy-btn', metaEl).addEventListener('click', () => onCopy(msg.content || ''));
-  msgEl.appendChild(metaEl);
+  $('.copy-btn', metaEl).onclick = () => onCopy(msg.content || '');
+  msgEl.addChild(metaEl);
 
-  const assistantEl = document.createElement('div');
-  assistantEl.className = 'message-assistant';
+  const assistantEl = mk('div', 'message-assistant');
   assistantEl.textContent = msg.content || '';
-  msgEl.appendChild(assistantEl);
+  msgEl.addChild(assistantEl);
 
   // Status bar: usage info if available
   if (msg.usage) {
-    const statusBar = document.createElement('div');
-    statusBar.className = 'message-status-bar';
-    const usageEl = document.createElement('span');
-    usageEl.className = 'message-usage';
+    const statusBar = mk('div', 'message-status-bar');
+    const usageEl = mk('span', 'message-usage');
     usageEl.textContent = `${msg.usage.input || 0} → ${msg.usage.output || 0} tokens`;
-    statusBar.appendChild(usageEl);
-    msgEl.appendChild(statusBar);
+    statusBar.addChild(usageEl);
+    msgEl.addChild(statusBar);
   }
 }
 
@@ -2909,17 +2880,14 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity)
   );
 
-  const hint = document.createElement('div');
-  hint.className = 'multi-response-hint';
+  const hint = mk('div', 'multi-response-hint');
   hint.textContent = `${sorted.length}个模型回复`;
-  msgEl.appendChild(hint);
+  msgEl.addChild(hint);
 
-  const cards = document.createElement('div');
-  cards.className = 'multi-response-cards';
+  const cards = mk('div', 'multi-response-cards');
 
   sorted.forEach(r => {
-    const card = document.createElement('div');
-    card.className = 'response-card';
+    const card = mk('div', 'response-card');
 
     const info = findModelById(groups, r.modelId);
     const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
@@ -2957,17 +2925,16 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     // Only add copy button for completed responses with content
     const copyBtn = $('.copy-btn', metaEl);
     if (r.status === 'completed' && r.content) {
-      copyBtn.addEventListener('click', () => onCopy(r.content || ''));
+      copyBtn.onclick = () => onCopy(r.content || '');
     } else {
       copyBtn.remove();
     }
 
-    card.appendChild(metaEl);
+    card.addChild(metaEl);
 
     // Thinking block（如果有thinking内容）
     if (r.thinking && r.thinking.trim()) {
-      const thinkingBlock = document.createElement('div');
-      thinkingBlock.className = 'thinking-block collapsed';
+      const thinkingBlock = mk('div', 'thinking-block collapsed');
 
       const thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
       thinkingHeader.onclick = function() { toggleThinking(this); };
@@ -2978,17 +2945,15 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 
       $('.thinking-duration', thinkingHeader).textContent = thinkingDurationStr;
 
-      const thinkingContent = document.createElement('div');
-      thinkingContent.className = 'thinking-content';
+      const thinkingContent = mk('div', 'thinking-content');
       thinkingContent.textContent = r.thinking;
 
-      thinkingBlock.appendChild(thinkingHeader);
-      thinkingBlock.appendChild(thinkingContent);
-      card.appendChild(thinkingBlock);
+      thinkingBlock.addChild(thinkingHeader);
+      thinkingBlock.addChild(thinkingContent);
+      card.addChild(thinkingBlock);
     }
 
-    const content = document.createElement('div');
-    content.className = 'response-card-content';
+    const content = mk('div', 'response-card-content');
     if (r.status === 'failed') {
       content.textContent = '';  // Error shown in meta row, content area empty
     } else if (r.status === 'stopped') {
@@ -2996,12 +2961,12 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     } else {
       content.textContent = r.content || '';
     }
-    card.appendChild(content);
+    card.addChild(content);
 
-    cards.appendChild(card);
+    cards.addChild(card);
   });
 
-  msgEl.appendChild(cards);
+  msgEl.addChild(cards);
 }
 
 function getStatusText(status) {
@@ -3063,10 +3028,10 @@ function showEditGroupDialog(group = null, onSave) {
   });
 
   const keyInput = $('#dialog-group-key', dialog);
-  document.body.appendChild(dialog);
+  document.body.addChild(dialog);
 
   const toggleBtn = $('.btn-toggle-key', dialog);
-  toggleBtn.onclick = (e) => {
+  toggleBtn.onclick = e => {
     e.preventDefault();
     const isPassword = keyInput.type === 'password';
     keyInput.type = isPassword ? 'text' : 'password';
@@ -3095,7 +3060,7 @@ function showEditModelDialog(groupId, model = null, onSave) {
   $('h3', dialog).textContent = model ? '编辑模型' : '新增模型';
   setValues(dialog, { '#dialog-model-name': model?.name });
 
-  document.body.appendChild(dialog);
+  document.body.addChild(dialog);
 
   onClick({
     '#dialog-cancel': () => dialog.remove(),
@@ -3123,12 +3088,11 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
   if (existing) existing.remove();
 
   // 创建遮罩
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
+  const overlay = mk('div', 'dialog-overlay');
   if (forceSelectDirectory) {
     overlay.style.background = 'rgba(0, 0, 0, 0.5)';
   }
-  document.body.appendChild(overlay);
+  document.body.addChild(overlay);
 
   const dialog = fromTemplate('tpl-help-dialog', '#help-dialog');
 
@@ -3166,7 +3130,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
     if (forceSelectDirectory) closeBtn.remove();
   }
 
-  document.body.appendChild(dialog);
+  document.body.addChild(dialog);
 
   // 选择/更换目录按钮
   changeDirBtn.onclick = async () => {
@@ -3371,7 +3335,7 @@ async function openDB() {
     const request = indexedDB.open(DB_NAME, 1);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
-    request.onupgradeneeded = (e) => {
+    request.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME);
@@ -4441,7 +4405,7 @@ async function init() {
   let sendOnEnter = true; // 默认Enter发送
   const chatInput = $('#chat-input');
 
-  chatInput.addEventListener('keydown', (e) => {
+  chatInput.on('keydown', e => {
     if (e.key === 'Enter') {
       if (sendOnEnter && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
@@ -4775,13 +4739,12 @@ async function handleSend() {
 function showThinkingCards(modelIds, groups) {
   const container = $('#chat-messages');
 
-  const msgEl = document.createElement('div');
-  msgEl.className = 'message';
+  const msgEl = mk('div', 'message');
   msgEl.id = 'streaming-multi-response';
 
   const hint = fromTemplate('tpl-multi-response-hint', '.multi-response-hint');
   $('.hint-text', hint).textContent = `${modelIds.length}个模型正在思考...`;
-  msgEl.appendChild(hint);
+  msgEl.addChild(hint);
 
   // 绑定停止按钮事件
   const stopBtn = $('#btn-stop-inline', hint);
@@ -4794,8 +4757,7 @@ function showThinkingCards(modelIds, groups) {
     };
   }
 
-  const cards = document.createElement('div');
-  cards.className = 'multi-response-cards';
+  const cards = mk('div', 'multi-response-cards');
 
   modelIds.forEach(id => {
     const card = fromTemplate('tpl-response-card-streaming', '.response-card');
@@ -4806,11 +4768,11 @@ function showThinkingCards(modelIds, groups) {
 
     $('.response-model-name', card).textContent = name;
 
-    cards.appendChild(card);
+    cards.addChild(card);
   });
 
-  msgEl.appendChild(cards);
-  container.appendChild(msgEl);
+  msgEl.addChild(cards);
+  container.addChild(msgEl);
   scrollToBottom();
 }
 
@@ -4871,8 +4833,7 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
 
       // 添加duration显示（如果不存在）
       if (!$('.response-duration', metaEl)) {
-        const durationEl = document.createElement('span');
-        durationEl.className = `response-duration ${getSpeedClass(firstTokenTime)}`;
+        const durationEl = mk('span', `response-duration ${getSpeedClass(firstTokenTime)}`);
         durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
         const modelNameEl = $('.response-model-name', metaEl);
         if (modelNameEl) {
@@ -4908,8 +4869,7 @@ function updateCardStatus(modelId, status, error, state = null) {
         contentEl.textContent = '';  // Empty content for failed
       }
       if (metaEl && error && !$('.response-error', metaEl)) {
-        const errorEl = document.createElement('span');
-        errorEl.className = 'response-error';
+        const errorEl = mk('span', 'response-error');
         errorEl.textContent = error;
         const statusEl = $('.response-status', metaEl) || icon;
         if (statusEl) {
@@ -4939,14 +4899,13 @@ function updateCardStatus(modelId, status, error, state = null) {
       if (state && state.totalDuration) {
         let totalEl = $('.response-total', metaEl);
         if (!totalEl) {
-          totalEl = document.createElement('span');
-          totalEl.className = 'response-total';
+          totalEl = mk('span', 'response-total');
           // 插入到metaEl末尾或icon后面
           const insertAfter = $('.response-status', metaEl) || $('.model-status-icon', metaEl);
           if (insertAfter) {
             insertAfter.insertAdjacentElement('afterend', totalEl);
           } else {
-            metaEl.appendChild(totalEl);
+            metaEl.addChild(totalEl);
           }
         }
         totalEl.textContent = `耗时${(state.totalDuration/1000).toFixed(1)}s`;
@@ -4968,7 +4927,7 @@ function reorderCardsBySpeed() {
       return (stateA?.firstTokenTime ?? Infinity) - (stateB?.firstTokenTime ?? Infinity);
     });
 
-    cards.forEach(c => container.appendChild(c));
+    cards.forEach(c => container.addChild(c));
   });
 }
 
