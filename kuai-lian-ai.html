@@ -288,32 +288,26 @@ aside .content {
 
 /* ========== Divider ========== */
 .divider {
-  width: 6px;
   background: var(--border-subtle);
-  cursor: col-resize;
   flex-shrink: 0;
-  transition: background var(--transition-fast), width var(--transition-fast);
+  transition: background var(--transition-fast);
   position: relative;
-  z-index: 10;
 }
 
 .divider:hover {
   background: var(--accent-primary);
 }
 
-#divider-horizontal {
-  height: 6px;
-  background: var(--border-subtle);
-  cursor: row-resize;
-  flex-shrink: 0;
-  transition: background var(--transition-fast), height var(--transition-fast);
-  position: relative;
-  z-index: 15;
+.divider.column {
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
 }
 
-#divider-horizontal:hover {
-  background: var(--accent-primary);
-  height: 8px;
+.divider.row {
+  height: 6px;
+  cursor: row-resize;
+  z-index: 15;
 }
 
 /* ========== Main Content ========== */
@@ -1734,7 +1728,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
       </div>
       <div class="content" id="endpoint-list"></div>
     </aside>
-    <div class="divider control sidebar left"></div>
+    <div class="divider column control sidebar left"></div>
 
     <div id="main-content">
       <div id="chat-header">
@@ -1747,7 +1741,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
         <button id="btn-new-session-header" title="新建会话">新建会话</button>
       </div>
       <div id="chat-messages"></div>
-      <div id="divider-horizontal"></div>
+      <div class="divider row"></div>
       <div class="chat-input-area">
         <!-- 新增：模型选择器 -->
         <div id="model-selector" class="model selector collapsed">
@@ -1773,7 +1767,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
       </div>
     </div>
 
-    <div class="divider control sidebar right"></div>
+    <div class="divider column control sidebar right"></div>
 
     <aside class="sidebar right">
       <div class="header">
@@ -2065,7 +2059,7 @@ function createTooltip(id, html) {
 
 function initDividers() {
   // 水平分隔线
-  const dividerHorizontal = $('#divider-horizontal');
+  const dividerHorizontal = $('.divider.row');
   const chatMsg = $('#chat-messages');
   const mainContent = $('#main-content');
   const chatHeader = $('#chat-header');
@@ -2177,7 +2171,7 @@ function initDividers() {
   }
 
   // 统一绑定所有水平 divider
-  $$('.divider.control').forEach(div => {
+  $$('.divider.column.control').forEach(div => {
     div.on('mousedown', startDragHorizontal);
   });
 
