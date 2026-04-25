@@ -151,7 +151,6 @@ main {
 .btn-base,
 .btn-navbar,
 .btn-header-action,
-.btn-scroll-nav,
 .btn-icon,
 .btn-action,
 .btn-action-small {
@@ -167,7 +166,6 @@ main {
 .btn-base:hover:not(:disabled),
 .btn-navbar:hover:not(:disabled),
 .btn-header-action:hover:not(:disabled),
-.btn-scroll-nav:hover:not(:disabled),
 .btn-icon:hover:not(:disabled),
 .btn-action:hover:not(:disabled),
 .btn-action-small:hover:not(:disabled) {
@@ -216,14 +214,14 @@ button.btn-navbar:hover:not(:disabled) {
   font-size: 12px;
 }
 
-.main-row {
+#main-row {
   display: flex;
   flex: 1;
   min-height: 0;
 }
 
 /* ========== Sidebar ========== */
-.sidebar-left, .sidebar-right {
+#sidebar-left, #sidebar-right {
   display: flex;
   flex-direction: column;
   background: var(--bg-base);
@@ -233,26 +231,26 @@ button.btn-navbar:hover:not(:disabled) {
   width: 260px;
 }
 
-.sidebar-right {
+#sidebar-right {
   border-right: none;
   border-left: 1px solid var(--border-subtle);
 }
 
-.sidebar-right.collapsed {
+#sidebar-right.collapsed {
   width: 40px;
   min-width: 40px;
   max-width: 40px;
 }
 
-.sidebar-right.collapsed .sidebar-header span {
+#sidebar-right.collapsed .sidebar-header span {
   display: none;
 }
 
-.sidebar-right.collapsed .sidebar-content {
+#sidebar-right.collapsed .sidebar-content {
   display: none;
 }
 
-.sidebar-right.collapsed #btn-collapse-right svg {
+#sidebar-right.collapsed #btn-collapse-right svg {
   transform: rotate(180deg);
 }
 
@@ -289,7 +287,7 @@ button.btn-navbar:hover:not(:disabled) {
 }
 
 /* ========== Divider ========== */
-.divider-left, .divider-right {
+#divider-left, #divider-right {
   width: 6px;
   background: var(--border-subtle);
   cursor: col-resize;
@@ -299,12 +297,12 @@ button.btn-navbar:hover:not(:disabled) {
   z-index: 10;
 }
 
-.divider-left:hover, .divider-right:hover {
+#divider-left:hover, #divider-right:hover {
   background: var(--accent-primary);
   width: 8px;
 }
 
-.divider-horizontal {
+#divider-horizontal {
   height: 6px;
   background: var(--border-subtle);
   cursor: row-resize;
@@ -314,13 +312,13 @@ button.btn-navbar:hover:not(:disabled) {
   z-index: 15;
 }
 
-.divider-horizontal:hover {
+#divider-horizontal:hover {
   background: var(--accent-primary);
   height: 8px;
 }
 
 /* ========== Main Content ========== */
-.main-content {
+#main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -328,7 +326,7 @@ button.btn-navbar:hover:not(:disabled) {
   background: var(--bg-base);
 }
 
-.chat-header {
+#chat-header {
   padding: var(--space-4) var(--space-6);
   background: var(--bg-base);
   border-bottom: 1px solid var(--border-subtle);
@@ -338,36 +336,13 @@ button.btn-navbar:hover:not(:disabled) {
   height: 56px;
 }
 
-.chat-header-prefix {
+#chat-header .prefix {
   color: var(--text-muted);
   font-size: 13px;
-}
-
-.chat-header-title {
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--text-primary);
-}
-
-.model.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  background: var(--accent-light);
-  border-radius: var(--radius-md);
-  color: var(--accent-primary);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.model.badge.empty {
-  background: var(--bg-muted);
-  color: var(--text-muted);
 }
 
 /* ========== Chat Messages ========== */
-.chat-messages {
+#chat-messages {
   flex: 1 1 auto;
   overflow-y: auto;
   padding: var(--space-6);
@@ -563,7 +538,7 @@ button.outline:hover:not(:disabled) {
 
 
 /* ========== Scroll Navigation Buttons ========== */
-.scroll-nav-buttons {
+#scroll-nav-buttons {
   display: flex;
   flex-direction: row;
   gap: var(--space-1);
@@ -572,11 +547,11 @@ button.outline:hover:not(:disabled) {
   margin-left: auto;
 }
 
-.scroll-nav-buttons.visible {
+#scroll-nav-buttons.visible {
   opacity: 1;
 }
 
-.btn-scroll-nav {
+.scroll-btn {
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   width: 24px;
@@ -585,12 +560,12 @@ button.outline:hover:not(:disabled) {
   font-size: 12px;
   font-weight: 600;
 }
-.btn-scroll-nav:hover:not(:disabled) {
+.scroll-btn:hover:not(:disabled) {
   background: var(--accent-light);
   color: var(--accent-primary);
   border-color: var(--accent-primary);
 }
-.btn-scroll-nav:active {
+.scroll-btn:active {
   transform: scale(0.95);
 }
 
@@ -1115,26 +1090,26 @@ button.outline:hover:not(:disabled) {
 
 /* ========== Scrollbar ========== */
 .sidebar-content::-webkit-scrollbar,
-.chat-messages::-webkit-scrollbar,
+#chat-messages::-webkit-scrollbar,
 .selector.list::-webkit-scrollbar {
   width: 5px;
 }
 
 .sidebar-content::-webkit-scrollbar-track,
-.chat-messages::-webkit-scrollbar-track,
+#chat-messages::-webkit-scrollbar-track,
 .selector.list::-webkit-scrollbar-track {
   background: transparent;
 }
 
 .sidebar-content::-webkit-scrollbar-thumb,
-.chat-messages::-webkit-scrollbar-thumb,
+#chat-messages::-webkit-scrollbar-thumb,
 .selector.list::-webkit-scrollbar-thumb {
   background: var(--border-default);
   border-radius: 3px;
 }
 
 .sidebar-content::-webkit-scrollbar-thumb:hover,
-.chat-messages::-webkit-scrollbar-thumb:hover,
+#chat-messages::-webkit-scrollbar-thumb:hover,
 .selector.list::-webkit-scrollbar-thumb:hover {
   background: var(--border-strong);
 }
@@ -1391,18 +1366,18 @@ button.outline:hover:not(:disabled) {
 
 /* ========== Responsive ========== */
 @media (max-width: 900px) {
-  .sidebar-left, .sidebar-right {
+  #sidebar-left, #sidebar-right {
     width: 200px;
     min-width: 160px;
   }
 }
 
 @media (max-width: 768px) {
-  .sidebar-right {
+  #sidebar-right {
     display: none;
   }
 
-  .chat-messages {
+  #chat-messages {
     padding: var(--space-4);
   }
 
@@ -1730,7 +1705,7 @@ button.outline:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.9.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.10.0</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -1750,9 +1725,8 @@ button.outline:hover:not(:disabled) {
       </div>
     </div>
 
-    <div class="main-row" id="main-row">
-    <!-- 左侧栏：端点列表 -->
-    <div class="sidebar-left" id="sidebar-left">
+    <div id="main-row">
+    <div id="sidebar-left">
       <div class="sidebar-header">
         <span>AI服务端点</span>
         <button id="btn-add-group" class="btn-header-action" title="新增端点">
@@ -1761,22 +1735,20 @@ button.outline:hover:not(:disabled) {
       </div>
       <div class="sidebar-content" id="endpoint-list"></div>
     </div>
-    <!-- 左侧拖动分界线 -->
-    <div class="divider-left" id="divider-left"></div>
+    <div id="divider-left"></div>
 
-    <!-- 中间：聊天界面 -->
-    <div class="main-content" id="main-content">
-      <div class="chat-header" id="chat-header">
-        <span class="chat-header-prefix">会话：</span>
+    <div id="main-content">
+      <div id="chat-header">
+        <span class="prefix">会话：</span>
         <span id="chat-title">新会话</span>
-        <div class="scroll-nav-buttons" id="scroll-nav-buttons">
-          <button id="btn-scroll-top" class="btn-scroll-nav" title="到顶部">↑</button>
-          <button id="btn-scroll-bottom" class="btn-scroll-nav" title="到底部">↓</button>
+        <div id="scroll-nav-buttons">
+          <button id="btn-scroll-top" class="scroll-btn" title="到顶部">↑</button>
+          <button id="btn-scroll-bottom" class="scroll-btn" title="到底部">↓</button>
         </div>
         <button id="btn-new-session-header" title="新建会话">新建会话</button>
       </div>
-      <div class="chat-messages" id="chat-messages"></div>
-      <div class="divider-horizontal" id="divider-horizontal"></div>
+      <div id="chat-messages"></div>
+      <div id="divider-horizontal"></div>
       <div class="chat-input-area">
         <!-- 新增：模型选择器 -->
         <div id="model-selector" class="model selector collapsed">
@@ -1802,11 +1774,9 @@ button.outline:hover:not(:disabled) {
       </div>
     </div>
 
-    <!-- 右侧拖动分界线 -->
-    <div class="divider-right" id="divider-right"></div>
+    <div id="divider-right"></div>
 
-    <!-- 右侧栏：会话记录 -->
-    <div class="sidebar-right" id="sidebar-right">
+    <div id="sidebar-right">
       <div class="sidebar-header">
         <span>会话记录</span>
         <button id="btn-collapse-right" class="btn-header-action" title="收起侧边栏">
@@ -2105,7 +2075,7 @@ function initDividers() {
   const chatMsg = $('#chat-messages');
   const mainContent = $('#main-content');
   const chatInputArea = $('.chat-input-area');
-  const chatHeader = $('.chat-header');
+  const chatHeader = $('#chat-header');
 
   // 恢复保存的侧栏宽度
   const savedLeftWidth = localStorage.getItem('sidebar-left-width');
