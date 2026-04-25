@@ -97,7 +97,7 @@ main {
 }
 
 /* ========== Navbar ========== */
-#navbar {
+nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -107,13 +107,13 @@ main {
   height: 36px;
 }
 
-.navbar-left {
+nav .left {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
-.logo {
+nav .logo {
   width: 24px;
   height: 24px;
   display: flex;
@@ -121,19 +121,19 @@ main {
   justify-content: center;
 }
 
-.brand {
+nav .brand {
   font-weight: 600;
   font-size: 14px;
   color: var(--text-primary);
 }
 
-.version {
+nav .version {
   font-size: 12px;
   color: var(--text-muted);
   margin-left: var(--space-1);
 }
 
-.navbar-center {
+nav .center {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -141,7 +141,7 @@ main {
   justify-content: center;
 }
 
-.navbar-right {
+nav .right {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1700,14 +1700,14 @@ button.outline:hover:not(:disabled) {
 </head>
 <body>
   <main>
-    <div id="navbar">
-      <div class="navbar-left">
+    <nav>
+      <div class="left">
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.10.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.10.1</span>
       </div>
-      <div class="navbar-center">
+      <div class="center">
         <span class="directory-label">当前存储目录：</span>
         <span id="directory-path" class="directory-path">未选择目录</span>
         <button id="btn-change-dir" class="btn-navbar" title="更换目录">
@@ -1720,10 +1720,10 @@ button.outline:hover:not(:disabled) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
         </button>
       </div>
-      <div class="navbar-right">
+      <div class="right">
         <button id="btn-help" class="btn-navbar btn-help-icon" title="帮助">?</button>
       </div>
-    </div>
+    </nav>
 
     <div id="main-row">
     <div id="sidebar-left">
