@@ -147,13 +147,8 @@ nav .right {
   gap: var(--space-2);
 }
 
-/* ========== Base Icon Button ========== */
-.btn-base,
-.btn-navbar,
-.btn-header-action,
-.btn-icon,
-.btn-action,
-.btn-action-small {
+/* ========== Button System ========== */
+.btn {
   background: transparent;
   display: inline-flex;
   align-items: center;
@@ -163,49 +158,86 @@ nav .right {
   transition: all var(--transition-fast);
   color: var(--text-muted);
 }
-.btn-base:hover:not(:disabled),
-.btn-navbar:hover:not(:disabled):not(.btn-danger),
-.btn-header-action:hover:not(:disabled),
-.btn-icon:hover:not(:disabled),
-.btn-action:hover:not(:disabled):not(.btn-danger),
-.btn-action-small:hover:not(:disabled):not(.btn-danger) {
+.btn:hover:not(:disabled):not(.danger) {
   background: var(--bg-muted);
   color: var(--text-secondary);
 }
 
-.btn-navbar {
+/* 尺寸修饰类 */
+.btn.navbar {
   border: 1px solid var(--border-subtle);
   padding: var(--space-1);
   height: 24px;
   min-width: 24px;
 }
-.btn-navbar:hover:not(:disabled):not(.btn-danger),
-button.btn-navbar:hover:not(:disabled):not(.btn-danger) {
+.btn.navbar:hover:not(:disabled):not(.danger) {
   background: var(--accent-light);
   border-color: var(--accent-primary);
   color: var(--accent-primary);
 }
 
-.btn-help-icon {
-  font-size: 14px;
-  font-weight: 600;
+.btn.header {
+  border: 1px solid var(--border-subtle);
+  padding: 0;
+  height: 24px;
+  min-width: 24px;
+}
+.btn.header:hover:not(:disabled) {
+  background: var(--accent-light);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
 }
 
-.directory-label {
-  color: var(--text-muted);
-  font-size: 12px;
+.btn.action {
+  border: 1px solid transparent;
+  padding: var(--space-1);
+  height: 22px;
+  min-width: 22px;
+}
+.btn.action:hover:not(:disabled) {
+  border-color: var(--border-subtle);
 }
 
-.btn-danger {
+.btn.action-sm {
+  border: none;
+  padding: 2px;
+  height: 18px;
+  min-width: 18px;
+}
+
+.btn.icon {
+  border: 1px solid transparent;
+  padding: var(--space-1);
+  height: 24px;
+  min-width: 24px;
+}
+.btn.icon:hover:not(:disabled) {
+  border-color: var(--border-subtle);
+}
+.btn.icon svg {
+  display: block;
+}
+.btn.icon.copy-success {
+  color: var(--accent-success);
+  background: transparent;
+}
+
+/* 颜色修饰类 */
+.btn.danger {
   color: var(--danger);
 }
-.btn-danger:hover:not(:disabled) {
+.btn.danger:hover:not(:disabled) {
   background: var(--danger-light);
   color: var(--danger);
 }
-/* 导航栏danger按钮hover时显示边框 */
-.btn-navbar.btn-danger:hover:not(:disabled) {
+.btn.navbar.danger:hover:not(:disabled) {
   border-color: var(--danger);
+}
+
+/* 功能修饰类 */
+.btn.help {
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .directory-path {
@@ -274,18 +306,6 @@ aside .content {
   overflow-y: auto;
   padding: var(--space-1);
   scrollbar-gutter: stable;
-}
-
-.btn-header-action {
-  border: 1px solid var(--border-subtle);
-  padding: 0;
-  height: 24px;
-  min-width: 24px;
-}
-.btn-header-action:hover {
-  background: var(--accent-light);
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
 }
 
 /* ========== Divider ========== */
@@ -417,24 +437,21 @@ aside .content {
 }
 
 
-/* 停止按钮样式（在hint中） */
-.btn-stop-all {
+/* 停止按钮样式 */
+.btn.stop {
   background: var(--danger-light);
   color: var(--danger);
   border: 1px solid var(--danger);
   padding: 2px 8px;
   height: 20px;
   font-size: 11px;
-  border-radius: var(--radius-sm);
   margin-left: var(--space-2);
 }
-
-.btn-stop-all:hover:not(:disabled) {
+.btn.stop:hover:not(:disabled) {
   background: var(--danger);
   color: white;
 }
-
-.btn-stop-all:disabled {
+.btn.stop:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -615,24 +632,6 @@ button.outline:hover:not(:disabled) {
   padding-left: 0;
 }
 
-.btn-icon {
-  border: 1px solid transparent;
-  padding: var(--space-1);
-  height: 24px;
-  min-width: 24px;
-}
-.btn-icon:hover {
-  border-color: var(--border-subtle);
-}
-.btn-icon svg {
-  display: block;
-}
-
-.btn-icon.copy-success {
-  color: var(--accent-success);
-  background: transparent;
-}
-
 .message-usage {
   font-size: 11px;
   color: var(--text-muted);
@@ -722,8 +721,19 @@ button.outline:hover:not(:disabled) {
   font-size: 12px;
 }
 
-/* 复制按钮成功状态 */
-.btn-tooltip-copy.copied {
+/* 复制按钮 */
+.btn.tooltip-copy {
+  font-size: 12px;
+  padding: 0;
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+}
+.btn.tooltip-copy:hover {
+  opacity: 1;
+  color: var(--accent-primary);
+}
+.btn.tooltip-copy.copied {
   color: var(--accent-success);
   opacity: 1;
 }
@@ -741,77 +751,25 @@ button.outline:hover:not(:disabled) {
   width: 40px;
 }
 
-.tooltip-value {
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
-}
-
-.btn-tooltip-copy {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 12px;
-  padding: 0;
-  width: 18px;
-  height: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity var(--transition-fast), color var(--transition-fast);
-  flex-shrink: 0;
-}
-
-.btn-tooltip-copy:hover {
-  opacity: 1;
-  color: var(--accent-primary);
-}
-
-.group-toggle {
-  color: var(--text-muted);
-  font-size: 8px;
-  transition: transform var(--transition-normal);
-  flex-shrink: 0;
-  width: 12px;
-  text-align: center;
-}
-
 .group-actions {
   display: flex;
   gap: 2px;
   flex-shrink: 0;
 }
 
-.btn-action {
-  border: 1px solid transparent;
-  padding: var(--space-1);
-  height: 22px;
-  min-width: 22px;
-}
-.btn-action:hover {
-  border-color: var(--border-subtle);
-}
-
 /* 批量测试按钮 */
-.btn-batch-test {
+.btn.batch-test {
   color: var(--text-muted);
 }
-
-.btn-batch-test:hover {
+.btn.batch-test:hover:not(:disabled) {
   background: var(--accent-light);
   color: var(--accent-primary);
 }
-
-.btn-batch-test.testing {
+.btn.batch-test.testing {
   background: var(--accent-light);
   color: var(--accent-primary);
 }
-
-.btn-batch-test.testing .spin {
+.btn.batch-test.testing .spin {
   animation: spin 2s linear infinite !important;
   display: inline-block;
 }
@@ -888,24 +846,22 @@ button.outline:hover:not(:disabled) {
   margin-bottom: var(--space-1);
 }
 
-.add-model-confirm.btn-action-small {
+.add-model-confirm.btn.action-sm {
   background: var(--success-light);
   color: var(--success);
   border: 1px solid transparent;
 }
-
-.add-model-confirm.btn-action-small:hover {
+.add-model-confirm.btn.action-sm:hover:not(:disabled) {
   background: var(--success);
   color: white;
 }
 
-.add-model-cancel.btn-action-small {
+.add-model-cancel.btn.action-sm {
   background: var(--bg-muted);
   color: var(--text-muted);
   border: 1px solid var(--border-subtle);
 }
-
-.add-model-cancel.btn-action-small:hover {
+.add-model-cancel.btn.action-sm:hover:not(:disabled) {
   background: var(--bg-active);
   color: var(--text-secondary);
 }
@@ -934,13 +890,6 @@ button.outline:hover:not(:disabled) {
 .model.actions {
   display: flex;
   gap: var(--space-1);
-}
-
-.btn-action-small {
-  border: none;
-  padding: 2px;
-  height: 18px;
-  min-width: 18px;
 }
 
 /* 连接状态按钮样式 */
@@ -1155,20 +1104,13 @@ aside .content::-webkit-scrollbar-thumb:hover,
   flex: 1;
 }
 
-.btn-toggle-key {
+.btn.toggle-key {
   background: var(--bg-base);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   padding: 6px 8px;
-  cursor: pointer;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
 }
-
-.btn-toggle-key:hover {
+.btn.toggle-key:hover:not(:disabled) {
   background: var(--bg-muted);
   color: var(--text-secondary);
   border-color: var(--border-subtle);
@@ -1672,23 +1614,23 @@ aside .content::-webkit-scrollbar-thumb:hover,
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.12.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.13.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
         <span id="directory-path" class="directory-path">未选择目录</span>
-        <button id="btn-change-dir" class="btn-navbar" title="更换目录">
+        <button id="btn-change-dir" class="btn navbar" title="更换目录">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         </button>
-        <button id="btn-delete-dir" class="btn-navbar btn-danger" title="弃用目录">
+        <button id="btn-delete-dir" class="btn navbar danger" title="弃用目录">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
-        <button id="btn-wipe-dir" class="btn-navbar btn-danger" title="清空数据">
+        <button id="btn-wipe-dir" class="btn navbar danger" title="清空数据">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
         </button>
       </div>
       <div class="right">
-        <button id="btn-help" class="btn-navbar btn-help-icon" title="帮助">?</button>
+        <button id="btn-help" class="btn navbar help" title="帮助">?</button>
       </div>
     </nav>
 
@@ -1696,7 +1638,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
     <aside class="sidebar left">
       <div class="header">
         <span>AI服务端点</span>
-        <button id="btn-add-group" class="btn-header-action" title="新增端点">
+        <button id="btn-add-group" class="btn header" title="新增端点">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
       </div>
@@ -1746,7 +1688,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
     <aside class="sidebar right">
       <div class="header">
         <span>会话记录</span>
-        <button id="btn-collapse-right" class="btn-header-action" title="收起侧边栏">
+        <button id="btn-collapse-right" class="btn header" title="收起侧边栏">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
@@ -1770,7 +1712,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
             <option value="gemini">Gemini</option>
           </select>
         </label>
-        <label>API Key: <div class="key-input-wrapper"><input id="dialog-group-key" type="password"><button class="btn-toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+        <label>API Key: <div class="key-input-wrapper"><input id="dialog-group-key" type="password"><button class="btn toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
       </div>
       <div class="dialog-buttons">
         <button id="dialog-cancel">取消</button>
@@ -1797,8 +1739,8 @@ aside .content::-webkit-scrollbar-thumb:hover,
   <template id="tpl-add-model-inline">
     <div class="add-model-inline">
       <input type="text" placeholder="模型名" class="add-model-input">
-      <button class="add-model-confirm btn-action-small">✓</button>
-      <button class="add-model-cancel btn-action-small">✗</button>
+      <button class="add-model-confirm btn action-sm">✓</button>
+      <button class="add-model-cancel btn action-sm">✗</button>
     </div>
   </template>
 
@@ -1807,7 +1749,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
     <div class="response meta">
       <span class="response model-name"></span>
       <span class="response time"></span>
-      <button class="btn-icon copy-btn" title="复制">
+      <button class="btn icon copy-btn" title="复制">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
     </div>
@@ -1822,7 +1764,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
       <span class="response total"></span>
       <span class="response status"></span>
       <span class="response error"></span>
-      <button class="btn-icon copy-btn" title="复制">
+      <button class="btn icon copy-btn" title="复制">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
     </div>
@@ -1855,7 +1797,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
   <template id="tpl-multi-response-hint">
     <div class="multi-response-hint">
       <span class="hint-text"></span>
-      <button class="btn-stop-all" id="btn-stop-inline">全部停止</button>
+      <button class="btn stop" id="btn-stop-inline">全部停止</button>
     </div>
   </template>
 
@@ -1992,7 +1934,7 @@ function createTooltip(id, html) {
       el.className = 'group-tooltip';
       el.innerHTML = html;
       doc.body.appendChild(el);
-      $$('.btn-tooltip-copy', el).forEach(btn => {
+      $$('.btn.tooltip-copy', el).forEach(btn => {
         btn.onclick = e => {
           e.stopPropagation();
           navigator.clipboard.writeText(btn.dataset.copy);
@@ -2388,17 +2330,17 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       <div class="tooltip-row">
         <span class="tooltip-label">名称：</span>
         <span class="tooltip-value">${group.name}</span>
-        <button class="btn-tooltip-copy" data-copy="${group.name}" title="复制">⧉</button>
+        <button class="btn tooltip-copy" data-copy="${group.name}" title="复制">⧉</button>
       </div>
       <div class="tooltip-row">
         <span class="tooltip-label">地址：</span>
         <span class="tooltip-value">${group.baseUrl}</span>
-        <button class="btn-tooltip-copy" data-copy="${group.baseUrl}" title="复制">⧉</button>
+        <button class="btn tooltip-copy" data-copy="${group.baseUrl}" title="复制">⧉</button>
       </div>
       <div class="tooltip-row">
         <span class="tooltip-label">格式：</span>
         <span class="tooltip-value">${styleLabels[group.style] || group.style}</span>
-        <button class="btn-tooltip-copy" data-copy="${group.style}" title="复制">⧉</button>
+        <button class="btn tooltip-copy" data-copy="${group.style}" title="复制">⧉</button>
       </div>
     `;
 
@@ -2435,7 +2377,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     });
 
     const batchTestBtn = mk('button');
-    batchTestBtn.className = 'btn-action btn-batch-test' + (hasTesting ? ' testing' : '');
+    batchTestBtn.className = 'btn action batch-test' + (hasTesting ? ' testing' : '');
     batchTestBtn.innerHTML = hasTesting ? '<span class="spin">◐</span>' : '○';
     batchTestBtn.title = hasTesting ? '测试中...' : '批量测试连接';
     batchTestBtn.on('click', e => {
@@ -2449,7 +2391,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     });
 
     // 编辑按钮
-    const editBtn = mk('button', 'btn-action');
+    const editBtn = mk('button', 'btn action');
     editBtn.innerHTML = SVG.edit(12);
     editBtn.title = '编辑端点';
     editBtn.on('click', e => {
@@ -2458,7 +2400,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     });
 
     // 删除按钮
-    const deleteBtn = mk('button', 'btn-action btn-danger');
+    const deleteBtn = mk('button', 'btn action danger');
     deleteBtn.innerHTML = SVG.del(12);
     deleteBtn.title = '删除端点';
     deleteBtn.on('click', e => {
@@ -2536,7 +2478,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         <div class="tooltip-row">
           <span class="tooltip-label">模型：</span>
           <span class="tooltip-value">${model.name}</span>
-          <button class="btn-tooltip-copy" data-copy="${model.name}" title="复制">⧉</button>
+          <button class="btn tooltip-copy" data-copy="${model.name}" title="复制">⧉</button>
         </div>
       `;
 
@@ -2558,7 +2500,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       const statusData = connectionStatus.get(statusKey) || { status: 'disconnected' };
       const status = statusData.status;
       const testBtn = mk('button');
-      testBtn.className = 'btn-action-small btn connection ' + status;
+      testBtn.className = 'btn action-sm connection ' + status;
       testBtn.title = getConnectionStatusText(statusKey);
       testBtn.innerHTML = status === 'testing' ? '<span class="spin">◐</span>' : '○';
       testBtn.on('click', e => {
@@ -2566,7 +2508,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         if (onTestConnection) onTestConnection(group.id, model.id);
       });
 
-      const modelEditBtn = mk('button', 'btn-action-small');
+      const modelEditBtn = mk('button', 'btn action-sm');
       modelEditBtn.innerHTML = SVG.edit(10);
       modelEditBtn.title = '编辑模型';
       modelEditBtn.on('click', e => {
@@ -2618,7 +2560,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         });
       });
 
-      const modelDeleteBtn = mk('button', 'btn-action-small btn-danger');
+      const modelDeleteBtn = mk('button', 'btn action-sm danger');
       modelDeleteBtn.innerHTML = SVG.del(10);
       modelDeleteBtn.title = '删除模型';
       modelDeleteBtn.on('click', e => {
@@ -2730,7 +2672,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
     // 操作按钮
     const actionsEl = mk('div', 'session actions');
 
-    const editBtn = mk('button', 'btn-action-small');
+    const editBtn = mk('button', 'btn action-sm');
     editBtn.innerHTML = SVG.edit(10);
     editBtn.title = '编辑标题';
     editBtn.on('click', e => {
@@ -2769,7 +2711,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
       });
     });
 
-    const deleteBtn = mk('button', 'btn-action-small btn-danger');
+    const deleteBtn = mk('button', 'btn action-sm danger');
     deleteBtn.innerHTML = SVG.del(10);
     deleteBtn.title = '删除会话';
     deleteBtn.on('click', e => {
@@ -2811,7 +2753,7 @@ function renderMessages(messages, groups, onCopy) {
       // 用户消息状态栏：复制按钮
       const statusBar = mk('div', 'message-status-bar message-status-bar-user');
 
-      const copyBtn = mk('button', 'btn-icon');
+      const copyBtn = mk('button', 'btn icon');
       copyBtn.innerHTML = SVG.copy;
       copyBtn.title = '复制';
       copyBtn.onclick = () => {
@@ -3043,7 +2985,7 @@ function showEditGroupDialog(group = null, onSave) {
   const keyInput = $('#dialog-group-key', dialog);
   doc.body.addChild(dialog);
 
-  const toggleBtn = $('.btn-toggle-key', dialog);
+  const toggleBtn = $('.btn.toggle-key', dialog);
   toggleBtn.onclick = e => {
     e.preventDefault();
     const isPassword = keyInput.type === 'password';
