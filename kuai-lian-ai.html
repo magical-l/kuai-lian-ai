@@ -356,7 +356,7 @@ button.btn-navbar:hover:not(:disabled) {
   color: var(--text-primary);
 }
 
-.model-badge {
+.model.badge {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -368,7 +368,7 @@ button.btn-navbar:hover:not(:disabled) {
   font-weight: 500;
 }
 
-.model-badge.empty {
+.model.badge.empty {
   background: var(--bg-muted);
   color: var(--text-muted);
 }
@@ -885,7 +885,7 @@ button.outline:hover:not(:disabled) {
   gap: 0;
 }
 
-.model-item {
+.model.item {
   padding: var(--space-1) var(--space-2);
   cursor: pointer;
   border-radius: 0;
@@ -897,22 +897,22 @@ button.outline:hover:not(:disabled) {
   justify-content: space-between;
 }
 
-.model-item:hover {
+.model.item:hover {
   background: var(--bg-muted);
   color: var(--text-primary);
 }
 
-.model-item.selected {
+.model.item.selected {
   background: var(--accent-light);
   color: var(--accent-primary);
   font-weight: 500;
 }
 
-.model-item.dragging {
+.model.item.dragging {
   opacity: 0.5;
 }
 
-.model-item.drag-over {
+.model.item.drag-over {
   border-top: 2px solid var(--accent-primary);
 }
 
@@ -988,11 +988,11 @@ button.outline:hover:not(:disabled) {
   box-shadow: 0 0 0 2px var(--accent-light);
 }
 
-.model-name {
+.model.name {
   flex: 1;
 }
 
-.model-actions {
+.model.actions {
   display: flex;
   gap: var(--space-1);
 }
@@ -1013,17 +1013,20 @@ button.outline:hover:not(:disabled) {
 }
 
 /* 连接状态按钮样式 */
-.btn-connection-disconnected {
+.btn.connection {
   background: transparent;
   color: var(--text-muted);
 }
+.btn.connection:hover {
+  transform: none;
+}
 
-.btn-connection-testing {
+.btn.connection.testing {
   background: var(--accent-light);
   color: var(--accent-primary);
 }
 
-.btn-connection-testing .spin {
+.btn.connection.testing .spin {
   animation: spin 2s linear infinite !important;
   display: inline-block;
 }
@@ -1035,24 +1038,17 @@ button.outline:hover:not(:disabled) {
   will-change: transform;
 }
 
-.btn-connection-connected {
+.btn.connection.connected {
   background: var(--success-light);
   color: var(--success);
 }
 
-.btn-connection-failed {
+.btn.connection.failed {
   background: var(--danger-light);
   color: var(--danger);
 }
 
-.btn-connection-connected:hover,
-.btn-connection-failed:hover,
-.btn-connection-testing:hover,
-.btn-connection-cors_blocked:hover {
-  transform: none;
-}
-
-.btn-connection-cors_blocked {
+.btn.connection.cors_blocked {
   background: rgba(217, 119, 6, 0.15);
   color: var(--warning);
 }
@@ -1063,7 +1059,7 @@ button.outline:hover:not(:disabled) {
 }
 
 /* ========== Session List ========== */
-.session-item {
+.session.item {
   padding: var(--space-3);
   margin-bottom: var(--space-1);
   cursor: pointer;
@@ -1072,16 +1068,16 @@ button.outline:hover:not(:disabled) {
   transition: all var(--transition-fast);
 }
 
-.session-item:hover {
+.session.item:hover {
   background: var(--bg-hover);
 }
 
-.session-item.selected {
+.session.item.selected {
   background: var(--accent-light);
   border-color: rgba(37, 99, 235, 0.3);
 }
 
-.session-title {
+.session.title {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
@@ -1090,11 +1086,11 @@ button.outline:hover:not(:disabled) {
   white-space: nowrap;
 }
 
-.session-item.selected .session-title {
+.session.item.selected .session.title {
   color: var(--accent-primary);
 }
 
-.session-title-edit {
+.session.title-edit {
   font-size: 13px;
   font-weight: 500;
   padding: 2px 6px;
@@ -1106,24 +1102,24 @@ button.outline:hover:not(:disabled) {
   min-width: 0;
 }
 
-.session-title-edit:focus {
+.session.title-edit:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-light);
 }
 
-.session-meta {
+.session.meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: var(--space-1);
 }
 
-.session-time {
+.session.time {
   font-size: 11px;
   color: var(--text-muted);
 }
 
-.session-actions {
+.session.actions {
   display: flex;
   gap: var(--space-1);
 }
@@ -1131,26 +1127,26 @@ button.outline:hover:not(:disabled) {
 /* ========== Scrollbar ========== */
 .sidebar-content::-webkit-scrollbar,
 .chat-messages::-webkit-scrollbar,
-.selector-list::-webkit-scrollbar {
+.selector.list::-webkit-scrollbar {
   width: 5px;
 }
 
 .sidebar-content::-webkit-scrollbar-track,
 .chat-messages::-webkit-scrollbar-track,
-.selector-list::-webkit-scrollbar-track {
+.selector.list::-webkit-scrollbar-track {
   background: transparent;
 }
 
 .sidebar-content::-webkit-scrollbar-thumb,
 .chat-messages::-webkit-scrollbar-thumb,
-.selector-list::-webkit-scrollbar-thumb {
+.selector.list::-webkit-scrollbar-thumb {
   background: var(--border-default);
   border-radius: 3px;
 }
 
 .sidebar-content::-webkit-scrollbar-thumb:hover,
 .chat-messages::-webkit-scrollbar-thumb:hover,
-.selector-list::-webkit-scrollbar-thumb:hover {
+.selector.list::-webkit-scrollbar-thumb:hover {
   background: var(--border-strong);
 }
 
@@ -1435,7 +1431,7 @@ button.outline:hover:not(:disabled) {
 }
 
 /* ========== Model Selector ========== */
-.model-selector {
+.model.selector {
   position: relative;
   width: 100%;
   background: var(--bg-muted);
@@ -1446,7 +1442,7 @@ button.outline:hover:not(:disabled) {
 }
 
 /* 展开状态：列表从底部向上悬浮展开 */
-.model-selector:not(.collapsed) .selector-list {
+.model.selector:not(.collapsed) .selector.list {
   position: absolute;
   bottom: calc(100% + 1px);
   left: -1px;
@@ -1462,28 +1458,28 @@ button.outline:hover:not(:disabled) {
   padding: var(--space-2);
 }
 
-.endpoint-name-color {
+.endpoint.name-color {
   color: var(--text-secondary);
   font-weight: 500;
 }
 
-.model-selector.collapsed .selector-list {
+.model.selector.collapsed .selector.list {
   display: none;
 }
 
-.model-selector.generating .selector-expand-btn,
-.model-selector.generating .model-tag {
+.model.selector.generating .selector.expand-btn,
+.model.selector.generating .model.tag {
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.selector-header {
+.selector.header {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.selector-summary {
+.selector.summary {
   display: flex;
   align-items: center;
   gap: var(--space-1);
@@ -1493,7 +1489,7 @@ button.outline:hover:not(:disabled) {
   overflow: hidden;
 }
 
-.selector-expand-btn {
+.selector.expand-btn {
   font-size: 11px;
   color: var(--text-muted);
   cursor: pointer;
@@ -1503,30 +1499,30 @@ button.outline:hover:not(:disabled) {
   white-space: nowrap;
 }
 
-.selector-expand-btn:hover {
+.selector.expand-btn:hover {
   color: var(--accent-primary);
   background: var(--accent-light);
 }
 
-.selector-group-label {
+.selector.group-label {
   font-size: 10px;
   color: var(--text-muted);
   margin-bottom: var(--space-1);
   margin-top: var(--space-2);
 }
 
-.selector-group-label:first-child {
+.selector.group-label:first-child {
   margin-top: 0;
 }
 
-.selector-models-row {
+.selector.models-row {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
 }
 
 /* 模型标签样式 */
-.model-tag {
+.model.tag {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -1538,18 +1534,18 @@ button.outline:hover:not(:disabled) {
   border: 1px solid transparent;
 }
 
-.model-tag.unselected {
+.model.tag.unselected {
   background: var(--bg-muted);
   color: var(--text-muted);
   border-color: var(--border-subtle);
 }
 
-.model-tag.unselected:hover {
+.model.tag.unselected:hover {
   background: var(--bg-hover);
   color: var(--text-secondary);
 }
 
-.model-tag.selected {
+.model.tag.selected {
   background: var(--accent-light);
   color: var(--accent-primary);
   border: 1px solid var(--accent-primary);
@@ -1557,35 +1553,35 @@ button.outline:hover:not(:disabled) {
   box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
 }
 
-.model-tag.selected:hover {
+.model.tag.selected:hover {
   background: var(--accent-muted);
 }
 
 /* Failed/stopped models show color in selector tags to alert user */
-.model-tag.selected.failed {
+.model.tag.selected.failed {
   background: var(--danger-light);
   color: var(--danger);
   border-color: var(--danger);
 }
-.model-tag.selected.stopped {
+.model.tag.selected.stopped {
   background: var(--bg-muted);
   color: var(--text-muted);
   border-color: var(--border-subtle);
 }
 
 /* 状态图标 */
-.model-status-icon {
+.model.status-icon {
   font-size: 10px;
 }
 
-.model-status-icon.spinning {
+.model.status-icon.spinning {
   animation: spin 1s linear infinite !important;
   display: inline-block;
   will-change: transform;
 }
 
 /* 选择器空状态提示 */
-.selector-empty-hint {
+.selector.empty-hint {
   color: var(--danger);
   font-size: 12px;
   font-weight: 500;
@@ -1604,14 +1600,14 @@ button.outline:hover:not(:disabled) {
   gap: var(--space-3);
 }
 
-.response-card {
+.response.card {
   background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: var(--space-3);
 }
 
-.response-meta {
+.response.meta {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1620,51 +1616,47 @@ button.outline:hover:not(:disabled) {
   padding-bottom: var(--space-2);
 }
 
-.response-meta .copy-btn {
+.response.meta .copy-btn {
   margin-left: auto;
 }
 
-.response-time {
+.response.time {
   color: var(--text-muted);
 }
 
-.response-duration {
+.response.duration {
   color: var(--text-secondary);
 }
 
 /* Response speed colors */
-.response-duration.fast { color: var(--success); }
-.response-duration.medium { color: var(--warning); }
-.response-duration.slow { color: #ea580c; }
+.response.duration.fast { color: var(--success); }
+.response.duration.medium { color: var(--warning); }
+.response.duration.slow { color: #ea580c; }
 
-.response-total {
+.response.total {
   color: var(--text-secondary);
 }
 
-.response-model-name {
+.response.model-name {
   font-weight: 500;
 }
 
-.response-status {
+.response.status {
   font-size: 10px;
 }
 
-.response-status.completed { color: var(--success); }
-.response-status.failed { color: var(--danger); }
-.response-status.stopped { color: var(--text-muted); }
+/* 通用状态颜色 */
+.status.completed { color: var(--success); }
+.status.failed { color: var(--danger); }
+.status.stopped { color: var(--text-muted); }
 
-/* Model status icon in cards - same colors */
-.model-status-icon.completed { color: var(--success); }
-.model-status-icon.failed { color: var(--danger); }
-.model-status-icon.stopped { color: var(--text-muted); }
-
-.response-error {
+.response.error {
   color: var(--danger);
   font-size: 12px;
   margin-left: 4px;
 }
 
-.response-card-content {
+.response.card-content {
   font-size: 13px;
   line-height: 1.5;
 }
@@ -1750,7 +1742,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.8.7</span>
+        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.9.0</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -1802,16 +1794,16 @@ button.outline:hover:not(:disabled) {
       <div class="divider-horizontal" id="divider-horizontal"></div>
       <div class="chat-input-area">
         <!-- 新增：模型选择器 -->
-        <div id="model-selector" class="model-selector collapsed">
-          <div class="selector-header">
-            <div class="selector-summary" id="selector-summary">
+        <div id="model-selector" class="model selector collapsed">
+          <div class="selector header">
+            <div class="selector summary" id="selector-summary">
               <!-- 收起时显示已选模型标签 -->
             </div>
-            <div class="selector-expand-btn" id="selector-expand-btn">
+            <div class="selector expand-btn" id="selector-expand-btn">
               <span id="expand-btn-text">▼ 展开</span>
             </div>
           </div>
-          <div class="selector-list" id="selector-list">
+          <div class="selector list" id="selector-list">
             <!-- 展开时显示按端点分组的模型列表 -->
           </div>
         </div>
@@ -1890,9 +1882,9 @@ button.outline:hover:not(:disabled) {
 
   <!-- 响应消息 meta 行 -->
   <template id="tpl-response-meta">
-    <div class="response-meta">
-      <span class="response-model-name"></span>
-      <span class="response-time"></span>
+    <div class="response meta">
+      <span class="response model-name"></span>
+      <span class="response time"></span>
       <button class="btn-icon copy-btn" title="复制">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
@@ -1901,13 +1893,13 @@ button.outline:hover:not(:disabled) {
 
   <!-- 多模型响应 meta 行 -->
   <template id="tpl-multi-response-meta">
-    <div class="response-meta">
-      <span class="response-model-name"></span>
-      <span class="response-time"></span>
-      <span class="response-duration"></span>
-      <span class="response-total"></span>
-      <span class="response-status"></span>
-      <span class="response-error"></span>
+    <div class="response meta">
+      <span class="response model-name"></span>
+      <span class="response time"></span>
+      <span class="response duration"></span>
+      <span class="response total"></span>
+      <span class="response status"></span>
+      <span class="response error"></span>
       <button class="btn-icon copy-btn" title="复制">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
@@ -1916,15 +1908,15 @@ button.outline:hover:not(:disabled) {
 
   <!-- 流式响应卡片 -->
   <template id="tpl-response-card-streaming">
-    <div class="response-card thinking">
-      <div class="response-meta">
-        <span class="response-model-name"></span>
-        <span class="model-status-icon spinning">◐</span>
+    <div class="response card thinking">
+      <div class="response meta">
+        <span class="response model-name"></span>
+        <span class="model status-icon spinning">◐</span>
       </div>
       <div class="thinking-block streaming" style="display:none;">
         <div class="thinking-content">等待思考...</div>
       </div>
-      <div class="response-card-content">等待回复...</div>
+      <div class="response card-content">等待回复...</div>
     </div>
   </template>
 
@@ -2311,14 +2303,14 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 
   // 收起状态摘要
   if (selectedModels.length === 0) {
-    summaryEl.innerHTML = '<span class="selector-empty-hint">请选择模型</span>';
+    summaryEl.innerHTML = '<span class="selector empty-hint">请选择模型</span>';
     expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开选择';
   } else {
     summaryEl.innerHTML = selectedModels.map(id => {
       const info = findModelById(groups, id);
       if (!info) return '';
       const statusClass = getTagStatusClass(id);
-      return `<span class="model-tag ${statusClass} selected" data-model="${id}"><span class="endpoint-name-color">${info.group.name}</span> ${info.model.name}</span>`;
+      return `<span class="model tag ${statusClass} selected" data-model="${id}"><span class="endpoint name-color">${info.group.name}</span> ${info.model.name}</span>`;
     }).join('');
     expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
   }
@@ -2332,9 +2324,9 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
         const cls = isSelected
           ? (statusClass ? `selected ${statusClass}` : 'selected')
           : 'unselected';
-        return `<span class="model-tag ${cls}" data-model="${g.id}:${m.id}">${m.name}</span>`;
+        return `<span class="model tag ${cls}" data-model="${g.id}:${m.id}">${m.name}</span>`;
       }).join('');
-      return `<div class="selector-group-label">${g.name}</div><div class="selector-models-row">${tags}</div>`;
+      return `<div class="selector group-label">${g.name}</div><div class="selector models-row">${tags}</div>`;
     }).join('');
   }
 
@@ -2374,7 +2366,7 @@ function bindSelectorEvents() {
   }
 
   // Make entire model tag clickable for toggle selection
-  $$('.model-tag').forEach(tag => {
+  $$('.model.tag').forEach(tag => {
     tag.onclick = e => {
       e.stopPropagation();
       // 实时检查生成状态（放在点击时检查，而非绑定时）
@@ -2599,7 +2591,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     }
 
     group.models.forEach((model, modelIndex) => {
-      const modelEl = mk('div', 'model-item');
+      const modelEl = mk('div', 'model item');
       modelEl.dataset.modelId = model.id;
       modelEl.dataset.groupId = group.id;
       if (model.id === selectedModelId) {
@@ -2618,10 +2610,10 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       });
       modelDragHandle.on('dragend', () => {
         modelEl.classList.remove('dragging');
-        $$('.model-item', models).forEach(el => el.classList.remove('drag-over'));
+        $$('.model.item', models).forEach(el => el.classList.remove('drag-over'));
       });
 
-      const modelName = mk('span', 'model-name');
+      const modelName = mk('span', 'model name');
       modelName.textContent = model.name;
 
       // 模型名tooltip
@@ -2645,14 +2637,14 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       });
 
       // 模型操作按钮
-      const modelActions = mk('div', 'model-actions');
+      const modelActions = mk('div', 'model actions');
 
       // 测试连接按钮
       const statusKey = `${group.id}:${model.id}`;
       const statusData = connectionStatus.get(statusKey) || { status: 'disconnected' };
       const status = statusData.status;
       const testBtn = mk('button');
-      testBtn.className = 'btn-action-small btn-connection-' + status;
+      testBtn.className = 'btn-action-small btn connection ' + status;
       testBtn.title = getConnectionStatusText(statusKey);
       testBtn.innerHTML = status === 'testing' ? '<span class="spin">◐</span>' : '○';
       testBtn.on('click', e => {
@@ -2808,21 +2800,21 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
   sessions.sort((a, b) => b.createdAt - a.createdAt);
 
   sessions.forEach(session => {
-    const sessionEl = mk('div', 'session-item');
+    const sessionEl = mk('div', 'session item');
     if (session.id === selectedSessionId) {
       sessionEl.classList.add('selected');
     }
 
-    const titleEl = mk('div', 'session-title');
+    const titleEl = mk('div', 'session title');
     titleEl.textContent = session.title || '新会话';
 
-    const meta = mk('div', 'session-meta');
+    const meta = mk('div', 'session meta');
 
-    const timeEl = mk('span', 'session-time');
+    const timeEl = mk('span', 'session time');
     timeEl.textContent = new Date(session.createdAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
 
     // 操作按钮
-    const actionsEl = mk('div', 'session-actions');
+    const actionsEl = mk('div', 'session actions');
 
     const editBtn = mk('button', 'btn-action-small');
     editBtn.innerHTML = SVG.edit(10);
@@ -2831,7 +2823,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
       e.stopPropagation();
       // 原地编辑：将标题替换为输入框
       const currentTitle = session.title || '新会话';
-      const inputEl = mk('input', 'session-title-edit');
+      const inputEl = mk('input', 'session title-edit');
       inputEl.type = 'text';
       inputEl.value = currentTitle;
 
@@ -2942,9 +2934,9 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
   const modelName = info ? `${info.group.name} / ${info.model.name}` : '未知模型';
 
   // Response meta row with name, time, copy button
-  const meta = fromTemplate('tpl-response-meta', '.response-meta');
-  $('.response-model-name', meta).textContent = modelName;
-  $('.response-time', meta).textContent = timeStr;
+  const meta = fromTemplate('tpl-response-meta', '.response.meta');
+  $('.response.model-name', meta).textContent = modelName;
+  $('.response.time', meta).textContent = timeStr;
   const copyBtn = $('.copy-btn', meta);
   copyBtn.onclick = () => {
     navigator.clipboard.writeText(msg.content || '').then(() => {
@@ -2999,20 +2991,21 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
     const speedClass = getSpeedClass(r.firstTokenTime);
 
-    $('.response-model-name', meta).textContent = name;
-    $('.response-time', meta).textContent = responseTimeStr;
+    $('.response.model-name', meta).textContent = name;
+    $('.response.time', meta).textContent = responseTimeStr;
 
-    const durationEl = $('.response-duration', meta);
+    const durationEl = $('.response.duration', meta);
     durationEl.textContent = durationStr;
     if (speedClass) durationEl.classList.add(speedClass);
 
-    $('.response-total', meta).textContent = totalStr;
+    $('.response.total', meta).textContent = totalStr;
 
-    const statusEl = $('.response-status', meta);
+    const statusEl = $('.response.status', meta);
     statusEl.textContent = statusText;
+    statusEl.classList.add('status');
     statusEl.classList.add(r.status);
 
-    const errorEl = $('.response-error', meta);
+    const errorEl = $('.response.error', meta);
     if (errorText) {
       errorEl.textContent = errorText;
     } else {
@@ -4875,7 +4868,7 @@ function showThinkingCards(modelIds, groups) {
     const info = findModelById(groups, id);
     const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
 
-    $('.response-model-name', card).textContent = name;
+    $('.response.model-name', card).textContent = name;
 
     cards.addChild(card);
   });
@@ -4887,7 +4880,7 @@ function showThinkingCards(modelIds, groups) {
 
 function updateStreamingCard(modelId, state, firstTokenTime, groups) {
   // 直接更新DOM，不用requestAnimationFrame（避免并行时排队显示）
-  const card = $(`.response-card[data-model-id="${modelId}"]`);
+  const card = $(`.response.card[data-model-id="${modelId}"]`);
   if (!card) return;
 
   // thinking区块处理
@@ -4926,21 +4919,21 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
   }
 
   // content区块处理
-  const contentEl = $('.response-card-content', card);
+  const contentEl = $('.response.card-content', card);
   if (contentEl) {
     contentEl.textContent = state.content || '';
   }
 
   // meta信息处理（duration等）
   if (firstTokenTime !== null) {
-    const meta = $('.response-meta', card);
+    const meta = $('.response.meta', card);
     if (meta) {
       // 收到第一个token时不停止动画，保持转动直到完成
       // 添加duration显示（如果不存在）
-      if (!$('.response-duration', meta)) {
-        const durationEl = mk('span', `response-duration ${getSpeedClass(firstTokenTime)}`);
+      if (!$('.response.duration', meta)) {
+        const durationEl = mk('span', `response duration ${getSpeedClass(firstTokenTime)}`);
         durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
-        const modelNameEl = $('.response-model-name', meta);
+        const modelNameEl = $('.response.model-name', meta);
         if (modelNameEl) {
           modelNameEl.insertAdjacentElement('afterend', durationEl);
         }
@@ -4952,18 +4945,19 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
 // Update streaming card status (for failed/stopped/completed models)
 function updateCardStatus(modelId, status, error, state = null) {
   requestAnimationFrame(() => {
-    const card = $(`.response-card[data-model-id="${modelId}"]`);
+    const card = $(`.response.card[data-model-id="${modelId}"]`);
     if (!card) return;
 
     card.classList.remove('thinking');
 
-    const contentEl = $('.response-card-content', card);
-    const meta = $('.response-meta', card);
+    const contentEl = $('.response.card-content', card);
+    const meta = $('.response.meta', card);
 
     // Update status icon with color class
-    const icon = meta ? $('.model-status-icon', meta) : null;
+    const icon = meta ? $('.model.status-icon', meta) : null;
     if (icon) {
-      icon.classList.remove('spinning', 'completed', 'failed', 'stopped');
+      icon.classList.remove('spinning');
+      icon.classList.add('status');
       icon.classList.add(status);
       icon.textContent = getStatusText(status);
     }
@@ -4973,10 +4967,10 @@ function updateCardStatus(modelId, status, error, state = null) {
       if (contentEl) {
         contentEl.textContent = '';  // Empty content for failed
       }
-      if (meta && error && !$('.response-error', meta)) {
-        const errorEl = mk('span', 'response-error');
+      if (meta && error && !$('.response.error', meta)) {
+        const errorEl = mk('span', 'response error');
         errorEl.textContent = error;
-        const statusEl = $('.response-status', meta) || icon;
+        const statusEl = $('.response.status', meta) || icon;
         if (statusEl) {
           statusEl.insertAdjacentElement('afterend', errorEl);
         }
@@ -5002,11 +4996,11 @@ function updateCardStatus(modelId, status, error, state = null) {
 
       // 更新totalDuration显示
       if (state && state.totalDuration) {
-        let totalEl = $('.response-total', meta);
+        let totalEl = $('.response.total', meta);
         if (!totalEl) {
-          totalEl = mk('span', 'response-total');
+          totalEl = mk('span', 'response total');
           // 插入到meta末尾或icon后面
-          const insertAfter = $('.response-status', meta) || $('.model-status-icon', meta);
+          const insertAfter = $('.response.status', meta) || $('.model.status-icon', meta);
           if (insertAfter) {
             insertAfter.insertAdjacentElement('afterend', totalEl);
           } else {
@@ -5024,7 +5018,7 @@ function reorderCardsBySpeed() {
     const container = $('#streaming-multi-response .multi-response-cards');
     if (!container) return;
 
-    const cards = Array.from($$('.response-card', container));
+    const cards = Array.from($$('.response.card', container));
     cards.sort((a, b) => {
       const stateA = activeGenerations.get(a.dataset.modelId);
       const stateB = activeGenerations.get(b.dataset.modelId);
