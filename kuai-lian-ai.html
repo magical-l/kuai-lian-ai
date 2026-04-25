@@ -2074,8 +2074,8 @@ function initDividers() {
   // 恢复保存的侧栏宽度
   const savedLeftWidth = localStorage.getItem('sidebar-left-width');
   const savedRightWidth = localStorage.getItem('sidebar-right-width');
-  if (savedLeftWidth) $('.sidebar.left').style.width = savedLeftWidth;
-  if (savedRightWidth) $('.sidebar.right').style.width = savedRightWidth;
+  if (savedLeftWidth) $('.sidebar.left:not(.divider)').style.width = savedLeftWidth;
+  if (savedRightWidth) $('.sidebar.right:not(.divider)').style.width = savedRightWidth;
 
   // 清理旧格式存储，重新初始化布局
   localStorage.removeItem('chat-messages-flex');
@@ -2097,7 +2097,7 @@ function initDividers() {
   function startDragHorizontal(e) {
     const divider = e.target;
     const isLeft = divider.classList.contains('left');
-    const sidebar = isLeft ? $('.sidebar.left') : $('.sidebar.right');
+    const sidebar = isLeft ? $('.sidebar.left:not(.divider)') : $('.sidebar.right:not(.divider)');
 
     isDragging = true;
     curDiv = {
@@ -2164,7 +2164,7 @@ function initDividers() {
   }
 
   // 右侧栏收起/展开
-  const sidebarRight = $('.sidebar.right');
+  const sidebarRight = $('.sidebar.right:not(.divider)');
   const btnCollapseRight = $('#btn-collapse-right');
   if (btnCollapseRight && sidebarRight) {
     const savedCollapsed = localStorage.getItem('sidebar-right-collapsed') === 'true';
