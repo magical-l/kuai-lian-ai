@@ -167,8 +167,8 @@ nav .right {
 .btn-navbar:hover:not(:disabled):not(.btn-danger),
 .btn-header-action:hover:not(:disabled),
 .btn-icon:hover:not(:disabled),
-.btn-action:hover:not(:disabled):not(.btn-action-danger),
-.btn-action-small:hover:not(:disabled):not(.btn-action-danger) {
+.btn-action:hover:not(:disabled):not(.btn-danger),
+.btn-action-small:hover:not(:disabled):not(.btn-danger) {
   background: var(--bg-muted);
   color: var(--text-secondary);
 }
@@ -199,14 +199,12 @@ button.btn-navbar:hover:not(:disabled):not(.btn-danger) {
 .btn-danger {
   color: var(--danger);
 }
-/* 统一危险按钮hover */
-.btn-danger:hover:not(:disabled),
-.btn-action-danger:hover:not(:disabled),
-.btn-action-small.btn-action-danger:hover:not(:disabled) {
+.btn-danger:hover:not(:disabled) {
   background: var(--danger-light);
   color: var(--danger);
 }
-.btn-danger:hover:not(:disabled) {
+/* 导航栏danger按钮hover时显示边框 */
+.btn-navbar.btn-danger:hover:not(:disabled) {
   border-color: var(--danger);
 }
 
@@ -487,16 +485,6 @@ button.primary {
 
 button.primary:hover:not(:disabled) {
   background: var(--accent-primary-hover);
-}
-
-button.danger {
-  background: var(--danger-light);
-  color: var(--danger);
-}
-
-button.danger:hover:not(:disabled) {
-  background: var(--danger);
-  color: white;
 }
 
 button.outline {
@@ -807,10 +795,6 @@ button.outline:hover:not(:disabled) {
 .btn-action:hover {
   border-color: var(--border-subtle);
 }
-.btn-action-danger {
-  color: var(--danger);
-  border-color: transparent;
-}
 
 /* 批量测试按钮 */
 .btn-batch-test {
@@ -957,9 +941,6 @@ button.outline:hover:not(:disabled) {
   padding: 2px;
   height: 18px;
   min-width: 18px;
-}
-.btn-action-small.btn-action-danger {
-  color: var(--danger);
 }
 
 /* 连接状态按钮样式 */
@@ -1691,7 +1672,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.11.4</span>
+        <span class="brand">快连AI</span><span class="version">v1.12.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2477,7 +2458,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
     });
 
     // 删除按钮
-    const deleteBtn = mk('button', 'btn-action btn-action-danger');
+    const deleteBtn = mk('button', 'btn-action btn-danger');
     deleteBtn.innerHTML = SVG.del(12);
     deleteBtn.title = '删除端点';
     deleteBtn.on('click', e => {
@@ -2637,7 +2618,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         });
       });
 
-      const modelDeleteBtn = mk('button', 'btn-action-small btn-action-danger');
+      const modelDeleteBtn = mk('button', 'btn-action-small btn-danger');
       modelDeleteBtn.innerHTML = SVG.del(10);
       modelDeleteBtn.title = '删除模型';
       modelDeleteBtn.on('click', e => {
@@ -2788,7 +2769,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
       });
     });
 
-    const deleteBtn = mk('button', 'btn-action-small btn-action-danger');
+    const deleteBtn = mk('button', 'btn-action-small btn-danger');
     deleteBtn.innerHTML = SVG.del(10);
     deleteBtn.title = '删除会话';
     deleteBtn.on('click', e => {
