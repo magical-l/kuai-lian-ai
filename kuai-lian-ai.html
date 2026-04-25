@@ -338,13 +338,6 @@ button.btn-navbar:hover:not(:disabled) {
   height: 56px;
 }
 
-.header-right-area {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-left: auto;
-}
-
 .chat-header-prefix {
   color: var(--text-muted);
   font-size: 13px;
@@ -576,6 +569,7 @@ button.outline:hover:not(:disabled) {
   gap: var(--space-1);
   opacity: 0;
   transition: opacity var(--transition-normal);
+  margin-left: auto;
 }
 
 .scroll-nav-buttons.visible {
@@ -742,15 +736,10 @@ button.outline:hover:not(:disabled) {
   background: var(--bg-muted);
 }
 
-/* 组名容器（包含 tooltip） */
-.group-name-wrapper {
-  position: relative;
+.group-name {
   flex: 1;
   min-width: 0;
   overflow-wrap: break-word;
-}
-
-.group-name {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
@@ -1740,7 +1729,7 @@ button.outline:hover:not(:disabled) {
     <div class="navbar" id="navbar">
       <div class="navbar-left">
         <div class="navbar-logo-placeholder" id="logo-placeholder">
-          <!-- Logo待定 -->
+          <!-- Logo位置 -->
         </div>
         <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.9.0</span>
       </div>
@@ -1781,14 +1770,11 @@ button.outline:hover:not(:disabled) {
       <div class="chat-header" id="chat-header">
         <span class="chat-header-prefix">会话：</span>
         <span id="chat-title">新会话</span>
-        <!-- 右侧区域：滚动按钮 + 新建会话 -->
-        <div class="header-right-area">
-          <div class="scroll-nav-buttons" id="scroll-nav-buttons">
-            <button id="btn-scroll-top" class="btn-scroll-nav" title="到顶部">↑</button>
-            <button id="btn-scroll-bottom" class="btn-scroll-nav" title="到底部">↓</button>
-          </div>
-          <button id="btn-new-session-header" title="新建会话">新建会话</button>
+        <div class="scroll-nav-buttons" id="scroll-nav-buttons">
+          <button id="btn-scroll-top" class="btn-scroll-nav" title="到顶部">↑</button>
+          <button id="btn-scroll-bottom" class="btn-scroll-nav" title="到底部">↓</button>
         </div>
+        <button id="btn-new-session-header" title="新建会话">新建会话</button>
       </div>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="divider-horizontal" id="divider-horizontal"></div>
@@ -2484,18 +2470,14 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       </div>
     `;
 
-    // 组名容器
-    const nameContainer = mk('div', 'group-name-wrapper');
-    nameContainer.addChild(nameSpan);
-
     // 使用createTooltip
     const tooltip = createTooltip(tooltipId, tooltipHTML);
 
     // hover事件
-    nameContainer.on('mouseenter', () => tooltip.show(nameContainer));
-    nameContainer.on('mouseleave', () => tooltip.hide());
+    nameSpan.on('mouseenter', () => tooltip.show(nameSpan));
+    nameSpan.on('mouseleave', () => tooltip.hide());
     // 点击展开/收起模型列表，同时隐藏tooltip
-    nameContainer.on('click', () => {
+    nameSpan.on('click', () => {
       tooltip.hide();
       const models = $('.group-models', groupEl);
       if (models) {
@@ -2558,7 +2540,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 
     headerEl.addChild(dragHandle);
     headerEl.addChild(toggleSpan);
-    headerEl.addChild(nameContainer);
+    headerEl.addChild(nameSpan);
     headerEl.addChild(actionsEl);
 
     // 拖放目标事件绑定到整个groupEl
@@ -2982,7 +2964,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
 
     // Response meta row with model name, time, duration, copy button
-    const meta = fromTemplate('tpl-multi-response-meta', '.response-meta');
+    const meta = fromTemplate('tpl-multi-response-meta', '.response.meta');
 
     const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
     const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
@@ -3052,7 +3034,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
       card.addChild(thinkingBlock);
     }
 
-    const content = mk('div', 'response-card-content');
+    const content = mk('div', 'response card-content');
     if (r.status === 'failed') {
       content.textContent = '';  // Error shown in meta row, content area empty
     } else if (r.status === 'stopped') {
@@ -4862,7 +4844,7 @@ function showThinkingCards(modelIds, groups) {
   const cards = mk('div', 'multi-response-cards');
 
   modelIds.forEach(id => {
-    const card = fromTemplate('tpl-response-card-streaming', '.response-card');
+    const card = fromTemplate('tpl-response-card-streaming', '.response.card');
     card.dataset.modelId = id;
 
     const info = findModelById(groups, id);
