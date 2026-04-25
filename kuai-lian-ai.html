@@ -501,6 +501,8 @@ button.outline {
   background: transparent;
   border: 1px solid var(--border-default);
   color: var(--text-secondary);
+  padding: var(--space-1) var(--space-3);
+  font-size: 13px;
 }
 
 button.outline:hover:not(:disabled) {
@@ -1647,7 +1649,7 @@ button.toggle-key:hover:not(:disabled) {
           <button id="btn-scroll-top" class="scroll-btn" title="到顶部">↑</button>
           <button id="btn-scroll-bottom" class="scroll-btn" title="到底部">↓</button>
         </div>
-        <button id="btn-new-session-header" title="新建会话">新建会话</button>
+        <button id="btn-new-session-header" class="outline" title="新建会话">新建会话</button>
       </div>
       <div id="chat-messages"></div>
       <div class="divider row"></div>
