@@ -231,26 +231,26 @@ aside {
   width: 260px;
 }
 
-#sidebar-right {
+.sidebar.right {
   border-right: none;
   border-left: 1px solid var(--border-subtle);
 }
 
-#sidebar-right.collapsed {
+.sidebar.right.collapsed {
   width: 40px;
   min-width: 40px;
   max-width: 40px;
 }
 
-#sidebar-right.collapsed .header span {
+.sidebar.right.collapsed .header span {
   display: none;
 }
 
-#sidebar-right.collapsed .content {
+.sidebar.right.collapsed .content {
   display: none;
 }
 
-#sidebar-right.collapsed #btn-collapse-right svg {
+.sidebar.right.collapsed #btn-collapse-right svg {
   transform: rotate(180deg);
 }
 
@@ -287,7 +287,7 @@ aside .content {
 }
 
 /* ========== Divider ========== */
-#divider-left, #divider-right {
+.divider {
   width: 6px;
   background: var(--border-subtle);
   cursor: col-resize;
@@ -297,7 +297,7 @@ aside .content {
   z-index: 10;
 }
 
-#divider-left:hover, #divider-right:hover {
+.divider:hover {
   background: var(--accent-primary);
   width: 8px;
 }
@@ -1373,7 +1373,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
 }
 
 @media (max-width: 768px) {
-  #sidebar-right {
+  .sidebar.right {
     display: none;
   }
 
@@ -1726,7 +1726,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
     </nav>
 
     <div id="main-row">
-    <aside id="sidebar-left">
+    <aside class="sidebar left">
       <div class="header">
         <span>AI服务端点</span>
         <button id="btn-add-group" class="btn-header-action" title="新增端点">
@@ -1735,7 +1735,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
       </div>
       <div class="content" id="endpoint-list"></div>
     </aside>
-    <div id="divider-left"></div>
+    <div class="divider control sidebar left"></div>
 
     <div id="main-content">
       <div id="chat-header">
@@ -1774,9 +1774,9 @@ aside .content::-webkit-scrollbar-thumb:hover,
       </div>
     </div>
 
-    <div id="divider-right"></div>
+    <div class="divider control sidebar right"></div>
 
-    <aside id="sidebar-right">
+    <aside class="sidebar right">
       <div class="header">
         <span>会话记录</span>
         <button id="btn-collapse-right" class="btn-header-action" title="收起侧边栏">
@@ -2065,23 +2065,17 @@ function createTooltip(id, html) {
 // ========== UI Functions ==========
 
 function initDividers() {
-  const dividerLeft = $('#divider-left');
-  const dividerRight = $('#divider-right');
-  const sidebarLeft = $('#sidebar-left');
-  const sidebarRight = $('#sidebar-right');
-
   // 水平分隔线
   const dividerHorizontal = $('#divider-horizontal');
   const chatMsg = $('#chat-messages');
   const mainContent = $('#main-content');
-  const chatInputArea = $('.chat-input-area');
   const chatHeader = $('#chat-header');
 
   // 恢复保存的侧栏宽度
   const savedLeftWidth = localStorage.getItem('sidebar-left-width');
   const savedRightWidth = localStorage.getItem('sidebar-right-width');
-  if (savedLeftWidth) sidebarLeft.style.width = savedLeftWidth;
-  if (savedRightWidth) sidebarRight.style.width = savedRightWidth;
+  if (savedLeftWidth) $('.sidebar.left').style.width = savedLeftWidth;
+  if (savedRightWidth) $('.sidebar.right').style.width = savedRightWidth;
 
   // 清理旧格式存储，重新初始化布局
   localStorage.removeItem('chat-messages-flex');
@@ -2100,9 +2094,18 @@ function initDividers() {
   let startMessagesHeight = 0;
   let startMainHeight = 0;
 
-  function startDrag(e, divider, sidebar, isLeft) {
+  function startDragHorizontal(e) {
+    const divider = e.target;
+    const isLeft = divider.classList.contains('left');
+    const sidebar = isLeft ? $('.sidebar.left') : $('.sidebar.right');
+
     isDragging = true;
-    curDiv = { divider, sidebar, isLeft, storageKey: isLeft ? 'sidebar-left-width' : 'sidebar-right-width', type: 'horizontal' };
+    curDiv = {
+      sidebar,
+      isLeft,
+      storageKey: isLeft ? 'sidebar-left-width' : 'sidebar-right-width',
+      type: 'horizontal'
+    };
     startX = e.clientX;
     startWidth = sidebar.offsetWidth;
     doc.body.style.cursor = 'col-resize';
@@ -2114,7 +2117,6 @@ function initDividers() {
     curDiv = { divider: dividerHorizontal, type: 'vertical' };
     startY = e.clientY;
     startMessagesHeight = chatMsg.offsetHeight;
-    // 记录消息区和输入区的总可用高度（不含header和divider）
     startMainHeight = mainContent.offsetHeight - dividerHorizontal.offsetHeight - chatHeader.offsetHeight;
     doc.body.style.cursor = 'row-resize';
     doc.body.style.userSelect = 'none';
@@ -2133,18 +2135,14 @@ function initDividers() {
       chatMsg.style.height = clamped + 'px';
       chatMsg.style.flex = '0 0 auto';
     } else {
-      // 水平方向拖动（调整侧栏宽度）
       const dx = e.clientX - startX;
-      const newWidth = curDiv.isLeft
-        ? startWidth + dx
-        : startWidth - dx;
+      const newWidth = curDiv.isLeft ? startWidth + dx : startWidth - dx;
 
-      // 使用百分比限制到1/3
       const mainRow = $('#main-row');
-      if (!mainRow) return; // 防止元素不存在时报错
+      if (!mainRow) return;
       const containerWidth = mainRow.offsetWidth;
       const minWidth = 180;
-      const maxWidth = containerWidth * 0.333; // 最多1/3
+      const maxWidth = containerWidth * 0.333;
       const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 
       curDiv.sidebar.style.width = clampedWidth + 'px';
@@ -2156,7 +2154,6 @@ function initDividers() {
       if (curDiv.type === 'vertical') {
         localStorage.setItem('chat-messages-height', chatMsg.style.height);
       } else {
-        // 保存宽度到localStorage
         localStorage.setItem(curDiv.storageKey, curDiv.sidebar.style.width);
       }
       isDragging = false;
@@ -2166,31 +2163,31 @@ function initDividers() {
     }
   }
 
-  dividerLeft.on('mousedown', e => startDrag(e, dividerLeft, sidebarLeft, true));
-
-  dividerRight.on('mousedown', e => startDrag(e, dividerRight, sidebarRight, false));
-
-  if (dividerHorizontal) {
-    dividerHorizontal.on('mousedown', e => startDragVertical(e));
-  }
-
-  doc.on('mousemove', doDrag);
-  doc.on('mouseup', stopDrag);
-
   // 右侧栏收起/展开
+  const sidebarRight = $('.sidebar.right');
   const btnCollapseRight = $('#btn-collapse-right');
-  if (btnCollapseRight) {
-    // 恢复保存的收起状态
+  if (btnCollapseRight && sidebarRight) {
     const savedCollapsed = localStorage.getItem('sidebar-right-collapsed') === 'true';
     if (savedCollapsed) {
       sidebarRight.classList.add('collapsed');
     }
-
     btnCollapseRight.on('click', () => {
       sidebarRight.classList.toggle('collapsed');
       localStorage.setItem('sidebar-right-collapsed', sidebarRight.classList.contains('collapsed'));
     });
   }
+
+  // 统一绑定所有水平 divider
+  $$('.divider.control').forEach(div => {
+    div.on('mousedown', startDragHorizontal);
+  });
+
+  if (dividerHorizontal) {
+    dividerHorizontal.on('mousedown', startDragVertical);
+  }
+
+  doc.on('mousemove', doDrag);
+  doc.on('mouseup', stopDrag);
 }
 
 // ========== Scroll Navigation ==========
