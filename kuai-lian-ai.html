@@ -674,6 +674,11 @@ button.outline:hover:not(:disabled) {
   display: block;
 }
 
+.btn-icon.copy-success {
+  color: var(--accent-success);
+  background: transparent;
+}
+
 .message-usage {
   font-size: 11px;
   color: var(--text-muted);
@@ -1087,6 +1092,23 @@ button.outline:hover:not(:disabled) {
 
 .session-item.selected .session-title {
   color: var(--accent-primary);
+}
+
+.session-title-edit {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+}
+
+.session-title-edit:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-light);
 }
 
 .session-meta {
@@ -1728,7 +1750,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.8.6</span>
+        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.8.7</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -2643,7 +2665,51 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       modelEditBtn.title = '编辑模型';
       modelEditBtn.on('click', e => {
         e.stopPropagation();
-        onModelEdit(group.id, model.id);
+        modelTooltip.hide();
+        // 原地编辑：将模型名替换为输入框
+        const existEdit = $('.add-model-inline', modelEl);
+        if (existEdit) existEdit.remove();
+
+        const inlineEdit = fromTemplate('tpl-add-model-inline', '.add-model-inline');
+        const inputEl = $('.add-model-input', inlineEdit);
+        inputEl.value = model.name;
+        inputEl.placeholder = '模型名';
+
+        // 替换模型名显示为编辑器
+        modelName.style.display = 'none';
+        modelEl.insertBefore(inlineEdit, modelActions);
+
+        inputEl.focus();
+        inputEl.select();
+
+        $('.add-model-confirm', inlineEdit).on('click', async e2 => {
+          e2.stopPropagation();
+          const newName = inputEl.value.trim();
+          if (newName && newName !== model.name) {
+            inlineEdit.remove();
+            modelName.style.display = '';
+            onModelEdit(group.id, model.id, newName);
+          } else {
+            inlineEdit.remove();
+            modelName.style.display = '';
+          }
+        });
+
+        $('.add-model-cancel', inlineEdit).on('click', e2 => {
+          e2.stopPropagation();
+          inlineEdit.remove();
+          modelName.style.display = '';
+        });
+
+        inputEl.on('keydown', e2 => {
+          if (e2.key === 'Enter') {
+            e2.preventDefault();
+            $('.add-model-confirm', inlineEdit).click();
+          } else if (e2.key === 'Escape') {
+            inlineEdit.remove();
+            modelName.style.display = '';
+          }
+        });
       });
 
       const modelDeleteBtn = mk('button', 'btn-action-small btn-action-danger');
@@ -2763,7 +2829,38 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
     editBtn.title = '编辑标题';
     editBtn.on('click', e => {
       e.stopPropagation();
-      onSessionEdit(session.id);
+      // 原地编辑：将标题替换为输入框
+      const currentTitle = session.title || '新会话';
+      const inputEl = mk('input', 'session-title-edit');
+      inputEl.type = 'text';
+      inputEl.value = currentTitle;
+
+      // 替换标题显示为编辑器
+      titleEl.style.display = 'none';
+      sessionEl.insertBefore(inputEl, meta);
+
+      inputEl.focus();
+      inputEl.select();
+
+      const finishEdit = () => {
+        const newTitle = inputEl.value.trim();
+        inputEl.remove();
+        titleEl.style.display = '';
+        if (newTitle && newTitle !== currentTitle) {
+          onSessionEdit(session.id, newTitle);
+        }
+      };
+
+      inputEl.on('blur', finishEdit);
+      inputEl.on('keydown', e2 => {
+        if (e2.key === 'Enter') {
+          e2.preventDefault();
+          inputEl.blur();
+        } else if (e2.key === 'Escape') {
+          inputEl.value = currentTitle;
+          inputEl.blur();
+        }
+      });
     });
 
     const deleteBtn = mk('button', 'btn-action-small btn-action-danger');
@@ -2811,7 +2908,16 @@ function renderMessages(messages, groups, onCopy) {
       const copyBtn = mk('button', 'btn-icon');
       copyBtn.innerHTML = SVG.copy;
       copyBtn.title = '复制';
-      copyBtn.onclick = () => onCopy(msg.content);
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(msg.content).then(() => {
+          copyBtn.innerHTML = '✓';
+          copyBtn.classList.add('copy-success');
+          setTimeout(() => {
+            copyBtn.innerHTML = SVG.copy;
+            copyBtn.classList.remove('copy-success');
+          }, 1500);
+        });
+      };
 
       statusBar.addChild(copyBtn);
       msgEl.addChild(statusBar);
@@ -2839,7 +2945,17 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
   const meta = fromTemplate('tpl-response-meta', '.response-meta');
   $('.response-model-name', meta).textContent = modelName;
   $('.response-time', meta).textContent = timeStr;
-  $('.copy-btn', meta).onclick = () => onCopy(msg.content || '');
+  const copyBtn = $('.copy-btn', meta);
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(msg.content || '').then(() => {
+      copyBtn.innerHTML = '✓';
+      copyBtn.classList.add('copy-success');
+      setTimeout(() => {
+        copyBtn.innerHTML = SVG.copy;
+        copyBtn.classList.remove('copy-success');
+      }, 1500);
+    });
+  };
   msgEl.addChild(meta);
 
   const assistantEl = mk('div', 'message-assistant');
@@ -2906,7 +3022,16 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     // Only add copy button for completed responses with content
     const copyBtn = $('.copy-btn', meta);
     if (r.status === 'completed' && r.content) {
-      copyBtn.onclick = () => onCopy(r.content || '');
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(r.content || '').then(() => {
+          copyBtn.innerHTML = '✓';
+          copyBtn.classList.add('copy-success');
+          setTimeout(() => {
+            copyBtn.innerHTML = SVG.copy;
+            copyBtn.classList.remove('copy-success');
+          }, 1500);
+        });
+      };
     } else {
       copyBtn.remove();
     }
@@ -4545,11 +4670,11 @@ async function handleSessionSelect(sessionId) {
   await refreshUI();
 }
 
-function handleSessionEdit(sessionId) {
+function handleSessionEdit(sessionId, newTitle) {
+  // 原地编辑模式：直接更新会话标题
   const session = getSession(sessionId);
-  const newTitle = prompt('编辑会话标题:', session?.title || '新会话');
-  if (newTitle && newTitle.trim()) {
-    session.title = newTitle.trim();
+  if (session && newTitle) {
+    session.title = newTitle;
     saveSession(session);
     refreshUI();
   }
@@ -4609,12 +4734,9 @@ function handleCopy(content) {
   });
 }
 
-function handleModelEdit(groupId, modelId) {
-  const model = getModel(groupId, modelId);
-  showEditModelDialog(groupId, model, async (name) => {
-    await updateModel(groupId, modelId, name);
-    await refreshUI();
-  });
+function handleModelEdit(groupId, modelId, newName) {
+  // 原地编辑模式：直接更新模型名
+  updateModel(groupId, modelId, newName).then(() => refreshUI());
 }
 
 async function handleModelDelete(groupId, modelId) {
