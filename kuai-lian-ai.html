@@ -221,7 +221,7 @@ button.btn-navbar:hover:not(:disabled) {
 }
 
 /* ========== Sidebar ========== */
-#sidebar-left, #sidebar-right {
+aside {
   display: flex;
   flex-direction: column;
   background: var(--bg-base);
@@ -242,11 +242,11 @@ button.btn-navbar:hover:not(:disabled) {
   max-width: 40px;
 }
 
-#sidebar-right.collapsed .sidebar-header span {
+#sidebar-right.collapsed .header span {
   display: none;
 }
 
-#sidebar-right.collapsed .sidebar-content {
+#sidebar-right.collapsed .content {
   display: none;
 }
 
@@ -254,7 +254,7 @@ button.btn-navbar:hover:not(:disabled) {
   transform: rotate(180deg);
 }
 
-.sidebar-header {
+aside .header {
   padding: var(--space-2) var(--space-3);
   font-weight: 600;
   font-size: 13px;
@@ -267,7 +267,7 @@ button.btn-navbar:hover:not(:disabled) {
   align-items: center;
 }
 
-.sidebar-content {
+aside .content {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-1);
@@ -1089,26 +1089,26 @@ button.outline:hover:not(:disabled) {
 }
 
 /* ========== Scrollbar ========== */
-.sidebar-content::-webkit-scrollbar,
+aside .content::-webkit-scrollbar,
 #chat-messages::-webkit-scrollbar,
 .selector.list::-webkit-scrollbar {
   width: 5px;
 }
 
-.sidebar-content::-webkit-scrollbar-track,
+aside .content::-webkit-scrollbar-track,
 #chat-messages::-webkit-scrollbar-track,
 .selector.list::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.sidebar-content::-webkit-scrollbar-thumb,
+aside .content::-webkit-scrollbar-thumb,
 #chat-messages::-webkit-scrollbar-thumb,
 .selector.list::-webkit-scrollbar-thumb {
   background: var(--border-default);
   border-radius: 3px;
 }
 
-.sidebar-content::-webkit-scrollbar-thumb:hover,
+aside .content::-webkit-scrollbar-thumb:hover,
 #chat-messages::-webkit-scrollbar-thumb:hover,
 .selector.list::-webkit-scrollbar-thumb:hover {
   background: var(--border-strong);
@@ -1366,7 +1366,7 @@ button.outline:hover:not(:disabled) {
 
 /* ========== Responsive ========== */
 @media (max-width: 900px) {
-  #sidebar-left, #sidebar-right {
+  aside {
     width: 200px;
     min-width: 160px;
   }
@@ -1705,7 +1705,7 @@ button.outline:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.10.1</span>
+        <span class="brand">快连AI</span><span class="version">v1.11.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -1726,15 +1726,15 @@ button.outline:hover:not(:disabled) {
     </nav>
 
     <div id="main-row">
-    <div id="sidebar-left">
-      <div class="sidebar-header">
+    <aside id="sidebar-left">
+      <div class="header">
         <span>AI服务端点</span>
         <button id="btn-add-group" class="btn-header-action" title="新增端点">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
       </div>
-      <div class="sidebar-content" id="endpoint-list"></div>
-    </div>
+      <div class="content" id="endpoint-list"></div>
+    </aside>
     <div id="divider-left"></div>
 
     <div id="main-content">
@@ -1776,15 +1776,15 @@ button.outline:hover:not(:disabled) {
 
     <div id="divider-right"></div>
 
-    <div id="sidebar-right">
-      <div class="sidebar-header">
+    <aside id="sidebar-right">
+      <div class="header">
         <span>会话记录</span>
         <button id="btn-collapse-right" class="btn-header-action" title="收起侧边栏">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
-      <div class="sidebar-content" id="session-list"></div>
-    </div>
+      <div class="content" id="session-list"></div>
+    </aside>
     </div>
   </main>
 
