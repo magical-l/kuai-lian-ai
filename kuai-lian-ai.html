@@ -89,7 +89,7 @@ body {
 }
 
 /* ========== Layout ========== */
-.app-container {
+main {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -97,7 +97,7 @@ body {
 }
 
 /* ========== Navbar ========== */
-.navbar {
+#navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -113,7 +113,7 @@ body {
   gap: var(--space-3);
 }
 
-.navbar-logo-placeholder {
+.logo {
   width: 24px;
   height: 24px;
   display: flex;
@@ -121,13 +121,13 @@ body {
   justify-content: center;
 }
 
-.navbar-brand {
+.brand {
   font-weight: 600;
   font-size: 14px;
   color: var(--text-primary);
 }
 
-.navbar-version {
+.version {
   font-size: 12px;
   color: var(--text-muted);
   margin-left: var(--space-1);
@@ -1724,14 +1724,13 @@ button.outline:hover:not(:disabled) {
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <!-- 导航栏 -->
-    <div class="navbar" id="navbar">
+  <main>
+    <div id="navbar">
       <div class="navbar-left">
-        <div class="navbar-logo-placeholder" id="logo-placeholder">
+        <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.9.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.9.0</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -1817,7 +1816,7 @@ button.outline:hover:not(:disabled) {
       <div class="sidebar-content" id="session-list"></div>
     </div>
     </div>
-  </div>
+  </main>
 
   <!-- ========== Templates ========== -->
   <!-- 编辑端点对话框 -->
