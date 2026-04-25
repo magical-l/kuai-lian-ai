@@ -1449,8 +1449,10 @@ button.outline:hover:not(:disabled) {
   display: none;
 }
 
-.model-selector.generating {
-  opacity: 0.7;
+.model-selector.generating .selector-expand-btn,
+.model-selector.generating .model-tag {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .selector-header {
@@ -1726,7 +1728,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.8.3</span>
+        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.8.6</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -2294,8 +2296,7 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
       const info = findModelById(groups, id);
       if (!info) return '';
       const statusClass = getTagStatusClass(id);
-      const icon = getStatusIcon(id);
-      return `<span class="model-tag ${statusClass} selected" data-model="${id}"><span class="model-status-icon">${icon}</span><span class="endpoint-name-color">${info.group.name}</span> ${info.model.name}</span>`;
+      return `<span class="model-tag ${statusClass} selected" data-model="${id}"><span class="endpoint-name-color">${info.group.name}</span> ${info.model.name}</span>`;
     }).join('');
     expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
   }
@@ -2306,12 +2307,10 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
       const tags = g.models.map(m => {
         const isSelected = selectedModels.includes(`${g.id}:${m.id}`);
         const statusClass = getTagStatusClass(`${g.id}:${m.id}`);
-        // Build class list: always include 'selected' if selected, plus status class if present
         const cls = isSelected
           ? (statusClass ? `selected ${statusClass}` : 'selected')
           : 'unselected';
-        const icon = isSelected ? getStatusIcon(`${g.id}:${m.id}`) : '';
-        return `<span class="model-tag ${cls}" data-model="${g.id}:${m.id}"><span class="model-status-icon">${icon}</span>${m.name}</span>`;
+        return `<span class="model-tag ${cls}" data-model="${g.id}:${m.id}">${m.name}</span>`;
       }).join('');
       return `<div class="selector-group-label">${g.name}</div><div class="selector-models-row">${tags}</div>`;
     }).join('');
@@ -2331,56 +2330,42 @@ function findModelById(groups, modelId) {
 function getTagStatusClass(modelId) {
   const gen = activeGenerations.get(modelId);
   if (!gen) return '';
-  // Only show color for failed/stopped status, not for generating/completed
-  // Speed colors are shown on "x秒回应" text in message cards instead
+  // Only show color for failed/stopped status
   if (gen.status === 'failed') return 'failed';
   if (gen.status === 'stopped') return 'stopped';
   return '';
 }
 
-function getStatusIcon(modelId) {
-  const gen = activeGenerations.get(modelId);
-  if (!gen) return ''; // No icon for idle selected models
-  if (gen.status === 'generating') {
-    return gen.firstTokenTime == null
-      ? '<span class="model-status-icon spinning">◐</span>'
-      : '<span class="model-status-icon">◐</span>';
-  }
-  // completed、failed、stopped的状态图标在消息卡片里显示，选择器里不显示
-  return '';
-}
+// getStatusIcon 已取消：选中模型的转圈功能不再需要
 
 function bindSelectorEvents() {
   const expandBtn = $('#selector-expand-btn');
   if (expandBtn) {
     expandBtn.onclick = () => {
-      // 实时检查生成状态，不使用闭包捕获的旧值
+      // 实时检查生成状态
       const isGenerating = activeGenerations.size > 0 &&
         Array.from(activeGenerations.values()).some(s => s.status === 'generating');
-      if (!isGenerating) {
-        selectorExpanded = !selectorExpanded;
-        renderModelSelector(getGroups(), selectedModels, false);
-      }
+      if (isGenerating) return;
+      selectorExpanded = !selectorExpanded;
+      renderModelSelector(getGroups(), selectedModels, false);
     };
   }
-
-  // 实时检查生成状态
-  const isGenerating = activeGenerations.size > 0 &&
-    Array.from(activeGenerations.values()).some(s => s.status === 'generating');
-  if (isGenerating) return;
 
   // Make entire model tag clickable for toggle selection
   $$('.model-tag').forEach(tag => {
     tag.onclick = e => {
-      e.stopPropagation(); // 阻止冒泡，避免触发document的click监听器导致收起
+      e.stopPropagation();
+      // 实时检查生成状态（放在点击时检查，而非绑定时）
+      const isGenerating = activeGenerations.size > 0 &&
+        Array.from(activeGenerations.values()).some(s => s.status === 'generating');
+      if (isGenerating) return;
+
       const id = tag.dataset.model;
       if (!id) return;
 
       if (selectedModels.includes(id)) {
-        // Deselect
         selectedModels = selectedModels.filter(x => x !== id);
       } else {
-        // Select
         if (!selectedModels.includes(id)) {
           selectedModels.push(id);
         }
