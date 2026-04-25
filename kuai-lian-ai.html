@@ -1023,6 +1023,12 @@ button.outline:hover:not(:disabled) {
   display: inline-block;
 }
 
+/* 通用的.spin类 */
+.spin {
+  animation: spin 1s linear infinite !important;
+  display: inline-block;
+  will-change: transform;
+}
 
 .btn-connection-connected {
   background: var(--success-light);
@@ -1363,6 +1369,11 @@ button.outline:hover:not(:disabled) {
   50% { opacity: 0.3; }
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1545,6 +1556,8 @@ button.outline:hover:not(:disabled) {
 
 .model-status-icon.spinning {
   animation: spin 1s linear infinite !important;
+  display: inline-block;
+  will-change: transform;
 }
 
 /* 选择器空状态提示 */
@@ -1713,7 +1726,7 @@ button.outline:hover:not(:disabled) {
         <div class="navbar-logo-placeholder" id="logo-placeholder">
           <!-- Logo待定 -->
         </div>
-        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.7.3</span>
+        <span class="navbar-brand">快连AI</span><span class="navbar-version">v1.8.3</span>
       </div>
       <div class="navbar-center">
         <span class="directory-label">当前存储目录：</span>
@@ -1979,104 +1992,104 @@ button.outline:hover:not(:disabled) {
   };
 
   // 从模板克隆元素
-  function fromTemplate(templateId, selector) {
-    const tpl = $('#' + templateId);
-    return tpl.content.cloneNode(true).querySelector(selector);
-  }
+function fromTemplate(templateId, selector) {
+  const tpl = $('#' + templateId);
+  return tpl.content.cloneNode(true).querySelector(selector);
+}
 
-  // DOM查询辅助函数（类似jQuery）
-  function $(selector, ctx = doc) {
-    return ctx.querySelector(selector);
-  }
-  function $$(selector, ctx = doc) {
-    return ctx.querySelectorAll(selector);
-  }
+// DOM查询辅助函数（类似jQuery）
+const doc = document;
+function $(selector, ctx = doc) {
+  return ctx.querySelector(selector);
+}
+function $$(selector, ctx = doc) {
+  return ctx.querySelectorAll(selector);
+}
 
-  // 批量设置表单值
-  function setValues(ctx, vals) {
-    for (const [sel, val] of Object.entries(vals)) {
-      $(sel, ctx).value = val ?? '';
+// 批量设置表单值
+function setValues(ctx, vals) {
+  for (const [sel, val] of Object.entries(vals)) {
+    $(sel, ctx).value = val ?? '';
+  }
+}
+
+// 批量绑定click事件
+function onClick(handlers, ctx = doc) {
+  for (const [sel, fn] of Object.entries(handlers)) {
+    $(sel, ctx).onclick = fn;
+  }
+}
+
+// 显示/隐藏元素
+function show(el) { el.style.display = ''; }
+function hide(el) { el.style.display = 'none'; }
+function toggle(el, visible) { el.style.display = visible ? '' : 'none'; }
+
+// 确认后执行
+function confirmAction(msg, action) {
+  if (confirm(msg)) action();
+}
+
+// DOM操作辅助
+const H = HTMLElement.prototype, D = Document.prototype;
+H.addChild = function(child) { return this.appendChild(child); };
+H.on = D.on = function(event, handler) { this.addEventListener(event, handler); return this; };
+function mk(tag, className) {
+  const el = doc.createElement(tag);
+  if (className) el.className = className;
+  return el;
+}
+function text(el, txt) { el.textContent = txt; return el; }
+
+// Tooltip通用组件
+function createTooltip(id, html) {
+  let el = null;
+  let hideTimer = null;
+
+  function show(triggerEl) {
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    el = $('#' + id);
+    if (!el) {
+      el = doc.createElement('div');
+      el.id = id;
+      el.className = 'group-tooltip';
+      el.innerHTML = html;
+      doc.body.appendChild(el);
+      $$('.btn-tooltip-copy', el).forEach(btn => {
+        btn.onclick = e => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(btn.dataset.copy);
+          btn.textContent = '✓';
+          btn.classList.add('copied');
+          setTimeout(() => { btn.textContent = '⧉'; btn.classList.remove('copied'); }, 1500);
+        };
+      });
+      el.onmouseenter = () => { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } };
+      el.onmouseleave = () => hide();
     }
+    // 计算位置
+    const rect = triggerEl.getBoundingClientRect();
+    const width = 200, height = el.offsetHeight || 80;
+    let top = rect.bottom + 4, left = rect.left;
+    if (top + height > window.innerHeight) top = rect.top - height - 4;
+    if (left + width > window.innerWidth) left = window.innerWidth - width - 10;
+    if (left < 10) left = 10;
+    el.style.top = top + 'px';
+    el.style.left = left + 'px';
+    el.style.display = 'block';
   }
 
-  // 批量绑定click事件
-  function onClick(handlers, ctx = doc) {
-    for (const [sel, fn] of Object.entries(handlers)) {
-      $(sel, ctx).onclick = fn;
-    }
+  function hide() {
+    hideTimer = setTimeout(() => {
+      if (el) el.style.display = 'none';
+      hideTimer = null;
+    }, 100);
   }
 
-  // 显示/隐藏元素
-  function show(el) { el.style.display = ''; }
-  function hide(el) { el.style.display = 'none'; }
-  function toggle(el, visible) { el.style.display = visible ? '' : 'none'; }
+  function remove() { if (el) { el.remove(); el = null; } }
 
-  // 确认后执行
-  function confirmAction(msg, action) {
-    if (confirm(msg)) action();
-  }
-
-  // DOM操作辅助
-  const doc = document;
-  const H = HTMLElement.prototype, D = Document.prototype;
-  H.addChild = function(child) { return this.appendChild(child); };
-  H.on = D.on = function(event, handler) { this.addEventListener(event, handler); return this; };
-  function mk(tag, className) {
-    const el = doc.createElement(tag);
-    if (className) el.className = className;
-    return el;
-  }
-  function text(el, txt) { el.textContent = txt; return el; }
-
-  // Tooltip通用组件
-  function createTooltip(id, html) {
-    let el = null;
-    let hideTimer = null;
-
-    function show(triggerEl) {
-      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-      el = $('#' + id);
-      if (!el) {
-        el = doc.createElement('div');
-        el.id = id;
-        el.className = 'group-tooltip';
-        el.innerHTML = html;
-        doc.body.appendChild(el);
-        $$('.btn-tooltip-copy', el).forEach(btn => {
-          btn.onclick = e => {
-            e.stopPropagation();
-            navigator.clipboard.writeText(btn.dataset.copy);
-            btn.textContent = '✓';
-            btn.classList.add('copied');
-            setTimeout(() => { btn.textContent = '⧉'; btn.classList.remove('copied'); }, 1500);
-          };
-        });
-        el.onmouseenter = () => { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } };
-        el.onmouseleave = () => hide();
-      }
-      // 计算位置
-      const rect = triggerEl.getBoundingClientRect();
-      const width = 200, height = el.offsetHeight || 80;
-      let top = rect.bottom + 4, left = rect.left;
-      if (top + height > window.innerHeight) top = rect.top - height - 4;
-      if (left + width > window.innerWidth) left = window.innerWidth - width - 10;
-      if (left < 10) left = 10;
-      el.style.top = top + 'px';
-      el.style.left = left + 'px';
-      show(el);
-    }
-
-    function hide() {
-      hideTimer = setTimeout(() => {
-        if (el) hide(el);
-        hideTimer = null;
-      }, 100);
-    }
-
-    function remove() { if (el) { el.remove(); el = null; } }
-
-    return { show, hide, remove, el };
-  }
+  return { show, hide, remove, el };
+}
 
 // ========== UI Functions ==========
 
@@ -3205,7 +3218,7 @@ async function testConnection(groupId, modelId) {
 
   const key = `${groupId}:${modelId}`;
   connectionStatus.set(key, { status: 'testing', timestamp: null });
-  renderEndpointList(getGroups(), null, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  renderEndpointList(getGroups(), null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 
   try {
     // 发送一个简单的测试请求
@@ -3300,7 +3313,7 @@ async function testConnection(groupId, modelId) {
     });
   }
 
-  renderEndpointList(getGroups(), null, handleModelSelect, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+  renderEndpointList(getGroups(), null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 }
 
 // ========== Store Functions ==========
@@ -3858,7 +3871,7 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
             const chunk = delta?.content;
             if (chunk) {
               // DeepSeek格式：收到content时（reasoning_content结束后），计算thinkingDuration
-              if (state.thinkingStartTime && state.thinkingDuration === null && delta?.reasoning_content !== undefined) {
+              if (state.thinkingStartTime && state.thinkingDuration === null && state.phase === 'thinking') {
                 state.thinkingDuration = Date.now() - state.thinkingStartTime;
                 state.phase = 'content';
               }
@@ -4688,11 +4701,17 @@ async function handleSend() {
   // 显示"思考中"状态卡片
   showThinkingCards(selectedModels, groups);
 
+  // 记录已排序的模型（只排序一次）
+  const sortedModels = new Set();
+
   // 并行调用所有模型
   const responses = await callAllModels(groups, selectedModels, messages, (modelId, partialContent, firstTokenTime) => {
     updateStreamingCard(modelId, partialContent, firstTokenTime, groups);
-    reorderCardsBySpeed();
-    renderModelSelector(groups, selectedModels, true);
+    // 只在firstTokenTime首次有值时排序一次
+    if (firstTokenTime != null && !sortedModels.has(modelId)) {
+      sortedModels.add(modelId);
+      reorderCardsBySpeed();
+    }
   });
 
   // 全部完成后保存助手消息
@@ -4809,11 +4828,7 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
   if (firstTokenTime !== null) {
     const meta = $('.response-meta', card);
     if (meta) {
-      const icon = $('.model-status-icon', meta);
-      if (icon) {
-        icon.classList.remove('spinning');
-      }
-
+      // 收到第一个token时不停止动画，保持转动直到完成
       // 添加duration显示（如果不存在）
       if (!$('.response-duration', meta)) {
         const durationEl = mk('span', `response-duration ${getSpeedClass(firstTokenTime)}`);
@@ -4898,7 +4913,6 @@ function updateCardStatus(modelId, status, error, state = null) {
 }
 
 function reorderCardsBySpeed() {
-  // Use requestAnimationFrame for non-blocking DOM updates
   requestAnimationFrame(() => {
     const container = $('#streaming-multi-response .multi-response-cards');
     if (!container) return;
@@ -4910,7 +4924,7 @@ function reorderCardsBySpeed() {
       return (stateA?.firstTokenTime ?? Infinity) - (stateB?.firstTokenTime ?? Infinity);
     });
 
-    cards.forEach(c => container.addChild(c));
+    cards.forEach(c => container.appendChild(c));
   });
 }
 
