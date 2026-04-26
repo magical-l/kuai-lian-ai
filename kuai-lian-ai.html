@@ -630,7 +630,8 @@ button.outline:hover:not(:disabled) {
 .message-assistant ul,
 .message-assistant ol {
   margin: 8px 0;
-  padding-left: 24px;
+  padding-left: 0;
+  list-style-position: inside;
 }
 
 .message-assistant li {
@@ -1637,6 +1638,53 @@ button.toggle-key:hover:not(:disabled) {
 .response.card-content {
   font-size: 13px;
   line-height: 1.5;
+}
+
+.response.card-content ul,
+.response.card-content ol {
+  margin: 8px 0;
+  padding-left: 1.2em;
+  list-style-position: inside;
+}
+
+.response.card-content li {
+  margin: 2px 0;
+}
+
+.response.card-content pre {
+  background: #f6f8fa;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  overflow-x: auto;
+  position: relative;
+}
+
+.response.card-content code {
+  font-family: 'Consolas', 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+}
+
+.response.card-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.response.card-content p code {
+  background: #f6f8fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.response.card-content a {
+  color: var(--accent-primary);
+}
+
+.response.card-content blockquote {
+  border-left: 3px solid var(--border-default);
+  margin: 8px 0;
+  padding-left: 12px;
+  color: var(--text-secondary);
 }
 
 /* ========== Thinking Block ========== */
