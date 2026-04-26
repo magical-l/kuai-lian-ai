@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>快连AI</title>
+  <!-- Markdown 渲染 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+  <!-- 代码高亮 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
@@ -594,6 +599,111 @@ button.outline:hover:not(:disabled) {
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-sm);
+}
+
+/* ========== Markdown 渲染样式 ========== */
+.message-assistant pre {
+  background: #f6f8fa;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  overflow-x: auto;
+  position: relative;
+}
+
+.message-assistant code {
+  font-family: 'Consolas', 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+}
+
+.message-assistant pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.message-assistant p code {
+  background: #f6f8fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.message-assistant ul,
+.message-assistant ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.message-assistant li {
+  margin: 4px 0;
+}
+
+.message-assistant h1,
+.message-assistant h2,
+.message-assistant h3,
+.message-assistant h4 {
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+
+.message-assistant h1 { font-size: 1.5em; }
+.message-assistant h2 { font-size: 1.3em; }
+.message-assistant h3 { font-size: 1.1em; }
+
+.message-assistant blockquote {
+  border-left: 4px solid var(--border-default);
+  margin: 8px 0;
+  padding-left: 16px;
+  color: var(--text-secondary);
+}
+
+.message-assistant table {
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+
+.message-assistant th,
+.message-assistant td {
+  border: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+}
+
+.message-assistant th {
+  background: var(--bg-muted);
+  font-weight: 600;
+}
+
+.message-assistant a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.message-assistant a:hover {
+  text-decoration: underline;
+}
+
+/* 代码块复制按钮 */
+.code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.code-copy-btn:hover {
+  opacity: 1;
+  background: var(--bg-hover);
+}
+
+.code-copy-btn.copy-success {
+  opacity: 1;
+  color: var(--success);
+  border-color: var(--success);
 }
 
 .message-meta {
@@ -1609,7 +1719,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.15.9</span>
+        <span class="brand">快连AI</span><span class="version">v1.16.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2745,6 +2855,37 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
   });
 }
 
+function renderMarkdown(text) {
+  if (!text) return '';
+  marked.setOptions({
+    breaks: true,
+    gfm: true
+  });
+  return marked.parse(text);
+}
+
+function addCodeCopyButtons(container) {
+  container.querySelectorAll('pre code').forEach(codeEl => {
+    const preEl = codeEl.parentElement;
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'code-copy-btn';
+    copyBtn.innerHTML = SVG.copy;
+    copyBtn.title = '复制代码';
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(codeEl.textContent).then(() => {
+        copyBtn.innerHTML = '✓';
+        copyBtn.classList.add('copy-success');
+        setTimeout(() => {
+          copyBtn.innerHTML = SVG.copy;
+          copyBtn.classList.remove('copy-success');
+        }, 1500);
+      });
+    };
+    preEl.appendChild(copyBtn);
+    hljs.highlightElement(codeEl);
+  });
+}
+
 function renderMessages(messages, groups, onCopy) {
   const container = $('#chat-messages');
   container.innerHTML = '';
@@ -2819,8 +2960,9 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
   msgEl.addChild(meta);
 
   const assistantEl = mk('div', 'message-assistant');
-  assistantEl.textContent = msg.content || '';
+  assistantEl.innerHTML = renderMarkdown(msg.content || '');
   msgEl.addChild(assistantEl);
+  addCodeCopyButtons(assistantEl);
 
   // Status bar: usage info if available
   if (msg.usage) {
@@ -2922,11 +3064,10 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 
     const content = mk('div', 'response card-content');
     if (r.status === 'failed') {
-      content.textContent = '';  // Error shown in meta row, content area empty
-    } else if (r.status === 'stopped') {
-      content.textContent = r.content || '';  // Show partial content if available
+      content.innerHTML = '';  // Error shown in meta row, content area empty
     } else {
-      content.textContent = r.content || '';
+      content.innerHTML = renderMarkdown(r.content || '');
+      addCodeCopyButtons(content);
     }
     card.addChild(content);
 
