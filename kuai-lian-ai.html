@@ -834,6 +834,7 @@ button.batch-test.testing .spin {
   background: var(--bg-muted);
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-1);
+  flex-grow: 1;
 }
 
 button.add-model-confirm.action-sm {
@@ -1604,7 +1605,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.14.2</span>
+        <span class="brand">快连AI</span><span class="version">v1.14.4</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2514,6 +2515,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         inputEl.placeholder = '模型名';
 
         // 替换模型名显示为编辑器
+        modelDragHandle.style.display = 'none';
         modelName.style.display = 'none';
         modelActions.style.display = 'none';
         modelEl.insertBefore(inlineEdit, modelActions);
@@ -2526,11 +2528,13 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
           const newName = inputEl.value.trim();
           if (newName && newName !== model.name) {
             inlineEdit.remove();
+            modelDragHandle.style.display = '';
             modelName.style.display = '';
             modelActions.style.display = '';
             onModelEdit(group.id, model.id, newName);
           } else {
             inlineEdit.remove();
+            modelDragHandle.style.display = '';
             modelName.style.display = '';
             modelActions.style.display = '';
           }
@@ -2539,6 +2543,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
         $('.add-model-cancel', inlineEdit).on('click', e2 => {
           e2.stopPropagation();
           inlineEdit.remove();
+          modelDragHandle.style.display = '';
           modelName.style.display = '';
           modelActions.style.display = '';
         });
@@ -2549,6 +2554,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
             $('.add-model-confirm', inlineEdit).click();
           } else if (e2.key === 'Escape') {
             inlineEdit.remove();
+            modelDragHandle.style.display = '';
             modelName.style.display = '';
             modelActions.style.display = '';
           }
