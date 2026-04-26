@@ -102,8 +102,6 @@ body {
 
 /* ========== Layout ========== */
 main {
-  display: flex;
-  flex-direction: column;
   height: 100vh;
   background: var(--bg-subtle);
 }
@@ -269,8 +267,6 @@ button.help {
 
 /* ========== Sidebar ========== */
 aside {
-  display: flex;
-  flex-direction: column;
   background: var(--bg-base);
   border-right: 1px solid var(--border-subtle);
   min-width: 180px;
@@ -338,8 +334,6 @@ aside .content {
 /* ========== Main Content ========== */
 #main-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
   min-width: 400px;
   background: var(--bg-base);
 }
@@ -364,8 +358,6 @@ aside .content {
   flex: 1 1 auto;
   overflow-y: auto;
   padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
   gap: var(--space-5);
   background: var(--bg-subtle);
   min-height: 100px;
@@ -374,8 +366,6 @@ aside .content {
 .chat-input-area {
   padding: 4px 8px;
   border-top: 1px solid var(--border-subtle);
-  display: flex;
-  flex-direction: column;
   background: var(--bg-base);
   flex: 1 1 auto;
   min-height: 120px;
@@ -383,8 +373,6 @@ aside .content {
 
 /* 输入框容器（包含textarea和发送按钮） */
 .input-wrapper {
-  display: flex;
-  flex-direction: column;
   flex: 1;
   min-height: 0;
 }
@@ -507,8 +495,6 @@ button.outline:hover:not(:disabled) {
 
 /* ========== Scroll Navigation Buttons ========== */
 #scroll-nav-buttons {
-  display: flex;
-  flex-direction: row;
   gap: var(--space-1);
   opacity: 0;
   transition: opacity var(--transition-normal);
@@ -549,8 +535,6 @@ button.outline:hover:not(:disabled) {
 
 /* ========== Messages ========== */
 .message {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-1);
 }
 
@@ -922,8 +906,6 @@ button.batch-test.testing .spin {
 .group-models {
   padding-left: var(--space-3);
   margin-top: var(--space-1);
-  display: flex;
-  flex-direction: column;
   gap: 0;
 }
 
@@ -1194,14 +1176,10 @@ aside .content::-webkit-scrollbar-thumb:hover,
 }
 
 .dialog-form {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-4);
 }
 
 #edit-dialog label {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-2);
   font-size: 13px;
   font-weight: 500;
@@ -1612,8 +1590,6 @@ button.toggle-key:hover:not(:disabled) {
 }
 
 .multi-response-cards {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-3);
 }
 
@@ -1978,13 +1954,13 @@ button.toggle-key:hover:not(:disabled) {
   </style>
 </head>
 <body>
-  <main>
+  <main class="layout-y-queue">
     <nav>
       <div class="left">
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.23.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.24.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2012,7 +1988,7 @@ button.toggle-key:hover:not(:disabled) {
     </nav>
 
     <div id="main-row">
-    <aside class="left">
+    <aside class="left layout-y-queue">
       <header>
         <span>AI服务端点</span>
         <button id="btn-add-group" title="新增端点">
@@ -2023,19 +1999,19 @@ button.toggle-key:hover:not(:disabled) {
     </aside>
     <div class="divider column control sidebar left"></div>
 
-    <div id="main-content">
+    <div id="main-content" class="layout-y-queue">
       <div id="chat-header">
         <span class="prefix">会话：</span>
         <span id="chat-title">新会话</span>
-        <div id="scroll-nav-buttons">
+        <div id="scroll-nav-buttons" class="layout-x-queue">
           <button id="btn-scroll-top" class="scroll-btn" title="到顶部">↑</button>
           <button id="btn-scroll-bottom" class="scroll-btn" title="到底部">↓</button>
         </div>
         <button id="btn-new-session-header" class="outline" title="新建会话">新建会话</button>
       </div>
-      <div id="chat-messages"></div>
+      <div id="chat-messages" class="layout-y-queue"></div>
       <div class="divider row"></div>
-      <div class="chat-input-area">
+      <div class="chat-input-area layout-y-queue">
         <!-- 新增：模型选择器 -->
         <div id="model-selector" class="model selector collapsed">
           <div class="selector header">
@@ -2051,7 +2027,7 @@ button.toggle-key:hover:not(:disabled) {
           </div>
         </div>
 
-        <div class="input-wrapper">
+        <div class="input-wrapper layout-y-queue">
           <textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
           <div id="action-bar" style="display:flex;align-items:center;gap:8px;padding:8px;min-height:40px;">
             <div id="attachments-row" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></div>
@@ -2086,7 +2062,7 @@ button.toggle-key:hover:not(:disabled) {
 
     <div class="divider column control sidebar right"></div>
 
-    <aside class="right">
+    <aside class="right layout-y-queue">
       <header>
         <span>会话记录</span>
       </header>
@@ -2100,17 +2076,17 @@ button.toggle-key:hover:not(:disabled) {
   <template id="tpl-edit-group-dialog">
     <div id="edit-dialog">
       <h3></h3>
-      <form class="dialog-form">
-        <label>名称: <input id="dialog-group-name"></label>
-        <label>Base URL: <input id="dialog-group-url"></label>
-        <label>接口风格:
+      <form class="dialog-form layout-y-queue">
+        <label class="layout-y-queue">名称: <input id="dialog-group-name"></label>
+        <label class="layout-y-queue">Base URL: <input id="dialog-group-url"></label>
+        <label class="layout-y-queue">接口风格:
           <select id="dialog-group-style">
             <option value="openai">OpenAI</option>
             <option value="claude">Claude</option>
             <option value="gemini">Gemini</option>
           </select>
         </label>
-        <label>API Key: <div class="key-input-wrapper"><input id="dialog-group-key" type="password"><button class="toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+        <label class="layout-y-queue">API Key: <div class="key-input-wrapper"><input id="dialog-group-key" type="password"><button class="toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
       </form>
       <footer class="dialog-buttons">
         <button id="dialog-cancel">✗</button>
@@ -3060,7 +3036,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
       }
     });
 
-    const models = mk('div', 'group-models');
+    const models = mk('div', 'group-models layout-y-queue');
     // 恢复收起状态
     if (isCollapsed) {
       models.style.display = 'none';
@@ -3400,7 +3376,7 @@ function renderMessages(messages, groups, onCopy) {
 
   messages.forEach((msg, index) => {
     const roleClass = msg.role === 'user' ? 'req' : 'res';
-    const msgEl = mk('article', `message ${roleClass} msg`);
+    const msgEl = mk('article', `message layout-y-queue ${roleClass} msg`);
 
     if (msg.role === 'user') {
       // 使用模板创建meta，包含复制按钮
@@ -3554,7 +3530,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
   hint.textContent = `${sorted.length}个模型回复`;
   msgEl.addChild(hint);
 
-  const cards = mk('div', 'multi-response-cards');
+  const cards = mk('div', 'multi-response-cards layout-y-queue');
 
   sorted.forEach(r => {
     const card = mk('div', 'response card');
@@ -5450,7 +5426,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
     existingCards.remove();
   }
 
-  const msgEl = mk('article', 'message res msg');
+  const msgEl = mk('article', 'message layout-y-queue res msg');
   msgEl.id = 'streaming-multi-response';
   msgEl.dataset.sessionId = sessionId;
 
@@ -5469,7 +5445,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
     };
   }
 
-  const cards = mk('div', 'multi-response-cards');
+  const cards = mk('div', 'multi-response-cards layout-y-queue');
 
   modelIds.forEach(id => {
     const card = fromTemplate('tpl-response-card-streaming', '.response.card');
