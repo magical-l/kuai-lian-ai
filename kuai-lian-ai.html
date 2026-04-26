@@ -590,6 +590,67 @@ button.outline:hover:not(:disabled) {
   font-weight: 500;
 }
 
+/* 消息中的附件展示 */
+.message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.message-attachment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-muted);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.message-attachment.image {
+  padding: 2px;
+}
+
+.message-attachment-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--bg-subtle);
+}
+
+.message-attachment-name {
+  color: var(--text-secondary);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.image-preview-overlay img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 8px;
+}
+
 .message-assistant {
   align-self: flex-start;
   margin-right: 15%;
@@ -1758,6 +1819,119 @@ button.toggle-key:hover:not(:disabled) {
   display: block;
   border-top: none;
 }
+
+/* ========== 附件缩略图 ========== */
+.attachments-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  overflow-x: auto;
+  flex-shrink: 0;
+  min-height: 44px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  border: 1px solid var(--border-subtle);
+  border-bottom: none;
+}
+
+.attachments-row:empty {
+  display: none;
+}
+
+.attachment-thumb {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.attachment-thumb.image {
+  background-size: cover;
+  background-position: center;
+}
+
+.attachment-thumb.file {
+  font-size: 20px;
+  color: var(--text-muted);
+}
+
+.attachment-thumb .name-tooltip {
+  position: absolute;
+  bottom: -24px;
+  left: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  display: none;
+  z-index: 10;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attachment-thumb:hover .name-tooltip {
+  display: block;
+}
+
+.attachment-remove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  background: var(--danger);
+  color: white;
+  border-radius: 50%;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  cursor: pointer;
+  display: none;
+}
+
+.attachment-thumb:hover .attachment-remove {
+  display: block;
+}
+
+.attachment-remove:hover {
+  background: #b91c1c;
+}
+
+/* 附件按钮 */
+#btn-attach {
+  border: 1px solid var(--border-subtle);
+  padding: 0;
+  height: 28px;
+  min-width: 28px;
+  background: var(--bg-muted);
+}
+
+#btn-attach:hover:not(:disabled) {
+  background: var(--accent-light);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+#btn-attach svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 隐藏的文件输入 */
+#file-input {
+  display: none;
+}
   </style>
 </head>
 <body>
@@ -1767,7 +1941,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.16.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.20.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -1834,9 +2008,18 @@ button.toggle-key:hover:not(:disabled) {
           </div>
         </div>
 
+        <div class="attachments-row" id="attachments-row"></div>
         <div class="input-wrapper">
           <textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
-          <button id="btn-send" class="send-btn-inline" title="发送">发送</button>
+          <div style="display:flex;gap:8px;position:absolute;right:8px;bottom:8px;z-index:1;">
+            <input type="file" id="file-input" multiple accept="*/*">
+            <button id="btn-attach" class="navbar" title="添加附件">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </button>
+            <button id="btn-send" class="send-btn-inline" title="发送">发送</button>
+          </div>
         </div>
         <!-- 隐藏的controls，保留btn-stop供JS引用 -->
         <button id="btn-stop" style="display:none;" disabled>停止</button>
@@ -1981,9 +2164,9 @@ button.toggle-key:hover:not(:disabled) {
           <h4>中间：聊天</h4>
           <p>可以选择一个或多个模型舌战群儒。</p>
           <p>* Enter发送，Shift+Enter换行。</p>
-          <p>交谈中可以随时加入未选模型，或移除已选模型（踢出群！）。</p>
+          <p>* 交谈中可以随时加入未选模型，或移除已选模型。</p>
           <p>* 目前，多轮对话只会把你的话和该模型之前的回复作为上下文，不搭理其他模型。</p>
-          <p>* 暂不支持其他模态。</p>
+          <p>* <strong>支持图片和文件输入：</strong>点击附件按钮📎上传，或粘贴剪贴板图片。不同模型对多模态的支持程度不同。</p>
         </div>
         <div class="help-section">
           <h4>右侧栏：会话记录</h4>
@@ -2422,6 +2605,69 @@ doc.on('click', e => {
 
 // 收起状态存储（端点ID -> 是否收起）
 const collapsedEndpoints = new Set();
+
+// 渲染待发送的附件缩略图
+function renderPendingAttachments() {
+  const row = $('#attachments-row');
+  if (!row) return;
+
+  row.innerHTML = '';
+
+  pendingAttachments.forEach(att => {
+    const thumb = mk('div', `attachment-thumb ${att.type === 'image' ? 'image' : 'file'}`);
+    thumb.dataset.id = att.id;
+
+    if (att.type === 'image' && att.previewUrl) {
+      thumb.style.backgroundImage = `url(${att.previewUrl})`;
+    } else {
+      thumb.textContent = '📄';
+    }
+
+    // 文件名提示
+    const tooltip = mk('span', 'name-tooltip');
+    tooltip.textContent = att.name;
+    thumb.appendChild(tooltip);
+
+    // 删除按钮
+    const remove = mk('span', 'attachment-remove');
+    remove.textContent = '×';
+    remove.onclick = (e) => {
+      e.stopPropagation();
+      removeAttachment(att.id);
+      renderPendingAttachments();
+    };
+    thumb.appendChild(remove);
+
+    // 点击预览
+    thumb.onclick = () => showAttachmentPreview(att);
+
+    row.appendChild(thumb);
+  });
+}
+
+// 预览附件（简单实现：图片弹窗，文件下载）
+function showAttachmentPreview(att) {
+  if (att.type === 'image' && att.previewUrl) {
+    // 图片预览弹窗
+    const overlay = mk('div', 'image-preview-overlay');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
+
+    const img = mk('img');
+    img.src = att.previewUrl;
+    img.style.cssText = 'max-width:90%;max-height:90%;border-radius:8px;';
+
+    overlay.onclick = () => overlay.remove();
+    overlay.appendChild(img);
+    document.body.appendChild(overlay);
+  } else {
+    // 文件下载
+    const link = mk('a');
+    link.href = att.previewUrl || URL.createObjectURL(att.file);
+    link.download = att.name;
+    link.click();
+    if (!att.previewUrl) URL.revokeObjectURL(link.href);
+  }
+}
 
 function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit, onGroupEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
   const container = $('#endpoint-list');
@@ -2947,9 +3193,77 @@ function renderMessages(messages, groups, onCopy) {
       meta.textContent = '我 · ' + timeStr;
       msgEl.addChild(meta);
 
-      const userEl = mk('div', 'message-user');
-      userEl.textContent = msg.content;
-      msgEl.addChild(userEl);
+      // 提取文本内容
+      const normalized = normalizeMessageContent(msg);
+      const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
+      const textContent = textItems.map(c => c.text || '').join('\n');
+
+      if (textContent) {
+        const userEl = mk('div', 'message-user');
+        userEl.textContent = textContent;
+        msgEl.addChild(userEl);
+      }
+
+      // 渲染附件（非 text/file_text 类型）
+      const attachmentItems = normalized.filter(c =>
+        c.type === 'image' || c.type === 'file'
+      );
+      if (attachmentItems.length > 0) {
+        const attContainer = mk('div', 'message-attachments');
+
+        attachmentItems.forEach(att => {
+          const attEl = mk('div', `message-attachment ${att.type}`);
+
+          if (att.type === 'image' && att.source) {
+            let imgSrc;
+            if (att.source.type === 'url') {
+              imgSrc = att.source.url;
+            } else {
+              imgSrc = `data:${att.source.media_type};base64,${att.source.data}`;
+            }
+            const thumb = mk('img', 'message-attachment-thumb');
+            thumb.src = imgSrc;
+            thumb.onclick = () => {
+              // 点击查看大图
+              const overlay = mk('div', 'image-preview-overlay');
+              const fullImg = mk('img');
+              fullImg.src = imgSrc;
+              overlay.onclick = () => overlay.remove();
+              overlay.addChild(fullImg);
+              doc.body.addChild(overlay);
+            };
+            attEl.addChild(thumb);
+
+            const nameEl = mk('span', 'message-attachment-name');
+            nameEl.textContent = att.name || '图片';
+            attEl.addChild(nameEl);
+          } else if (att.type === 'file' && att.source) {
+            const fileIcon = mk('span');
+            fileIcon.textContent = '📄';
+            attEl.addChild(fileIcon);
+
+            const nameEl = mk('span', 'message-attachment-name');
+            nameEl.textContent = att.name || '文件';
+            attEl.addChild(nameEl);
+
+            attEl.onclick = () => {
+              // 下载文件
+              const data = att.source.data;
+              const mime = att.source.media_type;
+              const blob = new Blob([Uint8Array.from(atob(data), c => c.charCodeAt(0))], { type: mime });
+              const link = mk('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = att.name || 'file';
+              link.click();
+              URL.revokeObjectURL(link.href);
+            };
+          }
+
+          attContainer.addChild(attEl);
+        });
+
+        msgEl.addChild(attContainer);
+      }
 
       // 用户消息状态栏：复制按钮
       const statusBar = mk('div', 'message-status-bar message-status-bar-user');
@@ -2958,7 +3272,7 @@ function renderMessages(messages, groups, onCopy) {
       copyBtn.innerHTML = SVG.copy;
       copyBtn.title = '复制';
       copyBtn.onclick = () => {
-        navigator.clipboard.writeText(msg.content).then(() => {
+        navigator.clipboard.writeText(textContent).then(() => {
           copyBtn.innerHTML = '✓';
           copyBtn.classList.add('copy-success');
           setTimeout(() => {
@@ -3155,6 +3469,153 @@ function updateChatTitle(title) {
 function getInputContent() {
   const input = $('#chat-input');
   return input.value.trim();
+}
+
+// 获取完整消息内容（包含文本和附件）
+async function getInputMessage() {
+  const input = $('#chat-input');
+  const text = input.value.trim();
+
+  // 构建消息内容数组
+  const content = [];
+
+  // 添加文本（如果有）
+  if (text) {
+    content.push({ type: 'text', text });
+  }
+
+  // 处理附件
+  for (const att of pendingAttachments) {
+    try {
+      if (att.type === 'image') {
+        const data = await fileToBase64(att.file);
+        content.push({
+          type: 'image',
+          name: att.name,
+          source: { type: 'base64', media_type: att.mediaType, data }
+        });
+      } else if (att.type === 'file_text') {
+        const textContent = await fileToText(att.file);
+        content.push({
+          type: 'file_text',
+          name: att.name,
+          text: textContent
+        });
+      } else {
+        const data = await fileToBase64(att.file);
+        content.push({
+          type: 'file',
+          name: att.name,
+          source: { type: 'base64', media_type: att.mediaType, data }
+        });
+      }
+    } catch (e) {
+      console.error(`处理附件失败: ${att.name}`, e);
+      alert(`附件 "${att.name}" 处理失败，请重试`);
+      return null;
+    }
+  }
+
+  return content;
+}
+
+// ========== 附件处理辅助函数 ==========
+
+// 附件类型判断
+function isTextFile(filename) {
+  const textExtensions = ['.txt', '.md', '.markdown', '.json', '.csv', '.log',
+    '.js', '.ts', '.jsx', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.hpp',
+    '.css', '.scss', '.sass', '.less', '.html', '.htm', '.xml', '.yaml', '.yml',
+    '.sh', '.bash', '.zsh', '.ps1', '.bat', '.cmd', '.sql', '.php', '.rb', '.go',
+    '.rs', '.swift', '.kt', '.scala', '.lua', '.r', '.vue', '.svelte'];
+  const dotIndex = filename.lastIndexOf('.');
+  const ext = dotIndex > 0 ? filename.toLowerCase().slice(dotIndex) : '';
+  return textExtensions.includes(ext);
+}
+
+function getMediaType(filename) {
+  const dotIndex = filename.lastIndexOf('.');
+  const ext = dotIndex > 0 ? filename.toLowerCase().slice(dotIndex) : '';
+  const imageTypes = {
+    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+    '.gif': 'image/gif', '.webp': 'image/webp', '.bmp': 'image/bmp',
+    '.svg': 'image/svg+xml'
+  };
+  if (imageTypes[ext]) return imageTypes[ext];
+
+  const fileTypes = {
+    '.pdf': 'application/pdf',
+    '.doc': 'application/msword',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.xls': 'application/vnd.ms-excel',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  };
+  if (fileTypes[ext]) return fileTypes[ext];
+
+  return 'application/octet-stream';
+}
+
+// 读取文件为 base64
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = reader.result.split(',')[1];  // 去掉 data:xxx;base64, 前缀
+      resolve(data);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// 读取文本文件内容
+async function fileToText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+// 添加附件
+async function addAttachment(file) {
+  const isImage = getMediaType(file.name).startsWith('image/');
+  const isText = isTextFile(file.name);
+
+  const attachment = {
+    id: generateUUID(),
+    name: file.name,
+    type: isImage ? 'image' : (isText ? 'file_text' : 'file'),
+    file: file,  // 临时存储 File 对象，用于缩略图和预览
+    mediaType: getMediaType(file.name),
+    previewUrl: null  // 缩略图 URL（图片用）
+  };
+
+  // 图片生成缩略图 URL
+  if (isImage) {
+    attachment.previewUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  pendingAttachments.push(attachment);
+  renderPendingAttachments();
+}
+
+// 删除附件
+function removeAttachment(id) {
+  pendingAttachments = pendingAttachments.filter(a => a.id !== id);
+  renderPendingAttachments();
+}
+
+// 清空附件
+function clearAttachments() {
+  pendingAttachments = [];
+  renderPendingAttachments();
 }
 
 function clearInput() {
@@ -3810,7 +4271,12 @@ async function createSession(firstMessage = null, targetModels = null) {
   };
 
   if (firstMessage) {
-    const msg = { role: 'user', content: firstMessage, timestamp: Date.now() };
+    // 使用标准数组格式
+    const msg = {
+      role: 'user',
+      content: [{ type: 'text', text: firstMessage }],
+      timestamp: Date.now()
+    };
     if (targetModels) {
       msg.targetModels = targetModels;
     }
@@ -3857,11 +4323,35 @@ async function saveSession(session) {
   }
 }
 
+// 辅助函数：确保消息 content 为数组格式
+function normalizeMessageContent(msg) {
+  if (!msg.content) return [{ type: 'text', text: '' }];
+  if (typeof msg.content === 'string') {
+    return [{ type: 'text', text: msg.content }];
+  }
+  if (Array.isArray(msg.content)) {
+    return msg.content;
+  }
+  return [{ type: 'text', text: String(msg.content) }];
+}
+
 async function addMessage(sessionId, role, content, options = {}) {
   const session = sessionsCache.get(sessionId);
   if (!session) return null;
 
-  const message = { role, content, timestamp: Date.now() };
+  const message = { role, timestamp: Date.now() };
+
+  // content 改造：支持字符串或数组
+  if (typeof content === 'string') {
+    // 纯文本，转换为标准数组格式
+    message.content = [{ type: 'text', text: content }];
+  } else if (Array.isArray(content)) {
+    // 已经是数组格式，直接使用
+    message.content = content;
+  } else {
+    // 兼容旧格式或其他情况
+    message.content = [{ type: 'text', text: content || '' }];
+  }
 
   if (role === 'user') {
     // 用户消息：记录targetModels
@@ -3881,9 +4371,10 @@ async function addMessage(sessionId, role, content, options = {}) {
     }
   }
 
-  // 更新标题逻辑保持不变
+  // 更新标题：从第一个 text 块提取
   if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 1) {
-    session.title = content.slice(0, 20);
+    const firstText = message.content.find(c => c.type === 'text');
+    session.title = firstText ? firstText.text.slice(0, 20) : '新会话';
   }
 
   session.messages.push(message);
@@ -3924,6 +4415,36 @@ function stopAllGenerations() {
     if (state.abortController && state.status === 'generating') {
       state.abortController.abort();
     }
+  });
+}
+
+// OpenAI 消息格式转换
+function toOpenAIContent(contentArray) {
+  return contentArray.map(item => {
+    if (item.type === 'text' || item.type === 'file_text') {
+      return { type: 'text', text: item.text || '' };
+    }
+    if (item.type === 'image') {
+      if (!item.source) {
+        return { type: 'text', text: `[图片 ${item.name || '未知'}，数据缺失]` };
+      }
+      let imageUrl;
+      if (item.source.type === 'url') {
+        imageUrl = item.source.url;
+      } else {
+        imageUrl = `data:${item.source.media_type};base64,${item.source.data}`;
+      }
+      return { type: 'image_url', image_url: { url: imageUrl } };
+    }
+    if (item.type === 'file') {
+      if (!item.source) {
+        return { type: 'text', text: `[文件 ${item.name || '未知'}，数据缺失]` };
+      }
+      const url = `data:${item.source.media_type};base64,${item.source.data}`;
+      return { type: 'image_url', image_url: { url } };
+    }
+    // 不支持的类型，降级为文本提示
+    return { type: 'text', text: `[附件 ${item.name || '未知'}，不支持此类型]` };
   });
 }
 
@@ -4101,6 +4622,44 @@ async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = nu
   }
 }
 
+// Claude 消息格式转换
+function toClaudeContent(contentArray) {
+  return contentArray.map(item => {
+    if (item.type === 'text' || item.type === 'file_text') {
+      return { type: 'text', text: item.text || '' };
+    }
+    if (item.type === 'image') {
+      if (!item.source) {
+        return { type: 'text', text: `[图片 ${item.name || '未知'}，数据缺失]` };
+      }
+      // Claude 只支持 base64
+      return {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: item.source.media_type,
+          data: item.source.data
+        }
+      };
+    }
+    if (item.type === 'file') {
+      if (!item.source) {
+        return { type: 'text', text: `[文件 ${item.name || '未知'}，数据缺失]` };
+      }
+      // Claude 支持 document 类型（PDF等）
+      return {
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: item.source.media_type,
+          data: item.source.data
+        }
+      };
+    }
+    return { type: 'text', text: `[附件 ${item.name || '未知'}，不支持此类型]` };
+  });
+}
+
 async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = null) {
   const url = `${baseUrl}/v1/messages`;
   const headers = {
@@ -4110,10 +4669,17 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = nu
     'anthropic-dangerous-direct-browser-access': 'true'
   };
 
-  const claudeMessages = messages.map(m => ({
-    role: m.role,
-    content: m.content
-  }));
+  // 转换消息格式
+  const claudeMessages = messages.map(m => {
+    // content 可能是数组（OpenAI格式）或字符串
+    if (typeof m.content === 'string') {
+      return { role: m.role, content: m.content };
+    }
+    if (Array.isArray(m.content)) {
+      return { role: m.role, content: toClaudeContent(m.content) };
+    }
+    return { role: m.role, content: m.content };
+  });
 
   const body = {
     model,
@@ -4223,27 +4789,55 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = nu
   }
 }
 
+// Gemini 消息格式转换
+function toGeminiContent(contentArray) {
+  const parts = [];
+  contentArray.forEach(item => {
+    if (item.type === 'text' || item.type === 'file_text') {
+      parts.push({ text: item.text || '' });
+    }
+    if (item.type === 'image' || item.type === 'file') {
+      if (!item.source) {
+        parts.push({ text: `[${item.type === 'image' ? '图片' : '文件'} ${item.name || '未知'}，数据缺失]` });
+        return;
+      }
+      parts.push({
+        inline_data: {
+          mime_type: item.source.media_type,
+          data: item.source.data
+        }
+      });
+    }
+    // 不支持的类型忽略
+  });
+  return parts;
+}
+
 async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = null) {
   const url = `${baseUrl}/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
+  // 转换消息格式为 contents
   const contents = [];
-  let currentRole = null;
-  let currentParts = [];
+  messages.forEach(m => {
+    const role = m.role === 'user' ? 'user' : 'model';
 
-  for (const msg of messages) {
-    const role = msg.role === 'user' ? 'user' : 'model';
-    if (currentRole !== role) {
-      if (currentRole !== null) {
-        contents.push({ role: currentRole, parts: currentParts });
-      }
-      currentRole = role;
-      currentParts = [];
+    let parts;
+    if (typeof m.content === 'string') {
+      parts = [{ text: m.content }];
+    } else if (Array.isArray(m.content)) {
+      parts = toGeminiContent(m.content);
+    } else {
+      parts = [{ text: String(m.content) }];
     }
-    currentParts.push({ text: msg.content });
-  }
-  if (currentRole !== null) {
-    contents.push({ role: currentRole, parts: currentParts });
-  }
+
+    // 合并相同角色的连续消息
+    const lastContent = contents[contents.length - 1];
+    if (lastContent && lastContent.role === role) {
+      lastContent.parts.push(...parts);
+    } else {
+      contents.push({ role, parts });
+    }
+  });
 
   const body = { contents };
 
@@ -4532,6 +5126,9 @@ let selectedModels = [];          // 当前选中模型ID数组
 let activeGenerations = new Map(); // 生成中状态跟踪
 let lastUserMessage = null;
 
+// 附件管理
+let pendingAttachments = [];  // 待发送的附件列表
+
 async function init() {
   initDividers();
   initScrollNav();
@@ -4548,6 +5145,22 @@ async function init() {
       } else if (!sendOnEnter && e.ctrlKey) {
         e.preventDefault();
         handleSend();
+      }
+    }
+  });
+
+  // 粘贴图片处理
+  chatInput.on('paste', async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          await addAttachment(file);
+          // 不阻止默认行为，允许同时粘贴文字
+        }
       }
     }
   });
@@ -4578,6 +5191,22 @@ async function init() {
   $('#btn-new-session-header').onclick = handleNewSession;
   $('#btn-delete-dir').onclick = handleDeleteDirectory;
   $('#btn-wipe-dir').onclick = handleWipeDirectory;
+
+  // 附件按钮
+  $('#btn-attach').onclick = () => {
+    $('#file-input').click();
+  };
+
+  $('#file-input').onchange = async (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      for (const file of files) {
+        await addAttachment(file);
+      }
+    }
+    e.target.value = '';  // 清空以便再次选择相同文件
+    renderPendingAttachments();
+  };
 
   // 更换目录按钮
   $('#btn-change-dir').onclick = async () => {
@@ -4782,8 +5411,9 @@ async function handleReorderModels(groupId, draggedModelId, targetModelId, inser
 }
 
 async function handleSend() {
-  const content = getInputContent();
-  if (!content) return;
+  const content = await getInputMessage();
+
+  if (!content || content.length === 0) return;  // 处理失败或无文本无附件
 
   if (selectedModels.length === 0) {
     selectorExpanded = true;
@@ -4804,8 +5434,14 @@ async function handleSend() {
     });
   }
 
-  lastUserMessage = content;
+  // 提取纯文本用于 lastUserMessage
+  const textContent = content
+    .filter(c => c.type === 'text' || c.type === 'file_text')
+    .map(c => c.text || '')
+    .join('\n');
+  lastUserMessage = textContent;
   clearInput();
+  clearAttachments();
   setButtonState(true, true);
 
   // 发送后自动收起模型选择区
@@ -4822,7 +5458,9 @@ async function handleSend() {
         .join('\n\n---\n\n');
       return { role: m.role, content };
     }
-    return { role: m.role, content: m.content || '' };
+    // 用户消息：使用 OpenAI 格式转换函数
+    const normalized = normalizeMessageContent(m);
+    return { role: m.role, content: toOpenAIContent(normalized) };
   });
 
   // 渲染用户消息
