@@ -5149,6 +5149,8 @@ function handleSessionEdit(sessionId, newTitle) {
 }
 
 async function handleSessionDelete(sessionId) {
+  // 停止并删除该会话的生成状态
+  deleteSessionGenerations(sessionId);
   await deleteSession(sessionId);
   if (currentSession?.id === sessionId) {
     currentSession = null;
