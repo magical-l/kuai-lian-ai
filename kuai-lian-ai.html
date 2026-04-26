@@ -1901,7 +1901,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.18.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.19.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2159,7 +2159,125 @@ button.toggle-key:hover:not(:disabled) {
     { start: '<thinking>', end: '</thinking>' },
     { start: '<think>', end: '</think>' }
   ];
-  const SVG = {
+
+  // ========== Provider 定义（API 格式抽象层）==========
+  const providers = {
+    openai: {
+      buildRequest(baseUrl, apiKey, model, messages) {
+        return {
+          url: baseUrl + '/v1/chat/completions',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey
+          },
+          body: { model, messages, stream: true }
+        };
+      },
+      parseChunk(json) {
+        const delta = json.choices && json.choices[0] && json.choices[0].delta;
+        if (!delta) return null;
+        return {
+          content: delta.content || null,
+          reasoning: delta.reasoning_content || null
+        };
+      },
+      testConfig(baseUrl, apiKey, model) {
+        return {
+          url: baseUrl + '/v1/chat/completions',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey
+          },
+          body: { model, messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 }
+        };
+      }
+    },
+
+    claude: {
+      buildRequest(baseUrl, apiKey, model, messages) {
+        return {
+          url: baseUrl + '/v1/messages',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: { model, max_tokens: 4096, messages: this.transformMessages(messages), stream: true }
+        };
+      },
+      transformMessages(messages) {
+        return messages.map(m => {
+          if (typeof m.content === 'string') return { role: m.role, content: m.content };
+          if (Array.isArray(m.content)) return { role: m.role, content: toClaudeContent(m.content) };
+          return { role: m.role, content: m.content };
+        });
+      },
+      parseChunk(json) {
+        if (json.type === 'content_block_start' && json.content_block && json.content_block.type === 'thinking') {
+          return { event: 'thinking_start' };
+        }
+        if (json.type === 'content_block_delta' && json.delta && json.delta.type === 'thinking_delta') {
+          return { reasoning: json.delta.thinking || null };
+        }
+        if (json.type === 'content_block_delta' && json.delta && json.delta.type === 'text_delta') {
+          return { content: json.delta.text || null };
+        }
+        if (json.type === 'content_block_start' && json.content_block && json.content_block.type === 'text') {
+          return { event: 'content_start' };
+        }
+        return null;
+      },
+      testConfig(baseUrl, apiKey, model) {
+        return {
+          url: baseUrl + '/v1/messages',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: { model, max_tokens: 1, messages: [{ role: 'user', content: 'hi' }] }
+        };
+      },
+      needsTagParsing: false
+    },
+
+    gemini: {
+      buildRequest(baseUrl, apiKey, model, messages) {
+        return {
+          url: baseUrl + '/v1beta/models/' + model + ':streamGenerateContent?key=' + apiKey + '&alt=sse',
+          headers: { 'Content-Type': 'application/json' },
+          body: { contents: this.transformMessages(messages) }
+        };
+      },
+      transformMessages(messages) {
+        const contents = [];
+        messages.forEach(m => {
+          const role = m.role === 'user' ? 'user' : 'model';
+          let parts;
+          if (typeof m.content === 'string') parts = [{ text: m.content }];
+          else if (Array.isArray(m.content)) parts = toGeminiContent(m.content);
+          else parts = [{ text: String(m.content) }];
+          const last = contents[contents.length - 1];
+          if (last && last.role === role) last.parts.push(...parts);
+          else contents.push({ role, parts });
+        });
+        return contents;
+      },
+      parseChunk(json) {
+        const text = json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts && json.candidates[0].content.parts[0] && json.candidates[0].content.parts[0].text;
+        return text ? { content: text } : null;
+      },
+      testConfig(baseUrl, apiKey, model) {
+        return {
+          url: baseUrl + '/v1beta/models/' + model + ':generateContent?key=' + apiKey,
+          headers: { 'Content-Type': 'application/json' },
+          body: { contents: [{ role: 'user', parts: [{ text: 'hi' }] }] }
+        };
+      }
+    }
+  };  const SVG = {
     edit: s => `<span style="font-size:${s}px">✎</span>`,
     del: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M12 6v16"/></svg>`,
     drag: s => `<span style="font-size:${s}px;letter-spacing:-1px;line-height:1">⋮⋮</span>`,
@@ -3809,77 +3927,38 @@ async function testConnection(groupId, modelId) {
   const model = getModel(groupId, modelId);
   if (!group || !model) return;
 
-  const key = `${groupId}:${modelId}`;
+  const provider = providers[group.style];
+  if (!provider) return;
+
+  const key = groupId + ':' + modelId;
   connectionStatus.set(key, { status: 'testing', timestamp: null });
   renderEndpointList(getGroups(), null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 
   try {
-    // 发送一个简单的测试请求
-    const testMessages = [{ role: 'user', content: 'hi' }];
-    let res = null;
-    let styleType = group.style;
-
-    if (group.style === 'openai') {
-      const url = `${group.baseUrl}/v1/chat/completions`;
-      res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${group.key}`
-        },
-        body: JSON.stringify({
-          model: model.name,
-          messages: testMessages,
-          max_tokens: 1
-        })
-      });
-    } else if (group.style === 'claude') {
-      const url = `${group.baseUrl}/v1/messages`;
-      res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': group.key,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: model.name,
-          max_tokens: 1,
-          messages: testMessages
-        })
-      });
-    } else if (group.style === 'gemini') {
-      const url = `${group.baseUrl}/v1beta/models/${model.name}:generateContent?key=${group.key}`;
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: 'hi' }] }]
-        })
-      });
-    }
+    const config = provider.testConfig(group.baseUrl, group.key, model.name);
+    const res = await fetch(config.url, {
+      method: 'POST',
+      headers: config.headers,
+      body: JSON.stringify(config.body)
+    });
 
     if (res && res.ok) {
       connectionStatus.set(key, {
         status: 'connected',
         timestamp: Date.now()
       });
-    } else if (response) {
-      // 尝试读取错误信息
-      let errorMsg = `HTTP ${res.status}`;
+    } else {
+      let errorMsg = 'HTTP ' + res.status;
       try {
         const errorBody = await res.text();
-        // 尝试解析 JSON 获取更详细的错误
         try {
           const errorJson = JSON.parse(errorBody);
-          if (errorJson.error?.message) {
+          if (errorJson.error && errorJson.error.message) {
             errorMsg = errorJson.error.message;
           } else if (errorJson.message) {
             errorMsg = errorJson.message;
           }
         } catch (e) {
-          // 非 JSON，截取前 100 字符
           if (errorBody && errorBody.length < 100) {
             errorMsg = errorBody;
           }
@@ -3893,7 +3972,6 @@ async function testConnection(groupId, modelId) {
       });
     }
   } catch (err) {
-    // CORS 错误表现为 TypeError: Failed to fetch，没有 response
     const isCorsError = err instanceof TypeError && (
       err.message.includes('Failed to fetch') ||
       err.message.includes('NetworkError') ||
@@ -3908,7 +3986,6 @@ async function testConnection(groupId, modelId) {
 
   renderEndpointList(getGroups(), null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
 }
-
 // ========== Store Functions ==========
 
 let directoryHandle = null;
@@ -4461,276 +4538,110 @@ function toOpenAIContent(contentArray) {
   });
 }
 
-async function callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal = null) {
-  const url = `${baseUrl}/v1/chat/completions`;
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`
-  };
-  const body = {
-    model,
-    messages,
-    stream: true
-  };
+// ========== 共享框架函数 ==========
 
-  const useSignal = signal || (currentAbortController = new AbortController()).signal;
+  function createInitialState() {
+    return {
+      thinking: '',
+      content: '',
+      phase: 'content',
+      thinkingStartTime: null,
+      firstContentTokenTime: null,
+      thinkingDuration: null
+    };
+  }
 
-  const state = {
-    thinking: '',
-    content: '',
-    phase: 'content',
-    thinkingStartTime: null,
-    firstContentTokenTime: null,
-    thinkingDuration: null
-  };
+  function createTagParser() {
+    return {
+      buffer: '',
+      inThinking: false,
+      currentTag: null
+    };
+  }
 
-  const startTime = Date.now();
+  function processWithTagParser(chunk, state, parser, onChunk) {
+    parser.buffer += chunk;
 
-  // 原始内容（含标签）和thinking解析状态
-  let rawContent = '';  // 保存原始完整内容
-  let inThinking = false;
-  let thinkingBuffer = '';  // 用于提取thinking内容
-  let currentThinkingTag = null;  // 当前匹配的标签类型
-
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      signal: useSignal
-    });
-
-    if (!res.ok) {
-      const error = await res.text();
-      throw new Error(`API错误: ${res.status} - ${error}`);
-    }
-
-    if (!res.body) {
-      throw new Error('Response body is empty');
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let streamBuffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      streamBuffer += decoder.decode(value, { stream: true });
-      const lines = streamBuffer.split('\n');
-      streamBuffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
-
-          try {
-            const json = JSON.parse(data);
-            const delta = json.choices?.[0]?.delta;
-
-            // DeepSeek格式：reasoning_content是独立字段
-            if (delta?.reasoning_content) {
-              if (!state.thinkingStartTime) {
-                state.thinkingStartTime = Date.now();
-                state.phase = 'thinking';
-              }
-              state.thinking += delta.reasoning_content;
-              onChunk(state);
-            }
-
-            // 普通content字段
-            const chunk = delta?.content;
-            if (chunk) {
-              // DeepSeek格式：收到content时（reasoning_content结束后），计算thinkingDuration
-              if (state.thinkingStartTime && state.thinkingDuration === null && state.phase === 'thinking') {
-                state.thinkingDuration = Date.now() - state.thinkingStartTime;
-                state.phase = 'content';
-              }
-
-              // 保存原始内容（含标签，用于调试）
-              rawContent += chunk;
-
-              // 解析thinking标签（多标签支持）
-              thinkingBuffer += chunk;
-
-              if (!inThinking) {
-                for (const tag of THINKING_TAGS) {
-                  const startIdx = thinkingBuffer.indexOf(tag.start);
-                  if (startIdx !== -1) {
-                    inThinking = true;
-                    currentThinkingTag = tag;
-                    state.thinkingStartTime = Date.now();
-                    state.phase = 'thinking';
-                    // 标签前的内容归入content
-                    if (startIdx > 0) {
-                      state.content += thinkingBuffer.slice(0, startIdx);
-                    }
-                    thinkingBuffer = thinkingBuffer.slice(startIdx + tag.start.length);
-                    break;
-                  }
-                }
-              }
-
-              if (inThinking && currentThinkingTag) {
-                const endIdx = thinkingBuffer.indexOf(currentThinkingTag.end);
-                if (endIdx !== -1) {
-                  // thinking内容不含标签
-                  state.thinking += thinkingBuffer.slice(0, endIdx);
-                  thinkingBuffer = thinkingBuffer.slice(endIdx + currentThinkingTag.end.length);
-                  inThinking = false;
-                  currentThinkingTag = null;
-                  state.phase = 'content';
-
-                  if (state.firstContentTokenTime === null) {
-                    state.firstContentTokenTime = Date.now();
-                  }
-                  // thinking结束，计算thinkingDuration（thinking结束时间 - 开始时间）
-                  if (state.thinkingStartTime) {
-                    state.thinkingDuration = Date.now() - state.thinkingStartTime;
-                  }
-                } else {
-                  // 还在thinking阶段，继续累积（不含标签）
-                  state.thinking += thinkingBuffer;
-                  thinkingBuffer = '';
-                }
-              } else if (!inThinking) {
-                // 非thinking阶段的内容归入content
-                state.content += thinkingBuffer;
-                thinkingBuffer = '';
-              }
-
-              // firstContentTokenTime：第一个chunk的时间
-              if (state.firstContentTokenTime === null && rawContent.length > 0) {
-                state.firstContentTokenTime = Date.now();
-              }
-
-              onChunk(state);
-            }
-          } catch (e) {}
+    if (!parser.inThinking) {
+      for (const tag of THINKING_TAGS) {
+        const idx = parser.buffer.indexOf(tag.start);
+        if (idx !== -1) {
+          parser.inThinking = true;
+          parser.currentTag = tag;
+          state.thinkingStartTime = Date.now();
+          state.phase = 'thinking';
+          if (idx > 0) state.content += parser.buffer.slice(0, idx);
+          parser.buffer = parser.buffer.slice(idx + tag.start.length);
+          break;
         }
       }
     }
 
-    // 处理未结束的thinking
-    if (inThinking && thinkingBuffer) {
-      state.thinking += thinkingBuffer;
+    if (parser.inThinking && parser.currentTag) {
+      const endIdx = parser.buffer.indexOf(parser.currentTag.end);
+      if (endIdx !== -1) {
+        state.thinking += parser.buffer.slice(0, endIdx);
+        parser.buffer = parser.buffer.slice(endIdx + parser.currentTag.end.length);
+        parser.inThinking = false;
+        parser.currentTag = null;
+        state.phase = 'content';
+        state.thinkingDuration = Date.now() - state.thinkingStartTime;
+        if (state.firstContentTokenTime === null) state.firstContentTokenTime = Date.now();
+      } else {
+        state.thinking += parser.buffer;
+        parser.buffer = '';
+      }
+    } else if (!parser.inThinking) {
+      state.content += parser.buffer;
+      parser.buffer = '';
     }
 
-    if (state.thinkingStartTime && state.thinkingDuration === null) {
-      state.thinkingDuration = Date.now() - state.thinkingStartTime;
+    if (state.firstContentTokenTime === null) state.firstContentTokenTime = Date.now();
+    onChunk(state);
+  }
+
+  function handleParsedChunk(parsed, state, tagParser, onChunk) {
+    // 事件类型处理（Claude 原生 thinking）
+    if (parsed.event === 'thinking_start') {
+      state.phase = 'thinking';
+      state.thinkingStartTime = Date.now();
+      return;
+    }
+    if (parsed.event === 'content_start') {
+      state.phase = 'content';
+      if (state.firstContentTokenTime === null) state.firstContentTokenTime = Date.now();
+      return;
     }
 
-    return state;
-  } catch (e) {
-    if (e.name === 'AbortError') {
-      return state;
+    // 原生 reasoning（DeepSeek/Claude thinking_delta）
+    if (parsed.reasoning) {
+      if (!state.thinkingStartTime) {
+        state.thinkingStartTime = Date.now();
+        state.phase = 'thinking';
+      }
+      state.thinking += parsed.reasoning;
+      onChunk(state);
+      return;
     }
-    throw e;
-  } finally {
-    if (!signal) {
-      currentAbortController = null;
+
+    // 内容处理
+    if (parsed.content) {
+      if (state.thinkingStartTime && state.thinkingDuration === null && state.phase === 'thinking') {
+        state.thinkingDuration = Date.now() - state.thinkingStartTime;
+        state.phase = 'content';
+      }
+
+      if (tagParser) {
+        processWithTagParser(parsed.content, state, tagParser, onChunk);
+      } else {
+        state.content += parsed.content;
+        if (state.firstContentTokenTime === null) state.firstContentTokenTime = Date.now();
+        onChunk(state);
+      }
     }
   }
-}
 
-// Claude 消息格式转换
-function toClaudeContent(contentArray) {
-  return contentArray.map(item => {
-    if (item.type === 'text' || item.type === 'file_text') {
-      return { type: 'text', text: item.text || '' };
-    }
-    if (item.type === 'image') {
-      if (!item.source) {
-        return { type: 'text', text: `[图片 ${item.name || '未知'}，数据缺失]` };
-      }
-      // Claude 只支持 base64
-      return {
-        type: 'image',
-        source: {
-          type: 'base64',
-          media_type: item.source.media_type,
-          data: item.source.data
-        }
-      };
-    }
-    if (item.type === 'file') {
-      if (!item.source) {
-        return { type: 'text', text: `[文件 ${item.name || '未知'}，数据缺失]` };
-      }
-      // Claude 支持 document 类型（PDF等）
-      return {
-        type: 'document',
-        source: {
-          type: 'base64',
-          media_type: item.source.media_type,
-          data: item.source.data
-        }
-      };
-    }
-    return { type: 'text', text: `[附件 ${item.name || '未知'}，不支持此类型]` };
-  });
-}
-
-async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = null) {
-  const url = `${baseUrl}/v1/messages`;
-  const headers = {
-    'Content-Type': 'application/json',
-    'x-api-key': apiKey,
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true'
-  };
-
-  // 转换消息格式
-  const claudeMessages = messages.map(m => {
-    // content 可能是数组（OpenAI格式）或字符串
-    if (typeof m.content === 'string') {
-      return { role: m.role, content: m.content };
-    }
-    if (Array.isArray(m.content)) {
-      return { role: m.role, content: toClaudeContent(m.content) };
-    }
-    return { role: m.role, content: m.content };
-  });
-
-  const body = {
-    model,
-    max_tokens: 4096,
-    messages: claudeMessages,
-    stream: true
-  };
-
-  const useSignal = signal || (currentAbortController = new AbortController()).signal;
-
-  const state = {
-    thinking: '',
-    content: '',
-    phase: 'content',
-    thinkingStartTime: null,
-    firstContentTokenTime: null,
-    thinkingDuration: null
-  };
-
-  const startTime = Date.now();
-
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      signal: useSignal
-    });
-
-    if (!res.ok) {
-      const error = await res.text();
-      throw new Error(`API错误: ${res.status} - ${error}`);
-    }
-
-    if (!res.body) {
-      throw new Error('Response body is empty');
-    }
-
+  async function processSSEStream(res, provider, state, tagParser, onChunk) {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -4744,264 +4655,72 @@ async function callClaude(baseUrl, apiKey, model, messages, onChunk, signal = nu
       buffer = lines.pop() || '';
 
       for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
 
-          try {
-            const json = JSON.parse(data);
-
-            if (json.type === 'content_block_start' && json.content_block?.type === 'thinking') {
-              state.phase = 'thinking';
-              state.thinkingStartTime = Date.now();
-            }
-            else if (json.type === 'content_block_delta' && json.delta?.type === 'thinking_delta') {
-              state.thinking += json.delta.thinking || '';
-              state.phase = 'thinking';
-              // 实时计算thinkingDuration
-              if (state.thinkingStartTime && state.thinkingDuration === null) {
-                state.thinkingDuration = Date.now() - state.thinkingStartTime;
-              }
-              onChunk(state);
-            }
-            else if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta') {
-              if (state.firstContentTokenTime === null) {
-                state.firstContentTokenTime = Date.now();
-                if (state.thinkingStartTime) {
-                  state.thinkingDuration = state.firstContentTokenTime - state.thinkingStartTime;
-                }
-              }
-              state.content += json.delta.text || '';
-              state.phase = 'content';
-              onChunk(state);
-            }
-            else if (json.type === 'content_block_start' && json.content_block?.type === 'text') {
-              state.phase = 'content';
-              if (state.firstContentTokenTime === null) {
-                state.firstContentTokenTime = Date.now();
-              }
-            }
-          } catch (e) {}
-        }
+        try {
+          const json = JSON.parse(data);
+          const parsed = provider.parseChunk(json);
+          if (!parsed) continue;
+          handleParsedChunk(parsed, state, tagParser, onChunk);
+        } catch (e) {}
       }
     }
 
+    // 处理未结束的 thinking
+    if (tagParser && tagParser.inThinking && tagParser.buffer) {
+      state.thinking += tagParser.buffer;
+    }
+  }
+
+  function finalizeState(state) {
     if (state.thinkingStartTime && state.thinkingDuration === null) {
       state.thinkingDuration = Date.now() - state.thinkingStartTime;
     }
-
-    return state;
-  } catch (e) {
-    if (e.name === 'AbortError') {
-      return state;
-    }
-    throw e;
-  } finally {
-    if (!signal) {
-      currentAbortController = null;
-    }
   }
-}
 
-// Gemini 消息格式转换
-function toGeminiContent(contentArray) {
-  const parts = [];
-  contentArray.forEach(item => {
-    if (item.type === 'text' || item.type === 'file_text') {
-      parts.push({ text: item.text || '' });
-    }
-    if (item.type === 'image' || item.type === 'file') {
-      if (!item.source) {
-        parts.push({ text: `[${item.type === 'image' ? '图片' : '文件'} ${item.name || '未知'}，数据缺失]` });
-        return;
-      }
-      parts.push({
-        inline_data: {
-          mime_type: item.source.media_type,
-          data: item.source.data
-        }
+  async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal = null) {
+    const config = provider.buildRequest(baseUrl, apiKey, model, messages);
+    const useSignal = signal || (currentAbortController = new AbortController()).signal;
+
+    const state = createInitialState();
+    const tagParser = provider.needsTagParsing === false ? null : createTagParser();
+
+    try {
+      const res = await fetch(config.url, {
+        method: 'POST',
+        headers: config.headers,
+        body: JSON.stringify(config.body),
+        signal: useSignal
       });
-    }
-    // 不支持的类型忽略
-  });
-  return parts;
-}
 
-async function callGemini(baseUrl, apiKey, model, messages, onChunk, signal = null) {
-  const url = `${baseUrl}/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
-
-  // 转换消息格式为 contents
-  const contents = [];
-  messages.forEach(m => {
-    const role = m.role === 'user' ? 'user' : 'model';
-
-    let parts;
-    if (typeof m.content === 'string') {
-      parts = [{ text: m.content }];
-    } else if (Array.isArray(m.content)) {
-      parts = toGeminiContent(m.content);
-    } else {
-      parts = [{ text: String(m.content) }];
-    }
-
-    // 合并相同角色的连续消息
-    const lastContent = contents[contents.length - 1];
-    if (lastContent && lastContent.role === role) {
-      lastContent.parts.push(...parts);
-    } else {
-      contents.push({ role, parts });
-    }
-  });
-
-  const body = { contents };
-
-  const useSignal = signal || (currentAbortController = new AbortController()).signal;
-
-  const state = {
-    thinking: '',
-    content: '',
-    phase: 'content',
-    thinkingStartTime: null,
-    firstContentTokenTime: null,
-    thinkingDuration: null
-  };
-
-  // 原始内容（含标签）和thinking解析状态
-  let rawContent = '';
-  let inThinking = false;
-  let thinkingBuffer = '';
-  let currentThinkingTag = null;
-
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: useSignal
-    });
-
-    if (!res.ok) {
-      const error = await res.text();
-      throw new Error(`API错误: ${res.status} - ${error}`);
-    }
-
-    if (!res.body) {
-      throw new Error('Response body is empty');
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let streamBuffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      streamBuffer += decoder.decode(value, { stream: true });
-      const lines = streamBuffer.split('\n');
-      streamBuffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-
-          try {
-            const json = JSON.parse(data);
-            const chunk = json.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (chunk) {
-              // 保存原始内容（含标签，用于调试）
-              rawContent += chunk;
-
-              // 解析thinking标签（多标签支持）
-              thinkingBuffer += chunk;
-
-              if (!inThinking) {
-                for (const tag of THINKING_TAGS) {
-                  const startIdx = thinkingBuffer.indexOf(tag.start);
-                  if (startIdx !== -1) {
-                    inThinking = true;
-                    currentThinkingTag = tag;
-                    state.thinkingStartTime = Date.now();
-                    state.phase = 'thinking';
-                    // 标签前的内容归入content
-                    if (startIdx > 0) {
-                      state.content += thinkingBuffer.slice(0, startIdx);
-                    }
-                    thinkingBuffer = thinkingBuffer.slice(startIdx + tag.start.length);
-                    break;
-                  }
-                }
-              }
-
-              if (inThinking && currentThinkingTag) {
-                const endIdx = thinkingBuffer.indexOf(currentThinkingTag.end);
-                if (endIdx !== -1) {
-                  state.thinking += thinkingBuffer.slice(0, endIdx);
-                  thinkingBuffer = thinkingBuffer.slice(endIdx + currentThinkingTag.end.length);
-                  inThinking = false;
-                  currentThinkingTag = null;
-                  state.phase = 'content';
-
-                  if (state.firstContentTokenTime === null) {
-                    state.firstContentTokenTime = Date.now();
-                  }
-                  // thinking结束，计算thinkingDuration（thinking结束时间 - 开始时间）
-                  if (state.thinkingStartTime) {
-                    state.thinkingDuration = Date.now() - state.thinkingStartTime;
-                  }
-                } else {
-                  state.thinking += thinkingBuffer;
-                  thinkingBuffer = '';
-                }
-              } else if (!inThinking) {
-                // 非thinking阶段的内容归入content
-                state.content += thinkingBuffer;
-                thinkingBuffer = '';
-              }
-
-              if (state.firstContentTokenTime === null && rawContent.length > 0) {
-                state.firstContentTokenTime = Date.now();
-              }
-
-              onChunk(state);
-            }
-          } catch (e) {}
-        }
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error('API错误: ' + res.status + ' - ' + error);
       }
-    }
 
-    if (inThinking && thinkingBuffer) {
-      state.thinking += thinkingBuffer;
-    }
+      if (!res.body) {
+        throw new Error('Response body is empty');
+      }
 
-    if (state.thinkingStartTime && state.thinkingDuration === null) {
-      state.thinkingDuration = Date.now() - state.thinkingStartTime;
-    }
-
-    return state;
-  } catch (e) {
-    if (e.name === 'AbortError') {
+      await processSSEStream(res, provider, state, tagParser, onChunk);
+      finalizeState(state);
       return state;
-    }
-    throw e;
-  } finally {
-    if (!signal) {
-      currentAbortController = null;
+    } catch (e) {
+      if (e.name === 'AbortError') return state;
+      throw e;
+    } finally {
+      if (!signal) currentAbortController = null;
     }
   }
-}
 
 async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal = null) {
-  switch (style) {
-    case 'openai':
-      return await callOpenAI(baseUrl, apiKey, model, messages, onChunk, signal);
-    case 'claude':
-      return await callClaude(baseUrl, apiKey, model, messages, onChunk, signal);
-    case 'gemini':
-      return await callGemini(baseUrl, apiKey, model, messages, onChunk, signal);
-    default:
-      throw new Error(`不支持的接口风格: ${style}`);
-  }
+  const provider = providers[style];
+  if (!provider) throw new Error('不支持的接口风格: ' + style);
+  return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal);
 }
+
 
 // 并行调用所有模型
 async function callAllModels(groups, modelIds, messages, onChunk) {
