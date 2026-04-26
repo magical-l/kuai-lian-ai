@@ -150,6 +150,7 @@ nav .right {
 /* ========== Buttons ========== */
 button {
   background: transparent;
+  border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -265,26 +266,26 @@ aside {
   width: 260px;
 }
 
-.sidebar.right {
+aside.right {
   border-right: none;
   border-left: 1px solid var(--border-subtle);
 }
 
-.sidebar.right.collapsed {
+aside.right.collapsed {
   width: 40px;
   min-width: 40px;
   max-width: 40px;
 }
 
-.sidebar.right.collapsed > header span {
+aside.right.collapsed > header span {
   display: none;
 }
 
-.sidebar.right.collapsed .content {
+aside.right.collapsed .content {
   display: none;
 }
 
-.sidebar.right.collapsed #btn-collapse-right svg {
+aside.right.collapsed #btn-collapse-right svg {
   transform: rotate(180deg);
 }
 
@@ -1277,7 +1278,7 @@ button.toggle-key:hover:not(:disabled) {
 }
 
 @media (max-width: 768px) {
-  .sidebar.right {
+  aside.right {
     display: none;
   }
 
@@ -1630,7 +1631,7 @@ button.toggle-key:hover:not(:disabled) {
     </nav>
 
     <div id="main-row">
-    <aside class="sidebar left">
+    <aside class="left">
       <header>
         <span>AI服务端点</span>
         <button id="btn-add-group" title="新增端点">
@@ -1680,7 +1681,7 @@ button.toggle-key:hover:not(:disabled) {
 
     <div class="divider column control sidebar right"></div>
 
-    <aside class="sidebar right">
+    <aside class="right">
       <header>
         <span>会话记录</span>
         <button id="btn-collapse-right" title="收起侧边栏">
@@ -1697,7 +1698,7 @@ button.toggle-key:hover:not(:disabled) {
   <template id="tpl-edit-group-dialog">
     <div id="edit-dialog">
       <h3></h3>
-      <div class="dialog-form">
+      <form class="dialog-form">
         <label>名称: <input id="dialog-group-name"></label>
         <label>Base URL: <input id="dialog-group-url"></label>
         <label>接口风格:
@@ -1708,11 +1709,11 @@ button.toggle-key:hover:not(:disabled) {
           </select>
         </label>
         <label>API Key: <div class="key-input-wrapper"><input id="dialog-group-key" type="password"><button class="toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
-      </div>
-      <div class="dialog-buttons">
+      </form>
+      <footer class="dialog-buttons">
         <button id="dialog-cancel">取消</button>
         <button id="dialog-save" class="primary">保存</button>
-      </div>
+      </footer>
     </div>
   </template>
 
@@ -1720,13 +1721,13 @@ button.toggle-key:hover:not(:disabled) {
   <template id="tpl-edit-model-dialog">
     <div id="edit-dialog">
       <h3></h3>
-      <div class="dialog-form">
+      <form class="dialog-form">
         <label>模型名: <input id="dialog-model-name"></label>
-      </div>
-      <div class="dialog-buttons">
+      </form>
+      <footer class="dialog-buttons">
         <button id="dialog-cancel">取消</button>
         <button id="dialog-save" class="primary">保存</button>
-      </div>
+      </footer>
     </div>
   </template>
 
@@ -1841,9 +1842,9 @@ button.toggle-key:hover:not(:disabled) {
           <p>可收起，眼不见为净。点击旧会话可再续前缘。</p>
         </div>
       </div>
-      <div class="dialog-buttons" id="help-dialog-buttons">
+      <footer class="dialog-buttons" id="help-dialog-buttons">
         <button id="help-close" class="primary">知道了</button>
-      </div>
+      </footer>
     </div>
   </template>
 
@@ -1977,8 +1978,8 @@ function initDividers() {
   // 恢复保存的侧栏宽度
   const savedLeftWidth = localStorage.getItem('sidebar-left-width');
   const savedRightWidth = localStorage.getItem('sidebar-right-width');
-  if (savedLeftWidth) $('.sidebar.left:not(.divider)').style.width = savedLeftWidth;
-  if (savedRightWidth) $('.sidebar.right:not(.divider)').style.width = savedRightWidth;
+  if (savedLeftWidth) $('aside.left:not(.divider)').style.width = savedLeftWidth;
+  if (savedRightWidth) $('aside.right:not(.divider)').style.width = savedRightWidth;
 
   // 清理旧格式存储，重新初始化布局
   localStorage.removeItem('chat-messages-flex');
@@ -2000,7 +2001,7 @@ function initDividers() {
   function startDragHorizontal(e) {
     const divider = e.target;
     const isLeft = divider.classList.contains('left');
-    const sidebar = isLeft ? $('.sidebar.left:not(.divider)') : $('.sidebar.right:not(.divider)');
+    const sidebar = isLeft ? $('aside.left:not(.divider)') : $('aside.right:not(.divider)');
 
     isDragging = true;
     curDiv = {
@@ -2067,7 +2068,7 @@ function initDividers() {
   }
 
   // 右侧栏收起/展开
-  const sidebarRight = $('.sidebar.right:not(.divider)');
+  const sidebarRight = $('aside.right:not(.divider)');
   const btnCollapseRight = $('#btn-collapse-right');
   if (btnCollapseRight && sidebarRight) {
     const savedCollapsed = localStorage.getItem('sidebar-right-collapsed') === 'true';
