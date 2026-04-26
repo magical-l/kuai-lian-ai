@@ -387,20 +387,6 @@ aside .content {
   flex: 1;
 }
 
-#btn-send {
-  border: 1px solid var(--accent-primary);
-  padding: 0 12px;
-  height: 28px;
-  font-size: 12px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-primary);
-  color: white;
-}
-
-#btn-send:hover:not(:disabled) {
-  background: var(--accent-primary-hover);
-}
-
 #chat-input {
   width: 100%;
   height: 100%;
@@ -501,19 +487,7 @@ button.outline:hover:not(:disabled) {
   border-color: var(--border-strong);
 }
 
-/* 主要按钮 */
-#btn-send {
-  background: var(--accent-primary);
-  color: white;
-  padding: var(--space-2) var(--space-5);
-  height: 34px;
-  font-weight: 600;
-}
-
-#btn-send:hover:not(:disabled) {
-  background: var(--accent-primary-hover);
-}
-
+/* 停止按钮 */
 #btn-stop {
   background: var(--danger-light);
   color: var(--danger);
@@ -786,12 +760,6 @@ button.outline:hover:not(:disabled) {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.message-meta-user {
-  text-align: right;
-  align-self: flex-end;
-  color: var(--text-muted);
 }
 
 .message-status-bar {
@@ -1095,11 +1063,6 @@ button.connection.failed {
 button.connection.cors_blocked {
   background: rgba(217, 119, 6, 0.15);
   color: var(--warning);
-}
-
-/* 用户消息状态栏 */
-.message-status-bar-user {
-  align-self: flex-end;
 }
 
 /* ========== Session List ========== */
@@ -1668,6 +1631,25 @@ button.toggle-key:hover:not(:disabled) {
   margin-left: auto;
 }
 
+/* 用户消息 meta 行 */
+.request.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-bottom: var(--space-2);
+  justify-content: flex-end;
+}
+
+.request.meta .copy-btn {
+  margin-left: var(--space-2);
+}
+
+.request.time {
+  color: var(--text-muted);
+}
+
 .response.time {
   color: var(--text-muted);
 }
@@ -1853,27 +1835,6 @@ button.toggle-key:hover:not(:disabled) {
   color: var(--text-muted);
 }
 
-.attachment-thumb .name-tooltip {
-  position: absolute;
-  bottom: -24px;
-  left: 0;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  padding: 2px 6px;
-  font-size: 11px;
-  white-space: nowrap;
-  border-radius: var(--radius-sm);
-  display: none;
-  z-index: 10;
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.attachment-thumb:hover .name-tooltip {
-  display: block;
-}
-
 .attachment-remove {
   position: absolute;
   top: -4px;
@@ -1920,11 +1881,11 @@ button.toggle-key:hover:not(:disabled) {
   background: var(--accent-primary);
   color: white;
   border-color: var(--accent-primary);
-  padding: 0 16px;
 }
 
 .action-btn.primary:hover:not(:disabled) {
   background: var(--accent-primary-hover);
+  color: white;
 }
 
 /* 隐藏的文件输入 */
@@ -1940,7 +1901,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.17.3</span>
+        <span class="brand">快连AI</span><span class="version">v1.18.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2017,7 +1978,11 @@ button.toggle-key:hover:not(:disabled) {
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
               </svg>
             </button>
-            <button id="btn-send" class="action-btn primary" title="发送">发送</button>
+            <button id="btn-send" class="action-btn primary" title="发送">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+            </button>
           </div>
         </div>
         <!-- 隐藏的controls，保留btn-stop供JS引用 -->
@@ -2067,6 +2032,17 @@ button.toggle-key:hover:not(:disabled) {
       <input type="text" placeholder="模型名" class="add-model-input">
       <button class="add-model-confirm action-sm">✓</button>
       <button class="add-model-cancel action-sm">✗</button>
+    </div>
+  </template>
+
+  <!-- 用户消息 meta 行 -->
+  <template id="tpl-user-meta">
+    <div class="request meta">
+      <span class="request name">我</span>
+      <span class="request time"></span>
+      <button class="icon copy-btn" title="复制">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
     </div>
   </template>
 
@@ -2605,6 +2581,30 @@ doc.on('click', e => {
 // 收起状态存储（端点ID -> 是否收起）
 const collapsedEndpoints = new Set();
 
+// 全局tooltip元素（用于附件hover显示名字）
+let attachmentTooltip = null;
+
+function showAttachmentTooltip(name, targetEl) {
+  if (!attachmentTooltip) {
+    attachmentTooltip = mk('div');
+    attachmentTooltip.style.cssText = 'position:fixed;background:var(--bg-elevated);border:1px solid var(--border-subtle);padding:2px 6px;font-size:11px;border-radius:4px;z-index:9999;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:var(--shadow-sm);pointer-events:none;';
+    doc.body.appendChild(attachmentTooltip);
+  }
+  attachmentTooltip.textContent = name;
+  attachmentTooltip.style.display = 'block';
+
+  const rect = targetEl.getBoundingClientRect();
+  // 显示在缩略图上方
+  attachmentTooltip.style.left = rect.left + 'px';
+  attachmentTooltip.style.top = (rect.top - 24) + 'px';
+}
+
+function hideAttachmentTooltip() {
+  if (attachmentTooltip) {
+    attachmentTooltip.style.display = 'none';
+  }
+}
+
 // 渲染待发送的附件缩略图
 function renderPendingAttachments() {
   const row = $('#attachments-row');
@@ -2622,10 +2622,9 @@ function renderPendingAttachments() {
       thumb.textContent = '📄';
     }
 
-    // 文件名提示
-    const tooltip = mk('span', 'name-tooltip');
-    tooltip.textContent = att.name;
-    thumb.appendChild(tooltip);
+    // hover显示名字
+    thumb.onmouseenter = () => showAttachmentTooltip(att.name, thumb);
+    thumb.onmouseleave = () => hideAttachmentTooltip();
 
     // 删除按钮
     const remove = mk('span', 'attachment-remove');
@@ -3188,15 +3187,29 @@ function renderMessages(messages, groups, onCopy) {
     const msgEl = mk('article', `message ${roleClass} msg`);
 
     if (msg.role === 'user') {
-      const meta = mk('div', 'message-meta message-meta-user');
+      // 使用模板创建meta，包含复制按钮
+      const meta = fromTemplate('tpl-user-meta', '.request.meta');
       const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
-      meta.textContent = '我 · ' + timeStr;
+      $('.request.time', meta).textContent = timeStr;
       msgEl.addChild(meta);
 
       // 提取文本内容
       const normalized = normalizeMessageContent(msg);
       const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
       const textContent = textItems.map(c => c.text || '').join('\n');
+
+      // 复制按钮事件
+      const copyBtn = $('.copy-btn', meta);
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(textContent).then(() => {
+          copyBtn.innerHTML = '✓';
+          copyBtn.classList.add('copy-success');
+          setTimeout(() => {
+            copyBtn.innerHTML = SVG.copy;
+            copyBtn.classList.remove('copy-success');
+          }, 1500);
+        });
+      };
 
       if (textContent) {
         const userEl = mk('div', 'message-user');
@@ -3264,26 +3277,6 @@ function renderMessages(messages, groups, onCopy) {
 
         msgEl.addChild(attContainer);
       }
-
-      // 用户消息状态栏：复制按钮
-      const statusBar = mk('div', 'message-status-bar message-status-bar-user');
-
-      const copyBtn = mk('button', 'icon');
-      copyBtn.innerHTML = SVG.copy;
-      copyBtn.title = '复制';
-      copyBtn.onclick = () => {
-        navigator.clipboard.writeText(textContent).then(() => {
-          copyBtn.innerHTML = '✓';
-          copyBtn.classList.add('copy-success');
-          setTimeout(() => {
-            copyBtn.innerHTML = SVG.copy;
-            copyBtn.classList.remove('copy-success');
-          }, 1500);
-        });
-      };
-
-      statusBar.addChild(copyBtn);
-      msgEl.addChild(statusBar);
     } else {
       // 检测消息格式
       if (msg.responses && Array.isArray(msg.responses)) {
