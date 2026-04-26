@@ -1901,7 +1901,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.21.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.21.1</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -5104,41 +5104,33 @@ async function handleSessionSelect(sessionId) {
 
   await refreshUI();
 
-  // 如果有正在生成或已完成的模型，恢复显示流式卡片
-  if (sessionModels.length > 0) {
+  // 只有正在生成的模型才需要恢复流式卡片（已完成的已保存到消息中）
+  const generatingModels = sessionModels.filter(([id, state]) => state.status === 'generating');
+
+  // 如果有正在生成的模型，恢复显示流式卡片
+  if (generatingModels.length > 0) {
     const groups = getGroups();
     const allModelIds = sessionModels.map(([id]) => id);
     showThinkingCards(allModelIds, groups, sessionId);
 
-    // 恢复各状态模型的内容
-    const generatingModels = sessionModels.filter(([id, state]) => state.status === 'generating');
-    const completedModels = sessionModels.filter(([id, state]) => state.status === 'completed');
-    const failedModels = sessionModels.filter(([id, state]) => state.status === 'failed');
-    const stoppedModels = sessionModels.filter(([id, state]) => state.status === 'stopped');
-
-    completedModels.forEach(([id, state]) => {
-      updateCardStatus(id, 'completed', null, state, sessionId);
-    });
-
-    failedModels.forEach(([id, state]) => {
-      updateCardStatus(id, 'failed', state.error, state, sessionId);
-    });
-
-    stoppedModels.forEach(([id, state]) => {
-      updateCardStatus(id, 'stopped', null, state, sessionId);
-    });
-
+    // 恢复各状态模型的内容（但只恢复 generating 状态的）
     generatingModels.forEach(([id, state]) => {
       if (state.content || state.thinking) {
         updateStreamingCard(id, state, state.firstTokenTime, groups, sessionId);
       }
     });
 
-    // 恢复按钮状态（如果有正在生成的）
-    if (generatingModels.length > 0) {
-      setButtonState(true, true);
-      renderModelSelector(groups, selectedModels, true);
-    }
+    // 恢复按钮状态
+    setButtonState(true, true);
+    renderModelSelector(groups, selectedModels, true);
+  }
+
+  // 如果所有模型都已完成/失败/停止，清理状态（不再需要恢复）
+  const allDone = sessionModels.length > 0 && sessionModels.every(([id, state]) =>
+    state.status === 'completed' || state.status === 'failed' || state.status === 'stopped'
+  );
+  if (allDone) {
+    sessionGenerations.delete(sessionId);
   }
 }
 
@@ -5305,25 +5297,14 @@ async function handleSend() {
   // 全部完成后保存助手消息到发起请求时的会话
   await addMessage(targetSessionId, 'assistant', null, { responses });
 
+  // 清理该会话的生成状态（回复已完成）
+  sessionGenerations.delete(targetSessionId);
+
   // 如果用户还在这个会话，刷新显示
   if (currentSession?.id === targetSessionId) {
     currentSession = await loadSession(targetSessionId);
 
     setButtonState(false, false);
-
-    // 隐藏停止按钮，更新hint文字
-    const stopBtnInline = $('#btn-stop-inline');
-    if (stopBtnInline) {
-      stopBtnInline.style.display = 'none';
-    }
-    const hintText = $('.multi-response-hint .hint-text');
-    if (hintText) {
-      const completedCount = responses.filter(r => r.status === 'completed').length;
-      hintText.textContent = `${completedCount}/${responses.length}个模型已回复`;
-    }
-
-    // Don't clear sessionGenerations here - keep status colors for completed models
-    // Entries will be cleared when next generation starts or when session is deleted
     renderModelSelector(groups, selectedModels, false);
     await refreshUI();
   }
@@ -5332,8 +5313,15 @@ async function handleSend() {
 function showThinkingCards(modelIds, groups, sessionId) {
   const container = $('#chat-messages');
 
+  // 先清理当前会话已有的流式卡片容器（防止重复）
+  const existingCards = $(`#streaming-multi-response[data-session-id="${sessionId}"]`);
+  if (existingCards) {
+    existingCards.remove();
+  }
+
   const msgEl = mk('article', 'message res msg');
   msgEl.id = 'streaming-multi-response';
+  msgEl.dataset.sessionId = sessionId;
 
   const hint = fromTemplate('tpl-multi-response-hint', '.multi-response-hint');
   $('.hint-text', hint).textContent = `${modelIds.length}个模型正在思考...`;
