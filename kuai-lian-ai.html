@@ -577,15 +577,13 @@ button.outline:hover:not(:disabled) {
 /* 用户消息：靠右，左侧空隙 */
 .message.req.msg {
   align-self: flex-end;
-  width: fit-content;
-  max-width: 70%;
+  max-width: 90%;
 }
 
 /* 助手消息：靠左，右侧空隙 */
 .message.res.msg {
   align-self: flex-start;
-  width: fit-content;
-  max-width: 70%;
+  max-width: 90%;
 }
 
 .message-user {
@@ -594,6 +592,8 @@ button.outline:hover:not(:disabled) {
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   color: var(--user-msg-text);
   font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* 消息中的附件展示 */
@@ -669,6 +669,8 @@ button.outline:hover:not(:disabled) {
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-sm);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* ========== Markdown 渲染样式 ========== */
@@ -1458,7 +1460,7 @@ button.toggle-key:hover:not(:disabled) {
 
   .message.req.msg,
   .message.res.msg {
-    max-width: 85%;
+    max-width: 95%;
   }
 }
 
@@ -1938,7 +1940,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.17.2</span>
+        <span class="brand">快连AI</span><span class="version">v1.17.3</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
