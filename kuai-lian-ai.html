@@ -5093,7 +5093,49 @@ async function handleSessionSelect(sessionId) {
   }
 
   lastUserMessage = lastUserMsg?.content || null;
+
+  // 获取当前会话的生成状态
+  const gens = sessionGenerations.get(sessionId);
+  const sessionModels = gens ? Array.from(gens.entries()) : [];
+
   await refreshUI();
+
+  // 如果有正在生成或已完成的模型，恢复显示流式卡片
+  if (sessionModels.length > 0) {
+    const groups = getGroups();
+    const allModelIds = sessionModels.map(([id]) => id);
+    showThinkingCards(allModelIds, groups);
+
+    // 恢复各状态模型的内容
+    const generatingModels = sessionModels.filter(([id, state]) => state.status === 'generating');
+    const completedModels = sessionModels.filter(([id, state]) => state.status === 'completed');
+    const failedModels = sessionModels.filter(([id, state]) => state.status === 'failed');
+    const stoppedModels = sessionModels.filter(([id, state]) => state.status === 'stopped');
+
+    completedModels.forEach(([id, state]) => {
+      updateCardStatus(id, 'completed', null, state);
+    });
+
+    failedModels.forEach(([id, state]) => {
+      updateCardStatus(id, 'failed', state.error, state);
+    });
+
+    stoppedModels.forEach(([id, state]) => {
+      updateCardStatus(id, 'stopped', null, state);
+    });
+
+    generatingModels.forEach(([id, state]) => {
+      if (state.content || state.thinking) {
+        updateStreamingCard(id, state, state.firstTokenTime, groups);
+      }
+    });
+
+    // 恢复按钮状态（如果有正在生成的）
+    if (generatingModels.length > 0) {
+      setButtonState(true, true);
+      renderModelSelector(groups, selectedModels, true);
+    }
+  }
 }
 
 function handleSessionEdit(sessionId, newTitle) {
