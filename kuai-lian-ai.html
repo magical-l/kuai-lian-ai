@@ -5279,6 +5279,9 @@ async function handleSend() {
   // 显示"思考中"状态卡片
   showThinkingCards(selectedModels, groups);
 
+  // 记录当前会话ID用于后台接收
+  const targetSessionId = currentSession.id;
+
   // 记录已排序的模型（只排序一次）
   const sortedModels = new Set();
 
@@ -5291,30 +5294,33 @@ async function handleSend() {
       reorderCardsBySpeed();
       reorderSelectorTagsBySpeed();
     }
-  });
+  }, targetSessionId);
 
-  // 全部完成后保存助手消息
-  await addMessage(currentSession.id, 'assistant', null, { responses });
+  // 全部完成后保存助手消息到发起请求时的会话
+  await addMessage(targetSessionId, 'assistant', null, { responses });
 
-  currentSession = await loadSession(currentSession.id);
+  // 如果用户还在这个会话，刷新显示
+  if (currentSession?.id === targetSessionId) {
+    currentSession = await loadSession(targetSessionId);
 
-  setButtonState(false, false);
+    setButtonState(false, false);
 
-  // 隐藏停止按钮，更新hint文字
-  const stopBtnInline = $('#btn-stop-inline');
-  if (stopBtnInline) {
-    stopBtnInline.style.display = 'none';
+    // 隐藏停止按钮，更新hint文字
+    const stopBtnInline = $('#btn-stop-inline');
+    if (stopBtnInline) {
+      stopBtnInline.style.display = 'none';
+    }
+    const hintText = $('.multi-response-hint .hint-text');
+    if (hintText) {
+      const completedCount = responses.filter(r => r.status === 'completed').length;
+      hintText.textContent = `${completedCount}/${responses.length}个模型已回复`;
+    }
+
+    // Don't clear activeGenerations here - keep status colors for completed models
+    // Entries will be cleared when next generation starts (line 2139) or new session starts (line 2714)
+    renderModelSelector(groups, selectedModels, false);
+    await refreshUI();
   }
-  const hintText = $('.multi-response-hint .hint-text');
-  if (hintText) {
-    const completedCount = responses.filter(r => r.status === 'completed').length;
-    hintText.textContent = `${completedCount}/${responses.length}个模型已回复`;
-  }
-
-  // Don't clear activeGenerations here - keep status colors for completed models
-  // Entries will be cleared when next generation starts (line 2139) or new session starts (line 2714)
-  renderModelSelector(groups, selectedModels, false);
-  await refreshUI();
 }
 
 function showThinkingCards(modelIds, groups) {
