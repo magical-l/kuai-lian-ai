@@ -1888,6 +1888,83 @@ button.toggle-key:hover:not(:disabled) {
   color: white;
 }
 
+/* 分裂式按钮（发送 + 模式切换） */
+.split-btn {
+  position: relative;
+  display: inline-flex;
+  height: 40px;
+}
+.split-btn-main {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--accent-primary);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  background: var(--accent-primary);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.split-btn-main:hover {
+  background: var(--accent-primary-hover);
+}
+.split-btn-main:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.split-btn-drop {
+  height: 40px;
+  width: 28px;
+  border: 1px solid var(--accent-primary);
+  border-radius: 0 6px 6px 0;
+  background: var(--accent-primary);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.split-btn-drop:hover {
+  background: var(--accent-primary-hover);
+}
+.split-btn.open .split-btn-main,
+.split-btn.open .split-btn-drop {
+  background: var(--accent-primary-hover);
+}
+.split-btn-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  min-width: 140px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+  display: none;
+  z-index: 100;
+}
+.split-btn.open .split-btn-menu {
+  display: block;
+}
+.split-btn-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-base);
+  transition: background 0.15s;
+}
+.split-btn-option:hover {
+  background: var(--bg-hover);
+}
+.split-btn-option.selected {
+  color: var(--accent-primary);
+  font-weight: 500;
+}
+
 /* 隐藏的文件输入 */
 #file-input {
   display: none;
@@ -1901,7 +1978,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.21.1</span>
+        <span class="brand">快连AI</span><span class="version">v1.22.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -1978,11 +2055,22 @@ button.toggle-key:hover:not(:disabled) {
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
               </svg>
             </button>
-            <button id="btn-send" class="action-btn primary" title="发送">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 19V5M5 12l7-7 7 7"/>
-              </svg>
-            </button>
+            <div id="send-btn-group" class="split-btn" title="发送">
+              <button id="btn-send" class="split-btn-main primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+              </button>
+              <button id="send-mode-toggle" class="split-btn-drop">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+              <div id="send-mode-menu" class="split-btn-menu">
+                <div class="split-btn-option selected" data-value="enter">Enter 发送</div>
+                <div class="split-btn-option" data-value="ctrl-enter">Ctrl+Enter 发送</div>
+              </div>
+            </div>
           </div>
         </div>
         <!-- 隐藏的controls，保留btn-stop供JS引用 -->
@@ -4904,8 +4992,8 @@ async function init() {
   initDividers();
   initScrollNav();
 
-  // 发送快捷键设置
-  let sendOnEnter = true; // 默认Enter发送
+  // 发送快捷键设置（从 localStorage 加载）
+  let sendOnEnter = localStorage.getItem('sendMode') !== 'ctrl-enter';
   const chatInput = $('#chat-input');
 
   chatInput.on('keydown', e => {
@@ -4918,6 +5006,43 @@ async function init() {
         handleSend();
       }
     }
+  });
+
+  // 分裂式按钮：发送模式切换
+  const btnGroup = $('#send-btn-group');
+  const toggle = $('#send-mode-toggle');
+  const options = $$('.split-btn-option', btnGroup);
+
+  // 初始化选中状态
+  if (!sendOnEnter) {
+    options[0].classList.remove('selected');
+    options[1].classList.add('selected');
+  }
+
+  // 点击下拉按钮
+  toggle.on('click', e => {
+    e.stopPropagation();
+    btnGroup.classList.toggle('open');
+  });
+
+  // 选择选项
+  options.forEach(opt => {
+    opt.on('click', e => {
+      e.stopPropagation();
+      const value = opt.dataset.value;
+      sendOnEnter = value === 'enter';
+      localStorage.setItem('sendMode', value);
+
+      // 更新选中状态
+      options.forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      btnGroup.classList.remove('open');
+    });
+  });
+
+  // 点击外部关闭
+  document.on('click', () => {
+    btnGroup.classList.remove('open');
   });
 
   // 粘贴图片处理
