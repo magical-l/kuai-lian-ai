@@ -381,28 +381,23 @@ aside .content {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  position: relative;
 }
 
 .input-wrapper textarea {
   flex: 1;
-  padding-right: 60px;
 }
 
-.send-btn-inline {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  height: 28px;
+#btn-send {
+  border: 1px solid var(--accent-primary);
   padding: 0 12px;
+  height: 28px;
   font-size: 12px;
   border-radius: var(--radius-sm);
   background: var(--accent-primary);
   color: white;
-  z-index: 1;
 }
 
-.send-btn-inline:hover:not(:disabled) {
+#btn-send:hover:not(:disabled) {
   background: var(--accent-primary-hover);
 }
 
@@ -410,7 +405,6 @@ aside .content {
   width: 100%;
   height: 100%;
   padding: var(--space-2) var(--space-3);
-  padding-right: 60px;
   border: 1px solid var(--border-default);
   border-radius: 0 0 var(--radius-md) var(--radius-md);
   resize: none;
@@ -1941,7 +1935,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.20.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.17.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2011,14 +2005,14 @@ button.toggle-key:hover:not(:disabled) {
         <div class="attachments-row" id="attachments-row"></div>
         <div class="input-wrapper">
           <textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
-          <div style="display:flex;gap:8px;position:absolute;right:8px;bottom:8px;z-index:1;">
+          <div style="display:flex;gap:8px;justify-content:flex-end;padding:8px;">
             <input type="file" id="file-input" multiple accept="*/*">
             <button id="btn-attach" class="navbar" title="添加附件">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
               </svg>
             </button>
-            <button id="btn-send" class="send-btn-inline" title="发送">发送</button>
+            <button id="btn-send" title="发送">发送</button>
           </div>
         </div>
         <!-- 隐藏的controls，保留btn-stop供JS引用 -->
@@ -4263,18 +4257,38 @@ function getAllSessions() {
 }
 
 async function createSession(firstMessage = null, targetModels = null) {
+  // 从第一条消息提取标题
+  let title = '新会话';
+  if (firstMessage) {
+    if (Array.isArray(firstMessage)) {
+      const firstText = firstMessage.find(c => c.type === 'text' || c.type === 'file_text');
+      title = firstText ? firstText.text.slice(0, 20) : '新会话';
+    } else if (typeof firstMessage === 'string') {
+      title = firstMessage.slice(0, 20);
+    }
+  }
+
   const session = {
     id: generateUUID(),
-    title: firstMessage ? firstMessage.slice(0, 20) : '新会话',
+    title,
     createdAt: Date.now(),
     messages: []
   };
 
   if (firstMessage) {
     // 使用标准数组格式
+    let content;
+    if (Array.isArray(firstMessage)) {
+      content = firstMessage;
+    } else if (typeof firstMessage === 'string') {
+      content = [{ type: 'text', text: firstMessage }];
+    } else {
+      content = [{ type: 'text', text: String(firstMessage) }];
+    }
+
     const msg = {
       role: 'user',
-      content: [{ type: 'text', text: firstMessage }],
+      content,
       timestamp: Date.now()
     };
     if (targetModels) {
