@@ -1901,7 +1901,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.20.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.21.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -4830,7 +4830,7 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
       state.totalDuration = completionTime - startTime;
       // Immediately update UI for this specific model
       renderModelSelector(groups, selectedModels, true);
-      updateCardStatus(id, 'completed', null, state);
+      updateCardStatus(id, 'completed', null, state, sessionId);
       return {
         modelId: id,
         status: 'completed',
@@ -4849,7 +4849,7 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
         state.status = 'stopped';
         // Immediately update UI for this specific model
         renderModelSelector(groups, selectedModels, true);
-        updateCardStatus(id, 'stopped', null, genState);
+        updateCardStatus(id, 'stopped', null, genState, sessionId);
         return {
           modelId: id,
           status: 'stopped',
@@ -4865,7 +4865,7 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
       state.error = err.message;
       // Immediately update UI for this specific model
       renderModelSelector(groups, selectedModels, true);
-      updateCardStatus(id, 'failed', err.message, genState);
+      updateCardStatus(id, 'failed', err.message, genState, sessionId);
       return { modelId: id, status: 'failed', error: err.message, content: '', totalDuration: completionTime - startTime, timestamp: completionTime };
     }
   });
@@ -5108,7 +5108,7 @@ async function handleSessionSelect(sessionId) {
   if (sessionModels.length > 0) {
     const groups = getGroups();
     const allModelIds = sessionModels.map(([id]) => id);
-    showThinkingCards(allModelIds, groups);
+    showThinkingCards(allModelIds, groups, sessionId);
 
     // 恢复各状态模型的内容
     const generatingModels = sessionModels.filter(([id, state]) => state.status === 'generating');
@@ -5117,20 +5117,20 @@ async function handleSessionSelect(sessionId) {
     const stoppedModels = sessionModels.filter(([id, state]) => state.status === 'stopped');
 
     completedModels.forEach(([id, state]) => {
-      updateCardStatus(id, 'completed', null, state);
+      updateCardStatus(id, 'completed', null, state, sessionId);
     });
 
     failedModels.forEach(([id, state]) => {
-      updateCardStatus(id, 'failed', state.error, state);
+      updateCardStatus(id, 'failed', state.error, state, sessionId);
     });
 
     stoppedModels.forEach(([id, state]) => {
-      updateCardStatus(id, 'stopped', null, state);
+      updateCardStatus(id, 'stopped', null, state, sessionId);
     });
 
     generatingModels.forEach(([id, state]) => {
       if (state.content || state.thinking) {
-        updateStreamingCard(id, state, state.firstTokenTime, groups);
+        updateStreamingCard(id, state, state.firstTokenTime, groups, sessionId);
       }
     });
 
@@ -5282,18 +5282,18 @@ async function handleSend() {
   // 渲染用户消息
   renderMessages(currentSession.messages, groups, handleCopy);
 
-  // 显示"思考中"状态卡片
-  showThinkingCards(selectedModels, groups);
-
-  // 记录当前会话ID用于后台接收
+  // 记录当前会话ID用于后台接收（在创建卡片前定义）
   const targetSessionId = currentSession.id;
+
+  // 显示"思考中"状态卡片（使用 targetSessionId 标记）
+  showThinkingCards(selectedModels, groups, targetSessionId);
 
   // 记录已排序的模型（只排序一次）
   const sortedModels = new Set();
 
   // 并行调用所有模型
   const responses = await callAllModels(groups, selectedModels, messages, (modelId, partialContent, firstTokenTime) => {
-    updateStreamingCard(modelId, partialContent, firstTokenTime, groups);
+    updateStreamingCard(modelId, partialContent, firstTokenTime, groups, targetSessionId);
     // 只在firstTokenTime首次有值时排序一次
     if (firstTokenTime != null && !sortedModels.has(modelId)) {
       sortedModels.add(modelId);
@@ -5329,7 +5329,7 @@ async function handleSend() {
   }
 }
 
-function showThinkingCards(modelIds, groups) {
+function showThinkingCards(modelIds, groups, sessionId) {
   const container = $('#chat-messages');
 
   const msgEl = mk('article', 'message res msg');
@@ -5354,6 +5354,7 @@ function showThinkingCards(modelIds, groups) {
 
   modelIds.forEach(id => {
     const card = fromTemplate('tpl-response-card-streaming', '.response.card');
+    card.dataset.sessionId = sessionId;
     card.dataset.modelId = id;
 
     const info = findModelById(groups, id);
@@ -5369,9 +5370,10 @@ function showThinkingCards(modelIds, groups) {
   scrollToBottom();
 }
 
-function updateStreamingCard(modelId, state, firstTokenTime, groups) {
+function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) {
   // 直接更新DOM，不用requestAnimationFrame（避免并行时排队显示）
-  const card = $(`.response.card[data-model-id="${modelId}"]`);
+  // 使用 sessionId + modelId 组合选择器，确保只更新当前会话的卡片
+  const card = $(`.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
   if (!card) return;
 
   // thinking区块处理
@@ -5434,9 +5436,13 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups) {
 }
 
 // Update streaming card status (for failed/stopped/completed models)
-function updateCardStatus(modelId, status, error, state = null) {
+function updateCardStatus(modelId, status, error, state = null, sessionId = null) {
   requestAnimationFrame(() => {
-    const card = $(`.response.card[data-model-id="${modelId}"]`);
+    // 使用 sessionId + modelId 组合选择器
+    const selector = sessionId
+      ? `.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`
+      : `.response.card[data-model-id="${modelId}"]`;
+    const card = $(selector);
     if (!card) return;
 
     card.classList.remove('thinking');
