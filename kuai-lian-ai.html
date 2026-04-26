@@ -272,23 +272,12 @@ aside.right {
   border-left: 1px solid var(--border-subtle);
 }
 
-aside.right.collapsed {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
-}
-
-aside.right.collapsed > header span {
+aside.right.hidden {
   display: none;
 }
 
-aside.right.collapsed .content {
+.divider.column.control.sidebar.right.hidden {
   display: none;
-}
-
-aside.right.collapsed #btn-collapse-right span {
-  display: inline-block;
-  transform: rotate(180deg);
 }
 
 aside > header {
@@ -1620,7 +1609,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.15.7</span>
+        <span class="brand">快连AI</span><span class="version">v1.15.9</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -1636,6 +1625,13 @@ button.toggle-key:hover:not(:disabled) {
         </button>
       </div>
       <div class="right">
+        <button id="btn-toggle-sidebar" class="navbar" title="显示/隐藏右侧栏">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="1" y="1" width="12" height="12" rx="1"/>
+            <line x1="8" y1="1" x2="8" y2="13"/>
+            <rect id="sidebar-toggle-right-panel" x="8" y="1" width="5" height="12" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
         <button id="btn-help" class="navbar help" title="帮助">?</button>
       </div>
     </nav>
@@ -1694,9 +1690,6 @@ button.toggle-key:hover:not(:disabled) {
     <aside class="right">
       <header>
         <span>会话记录</span>
-        <button id="btn-collapse-right" title="收起侧边栏">
-          <span style="font-size:16px;font-weight:700">›</span>
-        </button>
       </header>
       <div class="content" id="session-list"></div>
     </aside>
@@ -2064,17 +2057,30 @@ function initDividers() {
     }
   }
 
-  // 右侧栏收起/展开
+  // 右侧栏显示/隐藏
   const sidebarRight = $('aside.right:not(.divider)');
-  const btnCollapseRight = $('#btn-collapse-right');
-  if (btnCollapseRight && sidebarRight) {
-    const savedCollapsed = localStorage.getItem('sidebar-right-collapsed') === 'true';
-    if (savedCollapsed) {
-      sidebarRight.classList.add('collapsed');
+  const dividerRight = $('.divider.column.control.sidebar.right');
+  const btnToggleSidebar = $('#btn-toggle-sidebar');
+  const toggleIconRightPanel = $('#sidebar-toggle-right-panel');
+
+  function updateSidebarToggleIcon(isHidden) {
+    if (toggleIconRightPanel) {
+      toggleIconRightPanel.setAttribute('fill', isHidden ? 'none' : 'currentColor');
     }
-    btnCollapseRight.on('click', () => {
-      sidebarRight.classList.toggle('collapsed');
-      localStorage.setItem('sidebar-right-collapsed', sidebarRight.classList.contains('collapsed'));
+  }
+
+  if (btnToggleSidebar && sidebarRight && dividerRight) {
+    const savedHidden = localStorage.getItem('sidebar-right-hidden') === 'true';
+    if (savedHidden) {
+      sidebarRight.classList.add('hidden');
+      dividerRight.classList.add('hidden');
+    }
+    updateSidebarToggleIcon(savedHidden);
+    btnToggleSidebar.on('click', () => {
+      const isHidden = sidebarRight.classList.toggle('hidden');
+      dividerRight.classList.toggle('hidden', isHidden);
+      localStorage.setItem('sidebar-right-hidden', isHidden);
+      updateSidebarToggleIcon(isHidden);
     });
   }
 
