@@ -576,7 +576,8 @@ button.outline:hover:not(:disabled) {
 
 .message-user {
   align-self: flex-end;
-  margin-left: 15%;
+  width: fit-content;
+  max-width: 70%;
   background: var(--user-msg-bg);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
@@ -647,7 +648,8 @@ button.outline:hover:not(:disabled) {
 
 .message-assistant {
   align-self: flex-start;
-  margin-right: 15%;
+  width: fit-content;
+  max-width: 70%;
   background: var(--bg-base);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
@@ -1441,12 +1443,9 @@ button.toggle-key:hover:not(:disabled) {
     padding: 8px;
   }
 
-  .message-user {
-    margin-left: 8%;
-  }
-
+  .message-user,
   .message-assistant {
-    margin-right: 8%;
+    max-width: 85%;
   }
 }
 
@@ -1815,24 +1814,6 @@ button.toggle-key:hover:not(:disabled) {
 }
 
 /* ========== 附件缩略图 ========== */
-.attachments-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-  overflow-x: auto;
-  flex-shrink: 0;
-  min-height: 44px;
-  background: var(--bg-subtle);
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  border: 1px solid var(--border-subtle);
-  border-bottom: none;
-}
-
-.attachments-row:empty {
-  display: none;
-}
-
 .attachment-thumb {
   position: relative;
   width: 40px;
@@ -1902,24 +1883,33 @@ button.toggle-key:hover:not(:disabled) {
   background: #b91c1c;
 }
 
-/* 附件按钮 */
-#btn-attach {
+/* 操作栏按钮统一40px高度 */
+.action-btn {
   border: 1px solid var(--border-subtle);
-  padding: 0;
-  height: 28px;
-  min-width: 28px;
+  padding: 0 12px;
+  height: 40px;
+  min-width: 40px;
   background: var(--bg-muted);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-#btn-attach:hover:not(:disabled) {
-  background: var(--accent-light);
+.action-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.action-btn.primary {
+  background: var(--accent-primary);
+  color: white;
   border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  padding: 0 16px;
 }
 
-#btn-attach svg {
-  width: 14px;
-  height: 14px;
+.action-btn.primary:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
 }
 
 /* 隐藏的文件输入 */
@@ -1935,7 +1925,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.17.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.17.1</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2002,17 +1992,17 @@ button.toggle-key:hover:not(:disabled) {
           </div>
         </div>
 
-        <div class="attachments-row" id="attachments-row"></div>
         <div class="input-wrapper">
           <textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
-          <div style="display:flex;gap:8px;justify-content:flex-end;padding:8px;">
+          <div id="action-bar" style="display:flex;align-items:center;gap:8px;padding:8px;min-height:40px;">
+            <div id="attachments-row" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></div>
             <input type="file" id="file-input" multiple accept="*/*">
-            <button id="btn-attach" class="navbar" title="添加附件">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button id="btn-attach" class="action-btn" title="添加附件">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
               </svg>
             </button>
-            <button id="btn-send" title="发送">发送</button>
+            <button id="btn-send" class="action-btn primary" title="发送">发送</button>
           </div>
         </div>
         <!-- 隐藏的controls，保留btn-stop供JS引用 -->
