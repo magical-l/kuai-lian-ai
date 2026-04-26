@@ -1605,7 +1605,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.14.7</span>
+        <span class="brand">快连AI</span><span class="version">v1.15.1</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2820,7 +2820,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
   const cards = mk('div', 'multi-response-cards');
 
   sorted.forEach(r => {
-    const card = mk('div', 'response-card');
+    const card = mk('div', 'response card');
 
     const info = findModelById(groups, r.modelId);
     const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
@@ -4628,6 +4628,7 @@ async function handleSend() {
     if (firstTokenTime != null && !sortedModels.has(modelId)) {
       sortedModels.add(modelId);
       reorderCardsBySpeed();
+      reorderSelectorTagsBySpeed();
     }
   });
 
@@ -4843,6 +4844,29 @@ function reorderCardsBySpeed() {
     });
 
     cards.forEach(c => container.appendChild(c));
+  });
+}
+
+function reorderSelectorTagsBySpeed() {
+  requestAnimationFrame(() => {
+    const summaryEl = $('#selector-summary');
+    if (!summaryEl) return;
+
+    const tags = Array.from(summaryEl.querySelectorAll('.model.tag.selected'));
+    if (tags.length === 0) return;
+
+    // 按速度排序
+    const sortedTags = tags.sort((a, b) => {
+      const aTime = activeGenerations.get(a.dataset.model)?.firstTokenTime ?? Infinity;
+      const bTime = activeGenerations.get(b.dataset.model)?.firstTokenTime ?? Infinity;
+      return aTime - bTime;
+    });
+
+    // 同步更新 selectedModels 数组顺序（不持久化）
+    selectedModels = sortedTags.map(tag => tag.dataset.model);
+
+    // 重新排列 DOM
+    sortedTags.forEach(tag => summaryEl.appendChild(tag));
   });
 }
 
