@@ -4520,19 +4520,24 @@ function deleteSessionGenerations(sessionId) {
 
 let currentAbortController = null;
 
-function stopSingleGeneration(modelId) {
-  const state = activeGenerations.get(modelId);
-  if (state && state.abortController) {
+function stopSingleGeneration(sessionId, modelId) {
+  const gens = sessionGenerations.get(sessionId);
+  if (!gens) return;
+  const state = gens.get(modelId);
+  if (state && state.abortController && state.status === 'generating') {
     state.abortController.abort();
   }
 }
 
+function stopSessionGenerations(sessionId) {
+  clearSessionGenerations(sessionId);
+}
+
+// 兼容：停止当前会话的所有生成
 function stopAllGenerations() {
-  activeGenerations.forEach((state, id) => {
-    if (state.abortController && state.status === 'generating') {
-      state.abortController.abort();
-    }
-  });
+  if (currentSession) {
+    stopSessionGenerations(currentSession.id);
+  }
 }
 
 // OpenAI 消息格式转换
