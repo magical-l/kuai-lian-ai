@@ -4750,13 +4750,16 @@ async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal 
 
 
 // 并行调用所有模型
-async function callAllModels(groups, modelIds, messages, onChunk) {
+async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
   const startTime = Date.now();
-  activeGenerations.clear();
+
+  // 清除当前会话的旧生成状态（不影响其他会话）
+  clearSessionGenerations(sessionId);
+  const gens = getSessionGenerations(sessionId);
 
   // 初始化每个模型的状态和AbortController
   modelIds.forEach(id => {
-    activeGenerations.set(id, {
+    gens.set(id, {
       abortController: new AbortController(),
       status: 'generating',
       firstTokenTime: null,
@@ -4770,7 +4773,7 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
   // 并行调用所有模型
   const promises = modelIds.map(async id => {
     const info = findModelById(groups, id);
-    const state = activeGenerations.get(id);
+    const state = gens.get(id);
 
     if (!info) {
       state.status = 'failed';
@@ -4786,7 +4789,7 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
         info.model.name,
         messages,
         chunkState => {
-          const genState = activeGenerations.get(id);
+          const genState = gens.get(id);
           if (genState) {
             genState.content = chunkState.content;
             genState.thinking = chunkState.thinking;
@@ -4832,7 +4835,7 @@ async function callAllModels(groups, modelIds, messages, onChunk) {
 
     } catch (err) {
       const completionTime = Date.now();
-      const genState = activeGenerations.get(id);
+      const genState = gens.get(id);
       if (err.name === 'AbortError') {
         state.status = 'stopped';
         // Immediately update UI for this specific model
