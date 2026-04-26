@@ -4855,7 +4855,7 @@ let defaultSelectedModels = loadDefaultSelectedModels();
 
 let currentSession = null;
 let selectedModels = [];          // 当前选中模型ID数组
-let activeGenerations = new Map(); // 生成中状态跟踪
+let sessionGenerations = new Map(); // 按会话隔离的生成状态：Map<sessionId, Map<modelId, state>>
 let lastUserMessage = null;
 
 // 附件管理
