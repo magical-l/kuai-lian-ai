@@ -1605,7 +1605,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.14.4</span>
+        <span class="brand">快连AI</span><span class="version">v1.14.6</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -1706,26 +1706,13 @@ button.toggle-key:hover:not(:disabled) {
         <label>API Key: <div class="key-input-wrapper"><input id="dialog-group-key" type="password"><button class="toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
       </form>
       <footer class="dialog-buttons">
-        <button id="dialog-cancel">取消</button>
-        <button id="dialog-save" class="primary">保存</button>
+        <button id="dialog-cancel">✗</button>
+        <button id="dialog-save" class="primary">✓</button>
       </footer>
     </div>
   </template>
 
-  <!-- 编辑模型对话框 -->
-  <template id="tpl-edit-model-dialog">
-    <div id="edit-dialog">
-      <h3></h3>
-      <form class="dialog-form">
-        <label>模型名: <input id="dialog-model-name"></label>
-      </form>
-      <footer class="dialog-buttons">
-        <button id="dialog-cancel">取消</button>
-        <button id="dialog-save" class="primary">保存</button>
-      </footer>
-    </div>
-  </template>
-
+  
   <!-- 添加模型内联输入 -->
   <template id="tpl-add-model-inline">
     <div class="add-model-inline">
@@ -1838,7 +1825,7 @@ button.toggle-key:hover:not(:disabled) {
         </div>
       </div>
       <footer class="dialog-buttons" id="help-dialog-buttons">
-        <button id="help-close" class="primary">知道了</button>
+        <button id="help-close" class="primary">✓</button>
       </footer>
     </div>
   </template>
@@ -3003,27 +2990,6 @@ function showEditGroupDialog(group = null, onSave) {
       const key = keyInput.value.trim();
       if (!name || !baseUrl) { alert('请填写名称和Base URL'); return; }
       onSave({ name, baseUrl, style, key });
-      dialog.remove();
-    }
-  }, dialog);
-}
-
-function showEditModelDialog(groupId, model = null, onSave) {
-  const exist = $('#edit-dialog');
-  if (exist) exist.remove();
-
-  const dialog = fromTemplate('tpl-edit-model-dialog', '#edit-dialog');
-  $('h3', dialog).textContent = model ? '编辑模型' : '新增模型';
-  setValues(dialog, { '#dialog-model-name': model?.name });
-
-  doc.body.addChild(dialog);
-
-  onClick({
-    '#dialog-cancel': () => dialog.remove(),
-    '#dialog-save': () => {
-      const name = $('#dialog-model-name', dialog).value.trim();
-      if (!name) { alert('请输入模型名'); return; }
-      onSave(name);
       dialog.remove();
     }
   }, dialog);
@@ -4569,12 +4535,6 @@ async function handleAddModelForGroup(groupId, modelName) {
   if (modelName) {
     await addModel(groupId, modelName);
     await refreshUI();
-  } else {
-    // 如果没有提供名称，仍然使用弹窗（兼容旧调用方式）
-    showEditModelDialog(groupId, null, async (name) => {
-      await addModel(groupId, name);
-      await refreshUI();
-    });
   }
 }
 
