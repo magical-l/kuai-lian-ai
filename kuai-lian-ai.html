@@ -2276,7 +2276,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
   container.innerHTML = '';
 
   groups.forEach((group, groupIndex) => {
-    const groupEl = mk('div', 'endpoint-group');
+    const groupEl = mk('section', 'endpoint-group');
     groupEl.dataset.groupId = group.id;
     groupEl.dataset.groupIndex = groupIndex;
     groupEl.draggable = false;
@@ -2652,7 +2652,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
   sessions.sort((a, b) => b.createdAt - a.createdAt);
 
   sessions.forEach(session => {
-    const sessionEl = mk('div', 'session item');
+    const sessionEl = mk('article', 'session item');
     if (session.id === selectedSessionId) {
       sessionEl.classList.add('selected');
     }
@@ -2734,7 +2734,7 @@ function renderMessages(messages, groups, onCopy) {
   container.innerHTML = '';
 
   messages.forEach((msg, index) => {
-    const msgEl = mk('div', 'message');
+    const msgEl = mk('article', 'message');
 
     if (msg.role === 'user') {
       const meta = mk('div', 'message-meta message-meta-user');
@@ -4693,7 +4693,7 @@ async function handleSend() {
 function showThinkingCards(modelIds, groups) {
   const container = $('#chat-messages');
 
-  const msgEl = mk('div', 'message');
+  const msgEl = mk('article', 'message');
   msgEl.id = 'streaming-multi-response';
 
   const hint = fromTemplate('tpl-multi-response-hint', '.multi-response-hint');
