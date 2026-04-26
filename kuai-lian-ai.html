@@ -40,6 +40,7 @@
   --danger: #DC2626;
   --danger-light: rgba(220, 38, 38, 0.08);
   --warning: #D97706;
+  --warning-light: rgba(217, 119, 6, 0.1);
 
   /* 用户消息 */
   --user-msg-bg: #2563EB;
@@ -1433,6 +1434,20 @@ button.toggle-key:hover:not(:disabled) {
   border-color: var(--border-subtle);
 }
 
+/* 速度样式 - 与消息框反应时间颜色统一 */
+.model.tag.selected.speed-fast {
+  background: var(--success-light);
+  border-color: var(--success);
+}
+.model.tag.selected.speed-medium {
+  background: var(--warning-light);
+  border-color: var(--warning);
+}
+.model.tag.selected.speed-slow {
+  background: #fed7aa;
+  border-color: #ea580c;
+}
+
 /* 状态图标 */
 .model.status-icon {
   font-size: 10px;
@@ -1605,7 +1620,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.15.1</span>
+        <span class="brand">快连AI</span><span class="version">v1.15.6</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2148,7 +2163,10 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
       const info = findModelById(groups, id);
       if (!info) return '';
       const statusClass = getTagStatusClass(id);
-      return `<span class="model tag ${statusClass} selected" data-model="${id}"><span class="endpoint name-color">${info.group.name}</span> ${info.model.name}</span>`;
+      const genState = activeGenerations.get(id);
+      const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : '';
+      const classes = ['model', 'tag', 'selected', statusClass, speedClass ? `speed-${speedClass}` : ''].filter(Boolean).join(' ');
+      return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.group.name}</span> ${info.model.name}</span>`;
     }).join('');
     expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
   }
@@ -4848,26 +4866,31 @@ function reorderCardsBySpeed() {
 }
 
 function reorderSelectorTagsBySpeed() {
-  requestAnimationFrame(() => {
-    const summaryEl = $('#selector-summary');
-    if (!summaryEl) return;
+  const summaryEl = $('#selector-summary');
+  if (!summaryEl) return;
 
-    const tags = Array.from(summaryEl.querySelectorAll('.model.tag.selected'));
-    if (tags.length === 0) return;
+  const tags = Array.from(summaryEl.querySelectorAll('.model.tag.selected'));
+  if (tags.length === 0) return;
 
-    // 按速度排序
-    const sortedTags = tags.sort((a, b) => {
-      const aTime = activeGenerations.get(a.dataset.model)?.firstTokenTime ?? Infinity;
-      const bTime = activeGenerations.get(b.dataset.model)?.firstTokenTime ?? Infinity;
-      return aTime - bTime;
-    });
+  // 保存原始顺序（sort会原地修改）
+  const originalTags = [...tags];
 
-    // 同步更新 selectedModels 数组顺序（不持久化）
-    selectedModels = sortedTags.map(tag => tag.dataset.model);
-
-    // 重新排列 DOM
-    sortedTags.forEach(tag => summaryEl.appendChild(tag));
+  // 按速度排序
+  const sortedTags = tags.sort((a, b) => {
+    const aTime = activeGenerations.get(a.dataset.model)?.firstTokenTime ?? Infinity;
+    const bTime = activeGenerations.get(b.dataset.model)?.firstTokenTime ?? Infinity;
+    return aTime - bTime;
   });
+
+  // 检查是否需要排序（用原始顺序比较）
+  const needsReorder = sortedTags.some((tag, i) => tag !== originalTags[i]);
+  if (!needsReorder) return;
+
+  // 同步更新 selectedModels 数组顺序（不持久化）
+  selectedModels = sortedTags.map(tag => tag.dataset.model);
+
+  // 重新排列 DOM
+  sortedTags.forEach(tag => summaryEl.appendChild(tag));
 }
 
 async function handleNewSession() {
