@@ -76,6 +76,12 @@
   --space-8: 32px;
 }
 
+/* ========== Layout Utilities ========== */
+.layout-y-queue { display: flex; flex-direction: column; }
+.layout-y-stack { display: flex; flex-direction: column-reverse; }
+.layout-x-queue { display: flex; flex-direction: row; }
+.layout-x-stack { display: flex; flex-direction: row-reverse; }
+
 /* ========== Base ========== */
 * {
   box-sizing: border-box;
@@ -1978,7 +1984,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.22.0</span>
+        <span class="brand">快连AI</span><span class="version">v1.23.0</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
