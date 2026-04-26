@@ -2603,7 +2603,8 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
       const info = findModelById(groups, id);
       if (!info) return '';
       const statusClass = getTagStatusClass(id);
-      const genState = activeGenerations.get(id);
+      const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+      const genState = gens ? gens.get(id) : null;
       const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : '';
       const classes = ['model', 'tag', 'selected', statusClass, speedClass ? `speed-${speedClass}` : ''].filter(Boolean).join(' ');
       return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.group.name}</span> ${info.model.name}</span>`;
@@ -2638,7 +2639,8 @@ function findModelById(groups, modelId) {
 }
 
 function getTagStatusClass(modelId) {
-  const gen = activeGenerations.get(modelId);
+  const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+  const gen = gens ? gens.get(modelId) : null;
   if (!gen) return '';
   // Only show color for failed/stopped status
   if (gen.status === 'failed') return 'failed';
@@ -2653,8 +2655,9 @@ function bindSelectorEvents() {
   if (expandBtn) {
     expandBtn.onclick = () => {
       // 实时检查生成状态
-      const isGenerating = activeGenerations.size > 0 &&
-        Array.from(activeGenerations.values()).some(s => s.status === 'generating');
+      const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+      const isGenerating = gens && gens.size > 0 &&
+        Array.from(gens.values()).some(s => s.status === 'generating');
       if (isGenerating) return;
       selectorExpanded = !selectorExpanded;
       renderModelSelector(getGroups(), selectedModels, false);
@@ -2666,8 +2669,9 @@ function bindSelectorEvents() {
     tag.onclick = e => {
       e.stopPropagation();
       // 实时检查生成状态（放在点击时检查，而非绑定时）
-      const isGenerating = activeGenerations.size > 0 &&
-        Array.from(activeGenerations.values()).some(s => s.status === 'generating');
+      const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+      const isGenerating = gens && gens.size > 0 &&
+        Array.from(gens.values()).some(s => s.status === 'generating');
       if (isGenerating) return;
 
       const id = tag.dataset.model;
@@ -5318,8 +5322,8 @@ async function handleSend() {
       hintText.textContent = `${completedCount}/${responses.length}个模型已回复`;
     }
 
-    // Don't clear activeGenerations here - keep status colors for completed models
-    // Entries will be cleared when next generation starts (line 2139) or new session starts (line 2714)
+    // Don't clear sessionGenerations here - keep status colors for completed models
+    // Entries will be cleared when next generation starts or when session is deleted
     renderModelSelector(groups, selectedModels, false);
     await refreshUI();
   }
@@ -5505,10 +5509,11 @@ function reorderCardsBySpeed() {
     const container = $('#streaming-multi-response .multi-response-cards');
     if (!container) return;
 
+    const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
     const cards = Array.from($$('.response.card', container));
     cards.sort((a, b) => {
-      const stateA = activeGenerations.get(a.dataset.modelId);
-      const stateB = activeGenerations.get(b.dataset.modelId);
+      const stateA = gens ? gens.get(a.dataset.modelId) : null;
+      const stateB = gens ? gens.get(b.dataset.modelId) : null;
       return (stateA?.firstTokenTime ?? Infinity) - (stateB?.firstTokenTime ?? Infinity);
     });
 
@@ -5527,10 +5532,11 @@ function reorderSelectorTagsBySpeed() {
   const originalTags = [...tags];
 
   // 按速度排序
+  const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
   const sortedTags = tags.sort((a, b) => {
-    const aTime = activeGenerations.get(a.dataset.model)?.firstTokenTime ?? Infinity;
-    const bTime = activeGenerations.get(b.dataset.model)?.firstTokenTime ?? Infinity;
-    return aTime - bTime;
+    const aTime = gens ? gens.get(a.dataset.model)?.firstTokenTime : undefined;
+    const bTime = gens ? gens.get(b.dataset.model)?.firstTokenTime : undefined;
+    return (aTime ?? Infinity) - (bTime ?? Infinity);
   });
 
   // 检查是否需要排序（用原始顺序比较）
@@ -5547,7 +5553,6 @@ function reorderSelectorTagsBySpeed() {
 async function handleNewSession() {
   currentSession = null;
   selectedModels = [...defaultSelectedModels]; // 新会话继承全局默认
-  activeGenerations.clear();
   lastUserMessage = null;
   await refreshUI();
   // 新建会话后输入框自动获得焦点
