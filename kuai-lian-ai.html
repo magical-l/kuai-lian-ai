@@ -5053,8 +5053,9 @@ async function updateDirectoryDisplay() {
 
 async function refreshUI() {
   const groups = getGroups();
-  const isGenerating = activeGenerations.size > 0 &&
-    Array.from(activeGenerations.values()).some(s => s.status === 'generating');
+  const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+  const isGenerating = gens && gens.size > 0 &&
+    Array.from(gens.values()).some(s => s.status === 'generating');
 
   renderModelSelector(groups, selectedModels, isGenerating);
 
