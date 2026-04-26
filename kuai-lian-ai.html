@@ -1620,7 +1620,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.15.6</span>
+        <span class="brand">快连AI</span><span class="version">v1.15.7</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -4899,6 +4899,9 @@ async function handleNewSession() {
   activeGenerations.clear();
   lastUserMessage = null;
   await refreshUI();
+  // 新建会话后输入框自动获得焦点
+  const inputEl = $('#chat-input');
+  if (inputEl) inputEl.focus();
 }
 
 // 启动
