@@ -4491,6 +4491,33 @@ async function deleteSession(sessionId) {
 
 // ========== API Functions ==========
 
+// 获取指定会话的生成状态Map
+function getSessionGenerations(sessionId) {
+  if (!sessionGenerations.has(sessionId)) {
+    sessionGenerations.set(sessionId, new Map());
+  }
+  return sessionGenerations.get(sessionId);
+}
+
+// 清除指定会话的所有生成状态（中止请求并清空Map）
+function clearSessionGenerations(sessionId) {
+  const gens = sessionGenerations.get(sessionId);
+  if (gens) {
+    gens.forEach(state => {
+      if (state.abortController && state.status === 'generating') {
+        state.abortController.abort();
+      }
+    });
+    gens.clear();
+  }
+}
+
+// 删除指定会话的生成状态Map（中止请求并删除整个子Map）
+function deleteSessionGenerations(sessionId) {
+  clearSessionGenerations(sessionId);
+  sessionGenerations.delete(sessionId);
+}
+
 let currentAbortController = null;
 
 function stopSingleGeneration(modelId) {
