@@ -1604,7 +1604,7 @@ button.toggle-key:hover:not(:disabled) {
         <div class="logo">
           <!-- Logo位置 -->
         </div>
-        <span class="brand">快连AI</span><span class="version">v1.14.1</span>
+        <span class="brand">快连AI</span><span class="version">v1.14.2</span>
       </div>
       <div class="center">
         <span class="directory-label">当前存储目录：</span>
@@ -2515,6 +2515,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 
         // 替换模型名显示为编辑器
         modelName.style.display = 'none';
+        modelActions.style.display = 'none';
         modelEl.insertBefore(inlineEdit, modelActions);
 
         inputEl.focus();
@@ -2526,10 +2527,12 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
           if (newName && newName !== model.name) {
             inlineEdit.remove();
             modelName.style.display = '';
+            modelActions.style.display = '';
             onModelEdit(group.id, model.id, newName);
           } else {
             inlineEdit.remove();
             modelName.style.display = '';
+            modelActions.style.display = '';
           }
         });
 
@@ -2537,6 +2540,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
           e2.stopPropagation();
           inlineEdit.remove();
           modelName.style.display = '';
+          modelActions.style.display = '';
         });
 
         inputEl.on('keydown', e2 => {
@@ -2546,6 +2550,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
           } else if (e2.key === 'Escape') {
             inlineEdit.remove();
             modelName.style.display = '';
+            modelActions.style.display = '';
           }
         });
       });
