@@ -1915,6 +1915,12 @@ button.toggle-key:hover:not(:disabled) {
 #file-input {
   display: none;
 }
+
+.shhhh {
+  color: gray;
+  text-decoration: line-through;
+  text-decoration-style: double; 
+}
   </style>
 </head>
 <body>
@@ -2140,14 +2146,14 @@ button.toggle-key:hover:not(:disabled) {
   <!-- 帮助对话框 -->
   <template id="tpl-help-dialog">
     <div id="help-dialog">
-      <h3>快连AI 使用帮助</h3>
+      <h3>快<span class="shhhh">恋爱</span>连AI 使用帮助</h3>
       <div class="help-content">
         <div class="help-section">
           快连AI是一款极致小巧的小工具，主要用于快速添加和管理大模型服务端点、快速测试连接、简单对话。端点信息、会话记录完全存于你电脑本地，不会翻本地文件（由浏览器严格把关），也不会联网泄漏。
         </div>
         <div class="help-section">
           <h4>选目录</h4>
-          <p>第一次打开页面需选择一个本地文件夹做工作目录，端点信息、会话记录会保存于该目录。建议直接建个空目录。随时可以换一个目录。</p>
+          <p>首次打开页面需选择一个本地文件夹做工作目录，端点信息、会话记录将保存于该目录，随时可换，可自己在操作系统里查看、备份。</p>
           <p>后续重新打开页面可能会需要重新确认一下该目录（浏览器干的）。</p>
         </div>
         <div class="help-section help-section-directory">
@@ -2172,10 +2178,8 @@ button.toggle-key:hover:not(:disabled) {
         <div class="help-section">
           <h4>中间：聊天</h4>
           <p>可以选择一个或多个模型舌战群儒。</p>
-          <p>* Enter发送，Shift+Enter换行。</p>
-          <p>* 交谈中可以随时加入未选模型，或移除已选模型。</p>
-          <p>* 目前，多轮对话只会把你的话和该模型之前的回复作为上下文，不搭理其他模型。</p>
-          <p>* <strong>支持图片和文件输入：</strong>点击附件按钮📎上传，或粘贴剪贴板图片。不同模型对多模态的支持程度不同。</p>
+          <p>交谈中可以随时加入未选模型，或移除已选模型（踢出群！）。</p>
+          <p>* 目前多轮对话只会把你的话和该模型之前的回复作为上下文，不搭理其他模型。</p>
         </div>
         <div class="help-section">
           <h4>右侧栏：会话记录</h4>
