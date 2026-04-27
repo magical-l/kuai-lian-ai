@@ -3732,6 +3732,26 @@ async function fileToBase64(file) {
   });
 }
 
+// 带超时的 fetch
+async function fetchWithTimeout(url, options, timeout = 60000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  // 合并外部 signal（如用户取消）
+  const externalSignal = options?.signal;
+  if (externalSignal) {
+    externalSignal.addEventListener('abort', () => controller.abort());
+  }
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return res;
+  } catch (e) {
+    clearTimeout(id);
+    if (e.name === 'AbortError') throw new Error('请求超时或已取消');
+    throw e;
+  }
+}
+
 // 读取文本文件内容
 async function fileToText(file) {
   return new Promise((resolve, reject) => {
@@ -3989,11 +4009,11 @@ async function testConnection(groupId, modelId) {
 
   try {
     const config = provider.testConfig(group.baseUrl, group.key, model.name);
-    const res = await fetch(config.url, {
+    const res = await fetchWithTimeout(config.url, {
       method: 'POST',
       headers: config.headers,
       body: JSON.stringify(config.body)
-    });
+    }, 30000);
 
     if (res && res.ok) {
       connectionStatus.set(key, {
@@ -4367,10 +4387,14 @@ async function loadSessionsIndex() {
 
     for await (const handle of sessionsDir.values()) {
       if (handle.kind === 'file' && handle.name.endsWith('.json')) {
-        const file = await handle.getFile();
-        const text = await file.text();
-        const session = JSON.parse(text);
-        sessionsCache.set(session.id, session);
+        try {
+          const file = await handle.getFile();
+          const text = await file.text();
+          const session = JSON.parse(text);
+          sessionsCache.set(session.id, session);
+        } catch (e) {
+          console.warn('跳过损坏的会话文件:', handle.name, e);
+        }
       }
     }
 
@@ -4442,9 +4466,14 @@ async function loadSession(sessionId) {
     const fileHandle = await sessionsDir.getFileHandle(`${sessionId}.json`);
     const file = await fileHandle.getFile();
     const text = await file.text();
-    const session = JSON.parse(text);
-    sessionsCache.set(session.id, session);
-    return session;
+    try {
+      const session = JSON.parse(text);
+      sessionsCache.set(session.id, session);
+      return session;
+    } catch (e) {
+      console.warn('会话文件损坏:', sessionId, e);
+      return null;
+    }
   } catch (err) {
     console.error('加载会话失败:', err);
     return null;
@@ -4773,12 +4802,12 @@ function toOpenAIContent(contentArray) {
     const tagParser = provider.needsTagParsing === false ? null : createTagParser();
 
     try {
-      const res = await fetch(config.url, {
+      const res = await fetchWithTimeout(config.url, {
         method: 'POST',
         headers: config.headers,
         body: JSON.stringify(config.body),
         signal: useSignal
-      });
+      }, 60000);
 
       if (!res.ok) {
         const error = await res.text();
