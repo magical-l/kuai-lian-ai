@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>scnet.cn OCR简易界面</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg-base: #FFFFFF;
+    --bg-subtle: #F9FAFB;
+    --bg-muted: #F3F4F6;
+    --border-subtle: #E5E7EB;
+    --border-default: #D1D5DB;
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #6B7280;
+    --accent-primary: #2563EB;
+    --accent-primary-hover: #1D4ED8;
+    --success: #059669;
+    --danger: #DC2626;
+    --radius-sm: 5px;
+    --radius-md: 7px;
+    --radius-lg: 10px;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --transition-fast: 120ms ease;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 16px; }
+
+  .header h1 { font-size: 20px; font-weight: 700; }
+
+  .main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+
+  /* ===== 左栏 ===== */
+  .left-col { display: flex; flex-direction: column; gap: 8px; }
+
+  .card {
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  input[type="text"], input[type="password"] {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 7px 10px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    transition: border-color var(--transition-fast);
+    outline: none;
+    width: 100%;
+  }
+  input:focus { border-color: var(--accent-primary); }
+
+  .key-row { display: flex; gap: 10px; align-items: center; }
+  .key-row label { font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+  .key-row input { flex: 1; }
+
+  .btn-sm {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-default);
+    cursor: pointer;
+    background: var(--bg-base);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+  }
+  .btn-sm:hover { background: var(--bg-muted); }
+
+  /* ===== 识别类型多列 ===== */
+  .ocr-columns { column-count: 3; column-gap: 20px; }
+
+  .ocr-section { break-inside: avoid; margin-bottom: 14px; }
+  .ocr-section .sname {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+  }
+  .ocr-section label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 0;
+    transition: color var(--transition-fast);
+  }
+  .ocr-section label:hover { color: var(--text-primary); }
+  .ocr-section input[type="radio"] { accent-color: var(--accent-primary); width: auto; }
+
+  .file-area {
+    border: 2px dashed var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 56px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .file-area:hover, .file-area.dragover {
+    border-color: var(--accent-primary);
+    background: rgba(37,99,235,0.04);
+  }
+  .file-area.has-file {
+    border-style: solid;
+    border-color: var(--success);
+  }
+  .file-area img { max-width: 100%; max-height: 140px; border-radius: var(--radius-sm); object-fit: contain; }
+
+  .btn {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    background: var(--accent-primary);
+    color: #fff;
+    transition: background var(--transition-fast);
+    width: 100%;
+  }
+  .btn:hover { background: var(--accent-primary-hover); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ===== 右栏：结果 ===== */
+  .right-col { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 12px; }
+
+  .result-card {
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    overflow: hidden;
+  }
+  .result-card .head {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .result-card .body { padding: 12px 14px; }
+
+  .result-placeholder { padding: 48px 14px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+  .kv { display: grid; grid-template-columns: 110px 1fr; gap: 6px 10px; font-size: 13px; }
+  .kv .k { color: var(--text-muted); }
+  .kv .v { color: var(--text-primary); word-break: break-all; }
+
+  .status-badge {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 99px;
+    font-weight: 600;
+  }
+  .status-ok { background: #D1FAE5; color: #065F46; }
+  .status-err { background: #FEE2E2; color: #991B1B; }
+
+  .error-msg {
+    padding: 10px 12px;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: var(--radius-sm);
+    color: var(--danger);
+    font-size: 13px;
+  }
+
+  pre {
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+    font-size: 12px;
+    background: var(--bg-muted);
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .hide { display: none; }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+    .right-col { position: static; }
+    .ocr-columns { column-count: 2; }
+  }
+  @media (max-width: 500px) {
+    .ocr-columns { column-count: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header"><h1>scnet.cn OCR简易界面</h1></div>
+
+  <div class="main">
+    <!-- ===== 左栏 ===== -->
+    <div class="left-col">
+      <!-- API Key -->
+      <div class="card">
+        <div class="key-row">
+          <label for="apiKey">API Key</label>
+          <input id="apiKey" type="password" placeholder="填入 API Key（Bearer Token）">
+          <button class="btn-sm" id="clearKeyBtn">清除</button>
+        </div>
+      </div>
+
+      <!-- 识别类型 -->
+      <div class="card">
+        <div class="ocr-columns">
+          <div class="ocr-section">
+            <div class="sname">通用识别</div>
+            <label><input type="radio" name="ocrType" value="GENERAL" checked> 通用文字识别</label>
+          </div>
+
+          <div class="ocr-section">
+            <div class="sname">个人证照</div>
+            <label><input type="radio" name="ocrType" value="ID_CARD"> 居民身份证</label>
+            <label><input type="radio" name="ocrType" value="BANK_CARD"> 银行卡</label>
+            <label><input type="radio" name="ocrType" value="SOCIAL_SECURITY_CARD"> 社保卡</label>
+            <label><input type="radio" name="ocrType" value="HOUSEHOLD_REGISTER"> 户口本</label>
+            <label><input type="radio" name="ocrType" value="BIRTH_CERTIFICATE"> 出生医学证明</label>
+            <label><input type="radio" name="ocrType" value="HK_MACAU_PASS"> 往来港澳通行证</label>
+            <label><input type="radio" name="ocrType" value="TAIWAN_PASS"> 往来台湾通行证</label>
+            <label><input type="radio" name="ocrType" value="TAIWAN_MAINLAND_PASS"> 台湾居民来往大陆通行证</label>
+            <label><input type="radio" name="ocrType" value="HK_MAINLAND_PASS"> 港澳居民来往内地通行证</label>
+          </div>
+
+          <div class="ocr-section">
+            <div class="sname">行业资质</div>
+            <label><input type="radio" name="ocrType" value="BUSINESS_LICENSE"> 营业执照</label>
+            <label><input type="radio" name="ocrType" value="SOCIAL_ORG_REG"> 社会团体法人登记证书</label>
+            <label><input type="radio" name="ocrType" value="TRADE_UNION_REG"> 工会法人资格证书</label>
+            <label><input type="radio" name="ocrType" value="PRIVATE_NON_ENTERPRISE_REG"> 民办非企业单位登记证书</label>
+            <label><input type="radio" name="ocrType" value="INSTITUTION_LEGAL_REG"> 事业单位法人证书</label>
+            <label><input type="radio" name="ocrType" value="UNIFIED_SOCIAL_CREDIT_REG"> 统一社会信用代码证书</label>
+          </div>
+
+          <div class="ocr-section">
+            <div class="sname">财务票据</div>
+            <label><input type="radio" name="ocrType" value="VAT_INVOICE"> 增值税发票</label>
+            <label><input type="radio" name="ocrType" value="VAT_ROLL_INVOICE"> 增值税卷票</label>
+            <label><input type="radio" name="ocrType" value="TAXI_INVOICE"> 出租车发票</label>
+            <label><input type="radio" name="ocrType" value="TRAIN_TICKET"> 火车票</label>
+            <label><input type="radio" name="ocrType" value="AIRPORT_TICKET"> 航空运输电子客票行程单</label>
+            <label><input type="radio" name="ocrType" value="VEHICLE_SALE_INVOICE"> 机动车销售统一发票</label>
+            <label><input type="radio" name="ocrType" value="QUOTA_INVOICE"> 定额发票</label>
+            <label><input type="radio" name="ocrType" value="TOLL_INVOICE"> 过路过桥费发票</label>
+            <label><input type="radio" name="ocrType" value="MEDICAL_INVOICE"> 医疗门诊发票</label>
+            <label><input type="radio" name="ocrType" value="TAX_CERTIFICATE"> 税收完税证明</label>
+            <label><input type="radio" name="ocrType" value="SHIP_TICKET"> 船票</label>
+            <label><input type="radio" name="ocrType" value="NON_TAX_BILL"> 非税票据</label>
+            <label><input type="radio" name="ocrType" value="GENERAL_MACHINE_INVOICE"> 通用机打发票</label>
+            <label><input type="radio" name="ocrType" value="BUS_TICKET"> 汽车票</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 图片 + 按钮 -->
+      <div class="card">
+        <div class="file-area" id="fileArea">
+          <span id="fileHint">点击或拖拽图片到此处</span>
+          <img id="preview" class="hide" alt="预览">
+          <input type="file" id="fileInput" accept="image/*" class="hide">
+        </div>
+        <button class="btn" id="submitBtn">开始识别</button>
+      </div>
+    </div>
+
+    <!-- ===== 右栏：结果 ===== -->
+    <div class="right-col">
+      <div class="result-card" id="resultCard">
+        <div class="head">
+          <span>识别结果</span>
+          <span class="status-badge hide" id="statusBadge"></span>
+        </div>
+        <div class="body" id="resultBody">
+          <div class="result-placeholder">选择图片并点击"开始识别"</div>
+        </div>
+      </div>
+      <div class="error-msg hide" id="errorMsg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const LS_KEY = 'scnet_ocr_apikey';
+
+const apiKeyEl = $('#apiKey');
+const fileArea = $('#fileArea');
+const fileInput = $('#fileInput');
+const fileHint = $('#fileHint');
+const preview = $('#preview');
+const submitBtn = $('#submitBtn');
+const statusBadge = $('#statusBadge');
+const resultBody = $('#resultBody');
+const errorMsg = $('#errorMsg');
+
+let selectedFile = null;
+
+apiKeyEl.value = localStorage.getItem(LS_KEY) || '';
+apiKeyEl.addEventListener('input', () => localStorage.setItem(LS_KEY, apiKeyEl.value));
+$('#clearKeyBtn').addEventListener('click', () => {
+  apiKeyEl.value = '';
+  localStorage.removeItem(LS_KEY);
+});
+
+function getOcrType() {
+  const el = document.querySelector('input[name="ocrType"]:checked');
+  return el ? el.value : 'GENERAL';
+}
+
+fileArea.addEventListener('click', () => fileInput.click());
+fileArea.addEventListener('dragover', (e) => { e.preventDefault(); fileArea.classList.add('dragover'); });
+fileArea.addEventListener('dragleave', () => fileArea.classList.remove('dragover'));
+fileArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  fileArea.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files[0];
+  if (f) setFile(f);
+});
+
+function setFile(f) {
+  if (!f.type.startsWith('image/')) { showError('请选择图片文件'); return; }
+  selectedFile = f;
+  fileArea.classList.add('has-file');
+  fileHint.classList.add('hide');
+  preview.classList.remove('hide');
+  preview.src = URL.createObjectURL(f);
+}
+
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.classList.remove('hide');
+}
+
+function renderResult(data, ocrType) {
+  errorMsg.classList.add('hide');
+
+  const resultArr = data[0]?.result;
+  if (!resultArr || resultArr.length === 0) {
+    statusBadge.textContent = '无结果';
+    statusBadge.className = 'status-badge status-err';
+    statusBadge.classList.remove('hide');
+    resultBody.innerHTML = '<p style="color:var(--text-muted)">识别未返回结果</p>';
+    return;
+  }
+
+  const r = resultArr[0];
+  const ok = r.status === 200;
+  statusBadge.textContent = ok ? '成功' : `错误 ${r.status}`;
+  statusBadge.className = ok ? 'status-badge status-ok' : 'status-badge status-err';
+  statusBadge.classList.remove('hide');
+
+  let html = '';
+  if (r.confidence != null) {
+    html += `<p style="font-size:12px;color:var(--text-muted);margin-bottom:10px">置信度：${(r.confidence * 100).toFixed(1)}%</p>`;
+  }
+
+  if (r.elements) {
+    if (ocrType === 'GENERAL' && Array.isArray(r.elements.text)) {
+      html += '<div class="kv">';
+      r.elements.text.forEach((t, i) => {
+        html += `<div class="k">行${i + 1}</div><div class="v">${esc(t.content || t.text || '')}</div>`;
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="kv">';
+      for (const [k, v] of Object.entries(r.elements)) {
+        if (Array.isArray(v)) continue;
+        html += `<div class="k">${fieldLabel(k)}</div><div class="v">${esc(String(v))}</div>`;
+      }
+      html += '</div>';
+    }
+  }
+
+  html += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;color:var(--text-muted)">原始 JSON</summary>';
+  html += `<pre>${esc(JSON.stringify(data, null, 2))}</pre></details>`;
+
+  resultBody.innerHTML = html;
+}
+
+function fieldLabel(key) {
+  const map = {
+    name:'姓名', gender:'性别', nation:'民族', bornDate:'出生日期', address:'地址',
+    IDNumber:'身份证号', issueInstitution:'签发机关', validityPeriod:'有效期',
+    bankName:'银行名称', validThru:'有效期至', cardNumber:'卡号', cardHolder:'持卡人',
+    socialCreditCode:'统一社会信用代码', capital:'注册资本', type:'类型', date:'日期',
+    director:'负责人', businessScope:'经营范围',
+    invoiceCode:'发票代码', invoiceNo:'发票号码', invoiceDate:'开票日期',
+    buyerName:'购买方', sellerName:'销售方', totalAmountUpper:'大写金额', totalAmountLower:'小写金额',
+    departStation:'出发站', destinationStation:'到达站', trainNo:'车次',
+    departDate:'出发日期', ticketPrice:'票价', passengerName:'乘客姓名', identifyId:'证件号',
+    vehicleNo:'车牌号', boardingTime:'上车时间', alightingTime:'下车时间', amount:'金额', actualAmount:'实收金额',
+  };
+  return map[key] || key;
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+submitBtn.addEventListener('click', async () => {
+  const apiKey = apiKeyEl.value.trim();
+  if (!apiKey) { showError('请填写 API Key'); return; }
+  if (!selectedFile) { showError('请选择图片'); return; }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = '识别中...';
+  errorMsg.classList.add('hide');
+
+  try {
+    const form = new FormData();
+    form.append('file', selectedFile);
+    form.append('ocrType', getOcrType());
+    const res = await fetch('https://api.scnet.cn/api/llm/v1/ocr/recognize', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+    const json = await res.json();
+    if (json.code == 0) {
+      renderResult(json.data, getOcrType());
+    } else {
+      showError(`API 错误：${json.msg || '未知错误'} (code: ${json.code})`);
+    }
+  } catch (err) {
+    showError(`请求失败：${err.message}`);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '开始识别';
+  }
+});
+</script>
+</body>
+</html>
