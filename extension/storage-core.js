@@ -425,6 +425,12 @@
 			}
 
 			if (savedMode === 'directory') {
+				// 扩展环境不支持目录存储，降级到浏览器存储
+				if (isChromeExtension) {
+					currentMode = 'browser';
+					await this._saveModePref();
+					return { mode: 'browser', needUserAction: false };
+				}
 				// 尝试恢复目录
 				const ok = await DirectoryStorage.restoreHandle();
 				if (ok) {

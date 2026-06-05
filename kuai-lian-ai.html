@@ -3027,7 +3027,7 @@
 			return ctx.querySelector(selector);
 		}
 
-		function $(selector, ctx = doc) {
+		function $$(selector, ctx = doc) {
 			return ctx.querySelectorAll(selector);
 		}
 		// 批量设置表单值
@@ -3096,7 +3096,7 @@
 					el.className = 'group-tooltip';
 					el.innerHTML = html;
 					doc.body.appendChild(el);
-					$('button.tooltip-copy', el).forEach(btn => {
+					$$('button.tooltip-copy', el).forEach(btn => {
 						btn.onclick = e => {
 							e.stopPropagation();
 							navigator.clipboard.writeText(btn.dataset.copy);
@@ -3268,7 +3268,7 @@
 					updateSidebarToggleIcon(isHidden);
 				});
 			}
-			$('.divider.column.control').forEach(div => {
+			$$('.divider.column.control').forEach(div => {
 				div.on('mousedown', startDragHorizontal);
 			});
 			if (dividerHorizontal) {
@@ -3412,7 +3412,7 @@
 				};
 			}
 			// Make entire model tag clickable for toggle selection
-			$('.model.tag').forEach(tag => {
+			$$('.model.tag').forEach(tag => {
 				tag.onclick = e => {
 					e.stopPropagation();
 					// 实时检查生成状态（放在点击时检查，而非绑定时）
@@ -3518,7 +3518,7 @@
 		function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit, onGroupEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
 			const container = $('#endpoint-list');
 			// 保存当前收起状态
-			$('.endpoint-group', container).forEach(el => {
+			$$('.endpoint-group', container).forEach(el => {
 				const groupId = el.dataset.groupId;
 				const models = $('.group-models', el);
 				if (models && models.style.display === 'none') {
@@ -3546,7 +3546,7 @@
 				});
 				dragHandle.on('dragend', () => {
 					groupEl.classList.remove('dragging');
-					$('.endpoint-group', container).forEach(el => el.classList.remove('drag-over'));
+					$$('.endpoint-group', container).forEach(el => el.classList.remove('drag-over'));
 				});
 				// 收展三角放前面
 				const toggleSpan = mk('span', 'group-toggle');
@@ -3692,7 +3692,7 @@
 					});
 					modelDragHandle.on('dragend', () => {
 						modelEl.classList.remove('dragging');
-						$('.model.item', models).forEach(el => el.classList.remove('drag-over'));
+						$$('.model.item', models).forEach(el => el.classList.remove('drag-over'));
 					});
 					const modelName = mk('span', 'model name');
 					modelName.textContent = model.name;
@@ -5018,6 +5018,44 @@
 				};
 			});
 		}
+		function toClaudeContent(contentArray) {
+			return contentArray.map(item => {
+				if (item.type === 'text' || item.type === 'file_text') {
+					return { type: 'text', text: item.text || '' };
+				}
+				if (item.type === 'image') {
+					if (!item.source) return { type: 'text', text: `[图片 ${item.name || '未知'}，数据缺失]` };
+					if (item.source.type === 'url') {
+						return { type: 'image', source: { type: 'url', url: item.source.url } };
+					}
+					return { type: 'image', source: { type: 'base64', media_type: item.source.media_type, data: item.source.data } };
+				}
+				if (item.type === 'file') {
+					if (!item.source) return { type: 'text', text: `[文件 ${item.name || '未知'}，数据缺失]` };
+					return { type: 'image', source: { type: 'base64', media_type: item.source.media_type, data: item.source.data } };
+				}
+				return { type: 'text', text: `[附件 ${item.name || '未知'}，不支持此类型]` };
+			});
+		}
+
+		function toGeminiContent(contentArray) {
+			return contentArray.map(item => {
+				if (item.type === 'text' || item.type === 'file_text') {
+					return { text: item.text || '' };
+				}
+				if (item.type === 'image') {
+					if (!item.source) return { text: `[图片 ${item.name || '未知'}，数据缺失]` };
+					if (item.source.type === 'url') return { text: `[图片 URL: ${item.source.url}]` };
+					return { inline_data: { mime_type: item.source.media_type, data: item.source.data } };
+				}
+				if (item.type === 'file') {
+					if (!item.source) return { text: `[文件 ${item.name || '未知'}，数据缺失]` };
+					return { inline_data: { mime_type: item.source.media_type, data: item.source.data } };
+				}
+				return { text: `[附件 ${item.name || '未知'}，不支持此类型]` };
+			});
+		}
+
 		// ========== 共享框架函数 ==========
 		function createInitialState() {
 			return {
@@ -5321,7 +5359,7 @@
 			// 分裂式按钮：发送模式切换
 			const btnGroup = $('#send-btn-group');
 			const toggle = $('#send-mode-toggle');
-			const options = $('.split-btn-option', btnGroup);
+			const options = $$('.split-btn-option', btnGroup);
 			// 初始化选中状态
 			if (!sendOnEnter) {
 				options[0].classList.remove('selected');
@@ -5825,7 +5863,7 @@
 				const container = $('#streaming-multi-response .multi-response-cards');
 				if (!container) return;
 				const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-				const cards = Array.from($('.response.card', container));
+				const cards = Array.from($$('.response.card', container));
 				cards.sort((a, b) => {
 					const stateA = gens ? gens.get(a.dataset.modelId) : null;
 					const stateB = gens ? gens.get(b.dataset.modelId) : null;
