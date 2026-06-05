@@ -1,6 +1,461 @@
-		// 检测浏览器插件环境
-		const isExtension = window.__IS_EXTENSION__;
-		const storage = window.__STORAGE__;
+		// ========== 统一存储模块 ==========
+		let storage, currentMode;
+		if (!window.__IS_EXTENSION__) {
+			const BrowserStorage = {
+				_db: null,
+				async _getDB() {
+					if (this._db) return this._db;
+					return new Promise((resolve, reject) => {
+						const request = indexedDB.open('kuai-lian-ai-browser', 1);
+						request.onupgradeneeded = e => {
+							const db = e.target.result;
+							if (!db.objectStoreNames.contains('store')) db.createObjectStore('store');
+						};
+						request.onsuccess = () => {
+							this._db = request.result;
+							resolve(this._db);
+						};
+						request.onerror = () => reject(request.error);
+					});
+				},
+				async _get(key) {
+					const db = await this._getDB();
+					return new Promise((resolve, reject) => {
+						const tx = db.transaction('store', 'readonly');
+						const req = tx.objectStore('store').get(key);
+						req.onsuccess = () => resolve(req.result);
+						req.onerror = () => reject(req.error);
+					});
+				},
+				async _set(key, value) {
+					const db = await this._getDB();
+					return new Promise((resolve, reject) => {
+						const tx = db.transaction('store', 'readwrite');
+						tx.objectStore('store').put(value, key);
+						tx.oncomplete = () => resolve();
+						tx.onerror = () => reject(tx.error);
+					});
+				},
+				async _delete(key) {
+					const db = await this._getDB();
+					return new Promise((resolve, reject) => {
+						const tx = db.transaction('store', 'readwrite');
+						tx.objectStore('store').delete(key);
+						tx.oncomplete = () => resolve();
+						tx.onerror = () => reject(tx.error);
+					});
+				},
+				async loadEndpoints() {
+					return await this._get('endpoints') || {
+						groups: []
+					};
+				},
+				async saveEndpoints(data) {
+					await this._set('endpoints', data);
+					return true;
+				},
+				async loadSessions() {
+					const sessions = await this._get('sessions') || {};
+					return Object.values(sessions).sort((a, b) => {
+						const ta = a.updatedAt || a.createdAt || 0;
+						const tb = b.updatedAt || b.createdAt || 0;
+						return tb - ta;
+					});
+				},
+				async loadSession(sessionId) {
+					const sessions = await this._get('sessions') || {};
+					return sessions[sessionId] || null;
+				},
+				async saveSession(session) {
+					const sessions = await this._get('sessions') || {};
+					sessions[session.id] = session;
+					await this._set('sessions', sessions);
+					return true;
+				},
+				async deleteSession(sessionId) {
+					const sessions = await this._get('sessions') || {};
+					delete sessions[sessionId];
+					await this._set('sessions', sessions);
+					return true;
+				},
+				async loadSettings() {
+					return await this._get('settings') || {};
+				},
+				async saveSettings(settings) {
+					await this._set('settings', settings);
+				},
+				async exportAll() {
+					return {
+						endpoints: await this._get('endpoints') || {
+							groups: []
+						},
+						sessions: await this._get('sessions') || {},
+						settings: await this._get('settings') || {},
+						exportedAt: Date.now()
+					};
+				},
+				async importAll(data) {
+					if (!data || typeof data !== 'object') throw new Error('无效');
+					await this._set('endpoints', data.endpoints || {
+						groups: []
+					});
+					await this._set('sessions', data.sessions || {});
+					if (data.settings) await this._set('settings', data.settings);
+				},
+				async clearAll() {
+					await this._delete('endpoints');
+					await this._delete('sessions');
+					await this._delete('settings');
+				}
+			};
+			// IndexedDB handle storage (for persisting directory handle)
+			const DIRECTORY_DB = 'endpoint-manager';
+			const HANDLE_STORE = 'handles';
+			let directoryHandle = null;
+			async function openHandleDB() {
+				return new Promise((resolve, reject) => {
+					const request = indexedDB.open(DIRECTORY_DB, 1);
+					request.onerror = () => reject(request.error);
+					request.onsuccess = () => resolve(request.result);
+					request.onupgradeneeded = e => {
+						const db = e.target.result;
+						if (!db.objectStoreNames.contains(HANDLE_STORE)) db.createObjectStore(HANDLE_STORE);
+					};
+				});
+			}
+			async function saveHandleToIndexedDB(handle) {
+				const db = await openHandleDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction(HANDLE_STORE, 'readwrite');
+					tx.objectStore(HANDLE_STORE).put(handle, 'directory');
+					tx.oncomplete = () => resolve();
+					tx.onerror = () => reject(tx.error);
+				});
+			}
+			async function loadHandleFromIndexedDB() {
+				const db = await openHandleDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction(HANDLE_STORE, 'readonly');
+					const req = tx.objectStore(HANDLE_STORE).get('directory');
+					req.onsuccess = () => resolve(req.result);
+					req.onerror = () => reject(req.error);
+				});
+			}
+			async function clearHandleFromIndexedDB() {
+				const db = await openHandleDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction(HANDLE_STORE, 'readwrite');
+					tx.objectStore(HANDLE_STORE).delete('directory');
+					tx.oncomplete = () => resolve();
+					tx.onerror = () => reject(tx.error);
+				});
+			}
+			const DirectoryStorage = {
+				async loadEndpoints() {
+					if (!directoryHandle) return {
+						groups: []
+					};
+					try {
+						const fileHandle = await directoryHandle.getFileHandle('endpoints.json', {
+							create: true
+						});
+						const file = await fileHandle.getFile();
+						const text = await file.text();
+						return text ? JSON.parse(text) : {
+							groups: []
+						};
+					} catch (err) {
+						console.error('加载端点失败:', err);
+						return {
+							groups: []
+						};
+					}
+				},
+				async saveEndpoints(data) {
+					if (!directoryHandle) return false;
+					try {
+						const fileHandle = await directoryHandle.getFileHandle('endpoints.json', {
+							create: true
+						});
+						const writable = await fileHandle.createWritable();
+						await writable.write(JSON.stringify(data, null, 2));
+						await writable.close();
+						return true;
+					} catch (err) {
+						console.error('保存端点失败:', err);
+						return false;
+					}
+				},
+				async loadSessions() {
+					if (!directoryHandle) return [];
+					try {
+						const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+						const sessions = [];
+						for await (const handle of sessionsDir.values()) {
+							if (handle.kind === 'file' && handle.name.endsWith('.json')) {
+								try {
+									const file = await handle.getFile();
+									sessions.push(JSON.parse(await file.text()));
+								} catch (e) {}
+							}
+						}
+						return sessions;
+					} catch (err) {
+						if (err.name === 'NotFoundError') return [];
+						return [];
+					}
+				},
+				async loadSession(sessionId) {
+					if (!directoryHandle) return null;
+					try {
+						const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+						const fileHandle = await sessionsDir.getFileHandle(sessionId + '.json');
+						const file = await fileHandle.getFile();
+						return JSON.parse(await file.text());
+					} catch (err) {
+						return null;
+					}
+				},
+				async saveSession(session) {
+					if (!directoryHandle) return false;
+					try {
+						const sessionsDir = await directoryHandle.getDirectoryHandle('sessions', {
+							create: true
+						});
+						const fileHandle = await sessionsDir.getFileHandle(session.id + '.json', {
+							create: true
+						});
+						const writable = await fileHandle.createWritable();
+						await writable.write(JSON.stringify(session, null, 2));
+						await writable.close();
+						return true;
+					} catch (err) {
+						console.error('保存会话失败:', err);
+						return false;
+					}
+				},
+				async deleteSession(sessionId) {
+					if (!directoryHandle) return false;
+					try {
+						const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+						await sessionsDir.removeEntry(sessionId + '.json');
+						return true;
+					} catch (err) {
+						return err.name === 'NotFoundError';
+					}
+				},
+				async loadSettings() {
+					return {};
+				},
+				async saveSettings(settings) {},
+				async exportAll() {
+					return {
+						endpoints: await this.loadEndpoints(),
+						sessions: await this.loadSessions(),
+						settings: {},
+						exportedAt: Date.now()
+					};
+				},
+				async importAll(data) {
+					if (data.endpoints) await this.saveEndpoints(data.endpoints);
+					if (data.sessions) {
+						for (const id in data.sessions) {
+							await this.saveSession(data.sessions[id]);
+						}
+					}
+				},
+				async clearAll() {
+					if (!directoryHandle) return;
+					try {
+						await directoryHandle.removeEntry('endpoints.json');
+					} catch (e) {}
+					try {
+						await directoryHandle.removeEntry('sessions', {
+							recursive: true
+						});
+					} catch (e) {}
+				},
+				getDirectoryName() {
+					return directoryHandle ? directoryHandle.name : null;
+				},
+				async restoreHandle() {
+					try {
+						const savedHandle = await loadHandleFromIndexedDB();
+						if (!savedHandle) return false;
+						const perm = await savedHandle.queryPermission({
+							mode: 'readwrite'
+						});
+						if (perm !== 'granted') {
+							const req = await savedHandle.requestPermission({
+								mode: 'readwrite'
+							});
+							if (req !== 'granted') {
+								await clearHandleFromIndexedDB();
+								return false;
+							}
+						}
+						directoryHandle = savedHandle;
+						return true;
+					} catch (e) {
+						return false;
+					}
+				},
+				async pickAndSave() {
+					try {
+						directoryHandle = await window.showDirectoryPicker({
+							mode: 'readwrite'
+						});
+						await saveHandleToIndexedDB(directoryHandle);
+						return true;
+					} catch (err) {
+						return false;
+					}
+				},
+				async _setHandle(handle) {
+					directoryHandle = handle;
+					await saveHandleToIndexedDB(handle);
+				},
+				async release() {
+					directoryHandle = null;
+					await clearHandleFromIndexedDB();
+				}
+			};
+			// 统一存储接口
+			currentMode = null;
+
+			function getBackend() {
+				return currentMode === 'directory' ? DirectoryStorage : BrowserStorage;
+			}
+			storage = {
+				get mode() {
+					return currentMode;
+				},
+				async init() {
+					let savedMode = null;
+					try {
+						savedMode = await BrowserStorage._get('__mode');
+					} catch (e) {}
+					if (savedMode === 'directory') {
+						const ok = window.__IS_EXTENSION__ ? false : await DirectoryStorage.restoreHandle();
+						if (ok) {
+							currentMode = 'directory';
+							return {
+								mode: 'directory',
+								needUserAction: false
+							};
+						}
+						currentMode = 'browser';
+						await this._saveModePref();
+						return {
+							mode: 'browser',
+							needUserAction: false
+						};
+					}
+					if (savedMode === 'browser') {
+						currentMode = 'browser';
+						return {
+							mode: 'browser',
+							needUserAction: false
+						};
+					}
+					return {
+						mode: null,
+						needUserAction: true
+					};
+				},
+				async selectMode(mode, handle) {
+					if (mode === 'directory') {
+						if (handle) {
+							await DirectoryStorage._setHandle(handle);
+						} else {
+							const ok = await DirectoryStorage.pickAndSave();
+							if (!ok) return false;
+						}
+					}
+					currentMode = mode;
+					await this._saveModePref();
+					return true;
+				},
+				async switchMode(target, handle) {
+					if (target === currentMode) return true;
+					const data = await getBackend().exportAll();
+					if (target === 'directory') {
+						if (handle) {
+							await DirectoryStorage._setHandle(handle);
+						} else {
+							const ok = await DirectoryStorage.pickAndSave();
+							if (!ok) return false;
+						}
+					}
+					const oldMode = currentMode;
+					currentMode = target;
+					try {
+						await getBackend().importAll(data);
+						await this._saveModePref();
+						if (oldMode === 'directory') await DirectoryStorage.release();
+						return true;
+					} catch (e) {
+						currentMode = oldMode;
+						return false;
+					}
+				},
+				async _saveModePref() {
+					await BrowserStorage._set('__mode', currentMode);
+				},
+				async loadEndpoints() {
+					return getBackend().loadEndpoints();
+				},
+				async saveEndpoints(data) {
+					return getBackend().saveEndpoints(data);
+				},
+				async loadSessions() {
+					return getBackend().loadSessions();
+				},
+				async loadSession(id) {
+					return getBackend().loadSession(id);
+				},
+				async saveSession(session) {
+					return getBackend().saveSession(session);
+				},
+				async deleteSession(id) {
+					return getBackend().deleteSession(id);
+				},
+				async loadSettings() {
+					return getBackend().loadSettings();
+				},
+				async saveSettings(s) {
+					return getBackend().saveSettings(s);
+				},
+				async clearAll() {
+					return getBackend().clearAll();
+				},
+				async exportAll() {
+					return getBackend().exportAll();
+				},
+				async importAll(data) {
+					return getBackend().importAll(data);
+				},
+				getDirectoryName() {
+					return currentMode === 'directory' ? DirectoryStorage.getDirectoryName() : null;
+				},
+				getDisplayInfo() {
+					if (currentMode === 'directory') {
+						const name = DirectoryStorage.getDirectoryName();
+						return {
+							text: name || '未选择',
+							title: '目录存储: ' + (name || '')
+						};
+					}
+					return {
+						text: '浏览器存储',
+						title: '存储位置: 浏览器内部 (IndexedDB)'
+					};
+				}
+			};
+		} else {
+			storage = window.__STORAGE__;
+			currentMode = storage.mode;
+		}
 		const THINKING_TAGS = [{
 			start: '<thinking>',
 			end: '</thinking>'
@@ -212,7 +667,7 @@
 			return ctx.querySelector(selector);
 		}
 
-		function $$(selector, ctx = doc) {
+		function $(selector, ctx = doc) {
 			return ctx.querySelectorAll(selector);
 		}
 		// 批量设置表单值
@@ -281,7 +736,7 @@
 					el.className = 'group-tooltip';
 					el.innerHTML = html;
 					doc.body.appendChild(el);
-					$$('button.tooltip-copy', el).forEach(btn => {
+					$('button.tooltip-copy', el).forEach(btn => {
 						btn.onclick = e => {
 							e.stopPropagation();
 							navigator.clipboard.writeText(btn.dataset.copy);
@@ -342,17 +797,16 @@
 			const chatMsg = $('#chat-messages');
 			const mainContent = $('#main-content');
 			const chatHeader = $('#chat-header');
-			// 恢复保存的侧栏宽度
 			const savedLeftWidth = localStorage.getItem('sidebar-left-width');
 			const savedRightWidth = localStorage.getItem('sidebar-right-width');
 			if (savedLeftWidth) $('aside.left:not(.divider)').style.width = savedLeftWidth;
 			if (savedRightWidth) $('aside.right:not(.divider)').style.width = savedRightWidth;
-			// 清理旧格式存储，重新初始化布局
 			localStorage.removeItem('chat-messages-flex');
-			// 恢复保存的消息区高度（像素值）
 			const savedMessagesHeight = localStorage.getItem('chat-messages-height');
 			if (savedMessagesHeight) {
-				chatMsg.style.height = savedMessagesHeight;
+				const maxH = mainContent.offsetHeight - chatHeader.offsetHeight - dividerHorizontal.offsetHeight - 120;
+				const clamped = Math.max(100, Math.min(parseInt(savedMessagesHeight), maxH));
+				chatMsg.style.height = clamped + 'px';
 				chatMsg.style.flex = '0 0 auto';
 			}
 			let isDragging = false;
@@ -388,7 +842,7 @@
 				};
 				startY = e.clientY;
 				startMessagesHeight = chatMsg.offsetHeight;
-				startMainHeight = mainContent.offsetHeight - dividerHorizontal.offsetHeight - chatHeader.offsetHeight;
+				startMainHeight = mainContent.offsetHeight - chatHeader.offsetHeight;
 				doc.body.style.cursor = 'row-resize';
 				doc.body.style.userSelect = 'none';
 			}
@@ -430,7 +884,6 @@
 					doc.body.style.userSelect = '';
 				}
 			}
-			// 右侧栏显示/隐藏
 			const sidebarRight = $('aside.right:not(.divider)');
 			const dividerRight = $('.divider.column.control.sidebar.right');
 			const btnToggleSidebar = $('#btn-toggle-sidebar');
@@ -455,8 +908,7 @@
 					updateSidebarToggleIcon(isHidden);
 				});
 			}
-			// 统一绑定所有水平 divider
-			$$('.divider.column.control').forEach(div => {
+			$('.divider.column.control').forEach(div => {
 				div.on('mousedown', startDragHorizontal);
 			});
 			if (dividerHorizontal) {
@@ -465,6 +917,20 @@
 			doc.on('mousemove', doDrag);
 			doc.on('mouseup', stopDrag);
 		}
+		// 视口变化时重新 clamp 拖拽高度，防止 F12 等场景下输入区被挤出
+		window.addEventListener('resize', () => {
+			const savedH = localStorage.getItem('chat-messages-height');
+			if (!savedH) return;
+			const cm = $('#chat-messages');
+			if (!cm || cm.style.flex !== '0 0 auto') return;
+			const mc = $('#main-content');
+			const ch = $('#chat-header');
+			const dh = $('.divider.row');
+			if (!mc || !ch || !dh) return;
+			const maxH = mc.offsetHeight - ch.offsetHeight - dh.offsetHeight - 120;
+			const clamped = Math.max(100, Math.min(parseInt(savedH), maxH));
+			cm.style.height = clamped + 'px';
+		});
 		// ========== Scroll Navigation ==========
 		function scrollToBottom() {
 			const el = $('#chat-messages');
@@ -477,26 +943,23 @@
 			const navButtons = $('#scroll-nav-buttons');
 			const scrollContainer = $('#chat-messages');
 			if (!btnScrollTop || !btnScrollBottom || !navButtons || !scrollContainer) return;
-			// 检测是否有滚动条
+
 			function checkScrollable() {
 				const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight + 20;
 				navButtons.classList.toggle('visible', hasScroll);
 			}
-			// 到顶部
 			btnScrollTop.onclick = () => {
 				scrollContainer.scrollTo({
 					top: 0,
 					behavior: 'smooth'
 				});
 			};
-			// 到底部
 			btnScrollBottom.onclick = () => {
 				scrollContainer.scrollTo({
 					top: scrollContainer.scrollHeight,
 					behavior: 'smooth'
 				});
 			};
-			// 监听滚动和内容变化
 			scrollContainer.on('scroll', checkScrollable);
 			const observer = new MutationObserver(checkScrollable);
 			observer.observe(scrollContainer, {
@@ -562,7 +1025,7 @@
 					group: g,
 					model: m
 				};
-		}
+			}
 			return null;
 		}
 
@@ -589,7 +1052,7 @@
 				};
 			}
 			// Make entire model tag clickable for toggle selection
-			$$('.model.tag').forEach(tag => {
+			$('.model.tag').forEach(tag => {
 				tag.onclick = e => {
 					e.stopPropagation();
 					// 实时检查生成状态（放在点击时检查，而非绑定时）
@@ -619,9 +1082,7 @@
 				renderModelSelector(getGroups(), selectedModels, false);
 			}
 		});
-		// 收起状态存储（端点ID -> 是否收起）
 		const collapsedEndpoints = new Set();
-		// 全局tooltip元素（用于附件hover显示名字）
 		let attachmentTooltip = null;
 
 		function showAttachmentTooltip(name, targetEl) {
@@ -643,7 +1104,7 @@
 				attachmentTooltip.style.display = 'none';
 			}
 		}
-		// 渲染待发送的附件缩略图
+
 		function renderPendingAttachments() {
 			const row = $('#attachments-row');
 			if (!row) return;
@@ -659,7 +1120,6 @@
 				// hover显示名字
 				thumb.onmouseenter = () => showAttachmentTooltip(att.name, thumb);
 				thumb.onmouseleave = () => hideAttachmentTooltip();
-				// 删除按钮
 				const remove = mk('span', 'attachment-remove');
 				remove.textContent = '×';
 				remove.onclick = (e) => {
@@ -673,7 +1133,7 @@
 				row.appendChild(thumb);
 			});
 		}
-		// 预览附件（简单实现：图片弹窗，文件下载）
+
 		function showAttachmentPreview(att) {
 			if (att.type === 'image' && att.previewUrl) {
 				// 图片预览弹窗
@@ -698,7 +1158,7 @@
 		function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit, onGroupEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
 			const container = $('#endpoint-list');
 			// 保存当前收起状态
-			$$('.endpoint-group', container).forEach(el => {
+			$('.endpoint-group', container).forEach(el => {
 				const groupId = el.dataset.groupId;
 				const models = $('.group-models', el);
 				if (models && models.style.display === 'none') {
@@ -726,11 +1186,10 @@
 				});
 				dragHandle.on('dragend', () => {
 					groupEl.classList.remove('dragging');
-					$$('.endpoint-group', container).forEach(el => el.classList.remove('drag-over'));
+					$('.endpoint-group', container).forEach(el => el.classList.remove('drag-over'));
 				});
 				// 收展三角放前面
 				const toggleSpan = mk('span', 'group-toggle');
-				// 恢复收起状态
 				const isCollapsed = collapsedEndpoints.has(group.id);
 				toggleSpan.textContent = isCollapsed ? '▶' : '▼';
 				toggleSpan.on('click', e => {
@@ -747,7 +1206,6 @@
 				// 组名
 				const nameSpan = mk('span', 'group-name');
 				nameSpan.textContent = group.name;
-				// tooltip内容（创建但不添加到DOM，hover时动态定位）
 				const tooltipId = `tooltip-${group.id}`;
 				const styleLabels = {
 					'openai': 'OpenAI',
@@ -771,12 +1229,9 @@
         <button class="tooltip-copy" data-copy="${group.style}" title="复制">⧉</button>
       </div>
     `;
-				// 使用createTooltip
 				const tooltip = createTooltip(tooltipId, tooltipHTML);
-				// hover事件
 				nameSpan.on('mouseenter', () => tooltip.show(nameSpan));
 				nameSpan.on('mouseleave', () => tooltip.hide());
-				// 点击展开/收起模型列表，同时隐藏tooltip
 				nameSpan.on('click', () => {
 					tooltip.hide();
 					const models = $('.group-models', groupEl);
@@ -790,19 +1245,21 @@
 						}
 					}
 				});
-				// 操作按钮容器（不再包含添加模型按钮）
 				const actionsEl = mk('div', 'group-actions layout-x-queue');
 				// 批量测试连接按钮
-				// 检查该端点下是否有模型正在测试中
 				const hasTesting = group.models.some(model => {
 					const statusKey = `${group.id}:${model.id}`;
 					const statusData = connectionStatus.get(statusKey);
 					return statusData && statusData.status === 'testing';
 				});
 				const batchTestBtn = mk('button');
-				batchTestBtn.className = 'action batch-test' + (hasTesting ? ' testing' : '');
-				batchTestBtn.innerHTML = hasTesting ? '<span class="spin">◐</span>' : '○';
-				batchTestBtn.title = hasTesting ? '测试中...' : '批量测试连接';
+				batchTestBtn.className = "action batch-test";
+				batchTestBtn.innerHTML = '<span>🔗</span>';
+				if (hasTesting) {
+					batchTestBtn.classList.add("testing");
+					$("span", batchTestBtn).classList.add("spin");
+				}
+				batchTestBtn.title = hasTesting ? "测试中..." : "批量测试连接";
 				batchTestBtn.on('click', e => {
 					e.stopPropagation();
 					if (onTestConnection) {
@@ -812,7 +1269,6 @@
 						});
 					}
 				});
-				// 编辑按钮
 				const editBtn = mk('button', 'action');
 				editBtn.innerHTML = SVG.edit(12);
 				editBtn.title = '编辑端点';
@@ -820,7 +1276,6 @@
 					e.stopPropagation();
 					onGroupEdit(group.id);
 				});
-				// 删除按钮
 				const deleteBtn = mk('button', 'action danger');
 				deleteBtn.innerHTML = SVG.del(12);
 				deleteBtn.title = '删除端点';
@@ -835,7 +1290,6 @@
 				headerEl.addChild(toggleSpan);
 				headerEl.addChild(nameSpan);
 				headerEl.addChild(actionsEl);
-				// 拖放目标事件绑定到整个groupEl
 				groupEl.on('dragover', e => {
 					e.preventDefault();
 					e.dataTransfer.dropEffect = 'move';
@@ -850,7 +1304,6 @@
 					groupEl.classList.remove('drag-over');
 					const draggedGroupId = e.dataTransfer.getData('text/plain');
 					if (draggedGroupId !== group.id) {
-						// 根据鼠标位置判断插入到目标之前还是之后
 						const rect = groupEl.getBoundingClientRect();
 						const midY = rect.top + rect.height / 2;
 						const insertBefore = e.clientY < midY;
@@ -858,7 +1311,6 @@
 					}
 				});
 				const models = mk('div', 'group-models layout-y-queue');
-				// 恢复收起状态
 				if (isCollapsed) {
 					models.style.display = 'none';
 				}
@@ -869,7 +1321,6 @@
 					if (model.id === selectedModelId) {
 						modelEl.classList.add('selected');
 					}
-					// 模型拖动手柄
 					const modelDragHandle = mk('span', 'drag-handle');
 					modelDragHandle.innerHTML = SVG.drag(14);
 					modelDragHandle.title = '拖动排序';
@@ -881,11 +1332,10 @@
 					});
 					modelDragHandle.on('dragend', () => {
 						modelEl.classList.remove('dragging');
-						$$('.model.item', models).forEach(el => el.classList.remove('drag-over'));
+						$('.model.item', models).forEach(el => el.classList.remove('drag-over'));
 					});
 					const modelName = mk('span', 'model name');
 					modelName.textContent = model.name;
-					// 模型名tooltip
 					const modelTooltipId = `tooltip-model-${group.id}-${model.id}`;
 					const modelTooltipHTML = `
         <div class="tooltip-row layout-x-queue">
@@ -901,9 +1351,7 @@
 						modelTooltip.hide();
 						if (onModelSelect) onModelSelect(group.id, model.id);
 					});
-					// 模型操作按钮
 					const modelActions = mk('div', 'model actions layout-x-queue');
-					// 测试连接按钮
 					const statusKey = `${group.id}:${model.id}`;
 					const statusData = connectionStatus.get(statusKey) || {
 						status: 'disconnected'
@@ -912,7 +1360,10 @@
 					const testBtn = mk('button');
 					testBtn.className = 'action-sm connection ' + status;
 					testBtn.title = getConnectionStatusText(statusKey);
-					testBtn.innerHTML = status === 'testing' ? '<span class="spin">◐</span>' : '○';
+					testBtn.innerHTML = '<span>🔗</span>';
+					if (status === "testing") {
+						$("span", testBtn).classList.add("spin");
+					}
 					testBtn.on('click', e => {
 						e.stopPropagation();
 						if (onTestConnection) onTestConnection(group.id, model.id);
@@ -930,7 +1381,6 @@
 						const inputEl = $('.add-model-input', inlineEdit);
 						inputEl.value = model.name;
 						inputEl.placeholder = '模型名';
-						// 替换模型名显示为编辑器
 						modelDragHandle.style.display = 'none';
 						modelName.style.display = 'none';
 						modelActions.style.display = 'none';
@@ -985,7 +1435,6 @@
 					modelEl.addChild(modelDragHandle);
 					modelEl.addChild(modelName);
 					modelEl.addChild(modelActions);
-					// 模型拖放目标事件
 					modelEl.on('dragover', e => {
 						e.preventDefault();
 						e.dataTransfer.dropEffect = 'move';
@@ -1010,12 +1459,10 @@
 					});
 					models.addChild(modelEl);
 				});
-				// 添加模型按钮放在模型列表底部
 				const addModelBtn = mk('div', 'add-model-link');
 				addModelBtn.textContent = '+ 添加模型';
 				addModelBtn.on('click', e => {
 					e.stopPropagation();
-					// 显示内联输入框而非弹窗
 					const existInput = $('.add-model-inline', models);
 					if (existInput) existInput.remove();
 					const inlineInput = fromTemplate('tpl-add-model-inline', '.add-model-inline');
@@ -1067,19 +1514,16 @@
 					month: 'short',
 					day: 'numeric'
 				});
-				// 操作按钮
 				const actionsEl = mk('div', 'session actions layout-x-queue');
 				const editBtn = mk('button', 'action-sm');
 				editBtn.innerHTML = SVG.edit(10);
 				editBtn.title = '编辑标题';
 				editBtn.on('click', e => {
 					e.stopPropagation();
-					// 原地编辑：将标题替换为输入框
 					const currentTitle = session.title || '新会话';
 					const inputEl = mk('input', 'session title-edit');
 					inputEl.type = 'text';
 					inputEl.value = currentTitle;
-					// 替换标题显示为编辑器
 					titleEl.style.display = 'none';
 					sessionEl.insertBefore(inputEl, meta);
 					inputEl.focus();
@@ -1135,16 +1579,13 @@
 				const preEl = codeEl.parentElement;
 				const copyBtn = document.createElement('button');
 				copyBtn.className = 'code-copy-btn';
-				copyBtn.innerHTML = SVG.copy;
+				copyBtn.innerHTML = "<span class=\"copy-icon\">⧉</span><span class=\"copy-check\">✓</span>";
 				copyBtn.title = '复制代码';
 				copyBtn.onclick = () => {
 					navigator.clipboard.writeText(codeEl.textContent).then(() => {
-						copyBtn.innerHTML = '✓';
-						copyBtn.classList.add('copy-success');
-						setTimeout(() => {
-							copyBtn.innerHTML = SVG.copy;
-							copyBtn.classList.remove('copy-success');
-						}, 1500);
+						copyBtn.classList.add("copied");
+						clearTimeout(copyBtn._copiedTimer);
+						copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 					});
 				};
 				preEl.appendChild(copyBtn);
@@ -1164,20 +1605,15 @@
 					const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 					$('.request.time', meta).textContent = timeStr;
 					msgEl.addChild(meta);
-					// 提取文本内容
 					const normalized = normalizeMessageContent(msg);
 					const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
 					const textContent = textItems.map(c => c.text || '').join('\n');
-					// 复制按钮事件
 					const copyBtn = $('.copy-btn', meta);
 					copyBtn.onclick = () => {
 						navigator.clipboard.writeText(textContent).then(() => {
-							copyBtn.innerHTML = '✓';
-							copyBtn.classList.add('copy-success');
-							setTimeout(() => {
-								copyBtn.innerHTML = SVG.copy;
-								copyBtn.classList.remove('copy-success');
-							}, 1500);
+							copyBtn.classList.add("copied");
+							clearTimeout(copyBtn._copiedTimer);
+							copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 						});
 					};
 					if (textContent) {
@@ -1185,7 +1621,6 @@
 						userEl.textContent = textContent;
 						msgEl.addChild(userEl);
 					}
-					// 渲染附件（非 text/file_text 类型）
 					const attachmentItems = normalized.filter(c => c.type === 'image' || c.type === 'file');
 					if (attachmentItems.length > 0) {
 						const attContainer = mk('div', 'message-attachments layout-x-queue');
@@ -1201,7 +1636,6 @@
 								const thumb = mk('img', 'message-attachment-thumb');
 								thumb.src = imgSrc;
 								thumb.onclick = () => {
-									// 点击查看大图
 									const overlay = mk('div', 'image-preview-overlay layout-x-queue');
 									const fullImg = mk('img');
 									fullImg.src = imgSrc;
@@ -1221,7 +1655,6 @@
 								nameEl.textContent = att.name || '文件';
 								attEl.addChild(nameEl);
 								attEl.onclick = () => {
-									// 下载文件
 									const data = att.source.data;
 									const mime = att.source.media_type;
 									const blob = new Blob([Uint8Array.from(atob(data), c => c.charCodeAt(0))], {
@@ -1239,11 +1672,10 @@
 						msgEl.addChild(attContainer);
 					}
 				} else {
-					// 检测消息格式
 					if (msg.responses && Array.isArray(msg.responses)) {
 						renderMultiModelResponse(msgEl, msg, groups, onCopy);
 					} else {
-						renderSingleModelResponse(msgEl, msg, groups, onCopy); // 向后兼容
+						renderSingleModelResponse(msgEl, msg, groups, onCopy);
 					}
 				}
 				container.addChild(msgEl);
@@ -1255,19 +1687,15 @@
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 			const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
 			const modelName = info ? `${info.group.name} / ${info.model.name}` : '未知模型';
-			// Response meta row with name, time, copy button
 			const meta = fromTemplate('tpl-response-meta', '.response.meta');
 			$('.response.model-name', meta).textContent = modelName;
 			$('.response.time', meta).textContent = timeStr;
 			const copyBtn = $('.copy-btn', meta);
 			copyBtn.onclick = () => {
-				navigator.clipboard.writeText(msg.content || '').then(() => {
-					copyBtn.innerHTML = '✓';
-					copyBtn.classList.add('copy-success');
-					setTimeout(() => {
-						copyBtn.innerHTML = SVG.copy;
-						copyBtn.classList.remove('copy-success');
-					}, 1500);
+				navigator.clipboard.writeText(msg.content || "").then(() => {
+					copyBtn.classList.add("copied");
+					clearTimeout(copyBtn._copiedTimer);
+					copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 				});
 			};
 			msgEl.addChild(meta);
@@ -1275,7 +1703,6 @@
 			assistantEl.innerHTML = renderMarkdown(msg.content || '');
 			msgEl.addChild(assistantEl);
 			addCodeCopyButtons(assistantEl);
-			// Status bar: usage info if available
 			if (msg.usage) {
 				const statusBar = mk('div', 'message-status-bar layout-x-queue');
 				const usageEl = mk('span', 'message-usage');
@@ -1295,7 +1722,6 @@
 				const card = mk('div', 'response card');
 				const info = findModelById(groups, r.modelId);
 				const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
-				// Response meta row with model name, time, duration, copy button
 				const meta = fromTemplate('tpl-multi-response-meta', '.response.meta');
 				const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
 				const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
@@ -1319,24 +1745,19 @@
 				} else {
 					errorEl.remove();
 				}
-				// Only add copy button for completed responses with content
 				const copyBtn = $('.copy-btn', meta);
 				if (r.status === 'completed' && r.content) {
 					copyBtn.onclick = () => {
-						navigator.clipboard.writeText(r.content || '').then(() => {
-							copyBtn.innerHTML = '✓';
-							copyBtn.classList.add('copy-success');
-							setTimeout(() => {
-								copyBtn.innerHTML = SVG.copy;
-								copyBtn.classList.remove('copy-success');
-							}, 1500);
+						navigator.clipboard.writeText(r.content || "").then(() => {
+							copyBtn.classList.add("copied");
+							clearTimeout(copyBtn._copiedTimer);
+							copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 						});
 					};
 				} else {
 					copyBtn.remove();
 				}
 				card.addChild(meta);
-				// Thinking block（如果有thinking内容）
 				if (r.thinking && r.thinking.trim()) {
 					const thinkingBlock = mk('div', 'thinking-block collapsed');
 					const thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
@@ -1399,20 +1820,16 @@
 			const input = $('#chat-input');
 			return input.value.trim();
 		}
-		// 获取完整消息内容（包含文本和附件）
 		async function getInputMessage() {
 			const input = $('#chat-input');
 			const text = input.value.trim();
-			// 构建消息内容数组
 			const content = [];
-			// 添加文本（如果有）
 			if (text) {
 				content.push({
 					type: 'text',
 					text
 				});
 			}
-			// 处理附件
 			for (const att of pendingAttachments) {
 				try {
 					if (att.type === 'image') {
@@ -1454,7 +1871,6 @@
 			return content;
 		}
 		// ========== 附件处理辅助函数 ==========
-		// 附件类型判断
 		function isTextFile(filename) {
 			const textExtensions = ['.txt', '.md', '.markdown', '.json', '.csv', '.log', '.js', '.ts', '.jsx', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.hpp', '.css', '.scss', '.sass', '.less', '.html', '.htm', '.xml', '.yaml', '.yml', '.sh', '.bash', '.zsh', '.ps1', '.bat', '.cmd', '.sql', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.scala', '.lua', '.r', '.vue', '.svelte'];
 			const dotIndex = filename.lastIndexOf('.');
@@ -1485,7 +1901,6 @@
 			if (fileTypes[ext]) return fileTypes[ext];
 			return 'application/octet-stream';
 		}
-		// 读取文件为 base64
 		async function fileToBase64(file) {
 			return new Promise((resolve, reject) => {
 				const reader = new FileReader();
@@ -1497,19 +1912,9 @@
 				reader.readAsDataURL(file);
 			});
 		}
-		// 带超时的 fetch
 		async function fetchWithTimeout(url, options, timeout = 60000) {
-			if (isExtension && window.__EXTENSION_FETCH__) {
-				try {
-					const res = await window.__EXTENSION_FETCH__(url, options);
-					return res;
-				} catch (e) {
-					throw e;
-				}
-			}
 			const controller = new AbortController();
 			const id = setTimeout(() => controller.abort(), timeout);
-			// 合并外部 signal（如用户取消）
 			const externalSignal = options?.signal;
 			if (externalSignal) {
 				externalSignal.addEventListener('abort', () => controller.abort());
@@ -1527,7 +1932,6 @@
 				throw e;
 			}
 		}
-		// 读取文本文件内容
 		async function fileToText(file) {
 			return new Promise((resolve, reject) => {
 				const reader = new FileReader();
@@ -1536,7 +1940,6 @@
 				reader.readAsText(file);
 			});
 		}
-		// 添加附件
 		async function addAttachment(file) {
 			const isImage = getMediaType(file.name).startsWith('image/');
 			const isText = isTextFile(file.name);
@@ -1548,7 +1951,6 @@
 				mediaType: getMediaType(file.name),
 				previewUrl: null // 缩略图 URL（图片用）
 			};
-			// 图片生成缩略图 URL
 			if (isImage) {
 				attachment.previewUrl = await new Promise((resolve, reject) => {
 					const reader = new FileReader();
@@ -1560,12 +1962,12 @@
 			pendingAttachments.push(attachment);
 			renderPendingAttachments();
 		}
-		// 删除附件
+
 		function removeAttachment(id) {
 			pendingAttachments = pendingAttachments.filter(a => a.id !== id);
 			renderPendingAttachments();
 		}
-		// 清空附件
+
 		function clearAttachments() {
 			pendingAttachments = [];
 			renderPendingAttachments();
@@ -1626,7 +2028,6 @@
 		}
 
 		function showDirectoryPrompt(hasPendingHandle = false) {
-			// 无目录时调用帮助弹窗，强制选择目录
 			showHelpDialog(true, hasPendingHandle);
 		}
 
@@ -1638,7 +2039,6 @@
 		function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
 			const exist = $('#help-dialog');
 			if (exist) exist.remove();
-			// 创建遮罩
 			const overlay = mk('div', 'dialog-overlay');
 			if (forceSelectDirectory) {
 				overlay.style.background = 'rgba(0, 0, 0, 0.5)';
@@ -1655,8 +2055,12 @@
 			const restoreBtn = $('#btn-restore-dir', dialog);
 			if (restoreBtn) {
 				restoreBtn.onclick = async () => {
-					const result = await tryRestoreDirectory();
-					if (result.success) {
+					const ok = window.__IS_EXTENSION__ ? false : await DirectoryStorage.restoreHandle();
+					if (ok) {
+						currentMode = 'directory';
+						await storage._saveModePref();
+						await loadEndpoints();
+						await loadSessionsIndex();
 						const dispInfo = storage.getDisplayInfo();
 						$('#help-dir-name', dialog).textContent = '当前存储：' + dispInfo.text;
 						$('#help-dir-name', dialog).title = dispInfo.title;
@@ -1692,21 +2096,19 @@
 					}
 				}
 			};
-
 			// 使用浏览器存储按钮
 			const browserBtn = $("#btn-use-browser-storage", dialog);
 			if (browserBtn) {
 				browserBtn.onclick = async () => {
 					await storage.selectMode("browser");
-					endpointsData = await storage.loadEndpoints();
-					const sessions = await storage.loadSessions();
-					sessions.forEach(s => sessionsCache.set(s.id, s));
+					await loadEndpoints();
+					await loadSessionsIndex();
 					updateDirectoryDisplay();
 					await refreshUI();
 					closeHelpDialog(dialog, overlay, true);
 				};
-				}
 			}
+		}
 
 		function closeHelpDialog(dialog, overlay, immediate = false) {
 			const helpBtn = $('#btn-help');
@@ -1718,21 +2120,15 @@
 			const btnRect = helpBtn.getBoundingClientRect();
 			const dialogRect = dialog.getBoundingClientRect();
 			if (!immediate) {
-				// 计算按钮中心位置
 				const btnCenterX = btnRect.left + btnRect.width / 2;
 				const btnCenterY = btnRect.top + btnRect.height / 2;
-				// 计算对话框中心位置
 				const dialogCenterX = dialogRect.left + dialogRect.width / 2;
 				const dialogCenterY = dialogRect.top + dialogRect.height / 2;
-				// 计算需要移动的距离
 				const translateX = btnCenterX - dialogCenterX;
 				const translateY = btnCenterY - dialogCenterY;
-				// 设置动画 - 不改变透明度
 				dialog.style.setProperty('transition', 'transform 0.4s ease-in', 'important');
 				dialog.style.setProperty('transform-origin', 'center center', 'important');
-				// 强制浏览器重新计算样式
 				dialog.offsetHeight;
-				// 设置最终状态 - 缩小到按钮位置
 				dialog.style.setProperty('transform', `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px)) scale(0.05)`, 'important');
 				setTimeout(() => {
 					dialog.remove();
@@ -1743,7 +2139,6 @@
 				overlay.remove();
 			}
 		}
-		// 测试连接状态
 		const connectionStatus = new Map(); // groupId:modelId -> { status, timestamp }
 		function getConnectionStatusText(key) {
 			const data = connectionStatus.get(key);
@@ -1828,19 +2223,24 @@
 			updateDirectoryDisplay();
 			await refreshUI();
 		}
+		// 尝试恢复已保存的目录
 		async function tryRestoreDirectory() {
 			const result = await storage.init();
 			if (result.mode === null) {
-				return { success: false, needUserAction: true };
+				return {
+					success: false,
+					needUserAction: true
+				};
 			}
 			endpointsData = await storage.loadEndpoints();
 			const sessions = await storage.loadSessions();
 			sessions.forEach(s => sessionsCache.set(s.id, s));
 			updateDirectoryDisplay();
 			await refreshUI();
-			return { success: true };
-		}
-
+			return {
+				success: true
+			};
+		} // 用户点击后请求权限并恢复目录
 		function generateUUID() {
 			return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
 				const r = Math.random() * 16 | 0;
@@ -1881,7 +2281,7 @@
 				groups: []
 			};
 			if (storage.mode !== 'browser' && !storage.getDirectoryName()) {
-				alert('请先选择存储目录');
+				alert('请先选择存储位置');
 				return null;
 			}
 			const group = {
@@ -2026,7 +2426,9 @@
 		async function loadSessionsIndex() {
 			const sessions = await storage.loadSessions();
 			sessionsCache.clear();
-			sessions.forEach(s => sessionsCache.set(s.id, s));
+			for (const s of sessions) {
+				sessionsCache.set(s.id, s);
+			}
 			return sessions;
 		}
 
@@ -2034,7 +2436,6 @@
 			return Array.from(sessionsCache.values());
 		}
 		async function createSession(firstMessage = null, targetModels = null) {
-			// 从第一条消息提取标题
 			let title = '新会话';
 			if (firstMessage) {
 				if (Array.isArray(firstMessage)) {
@@ -2051,7 +2452,6 @@
 				messages: []
 			};
 			if (firstMessage) {
-				// 使用标准数组格式
 				let content;
 				if (Array.isArray(firstMessage)) {
 					content = firstMessage;
@@ -2085,11 +2485,12 @@
 				return sessionsCache.get(sessionId);
 			}
 			const session = await storage.loadSession(sessionId);
-			if (session) sessionsCache.set(sessionId, session);
+			if (session) {
+				sessionsCache.set(session.id, session);
+			}
 			return session;
 		}
 		async function saveSession(session) {
-			sessionsCache.set(session.id, session);
 			return await storage.saveSession(session);
 		}
 		// 辅助函数：确保消息 content 为数组格式
@@ -2121,39 +2522,32 @@
 			};
 			// content 改造：支持字符串或数组
 			if (typeof content === 'string') {
-				// 纯文本，转换为标准数组格式
 				message.content = [{
 					type: 'text',
 					text: content
 				}];
 			} else if (Array.isArray(content)) {
-				// 已经是数组格式，直接使用
 				message.content = content;
 			} else {
-				// 兼容旧格式或其他情况
 				message.content = [{
 					type: 'text',
 					text: content || ''
 				}];
 			}
 			if (role === 'user') {
-				// 用户消息：记录targetModels
 				if (options.targetModels) {
 					message.targetModels = options.targetModels;
 				}
 			} else if (role === 'assistant') {
-				// 助手消息：多模型responses数组
 				if (options.responses) {
 					message.responses = options.responses;
 				}
-				// 兼容旧格式：单模型消息
 				if (options.modelId && !options.responses) {
 					message.modelId = options.modelId;
 					message.endpointGroupId = options.endpointGroupId;
 					if (options.usage) message.usage = options.usage;
 				}
 			}
-			// 更新标题：从第一个 text 块提取
 			if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 1) {
 				const firstText = message.content.find(c => c.type === 'text');
 				session.title = firstText ? firstText.text.slice(0, 20) : '新会话';
@@ -2171,14 +2565,13 @@
 			return await storage.deleteSession(sessionId);
 		}
 		// ========== API Functions ==========
-		// 获取指定会话的生成状态Map
 		function getSessionGenerations(sessionId) {
 			if (!sessionGenerations.has(sessionId)) {
 				sessionGenerations.set(sessionId, new Map());
 			}
 			return sessionGenerations.get(sessionId);
 		}
-		// 清除指定会话的所有生成状态（中止请求并清空Map）
+
 		function clearSessionGenerations(sessionId) {
 			const gens = sessionGenerations.get(sessionId);
 			if (gens) {
@@ -2190,7 +2583,7 @@
 				gens.clear();
 			}
 		}
-		// 删除指定会话的生成状态Map（中止请求并删除整个子Map）
+
 		function deleteSessionGenerations(sessionId) {
 			clearSessionGenerations(sessionId);
 			sessionGenerations.delete(sessionId);
@@ -2209,13 +2602,13 @@
 		function stopSessionGenerations(sessionId) {
 			clearSessionGenerations(sessionId);
 		}
-		// 兼容：停止当前会话的所有生成
+
 		function stopAllGenerations() {
 			if (currentSession) {
 				stopSessionGenerations(currentSession.id);
 			}
 		}
-		// OpenAI 消息格式转换
+
 		function toOpenAIContent(contentArray) {
 			return contentArray.map(item => {
 				if (item.type === 'text' || item.type === 'file_text') {
@@ -2259,7 +2652,6 @@
 						}
 					};
 				}
-				// 不支持的类型，降级为文本提示
 				return {
 					type: 'text',
 					text: `[附件 ${item.name || '未知'}，不支持此类型]`
@@ -2325,7 +2717,6 @@
 		}
 
 		function handleParsedChunk(parsed, state, tagParser, onChunk) {
-			// 事件类型处理（Claude 原生 thinking）
 			if (parsed.event === 'thinking_start') {
 				state.phase = 'thinking';
 				state.thinkingStartTime = Date.now();
@@ -2336,7 +2727,6 @@
 				if (state.firstContentTokenTime === null) state.firstContentTokenTime = Date.now();
 				return;
 			}
-			// 原生 reasoning（DeepSeek/Claude thinking_delta）
 			if (parsed.reasoning) {
 				if (!state.thinkingStartTime) {
 					state.thinkingStartTime = Date.now();
@@ -2346,7 +2736,6 @@
 				onChunk(state);
 				return;
 			}
-			// 内容处理
 			if (parsed.content) {
 				if (state.thinkingStartTime && state.thinkingDuration === null && state.phase === 'thinking') {
 					state.thinkingDuration = Date.now() - state.thinkingStartTime;
@@ -2388,7 +2777,6 @@
 					} catch (e) {}
 				}
 			}
-			// 处理未结束的 thinking
 			if (tagParser && tagParser.inThinking && tagParser.buffer) {
 				state.thinking += tagParser.buffer;
 			}
@@ -2433,13 +2821,10 @@
 			if (!provider) throw new Error('不支持的接口风格: ' + style);
 			return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal);
 		}
-		// 并行调用所有模型
 		async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 			const startTime = Date.now();
-			// 清除当前会话的旧生成状态（不影响其他会话）
 			clearSessionGenerations(sessionId);
 			const gens = getSessionGenerations(sessionId);
-			// 初始化每个模型的状态和AbortController
 			modelIds.forEach(id => {
 				gens.set(id, {
 					abortController: new AbortController(),
@@ -2451,7 +2836,6 @@
 					thinkingDuration: null
 				});
 			});
-			// 并行调用所有模型
 			const promises = modelIds.map(async id => {
 				const info = findModelById(groups, id);
 				const state = gens.get(id);
@@ -2540,7 +2924,6 @@
 			return Promise.all(promises);
 		}
 		// ========== Main Logic ==========
-		// 全局默认模型集管理
 		function loadDefaultSelectedModels() {
 			try {
 				const saved = localStorage.getItem('defaultSelectedModels');
@@ -2553,18 +2936,15 @@
 		function saveDefaultSelectedModels(models) {
 			localStorage.setItem('defaultSelectedModels', JSON.stringify(models));
 		}
-		// 初始化时加载
 		let defaultSelectedModels = loadDefaultSelectedModels();
 		let currentSession = null;
 		let selectedModels = []; // 当前选中模型ID数组
 		let sessionGenerations = new Map(); // 按会话隔离的生成状态：Map<sessionId, Map<modelId, state>>
 		let lastUserMessage = null;
-		// 附件管理
 		let pendingAttachments = []; // 待发送的附件列表
 		async function init() {
 			initDividers();
 			initScrollNav();
-			// 发送快捷键设置（从 localStorage 加载）
 			let sendOnEnter = localStorage.getItem('sendMode') !== 'ctrl-enter';
 			const chatInput = $('#chat-input');
 			chatInput.on('keydown', e => {
@@ -2581,7 +2961,7 @@
 			// 分裂式按钮：发送模式切换
 			const btnGroup = $('#send-btn-group');
 			const toggle = $('#send-mode-toggle');
-			const options = $$('.split-btn-option', btnGroup);
+			const options = $('.split-btn-option', btnGroup);
 			// 初始化选中状态
 			if (!sendOnEnter) {
 				options[0].classList.remove('selected');
@@ -2623,13 +3003,11 @@
 					}
 				}
 			});
-			// 先尝试恢复已保存的目录
+			// 先尝试恢复已保存的存储
 			const result = await tryRestoreDirectory();
 			if (!result.success) {
-				// 显示选择目录弹窗，如果有待恢复的 handle 则显示"恢复目录"按钮
 				showDirectoryPrompt(result.needUserAction);
 			} else {
-				// 如果有全局默认，设为当前选中
 				if (defaultSelectedModels.length > 0) {
 					selectedModels = [...defaultSelectedModels];
 				}
@@ -2643,7 +3021,10 @@
 				setButtonState(false, false);
 				renderModelSelector(getGroups(), selectedModels, false);
 			};
-			$('#btn-help').onclick = () => showHelpDialog(false, false);
+			$('#btn-help').onclick = async () => {
+				const saved = window.__IS_EXTENSION__ ? false : await loadHandleFromIndexedDB().catch(() => null);
+				showHelpDialog(false, !!saved);
+			};
 			$('#btn-new-session-header').onclick = handleNewSession;
 			$('#btn-delete-dir').onclick = handleDeleteDirectory;
 			$('#btn-wipe-dir').onclick = handleWipeDirectory;
@@ -2671,33 +3052,22 @@
 			};
 		}
 		async function handleDeleteDirectory() {
-			if (storage.mode === 'browser') {
-				confirmAction('确定清除浏览器存储中的所有数据？端点配置和会话记录将被删除。', async () => {
-					await storage.clearAll();
-					endpointsData = { groups: [] };
-					sessionsCache.clear();
-					updateDirectoryDisplay();
-					await refreshUI();
-				});
-			return;
-			}
-			confirmAction('确定删除当前目录配置？删除后需要重新选择目录。（磁盘上的数据文件不会被删除）', async () => {
+			const msg = storage.mode === 'browser' ? '确定清除浏览器存储中的所有数据？此操作不可恢复。' : '确定删除当前目录配置？删除后需要重新选择目录。（磁盘上的数据文件不会被删除）';
+			confirmAction(msg, async () => {
 				await clearDirectory();
 				showDirectoryPrompt(false);
 			});
 		}
 		async function handleWipeDirectory() {
 			if (storage.mode === 'browser') {
-				confirmAction('确定清空浏览器存储中的所有数据？此操作不可恢复！', () => {
+				confirmAction('确定清空浏览器存储中的所有数据？\n这将删除所有端点配置和会话记录。\n此操作不可恢复！', () => {
 					confirmAction('再次确认：这将永久删除所有端点配置和会话记录！', async () => {
-						await storage.clearAll();
-						endpointsData = { groups: [] };
-						sessionsCache.clear();
-						updateDirectoryDisplay();
-						await refreshUI();
+						await clearDirectory();
+						alert('数据已清空');
+						showDirectoryPrompt(false);
 					});
 				});
-			return;
+				return;
 			}
 			if (!storage.getDirectoryName()) {
 				alert('请先选择目录');
@@ -2706,7 +3076,11 @@
 			confirmAction('确定清空磁盘上的所有数据？\n这将删除 endpoints.json 和 sessions 目录中的所有会话记录。\n此操作不可恢复！', () => {
 				confirmAction('再次确认：这将永久删除所有端点配置和会话记录！', async () => {
 					try {
-						await storage.clearAll();
+						if (window.__IS_EXTENSION__) {
+							await storage.clearAll();
+						} else {
+							await DirectoryStorage.clearAll();
+						}
 						await clearDirectory();
 						alert('数据已清空');
 						showDirectoryPrompt(false);
@@ -2724,6 +3098,18 @@
 		}
 		async function refreshUI() {
 			const groups = getGroups();
+			// 清理在新存储中已不存在的已选模型
+			const availableIds = new Set();
+			groups.forEach(g => g.models.forEach(m => availableIds.add(`${g.id}:${m.id}`)));
+			const before = selectedModels.length;
+			selectedModels = availableIds.size > 0 ? selectedModels.filter(id => availableIds.has(id)) : [];
+			if (selectedModels.length !== before) {
+				saveDefaultSelectedModels(selectedModels);
+			}
+			// 清理在新存储中已不存在的当前会话
+			if (currentSession && !sessionsCache.has(currentSession.id)) {
+				currentSession = null;
+			}
 			const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
 			const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === 'generating');
 			renderModelSelector(groups, selectedModels, isGenerating);
@@ -2909,9 +3295,7 @@
 			const targetSessionId = currentSession.id;
 			// 显示"思考中"状态卡片（使用 targetSessionId 标记）
 			showThinkingCards(selectedModels, groups, targetSessionId);
-			// 记录已排序的模型（只排序一次）
 			const sortedModels = new Set();
-			// 并行调用所有模型
 			const responses = await callAllModels(groups, selectedModels, messages, (modelId, partialContent, firstTokenTime) => {
 				updateStreamingCard(modelId, partialContent, firstTokenTime, groups, targetSessionId);
 				// 只在firstTokenTime首次有值时排序一次
@@ -2921,13 +3305,10 @@
 					reorderSelectorTagsBySpeed();
 				}
 			}, targetSessionId);
-			// 全部完成后保存助手消息到发起请求时的会话
 			await addMessage(targetSessionId, 'assistant', null, {
 				responses
 			});
-			// 清理该会话的生成状态（回复已完成）
 			sessionGenerations.delete(targetSessionId);
-			// 如果用户还在这个会话，刷新显示
 			if (currentSession?.id === targetSessionId) {
 				currentSession = await loadSession(targetSessionId);
 				setButtonState(false, false);
@@ -2938,7 +3319,6 @@
 
 		function showThinkingCards(modelIds, groups, sessionId) {
 			const container = $('#chat-messages');
-			// 先清理当前会话已有的流式卡片容器（防止重复）
 			const existingCards = $(`#streaming-multi-response[data-session-id="${sessionId}"]`);
 			if (existingCards) {
 				existingCards.remove();
@@ -2949,7 +3329,6 @@
 			const hint = fromTemplate('tpl-multi-response-hint', '.multi-response-hint');
 			$('.hint-text', hint).textContent = `${modelIds.length}个模型正在思考...`;
 			msgEl.addChild(hint);
-			// 绑定停止按钮事件
 			const stopBtn = $('#btn-stop-inline', hint);
 			if (stopBtn) {
 				stopBtn.onclick = () => {
@@ -2975,11 +3354,8 @@
 		}
 
 		function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) {
-			// 直接更新DOM，不用requestAnimationFrame（避免并行时排队显示）
-			// 使用 sessionId + modelId 组合选择器，确保只更新当前会话的卡片
 			const card = $(`.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
 			if (!card) return;
-			// thinking区块处理
 			const thinkingBlock = $('.thinking-block', card);
 			if (thinkingBlock) {
 				if (state.thinking && state.thinking.trim()) {
@@ -2989,7 +3365,6 @@
 					if (thinkingContent) {
 						thinkingContent.textContent = state.thinking;
 					}
-					// 创建thinking header（如果不存在）
 					let thinkingHeader = $('.thinking-header', thinkingBlock);
 					if (!thinkingHeader) {
 						thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
@@ -3000,7 +3375,6 @@
 						$('.thinking-duration', thinkingHeader).textContent = durationText;
 						thinkingBlock.insertBefore(thinkingHeader, thinkingBlock.firstChild);
 					}
-					// 更新thinkingDuration
 					if (state.thinkingDuration) {
 						const thinkingDurationEl = $('.thinking-duration', thinkingHeader);
 						if (thinkingDurationEl) {
@@ -3008,21 +3382,16 @@
 						}
 					}
 				} else {
-					// thinking为空，隐藏思考块
 					thinkingBlock.style.display = 'none';
 				}
 			}
-			// content区块处理
 			const contentEl = $('.response.card-content', card);
 			if (contentEl) {
 				contentEl.textContent = state.content || '';
 			}
-			// meta信息处理（duration等）
 			if (firstTokenTime !== null) {
 				const meta = $('.response.meta', card);
 				if (meta) {
-					// 收到第一个token时不停止动画，保持转动直到完成
-					// 添加duration显示（如果不存在）
 					if (!$('.response.duration', meta)) {
 						const durationEl = mk('span', `response duration ${getSpeedClass(firstTokenTime)}`);
 						durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
@@ -3034,17 +3403,15 @@
 				}
 			}
 		}
-		// Update streaming card status (for failed/stopped/completed models)
+
 		function updateCardStatus(modelId, status, error, state = null, sessionId = null) {
 			requestAnimationFrame(() => {
-				// 使用 sessionId + modelId 组合选择器
 				const selector = sessionId ? `.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.response.card[data-model-id="${modelId}"]`;
 				const card = $(selector);
 				if (!card) return;
 				card.classList.remove('thinking');
 				const contentEl = $('.response.card-content', card);
 				const meta = $('.response.meta', card);
-				// Update status icon with color class
 				const icon = meta ? $('.model.status-icon', meta) : null;
 				if (icon) {
 					icon.classList.remove('spinning');
@@ -3052,7 +3419,6 @@
 					icon.classList.add(status);
 					icon.textContent = getStatusText(status);
 				}
-				// Update content and add error message for failed models
 				if (status === 'failed') {
 					if (contentEl) {
 						contentEl.textContent = ''; // Empty content for failed
@@ -3065,11 +3431,7 @@
 							statusEl.insertAdjacentElement('afterend', errorEl);
 						}
 					}
-				} else if (status === 'stopped') {
-					// Keep partial content if exists
-				} else if (status === 'completed') {
-					// Content already updated via updateStreamingCard
-					// 更新thinking区块的duration显示
+				} else if (status === 'stopped') {} else if (status === 'completed') {
 					if (state && state.thinkingDuration) {
 						const thinkingBlock = $('.thinking-block', card);
 						if (thinkingBlock) {
@@ -3081,12 +3443,10 @@
 							}
 						}
 					}
-					// 更新totalDuration显示
 					if (state && state.totalDuration) {
 						let totalEl = $('.response.total', meta);
 						if (!totalEl) {
 							totalEl = mk('span', 'response total');
-							// 插入到meta末尾或icon后面
 							const insertAfter = $('.response.status', meta) || $('.model.status-icon', meta);
 							if (insertAfter) {
 								insertAfter.insertAdjacentElement('afterend', totalEl);
@@ -3105,7 +3465,7 @@
 				const container = $('#streaming-multi-response .multi-response-cards');
 				if (!container) return;
 				const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-				const cards = Array.from($$('.response.card', container));
+				const cards = Array.from($('.response.card', container));
 				cards.sort((a, b) => {
 					const stateA = gens ? gens.get(a.dataset.modelId) : null;
 					const stateB = gens ? gens.get(b.dataset.modelId) : null;
@@ -3120,31 +3480,25 @@
 			if (!summaryEl) return;
 			const tags = Array.from(summaryEl.querySelectorAll('.model.tag.selected'));
 			if (tags.length === 0) return;
-			// 保存原始顺序（sort会原地修改）
 			const originalTags = [...tags];
-			// 按速度排序
 			const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
 			const sortedTags = tags.sort((a, b) => {
 				const aTime = gens ? gens.get(a.dataset.model)?.firstTokenTime : undefined;
 				const bTime = gens ? gens.get(b.dataset.model)?.firstTokenTime : undefined;
 				return (aTime ?? Infinity) - (bTime ?? Infinity);
 			});
-			// 检查是否需要排序（用原始顺序比较）
 			const needsReorder = sortedTags.some((tag, i) => tag !== originalTags[i]);
 			if (!needsReorder) return;
-			// 同步更新 selectedModels 数组顺序（不持久化）
 			selectedModels = sortedTags.map(tag => tag.dataset.model);
-			// 重新排列 DOM
 			sortedTags.forEach(tag => summaryEl.appendChild(tag));
 		}
 		async function handleNewSession() {
 			currentSession = null;
-			selectedModels = [...defaultSelectedModels]; // 新会话继承全局默认
+			selectedModels = [...defaultSelectedModels];
 			lastUserMessage = null;
 			await refreshUI();
-			// 新建会话后输入框自动获得焦点
 			const inputEl = $('#chat-input');
 			if (inputEl) inputEl.focus();
 		}
-		// 启动
 		init();
+
