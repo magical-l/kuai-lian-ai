@@ -17,10 +17,11 @@
 	<title>快连AI</title>
 	<!-- Favicon -->
 	<link rel="icon" href="恋-人脸、ai.svg" type="image/svg+xml">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
-	<style>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" onerror="this.href='vendor/highlight-github.min.css'">
+	<style id="google-fonts">
 		@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-
+	</style>
+	<style>
 		/* ========== Design Tokens ========== */
 		:root {
 			/* 背景层级 */
@@ -249,7 +250,7 @@
 			display: block;
 		}
 
-		button.icon.copy-success {
+		button.icon.copied {
 			color: var(--accent-success);
 			background: transparent;
 		}
@@ -376,7 +377,7 @@
 		/* ========== Chat Messages ========== */
 		#chat-messages {
 			flex: 1 0 auto;
-		overflow-y: auto;
+			overflow-y: auto;
 			padding: var(--space-6);
 			gap: var(--space-5);
 			background: var(--bg-subtle);
@@ -780,10 +781,29 @@
 			background: var(--bg-hover);
 		}
 
-		.code-copy-btn.copy-success {
+		.code-copy-btn.copied {
 			opacity: 1;
 			color: var(--success);
 			border-color: var(--success);
+		}
+
+		/* 复制按钮反馈 */
+		.copy-btn .copy-icon,
+		.code-copy-btn .copy-icon {}
+
+		.copy-btn.copied .copy-icon,
+		.code-copy-btn.copied .copy-icon {
+			display: none;
+		}
+
+		.copy-btn .copy-check,
+		.code-copy-btn .copy-check {
+			display: none;
+		}
+
+		.copy-btn.copied .copy-check,
+		.code-copy-btn.copied .copy-check {
+			display: inline;
 		}
 
 		.message-meta {
@@ -941,7 +961,7 @@
 		}
 
 		button.batch-test.testing .spin {
-			animation: spin 2s linear infinite !important;
+			animation: spin 0.5s linear infinite !important;
 			display: inline-block;
 		}
 
@@ -2048,6 +2068,25 @@
 		}
 
 	</style>
+	<script>
+		// 扩展环境检测 + 按需加载
+		(function() {
+			const isExt = typeof chrome !== 'undefined' && chrome.storage && chrome.runtime && chrome.runtime.id;
+			window.__IS_EXTENSION__ = isExt;
+			if (isExt) {
+				// 扩展 CSP 禁止外部字体
+				const gf = document.getElementById('google-fonts');
+				if (gf) gf.remove();
+				// 动态加载扩展专属脚本
+				['storage-core.js', 'cors-proxy.js'].forEach(src => {
+					const s = document.createElement('script');
+					s.src = src;
+					document.head.appendChild(s);
+				});
+			}
+		})();
+
+	</script>
 </head>
 <body>
 	<main class="layout-y-queue">
@@ -2210,10 +2249,7 @@
 			<span class="request name">我</span>
 			<span class="request time"></span>
 			<button class="icon copy-btn" title="复制">
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<rect x="9" y="9" width="13" height="13" rx="2"></rect>
-					<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-				</svg>
+				<span class="copy-icon">⧉</span><span class="copy-check">✓</span>
 			</button>
 		</div>
 	</template>
@@ -2223,10 +2259,7 @@
 			<span class="response model-name"></span>
 			<span class="response time"></span>
 			<button class="icon copy-btn" title="复制">
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<rect x="9" y="9" width="13" height="13" rx="2"></rect>
-					<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-				</svg>
+				<span class="copy-icon">⧉</span><span class="copy-check">✓</span>
 			</button>
 		</div>
 	</template>
@@ -2240,10 +2273,7 @@
 			<span class="response status"></span>
 			<span class="response error"></span>
 			<button class="icon copy-btn" title="复制">
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<rect x="9" y="9" width="13" height="13" rx="2"></rect>
-					<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-				</svg>
+				<span class="copy-icon">⧉</span><span class="copy-check">✓</span>
 			</button>
 		</div>
 	</template>
@@ -2331,457 +2361,463 @@
 	</div>
 	<script>
 		// ========== 统一存储模块 ==========
-		const BrowserStorage = {
-			_db: null,
-			async _getDB() {
-				if (this._db) return this._db;
+		let storage, currentMode;
+		if (!window.__IS_EXTENSION__) {
+			const BrowserStorage = {
+				_db: null,
+				async _getDB() {
+					if (this._db) return this._db;
+					return new Promise((resolve, reject) => {
+						const request = indexedDB.open('kuai-lian-ai-browser', 1);
+						request.onupgradeneeded = e => {
+							const db = e.target.result;
+							if (!db.objectStoreNames.contains('store')) db.createObjectStore('store');
+						};
+						request.onsuccess = () => {
+							this._db = request.result;
+							resolve(this._db);
+						};
+						request.onerror = () => reject(request.error);
+					});
+				},
+				async _get(key) {
+					const db = await this._getDB();
+					return new Promise((resolve, reject) => {
+						const tx = db.transaction('store', 'readonly');
+						const req = tx.objectStore('store').get(key);
+						req.onsuccess = () => resolve(req.result);
+						req.onerror = () => reject(req.error);
+					});
+				},
+				async _set(key, value) {
+					const db = await this._getDB();
+					return new Promise((resolve, reject) => {
+						const tx = db.transaction('store', 'readwrite');
+						tx.objectStore('store').put(value, key);
+						tx.oncomplete = () => resolve();
+						tx.onerror = () => reject(tx.error);
+					});
+				},
+				async _delete(key) {
+					const db = await this._getDB();
+					return new Promise((resolve, reject) => {
+						const tx = db.transaction('store', 'readwrite');
+						tx.objectStore('store').delete(key);
+						tx.oncomplete = () => resolve();
+						tx.onerror = () => reject(tx.error);
+					});
+				},
+				async loadEndpoints() {
+					return await this._get('endpoints') || {
+						groups: []
+					};
+				},
+				async saveEndpoints(data) {
+					await this._set('endpoints', data);
+					return true;
+				},
+				async loadSessions() {
+					const sessions = await this._get('sessions') || {};
+					return Object.values(sessions).sort((a, b) => {
+						const ta = a.updatedAt || a.createdAt || 0;
+						const tb = b.updatedAt || b.createdAt || 0;
+						return tb - ta;
+					});
+				},
+				async loadSession(sessionId) {
+					const sessions = await this._get('sessions') || {};
+					return sessions[sessionId] || null;
+				},
+				async saveSession(session) {
+					const sessions = await this._get('sessions') || {};
+					sessions[session.id] = session;
+					await this._set('sessions', sessions);
+					return true;
+				},
+				async deleteSession(sessionId) {
+					const sessions = await this._get('sessions') || {};
+					delete sessions[sessionId];
+					await this._set('sessions', sessions);
+					return true;
+				},
+				async loadSettings() {
+					return await this._get('settings') || {};
+				},
+				async saveSettings(settings) {
+					await this._set('settings', settings);
+				},
+				async exportAll() {
+					return {
+						endpoints: await this._get('endpoints') || {
+							groups: []
+						},
+						sessions: await this._get('sessions') || {},
+						settings: await this._get('settings') || {},
+						exportedAt: Date.now()
+					};
+				},
+				async importAll(data) {
+					if (!data || typeof data !== 'object') throw new Error('无效');
+					await this._set('endpoints', data.endpoints || {
+						groups: []
+					});
+					await this._set('sessions', data.sessions || {});
+					if (data.settings) await this._set('settings', data.settings);
+				},
+				async clearAll() {
+					await this._delete('endpoints');
+					await this._delete('sessions');
+					await this._delete('settings');
+				}
+			};
+			// IndexedDB handle storage (for persisting directory handle)
+			const DIRECTORY_DB = 'endpoint-manager';
+			const HANDLE_STORE = 'handles';
+			let directoryHandle = null;
+			async function openHandleDB() {
 				return new Promise((resolve, reject) => {
-					const request = indexedDB.open('kuai-lian-ai-browser', 1);
+					const request = indexedDB.open(DIRECTORY_DB, 1);
+					request.onerror = () => reject(request.error);
+					request.onsuccess = () => resolve(request.result);
 					request.onupgradeneeded = e => {
 						const db = e.target.result;
-						if (!db.objectStoreNames.contains('store')) db.createObjectStore('store');
+						if (!db.objectStoreNames.contains(HANDLE_STORE)) db.createObjectStore(HANDLE_STORE);
 					};
-					request.onsuccess = () => {
-						this._db = request.result;
-						resolve(this._db);
-					};
-					request.onerror = () => reject(request.error);
 				});
-			},
-			async _get(key) {
-				const db = await this._getDB();
+			}
+			async function saveHandleToIndexedDB(handle) {
+				const db = await openHandleDB();
 				return new Promise((resolve, reject) => {
-					const tx = db.transaction('store', 'readonly');
-					const req = tx.objectStore('store').get(key);
+					const tx = db.transaction(HANDLE_STORE, 'readwrite');
+					tx.objectStore(HANDLE_STORE).put(handle, 'directory');
+					tx.oncomplete = () => resolve();
+					tx.onerror = () => reject(tx.error);
+				});
+			}
+			async function loadHandleFromIndexedDB() {
+				const db = await openHandleDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction(HANDLE_STORE, 'readonly');
+					const req = tx.objectStore(HANDLE_STORE).get('directory');
 					req.onsuccess = () => resolve(req.result);
 					req.onerror = () => reject(req.error);
 				});
-			},
-			async _set(key, value) {
-				const db = await this._getDB();
-				return new Promise((resolve, reject) => {
-					const tx = db.transaction('store', 'readwrite');
-					tx.objectStore('store').put(value, key);
-					tx.oncomplete = () => resolve();
-					tx.onerror = () => reject(tx.error);
-				});
-			},
-			async _delete(key) {
-				const db = await this._getDB();
-				return new Promise((resolve, reject) => {
-					const tx = db.transaction('store', 'readwrite');
-					tx.objectStore('store').delete(key);
-					tx.oncomplete = () => resolve();
-					tx.onerror = () => reject(tx.error);
-				});
-			},
-			async loadEndpoints() {
-				return await this._get('endpoints') || {
-					groups: []
-				};
-			},
-			async saveEndpoints(data) {
-				await this._set('endpoints', data);
-				return true;
-			},
-			async loadSessions() {
-				const sessions = await this._get('sessions') || {};
-				return Object.values(sessions).sort((a, b) => {
-					const ta = a.updatedAt || a.createdAt || 0;
-					const tb = b.updatedAt || b.createdAt || 0;
-					return tb - ta;
-				});
-			},
-			async loadSession(sessionId) {
-				const sessions = await this._get('sessions') || {};
-				return sessions[sessionId] || null;
-			},
-			async saveSession(session) {
-				const sessions = await this._get('sessions') || {};
-				sessions[session.id] = session;
-				await this._set('sessions', sessions);
-				return true;
-			},
-			async deleteSession(sessionId) {
-				const sessions = await this._get('sessions') || {};
-				delete sessions[sessionId];
-				await this._set('sessions', sessions);
-				return true;
-			},
-			async loadSettings() {
-				return await this._get('settings') || {};
-			},
-			async saveSettings(settings) {
-				await this._set('settings', settings);
-			},
-			async exportAll() {
-				return {
-					endpoints: await this._get('endpoints') || {
-						groups: []
-					},
-					sessions: await this._get('sessions') || {},
-					settings: await this._get('settings') || {},
-					exportedAt: Date.now()
-				};
-			},
-			async importAll(data) {
-				if (!data || typeof data !== 'object') throw new Error('无效');
-				await this._set('endpoints', data.endpoints || {
-					groups: []
-				});
-				await this._set('sessions', data.sessions || {});
-				if (data.settings) await this._set('settings', data.settings);
-			},
-			async clearAll() {
-				await this._delete('endpoints');
-				await this._delete('sessions');
-				await this._delete('settings');
 			}
-		};
-		// IndexedDB handle storage (for persisting directory handle)
-		const DIRECTORY_DB = 'endpoint-manager';
-		const HANDLE_STORE = 'handles';
-		let directoryHandle = null;
-		async function openHandleDB() {
-			return new Promise((resolve, reject) => {
-				const request = indexedDB.open(DIRECTORY_DB, 1);
-				request.onerror = () => reject(request.error);
-				request.onsuccess = () => resolve(request.result);
-				request.onupgradeneeded = e => {
-					const db = e.target.result;
-					if (!db.objectStoreNames.contains(HANDLE_STORE)) db.createObjectStore(HANDLE_STORE);
-				};
-			});
-		}
-		async function saveHandleToIndexedDB(handle) {
-			const db = await openHandleDB();
-			return new Promise((resolve, reject) => {
-				const tx = db.transaction(HANDLE_STORE, 'readwrite');
-				tx.objectStore(HANDLE_STORE).put(handle, 'directory');
-				tx.oncomplete = () => resolve();
-				tx.onerror = () => reject(tx.error);
-			});
-		}
-		async function loadHandleFromIndexedDB() {
-			const db = await openHandleDB();
-			return new Promise((resolve, reject) => {
-				const tx = db.transaction(HANDLE_STORE, 'readonly');
-				const req = tx.objectStore(HANDLE_STORE).get('directory');
-				req.onsuccess = () => resolve(req.result);
-				req.onerror = () => reject(req.error);
-			});
-		}
-		async function clearHandleFromIndexedDB() {
-			const db = await openHandleDB();
-			return new Promise((resolve, reject) => {
-				const tx = db.transaction(HANDLE_STORE, 'readwrite');
-				tx.objectStore(HANDLE_STORE).delete('directory');
-				tx.oncomplete = () => resolve();
-				tx.onerror = () => reject(tx.error);
-			});
-		}
-		const DirectoryStorage = {
-			async loadEndpoints() {
-				if (!directoryHandle) return {
-					groups: []
-				};
-				try {
-					const fileHandle = await directoryHandle.getFileHandle('endpoints.json', {
-						create: true
-					});
-					const file = await fileHandle.getFile();
-					const text = await file.text();
-					return text ? JSON.parse(text) : {
+			async function clearHandleFromIndexedDB() {
+				const db = await openHandleDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction(HANDLE_STORE, 'readwrite');
+					tx.objectStore(HANDLE_STORE).delete('directory');
+					tx.oncomplete = () => resolve();
+					tx.onerror = () => reject(tx.error);
+				});
+			}
+			const DirectoryStorage = {
+				async loadEndpoints() {
+					if (!directoryHandle) return {
 						groups: []
 					};
-				} catch (err) {
-					console.error('加载端点失败:', err);
+					try {
+						const fileHandle = await directoryHandle.getFileHandle('endpoints.json', {
+							create: true
+						});
+						const file = await fileHandle.getFile();
+						const text = await file.text();
+						return text ? JSON.parse(text) : {
+							groups: []
+						};
+					} catch (err) {
+						console.error('加载端点失败:', err);
+						return {
+							groups: []
+						};
+					}
+				},
+				async saveEndpoints(data) {
+					if (!directoryHandle) return false;
+					try {
+						const fileHandle = await directoryHandle.getFileHandle('endpoints.json', {
+							create: true
+						});
+						const writable = await fileHandle.createWritable();
+						await writable.write(JSON.stringify(data, null, 2));
+						await writable.close();
+						return true;
+					} catch (err) {
+						console.error('保存端点失败:', err);
+						return false;
+					}
+				},
+				async loadSessions() {
+					if (!directoryHandle) return [];
+					try {
+						const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+						const sessions = [];
+						for await (const handle of sessionsDir.values()) {
+							if (handle.kind === 'file' && handle.name.endsWith('.json')) {
+								try {
+									const file = await handle.getFile();
+									sessions.push(JSON.parse(await file.text()));
+								} catch (e) {}
+							}
+						}
+						return sessions;
+					} catch (err) {
+						if (err.name === 'NotFoundError') return [];
+						return [];
+					}
+				},
+				async loadSession(sessionId) {
+					if (!directoryHandle) return null;
+					try {
+						const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+						const fileHandle = await sessionsDir.getFileHandle(sessionId + '.json');
+						const file = await fileHandle.getFile();
+						return JSON.parse(await file.text());
+					} catch (err) {
+						return null;
+					}
+				},
+				async saveSession(session) {
+					if (!directoryHandle) return false;
+					try {
+						const sessionsDir = await directoryHandle.getDirectoryHandle('sessions', {
+							create: true
+						});
+						const fileHandle = await sessionsDir.getFileHandle(session.id + '.json', {
+							create: true
+						});
+						const writable = await fileHandle.createWritable();
+						await writable.write(JSON.stringify(session, null, 2));
+						await writable.close();
+						return true;
+					} catch (err) {
+						console.error('保存会话失败:', err);
+						return false;
+					}
+				},
+				async deleteSession(sessionId) {
+					if (!directoryHandle) return false;
+					try {
+						const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+						await sessionsDir.removeEntry(sessionId + '.json');
+						return true;
+					} catch (err) {
+						return err.name === 'NotFoundError';
+					}
+				},
+				async loadSettings() {
+					return {};
+				},
+				async saveSettings(settings) {},
+				async exportAll() {
 					return {
-						groups: []
+						endpoints: await this.loadEndpoints(),
+						sessions: await this.loadSessions(),
+						settings: {},
+						exportedAt: Date.now()
 					};
-				}
-			},
-			async saveEndpoints(data) {
-				if (!directoryHandle) return false;
-				try {
-					const fileHandle = await directoryHandle.getFileHandle('endpoints.json', {
-						create: true
-					});
-					const writable = await fileHandle.createWritable();
-					await writable.write(JSON.stringify(data, null, 2));
-					await writable.close();
-					return true;
-				} catch (err) {
-					console.error('保存端点失败:', err);
-					return false;
-				}
-			},
-			async loadSessions() {
-				if (!directoryHandle) return [];
-				try {
-					const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
-					const sessions = [];
-					for await (const handle of sessionsDir.values()) {
-						if (handle.kind === 'file' && handle.name.endsWith('.json')) {
-							try {
-								const file = await handle.getFile();
-								sessions.push(JSON.parse(await file.text()));
-							} catch (e) {}
+				},
+				async importAll(data) {
+					if (data.endpoints) await this.saveEndpoints(data.endpoints);
+					if (data.sessions) {
+						for (const id in data.sessions) {
+							await this.saveSession(data.sessions[id]);
 						}
 					}
-					return sessions;
-				} catch (err) {
-					if (err.name === 'NotFoundError') return [];
-					return [];
-				}
-			},
-			async loadSession(sessionId) {
-				if (!directoryHandle) return null;
-				try {
-					const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
-					const fileHandle = await sessionsDir.getFileHandle(sessionId + '.json');
-					const file = await fileHandle.getFile();
-					return JSON.parse(await file.text());
-				} catch (err) {
-					return null;
-				}
-			},
-			async saveSession(session) {
-				if (!directoryHandle) return false;
-				try {
-					const sessionsDir = await directoryHandle.getDirectoryHandle('sessions', {
-						create: true
-					});
-					const fileHandle = await sessionsDir.getFileHandle(session.id + '.json', {
-						create: true
-					});
-					const writable = await fileHandle.createWritable();
-					await writable.write(JSON.stringify(session, null, 2));
-					await writable.close();
-					return true;
-				} catch (err) {
-					console.error('保存会话失败:', err);
-					return false;
-				}
-			},
-			async deleteSession(sessionId) {
-				if (!directoryHandle) return false;
-				try {
-					const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
-					await sessionsDir.removeEntry(sessionId + '.json');
-					return true;
-				} catch (err) {
-					return err.name === 'NotFoundError';
-				}
-			},
-			async loadSettings() {
-				return {};
-			},
-			async saveSettings(settings) {},
-			async exportAll() {
-				return {
-					endpoints: await this.loadEndpoints(),
-					sessions: await this.loadSessions(),
-					settings: {},
-					exportedAt: Date.now()
-				};
-			},
-			async importAll(data) {
-				if (data.endpoints) await this.saveEndpoints(data.endpoints);
-				if (data.sessions) {
-					for (const id in data.sessions) {
-						await this.saveSession(data.sessions[id]);
-					}
-				}
-			},
-			async clearAll() {
-				if (!directoryHandle) return;
-				try {
-					await directoryHandle.removeEntry('endpoints.json');
-				} catch (e) {}
-				try {
-					await directoryHandle.removeEntry('sessions', {
-						recursive: true
-					});
-				} catch (e) {}
-			},
-			getDirectoryName() {
-				return directoryHandle ? directoryHandle.name : null;
-			},
-			async restoreHandle() {
-				try {
-					const savedHandle = await loadHandleFromIndexedDB();
-					if (!savedHandle) return false;
-					const perm = await savedHandle.queryPermission({
-						mode: 'readwrite'
-					});
-					if (perm !== 'granted') {
-						const req = await savedHandle.requestPermission({
+				},
+				async clearAll() {
+					if (!directoryHandle) return;
+					try {
+						await directoryHandle.removeEntry('endpoints.json');
+					} catch (e) {}
+					try {
+						await directoryHandle.removeEntry('sessions', {
+							recursive: true
+						});
+					} catch (e) {}
+				},
+				getDirectoryName() {
+					return directoryHandle ? directoryHandle.name : null;
+				},
+				async restoreHandle() {
+					try {
+						const savedHandle = await loadHandleFromIndexedDB();
+						if (!savedHandle) return false;
+						const perm = await savedHandle.queryPermission({
 							mode: 'readwrite'
 						});
-						if (req !== 'granted') {
-							await clearHandleFromIndexedDB();
-							return false;
+						if (perm !== 'granted') {
+							const req = await savedHandle.requestPermission({
+								mode: 'readwrite'
+							});
+							if (req !== 'granted') {
+								await clearHandleFromIndexedDB();
+								return false;
+							}
 						}
+						directoryHandle = savedHandle;
+						return true;
+					} catch (e) {
+						return false;
 					}
-					directoryHandle = savedHandle;
-					return true;
-				} catch (e) {
-					return false;
+				},
+				async pickAndSave() {
+					try {
+						directoryHandle = await window.showDirectoryPicker({
+							mode: 'readwrite'
+						});
+						await saveHandleToIndexedDB(directoryHandle);
+						return true;
+					} catch (err) {
+						return false;
+					}
+				},
+				async _setHandle(handle) {
+					directoryHandle = handle;
+					await saveHandleToIndexedDB(handle);
+				},
+				async release() {
+					directoryHandle = null;
+					await clearHandleFromIndexedDB();
 				}
-			},
-			async pickAndSave() {
-				try {
-					directoryHandle = await window.showDirectoryPicker({
-						mode: 'readwrite'
-					});
-					await saveHandleToIndexedDB(directoryHandle);
-					return true;
-				} catch (err) {
-					return false;
-				}
-			},
-			async _setHandle(handle) {
-				directoryHandle = handle;
-				await saveHandleToIndexedDB(handle);
-			},
-			async release() {
-				directoryHandle = null;
-				await clearHandleFromIndexedDB();
-			}
-		};
-		// 统一存储接口
-		let currentMode = null;
+			};
+			// 统一存储接口
+			currentMode = null;
 
-		function getBackend() {
-			return currentMode === 'directory' ? DirectoryStorage : BrowserStorage;
-		}
-		const storage = {
-			get mode() {
-				return currentMode;
-			},
-			async init() {
-				let savedMode = null;
-				try {
-					savedMode = await BrowserStorage._get('__mode');
-				} catch (e) {}
-				if (savedMode === 'directory') {
-					const ok = await DirectoryStorage.restoreHandle();
-					if (ok) {
-						currentMode = 'directory';
+			function getBackend() {
+				return currentMode === 'directory' ? DirectoryStorage : BrowserStorage;
+			}
+			storage = {
+				get mode() {
+					return currentMode;
+				},
+				async init() {
+					let savedMode = null;
+					try {
+						savedMode = await BrowserStorage._get('__mode');
+					} catch (e) {}
+					if (savedMode === 'directory') {
+						const ok = window.__IS_EXTENSION__ ? false : await DirectoryStorage.restoreHandle();
+						if (ok) {
+							currentMode = 'directory';
+							return {
+								mode: 'directory',
+								needUserAction: false
+							};
+						}
+						currentMode = 'browser';
+						await this._saveModePref();
 						return {
-							mode: 'directory',
+							mode: 'browser',
 							needUserAction: false
 						};
 					}
-					currentMode = 'browser';
-					await this._saveModePref();
-					return {
-						mode: 'browser',
-						needUserAction: false
-					};
-				}
-				if (savedMode === 'browser') {
-					currentMode = 'browser';
-					return {
-						mode: 'browser',
-						needUserAction: false
-					};
-				}
-				return {
-					mode: null,
-					needUserAction: true
-				};
-			},
-			async selectMode(mode, handle) {
-				if (mode === 'directory') {
-					if (handle) {
-						await DirectoryStorage._setHandle(handle);
-					} else {
-						const ok = await DirectoryStorage.pickAndSave();
-						if (!ok) return false;
+					if (savedMode === 'browser') {
+						currentMode = 'browser';
+						return {
+							mode: 'browser',
+							needUserAction: false
+						};
 					}
-				}
-				currentMode = mode;
-				await this._saveModePref();
-				return true;
-			},
-			async switchMode(target, handle) {
-				if (target === currentMode) return true;
-				const data = await getBackend().exportAll();
-				if (target === 'directory') {
-					if (handle) {
-						await DirectoryStorage._setHandle(handle);
-					} else {
-						const ok = await DirectoryStorage.pickAndSave();
-						if (!ok) return false;
+					return {
+						mode: null,
+						needUserAction: true
+					};
+				},
+				async selectMode(mode, handle) {
+					if (mode === 'directory') {
+						if (handle) {
+							await DirectoryStorage._setHandle(handle);
+						} else {
+							const ok = await DirectoryStorage.pickAndSave();
+							if (!ok) return false;
+						}
 					}
-				}
-				const oldMode = currentMode;
-				currentMode = target;
-				try {
-					await getBackend().importAll(data);
+					currentMode = mode;
 					await this._saveModePref();
-					if (oldMode === 'directory') await DirectoryStorage.release();
 					return true;
-				} catch (e) {
-					currentMode = oldMode;
-					return false;
-				}
-			},
-			async _saveModePref() {
-				await BrowserStorage._set('__mode', currentMode);
-			},
-			async loadEndpoints() {
-				return getBackend().loadEndpoints();
-			},
-			async saveEndpoints(data) {
-				return getBackend().saveEndpoints(data);
-			},
-			async loadSessions() {
-				return getBackend().loadSessions();
-			},
-			async loadSession(id) {
-				return getBackend().loadSession(id);
-			},
-			async saveSession(session) {
-				return getBackend().saveSession(session);
-			},
-			async deleteSession(id) {
-				return getBackend().deleteSession(id);
-			},
-			async loadSettings() {
-				return getBackend().loadSettings();
-			},
-			async saveSettings(s) {
-				return getBackend().saveSettings(s);
-			},
-			async clearAll() {
-				return getBackend().clearAll();
-			},
-			async exportAll() {
-				return getBackend().exportAll();
-			},
-			async importAll(data) {
-				return getBackend().importAll(data);
-			},
-			getDirectoryName() {
-				return currentMode === 'directory' ? DirectoryStorage.getDirectoryName() : null;
-			},
-			getDisplayInfo() {
-				if (currentMode === 'directory') {
-					const name = DirectoryStorage.getDirectoryName();
+				},
+				async switchMode(target, handle) {
+					if (target === currentMode) return true;
+					const data = await getBackend().exportAll();
+					if (target === 'directory') {
+						if (handle) {
+							await DirectoryStorage._setHandle(handle);
+						} else {
+							const ok = await DirectoryStorage.pickAndSave();
+							if (!ok) return false;
+						}
+					}
+					const oldMode = currentMode;
+					currentMode = target;
+					try {
+						await getBackend().importAll(data);
+						await this._saveModePref();
+						if (oldMode === 'directory') await DirectoryStorage.release();
+						return true;
+					} catch (e) {
+						currentMode = oldMode;
+						return false;
+					}
+				},
+				async _saveModePref() {
+					await BrowserStorage._set('__mode', currentMode);
+				},
+				async loadEndpoints() {
+					return getBackend().loadEndpoints();
+				},
+				async saveEndpoints(data) {
+					return getBackend().saveEndpoints(data);
+				},
+				async loadSessions() {
+					return getBackend().loadSessions();
+				},
+				async loadSession(id) {
+					return getBackend().loadSession(id);
+				},
+				async saveSession(session) {
+					return getBackend().saveSession(session);
+				},
+				async deleteSession(id) {
+					return getBackend().deleteSession(id);
+				},
+				async loadSettings() {
+					return getBackend().loadSettings();
+				},
+				async saveSettings(s) {
+					return getBackend().saveSettings(s);
+				},
+				async clearAll() {
+					return getBackend().clearAll();
+				},
+				async exportAll() {
+					return getBackend().exportAll();
+				},
+				async importAll(data) {
+					return getBackend().importAll(data);
+				},
+				getDirectoryName() {
+					return currentMode === 'directory' ? DirectoryStorage.getDirectoryName() : null;
+				},
+				getDisplayInfo() {
+					if (currentMode === 'directory') {
+						const name = DirectoryStorage.getDirectoryName();
+						return {
+							text: name || '未选择',
+							title: '目录存储: ' + (name || '')
+						};
+					}
 					return {
-						text: name || '未选择',
-						title: '目录存储: ' + (name || '')
+						text: '浏览器存储',
+						title: '存储位置: 浏览器内部 (IndexedDB)'
 					};
 				}
-				return {
-					text: '浏览器存储',
-					title: '存储位置: 浏览器内部 (IndexedDB)'
-				};
-			}
-		};
+			};
+		} else {
+			storage = window.__STORAGE__;
+			currentMode = storage.mode;
+		}
 		const THINKING_TAGS = [{
 			start: '<thinking>',
 			end: '</thinking>'
@@ -3579,9 +3615,13 @@
 					return statusData && statusData.status === 'testing';
 				});
 				const batchTestBtn = mk('button');
-				batchTestBtn.className = 'action batch-test' + (hasTesting ? ' testing' : '');
-				batchTestBtn.innerHTML = hasTesting ? '<span class="spin">◐</span>' : '○';
-				batchTestBtn.title = hasTesting ? '测试中...' : '批量测试连接';
+				batchTestBtn.className = "action batch-test";
+				batchTestBtn.innerHTML = '<span>🔗</span>';
+				if (hasTesting) {
+					batchTestBtn.classList.add("testing");
+					$("span", batchTestBtn).classList.add("spin");
+				}
+				batchTestBtn.title = hasTesting ? "测试中..." : "批量测试连接";
 				batchTestBtn.on('click', e => {
 					e.stopPropagation();
 					if (onTestConnection) {
@@ -3682,7 +3722,10 @@
 					const testBtn = mk('button');
 					testBtn.className = 'action-sm connection ' + status;
 					testBtn.title = getConnectionStatusText(statusKey);
-					testBtn.innerHTML = status === 'testing' ? '<span class="spin">◐</span>' : '○';
+					testBtn.innerHTML = '<span>🔗</span>';
+					if (status === "testing") {
+						$("span", testBtn).classList.add("spin");
+					}
 					testBtn.on('click', e => {
 						e.stopPropagation();
 						if (onTestConnection) onTestConnection(group.id, model.id);
@@ -3898,16 +3941,13 @@
 				const preEl = codeEl.parentElement;
 				const copyBtn = document.createElement('button');
 				copyBtn.className = 'code-copy-btn';
-				copyBtn.innerHTML = SVG.copy;
+				copyBtn.innerHTML = "<span class=\"copy-icon\">⧉</span><span class=\"copy-check\">✓</span>";
 				copyBtn.title = '复制代码';
 				copyBtn.onclick = () => {
 					navigator.clipboard.writeText(codeEl.textContent).then(() => {
-						copyBtn.innerHTML = '✓';
-						copyBtn.classList.add('copy-success');
-						setTimeout(() => {
-							copyBtn.innerHTML = SVG.copy;
-							copyBtn.classList.remove('copy-success');
-						}, 1500);
+						copyBtn.classList.add("copied");
+						clearTimeout(copyBtn._copiedTimer);
+						copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 					});
 				};
 				preEl.appendChild(copyBtn);
@@ -3933,12 +3973,9 @@
 					const copyBtn = $('.copy-btn', meta);
 					copyBtn.onclick = () => {
 						navigator.clipboard.writeText(textContent).then(() => {
-							copyBtn.innerHTML = '✓';
-							copyBtn.classList.add('copy-success');
-							setTimeout(() => {
-								copyBtn.innerHTML = SVG.copy;
-								copyBtn.classList.remove('copy-success');
-							}, 1500);
+							copyBtn.classList.add("copied");
+							clearTimeout(copyBtn._copiedTimer);
+							copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 						});
 					};
 					if (textContent) {
@@ -4017,13 +4054,10 @@
 			$('.response.time', meta).textContent = timeStr;
 			const copyBtn = $('.copy-btn', meta);
 			copyBtn.onclick = () => {
-				navigator.clipboard.writeText(msg.content || '').then(() => {
-					copyBtn.innerHTML = '✓';
-					copyBtn.classList.add('copy-success');
-					setTimeout(() => {
-						copyBtn.innerHTML = SVG.copy;
-						copyBtn.classList.remove('copy-success');
-					}, 1500);
+				navigator.clipboard.writeText(msg.content || "").then(() => {
+					copyBtn.classList.add("copied");
+					clearTimeout(copyBtn._copiedTimer);
+					copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 				});
 			};
 			msgEl.addChild(meta);
@@ -4076,13 +4110,10 @@
 				const copyBtn = $('.copy-btn', meta);
 				if (r.status === 'completed' && r.content) {
 					copyBtn.onclick = () => {
-						navigator.clipboard.writeText(r.content || '').then(() => {
-							copyBtn.innerHTML = '✓';
-							copyBtn.classList.add('copy-success');
-							setTimeout(() => {
-								copyBtn.innerHTML = SVG.copy;
-								copyBtn.classList.remove('copy-success');
-							}, 1500);
+						navigator.clipboard.writeText(r.content || "").then(() => {
+							copyBtn.classList.add("copied");
+							clearTimeout(copyBtn._copiedTimer);
+							copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 						});
 					};
 				} else {
@@ -4386,7 +4417,7 @@
 			const restoreBtn = $('#btn-restore-dir', dialog);
 			if (restoreBtn) {
 				restoreBtn.onclick = async () => {
-					const ok = await DirectoryStorage.restoreHandle();
+					const ok = window.__IS_EXTENSION__ ? false : await DirectoryStorage.restoreHandle();
 					if (ok) {
 						currentMode = 'directory';
 						await storage._saveModePref();
@@ -5407,7 +5438,11 @@
 			confirmAction('确定清空磁盘上的所有数据？\n这将删除 endpoints.json 和 sessions 目录中的所有会话记录。\n此操作不可恢复！', () => {
 				confirmAction('再次确认：这将永久删除所有端点配置和会话记录！', async () => {
 					try {
-						await DirectoryStorage.clearAll();
+						if (window.__IS_EXTENSION__) {
+							await storage.clearAll();
+						} else {
+							await DirectoryStorage.clearAll();
+						}
 						await clearDirectory();
 						alert('数据已清空');
 						showDirectoryPrompt(false);
