@@ -1,27 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <!--
-  Copyright (c) 2026 magicall
-  快连AI (Kuai Lian AI) is licensed under Mulan PSL v2.
-  You can use this software according to the terms and conditions of the Mulan PSL v2.
-  You may obtain a copy of Mulan PSL v2 at:
-           http://license.coscl.org.cn/MulanPSL2
-  THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY
-  KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-  NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-  See the Mulan PSL v2 for more details.
-  -->
+	<!--
+		Copyright (c) 2026 magicall
+		快连AI (Kuai Lian AI) is licensed under Mulan PSL v2.
+		You can use this software according to the terms and conditions of the Mulan PSL v2.
+		You may obtain a copy of Mulan PSL v2 at:
+				http://license.coscl.org.cn/MulanPSL2
+		THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY
+		KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+		NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+		See the Mulan PSL v2 for more details.
+	-->
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>快连AI</title>
 	<!-- Favicon -->
 	<link rel="icon" href="恋-人脸、ai.svg" type="image/svg+xml">
-	<!-- Markdown 渲染 -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
-	<!-- 代码高亮 -->
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
@@ -124,8 +120,8 @@
 			background: var(--bg-subtle);
 		}
 
-		/* ========== Navbar ========== */
-		nav {
+		/* ========== App Header ========== */
+		.app-header {
 			align-items: center;
 			justify-content: space-between;
 			padding: var(--space-2) var(--space-4);
@@ -134,38 +130,38 @@
 			height: 36px;
 		}
 
-		nav .left {
+		.app-header .left {
 			align-items: center;
 			gap: var(--space-3);
 		}
 
-		nav .logo {
+		.app-header .logo {
 			width: 24px;
 			height: 24px;
 			align-items: center;
 			justify-content: center;
 		}
 
-		nav .brand {
+		.app-header .brand {
 			font-weight: 600;
 			font-size: 14px;
 			color: var(--text-primary);
 		}
 
-		nav .version {
+		.app-header .version {
 			font-size: 12px;
 			color: var(--text-muted);
 			margin-left: var(--space-1);
 		}
 
-		nav .center {
+		.app-header .center {
 			align-items: center;
 			gap: var(--space-2);
 			flex: 1;
 			justify-content: center;
 		}
 
-		nav .right {
+		.app-header .right {
 			align-items: center;
 			gap: var(--space-2);
 		}
@@ -1356,7 +1352,6 @@
 			background: var(--accent-primary-hover);
 		}
 
-		
 		#btn-use-browser-storage {
 			background: #2563EB;
 			color: #fff;
@@ -1377,7 +1372,9 @@
 			font-size: 12px;
 			color: var(--text-muted);
 			margin-top: 6px;
-		}		#help-dialog .directory-warning {
+		}
+
+		#help-dialog .directory-warning {
 			color: var(--warning);
 			font-size: 13px;
 			margin-top: var(--space-2);
@@ -2037,7 +2034,7 @@
 </head>
 <body>
 	<main class="layout-y-queue">
-		<nav class="layout-x-queue">
+		<header class="layout-x-queue app-header">
 			<div class="left layout-x-queue">
 				<div class="logo layout-x-queue">
 					<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
@@ -2074,7 +2071,7 @@
 				</button>
 				<button id="btn-help" class="navbar help" title="帮助">?</button>
 			</div>
-		</nav>
+		</header>
 		<div id="main-row" class="layout-x-queue">
 			<aside class="left layout-y-queue">
 				<header class="layout-x-queue">
@@ -2309,6 +2306,10 @@
 			</footer>
 		</div>
 	</template>
+	<div class="js container">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+	</div>
 	<script>
 		// ========== 统一存储模块 ==========
 		const BrowserStorage = {
@@ -2819,7 +2820,7 @@
 						headers: {
 							'Content-Type': 'application/json',
 							'x-api-key': apiKey,
-								'Authorization': 'Bearer ' + apiKey,
+							'Authorization': 'Bearer ' + apiKey,
 							'anthropic-version': '2023-06-01',
 							'anthropic-dangerous-direct-browser-access': 'true'
 						},
@@ -2876,7 +2877,7 @@
 						headers: {
 							'Content-Type': 'application/json',
 							'x-api-key': apiKey,
-								'Authorization': 'Bearer ' + apiKey,
+							'Authorization': 'Bearer ' + apiKey,
 							'anthropic-version': '2023-06-01',
 							'anthropic-dangerous-direct-browser-access': 'true'
 						},
@@ -3095,7 +3096,6 @@
 				remove,
 				el
 			};
-
 		}
 		// ========== UI Functions ==========
 		function initDividers() {
@@ -3104,14 +3104,11 @@
 			const chatMsg = $('#chat-messages');
 			const mainContent = $('#main-content');
 			const chatHeader = $('#chat-header');
-			// 恢复保存的侧栏宽度
 			const savedLeftWidth = localStorage.getItem('sidebar-left-width');
 			const savedRightWidth = localStorage.getItem('sidebar-right-width');
 			if (savedLeftWidth) $('aside.left:not(.divider)').style.width = savedLeftWidth;
 			if (savedRightWidth) $('aside.right:not(.divider)').style.width = savedRightWidth;
-			// 清理旧格式存储，重新初始化布局
 			localStorage.removeItem('chat-messages-flex');
-			// 恢复保存的消息区高度（像素值）
 			const savedMessagesHeight = localStorage.getItem('chat-messages-height');
 			if (savedMessagesHeight) {
 				chatMsg.style.height = savedMessagesHeight;
@@ -3192,7 +3189,6 @@
 					doc.body.style.userSelect = '';
 				}
 			}
-			// 右侧栏显示/隐藏
 			const sidebarRight = $('aside.right:not(.divider)');
 			const dividerRight = $('.divider.column.control.sidebar.right');
 			const btnToggleSidebar = $('#btn-toggle-sidebar');
@@ -3217,7 +3213,6 @@
 					updateSidebarToggleIcon(isHidden);
 				});
 			}
-			// 统一绑定所有水平 divider
 			$$('.divider.column.control').forEach(div => {
 				div.on('mousedown', startDragHorizontal);
 			});
@@ -3239,26 +3234,23 @@
 			const navButtons = $('#scroll-nav-buttons');
 			const scrollContainer = $('#chat-messages');
 			if (!btnScrollTop || !btnScrollBottom || !navButtons || !scrollContainer) return;
-			// 检测是否有滚动条
+
 			function checkScrollable() {
 				const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight + 20;
 				navButtons.classList.toggle('visible', hasScroll);
 			}
-			// 到顶部
 			btnScrollTop.onclick = () => {
 				scrollContainer.scrollTo({
 					top: 0,
 					behavior: 'smooth'
 				});
 			};
-			// 到底部
 			btnScrollBottom.onclick = () => {
 				scrollContainer.scrollTo({
 					top: scrollContainer.scrollHeight,
 					behavior: 'smooth'
 				});
 			};
-			// 监听滚动和内容变化
 			scrollContainer.on('scroll', checkScrollable);
 			const observer = new MutationObserver(checkScrollable);
 			observer.observe(scrollContainer, {
@@ -3381,9 +3373,7 @@
 				renderModelSelector(getGroups(), selectedModels, false);
 			}
 		});
-		// 收起状态存储（端点ID -> 是否收起）
 		const collapsedEndpoints = new Set();
-		// 全局tooltip元素（用于附件hover显示名字）
 		let attachmentTooltip = null;
 
 		function showAttachmentTooltip(name, targetEl) {
@@ -3405,7 +3395,7 @@
 				attachmentTooltip.style.display = 'none';
 			}
 		}
-		// 渲染待发送的附件缩略图
+
 		function renderPendingAttachments() {
 			const row = $('#attachments-row');
 			if (!row) return;
@@ -3421,7 +3411,6 @@
 				// hover显示名字
 				thumb.onmouseenter = () => showAttachmentTooltip(att.name, thumb);
 				thumb.onmouseleave = () => hideAttachmentTooltip();
-				// 删除按钮
 				const remove = mk('span', 'attachment-remove');
 				remove.textContent = '×';
 				remove.onclick = (e) => {
@@ -3435,7 +3424,7 @@
 				row.appendChild(thumb);
 			});
 		}
-		// 预览附件（简单实现：图片弹窗，文件下载）
+
 		function showAttachmentPreview(att) {
 			if (att.type === 'image' && att.previewUrl) {
 				// 图片预览弹窗
@@ -3492,7 +3481,6 @@
 				});
 				// 收展三角放前面
 				const toggleSpan = mk('span', 'group-toggle');
-				// 恢复收起状态
 				const isCollapsed = collapsedEndpoints.has(group.id);
 				toggleSpan.textContent = isCollapsed ? '▶' : '▼';
 				toggleSpan.on('click', e => {
@@ -3509,7 +3497,6 @@
 				// 组名
 				const nameSpan = mk('span', 'group-name');
 				nameSpan.textContent = group.name;
-				// tooltip内容（创建但不添加到DOM，hover时动态定位）
 				const tooltipId = `tooltip-${group.id}`;
 				const styleLabels = {
 					'openai': 'OpenAI',
@@ -3533,12 +3520,9 @@
         <button class="tooltip-copy" data-copy="${group.style}" title="复制">⧉</button>
       </div>
     `;
-				// 使用createTooltip
 				const tooltip = createTooltip(tooltipId, tooltipHTML);
-				// hover事件
 				nameSpan.on('mouseenter', () => tooltip.show(nameSpan));
 				nameSpan.on('mouseleave', () => tooltip.hide());
-				// 点击展开/收起模型列表，同时隐藏tooltip
 				nameSpan.on('click', () => {
 					tooltip.hide();
 					const models = $('.group-models', groupEl);
@@ -3552,10 +3536,8 @@
 						}
 					}
 				});
-				// 操作按钮容器（不再包含添加模型按钮）
 				const actionsEl = mk('div', 'group-actions layout-x-queue');
 				// 批量测试连接按钮
-				// 检查该端点下是否有模型正在测试中
 				const hasTesting = group.models.some(model => {
 					const statusKey = `${group.id}:${model.id}`;
 					const statusData = connectionStatus.get(statusKey);
@@ -3574,7 +3556,6 @@
 						});
 					}
 				});
-				// 编辑按钮
 				const editBtn = mk('button', 'action');
 				editBtn.innerHTML = SVG.edit(12);
 				editBtn.title = '编辑端点';
@@ -3582,7 +3563,6 @@
 					e.stopPropagation();
 					onGroupEdit(group.id);
 				});
-				// 删除按钮
 				const deleteBtn = mk('button', 'action danger');
 				deleteBtn.innerHTML = SVG.del(12);
 				deleteBtn.title = '删除端点';
@@ -3597,7 +3577,6 @@
 				headerEl.addChild(toggleSpan);
 				headerEl.addChild(nameSpan);
 				headerEl.addChild(actionsEl);
-				// 拖放目标事件绑定到整个groupEl
 				groupEl.on('dragover', e => {
 					e.preventDefault();
 					e.dataTransfer.dropEffect = 'move';
@@ -3612,7 +3591,6 @@
 					groupEl.classList.remove('drag-over');
 					const draggedGroupId = e.dataTransfer.getData('text/plain');
 					if (draggedGroupId !== group.id) {
-						// 根据鼠标位置判断插入到目标之前还是之后
 						const rect = groupEl.getBoundingClientRect();
 						const midY = rect.top + rect.height / 2;
 						const insertBefore = e.clientY < midY;
@@ -3620,7 +3598,6 @@
 					}
 				});
 				const models = mk('div', 'group-models layout-y-queue');
-				// 恢复收起状态
 				if (isCollapsed) {
 					models.style.display = 'none';
 				}
@@ -3631,7 +3608,6 @@
 					if (model.id === selectedModelId) {
 						modelEl.classList.add('selected');
 					}
-					// 模型拖动手柄
 					const modelDragHandle = mk('span', 'drag-handle');
 					modelDragHandle.innerHTML = SVG.drag(14);
 					modelDragHandle.title = '拖动排序';
@@ -3647,7 +3623,6 @@
 					});
 					const modelName = mk('span', 'model name');
 					modelName.textContent = model.name;
-					// 模型名tooltip
 					const modelTooltipId = `tooltip-model-${group.id}-${model.id}`;
 					const modelTooltipHTML = `
         <div class="tooltip-row layout-x-queue">
@@ -3663,9 +3638,7 @@
 						modelTooltip.hide();
 						if (onModelSelect) onModelSelect(group.id, model.id);
 					});
-					// 模型操作按钮
 					const modelActions = mk('div', 'model actions layout-x-queue');
-					// 测试连接按钮
 					const statusKey = `${group.id}:${model.id}`;
 					const statusData = connectionStatus.get(statusKey) || {
 						status: 'disconnected'
@@ -3692,7 +3665,6 @@
 						const inputEl = $('.add-model-input', inlineEdit);
 						inputEl.value = model.name;
 						inputEl.placeholder = '模型名';
-						// 替换模型名显示为编辑器
 						modelDragHandle.style.display = 'none';
 						modelName.style.display = 'none';
 						modelActions.style.display = 'none';
@@ -3747,7 +3719,6 @@
 					modelEl.addChild(modelDragHandle);
 					modelEl.addChild(modelName);
 					modelEl.addChild(modelActions);
-					// 模型拖放目标事件
 					modelEl.on('dragover', e => {
 						e.preventDefault();
 						e.dataTransfer.dropEffect = 'move';
@@ -3772,12 +3743,10 @@
 					});
 					models.addChild(modelEl);
 				});
-				// 添加模型按钮放在模型列表底部
 				const addModelBtn = mk('div', 'add-model-link');
 				addModelBtn.textContent = '+ 添加模型';
 				addModelBtn.on('click', e => {
 					e.stopPropagation();
-					// 显示内联输入框而非弹窗
 					const existInput = $('.add-model-inline', models);
 					if (existInput) existInput.remove();
 					const inlineInput = fromTemplate('tpl-add-model-inline', '.add-model-inline');
@@ -3829,19 +3798,16 @@
 					month: 'short',
 					day: 'numeric'
 				});
-				// 操作按钮
 				const actionsEl = mk('div', 'session actions layout-x-queue');
 				const editBtn = mk('button', 'action-sm');
 				editBtn.innerHTML = SVG.edit(10);
 				editBtn.title = '编辑标题';
 				editBtn.on('click', e => {
 					e.stopPropagation();
-					// 原地编辑：将标题替换为输入框
 					const currentTitle = session.title || '新会话';
 					const inputEl = mk('input', 'session title-edit');
 					inputEl.type = 'text';
 					inputEl.value = currentTitle;
-					// 替换标题显示为编辑器
 					titleEl.style.display = 'none';
 					sessionEl.insertBefore(inputEl, meta);
 					inputEl.focus();
@@ -3926,11 +3892,9 @@
 					const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 					$('.request.time', meta).textContent = timeStr;
 					msgEl.addChild(meta);
-					// 提取文本内容
 					const normalized = normalizeMessageContent(msg);
 					const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
 					const textContent = textItems.map(c => c.text || '').join('\n');
-					// 复制按钮事件
 					const copyBtn = $('.copy-btn', meta);
 					copyBtn.onclick = () => {
 						navigator.clipboard.writeText(textContent).then(() => {
@@ -3947,7 +3911,6 @@
 						userEl.textContent = textContent;
 						msgEl.addChild(userEl);
 					}
-					// 渲染附件（非 text/file_text 类型）
 					const attachmentItems = normalized.filter(c => c.type === 'image' || c.type === 'file');
 					if (attachmentItems.length > 0) {
 						const attContainer = mk('div', 'message-attachments layout-x-queue');
@@ -3963,7 +3926,6 @@
 								const thumb = mk('img', 'message-attachment-thumb');
 								thumb.src = imgSrc;
 								thumb.onclick = () => {
-									// 点击查看大图
 									const overlay = mk('div', 'image-preview-overlay layout-x-queue');
 									const fullImg = mk('img');
 									fullImg.src = imgSrc;
@@ -3983,7 +3945,6 @@
 								nameEl.textContent = att.name || '文件';
 								attEl.addChild(nameEl);
 								attEl.onclick = () => {
-									// 下载文件
 									const data = att.source.data;
 									const mime = att.source.media_type;
 									const blob = new Blob([Uint8Array.from(atob(data), c => c.charCodeAt(0))], {
@@ -4001,11 +3962,10 @@
 						msgEl.addChild(attContainer);
 					}
 				} else {
-					// 检测消息格式
 					if (msg.responses && Array.isArray(msg.responses)) {
 						renderMultiModelResponse(msgEl, msg, groups, onCopy);
 					} else {
-						renderSingleModelResponse(msgEl, msg, groups, onCopy); // 向后兼容
+						renderSingleModelResponse(msgEl, msg, groups, onCopy);
 					}
 				}
 				container.addChild(msgEl);
@@ -4017,7 +3977,6 @@
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 			const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
 			const modelName = info ? `${info.group.name} / ${info.model.name}` : '未知模型';
-			// Response meta row with name, time, copy button
 			const meta = fromTemplate('tpl-response-meta', '.response.meta');
 			$('.response.model-name', meta).textContent = modelName;
 			$('.response.time', meta).textContent = timeStr;
@@ -4037,7 +3996,6 @@
 			assistantEl.innerHTML = renderMarkdown(msg.content || '');
 			msgEl.addChild(assistantEl);
 			addCodeCopyButtons(assistantEl);
-			// Status bar: usage info if available
 			if (msg.usage) {
 				const statusBar = mk('div', 'message-status-bar layout-x-queue');
 				const usageEl = mk('span', 'message-usage');
@@ -4057,7 +4015,6 @@
 				const card = mk('div', 'response card');
 				const info = findModelById(groups, r.modelId);
 				const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
-				// Response meta row with model name, time, duration, copy button
 				const meta = fromTemplate('tpl-multi-response-meta', '.response.meta');
 				const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
 				const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
@@ -4081,7 +4038,6 @@
 				} else {
 					errorEl.remove();
 				}
-				// Only add copy button for completed responses with content
 				const copyBtn = $('.copy-btn', meta);
 				if (r.status === 'completed' && r.content) {
 					copyBtn.onclick = () => {
@@ -4098,7 +4054,6 @@
 					copyBtn.remove();
 				}
 				card.addChild(meta);
-				// Thinking block（如果有thinking内容）
 				if (r.thinking && r.thinking.trim()) {
 					const thinkingBlock = mk('div', 'thinking-block collapsed');
 					const thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
@@ -4161,20 +4116,16 @@
 			const input = $('#chat-input');
 			return input.value.trim();
 		}
-		// 获取完整消息内容（包含文本和附件）
 		async function getInputMessage() {
 			const input = $('#chat-input');
 			const text = input.value.trim();
-			// 构建消息内容数组
 			const content = [];
-			// 添加文本（如果有）
 			if (text) {
 				content.push({
 					type: 'text',
 					text
 				});
 			}
-			// 处理附件
 			for (const att of pendingAttachments) {
 				try {
 					if (att.type === 'image') {
@@ -4216,7 +4167,6 @@
 			return content;
 		}
 		// ========== 附件处理辅助函数 ==========
-		// 附件类型判断
 		function isTextFile(filename) {
 			const textExtensions = ['.txt', '.md', '.markdown', '.json', '.csv', '.log', '.js', '.ts', '.jsx', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.hpp', '.css', '.scss', '.sass', '.less', '.html', '.htm', '.xml', '.yaml', '.yml', '.sh', '.bash', '.zsh', '.ps1', '.bat', '.cmd', '.sql', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.scala', '.lua', '.r', '.vue', '.svelte'];
 			const dotIndex = filename.lastIndexOf('.');
@@ -4247,7 +4197,6 @@
 			if (fileTypes[ext]) return fileTypes[ext];
 			return 'application/octet-stream';
 		}
-		// 读取文件为 base64
 		async function fileToBase64(file) {
 			return new Promise((resolve, reject) => {
 				const reader = new FileReader();
@@ -4259,11 +4208,9 @@
 				reader.readAsDataURL(file);
 			});
 		}
-		// 带超时的 fetch
 		async function fetchWithTimeout(url, options, timeout = 60000) {
 			const controller = new AbortController();
 			const id = setTimeout(() => controller.abort(), timeout);
-			// 合并外部 signal（如用户取消）
 			const externalSignal = options?.signal;
 			if (externalSignal) {
 				externalSignal.addEventListener('abort', () => controller.abort());
@@ -4281,7 +4228,6 @@
 				throw e;
 			}
 		}
-		// 读取文本文件内容
 		async function fileToText(file) {
 			return new Promise((resolve, reject) => {
 				const reader = new FileReader();
@@ -4290,7 +4236,6 @@
 				reader.readAsText(file);
 			});
 		}
-		// 添加附件
 		async function addAttachment(file) {
 			const isImage = getMediaType(file.name).startsWith('image/');
 			const isText = isTextFile(file.name);
@@ -4302,7 +4247,6 @@
 				mediaType: getMediaType(file.name),
 				previewUrl: null // 缩略图 URL（图片用）
 			};
-			// 图片生成缩略图 URL
 			if (isImage) {
 				attachment.previewUrl = await new Promise((resolve, reject) => {
 					const reader = new FileReader();
@@ -4314,12 +4258,12 @@
 			pendingAttachments.push(attachment);
 			renderPendingAttachments();
 		}
-		// 删除附件
+
 		function removeAttachment(id) {
 			pendingAttachments = pendingAttachments.filter(a => a.id !== id);
 			renderPendingAttachments();
 		}
-		// 清空附件
+
 		function clearAttachments() {
 			pendingAttachments = [];
 			renderPendingAttachments();
@@ -4380,7 +4324,6 @@
 		}
 
 		function showDirectoryPrompt(hasPendingHandle = false) {
-			// 无目录时调用帮助弹窗，强制选择目录
 			showHelpDialog(true, hasPendingHandle);
 		}
 
@@ -4392,7 +4335,6 @@
 		function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
 			const exist = $('#help-dialog');
 			if (exist) exist.remove();
-			// 创建遮罩
 			const overlay = mk('div', 'dialog-overlay');
 			if (forceSelectDirectory) {
 				overlay.style.background = 'rgba(0, 0, 0, 0.5)';
@@ -4450,7 +4392,6 @@
 					}
 				}
 			};
-
 			// 使用浏览器存储按钮
 			const browserBtn = $("#btn-use-browser-storage", dialog);
 			if (browserBtn) {
@@ -4475,21 +4416,15 @@
 			const btnRect = helpBtn.getBoundingClientRect();
 			const dialogRect = dialog.getBoundingClientRect();
 			if (!immediate) {
-				// 计算按钮中心位置
 				const btnCenterX = btnRect.left + btnRect.width / 2;
 				const btnCenterY = btnRect.top + btnRect.height / 2;
-				// 计算对话框中心位置
 				const dialogCenterX = dialogRect.left + dialogRect.width / 2;
 				const dialogCenterY = dialogRect.top + dialogRect.height / 2;
-				// 计算需要移动的距离
 				const translateX = btnCenterX - dialogCenterX;
 				const translateY = btnCenterY - dialogCenterY;
-				// 设置动画 - 不改变透明度
 				dialog.style.setProperty('transition', 'transform 0.4s ease-in', 'important');
 				dialog.style.setProperty('transform-origin', 'center center', 'important');
-				// 强制浏览器重新计算样式
 				dialog.offsetHeight;
-				// 设置最终状态 - 缩小到按钮位置
 				dialog.style.setProperty('transform', `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px)) scale(0.05)`, 'important');
 				setTimeout(() => {
 					dialog.remove();
@@ -4500,7 +4435,6 @@
 				overlay.remove();
 			}
 		}
-		// 测试连接状态
 		const connectionStatus = new Map(); // groupId:modelId -> { status, timestamp }
 		function getConnectionStatusText(key) {
 			const data = connectionStatus.get(key);
@@ -4798,7 +4732,6 @@
 			return Array.from(sessionsCache.values());
 		}
 		async function createSession(firstMessage = null, targetModels = null) {
-			// 从第一条消息提取标题
 			let title = '新会话';
 			if (firstMessage) {
 				if (Array.isArray(firstMessage)) {
@@ -4815,7 +4748,6 @@
 				messages: []
 			};
 			if (firstMessage) {
-				// 使用标准数组格式
 				let content;
 				if (Array.isArray(firstMessage)) {
 					content = firstMessage;
@@ -4886,39 +4818,32 @@
 			};
 			// content 改造：支持字符串或数组
 			if (typeof content === 'string') {
-				// 纯文本，转换为标准数组格式
 				message.content = [{
 					type: 'text',
 					text: content
 				}];
 			} else if (Array.isArray(content)) {
-				// 已经是数组格式，直接使用
 				message.content = content;
 			} else {
-				// 兼容旧格式或其他情况
 				message.content = [{
 					type: 'text',
 					text: content || ''
 				}];
 			}
 			if (role === 'user') {
-				// 用户消息：记录targetModels
 				if (options.targetModels) {
 					message.targetModels = options.targetModels;
 				}
 			} else if (role === 'assistant') {
-				// 助手消息：多模型responses数组
 				if (options.responses) {
 					message.responses = options.responses;
 				}
-				// 兼容旧格式：单模型消息
 				if (options.modelId && !options.responses) {
 					message.modelId = options.modelId;
 					message.endpointGroupId = options.endpointGroupId;
 					if (options.usage) message.usage = options.usage;
 				}
 			}
-			// 更新标题：从第一个 text 块提取
 			if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 1) {
 				const firstText = message.content.find(c => c.type === 'text');
 				session.title = firstText ? firstText.text.slice(0, 20) : '新会话';
@@ -4936,14 +4861,13 @@
 			return await storage.deleteSession(sessionId);
 		}
 		// ========== API Functions ==========
-		// 获取指定会话的生成状态Map
 		function getSessionGenerations(sessionId) {
 			if (!sessionGenerations.has(sessionId)) {
 				sessionGenerations.set(sessionId, new Map());
 			}
 			return sessionGenerations.get(sessionId);
 		}
-		// 清除指定会话的所有生成状态（中止请求并清空Map）
+
 		function clearSessionGenerations(sessionId) {
 			const gens = sessionGenerations.get(sessionId);
 			if (gens) {
@@ -4955,7 +4879,7 @@
 				gens.clear();
 			}
 		}
-		// 删除指定会话的生成状态Map（中止请求并删除整个子Map）
+
 		function deleteSessionGenerations(sessionId) {
 			clearSessionGenerations(sessionId);
 			sessionGenerations.delete(sessionId);
@@ -4974,13 +4898,13 @@
 		function stopSessionGenerations(sessionId) {
 			clearSessionGenerations(sessionId);
 		}
-		// 兼容：停止当前会话的所有生成
+
 		function stopAllGenerations() {
 			if (currentSession) {
 				stopSessionGenerations(currentSession.id);
 			}
 		}
-		// OpenAI 消息格式转换
+
 		function toOpenAIContent(contentArray) {
 			return contentArray.map(item => {
 				if (item.type === 'text' || item.type === 'file_text') {
@@ -5024,7 +4948,6 @@
 						}
 					};
 				}
-				// 不支持的类型，降级为文本提示
 				return {
 					type: 'text',
 					text: `[附件 ${item.name || '未知'}，不支持此类型]`
@@ -5090,7 +5013,6 @@
 		}
 
 		function handleParsedChunk(parsed, state, tagParser, onChunk) {
-			// 事件类型处理（Claude 原生 thinking）
 			if (parsed.event === 'thinking_start') {
 				state.phase = 'thinking';
 				state.thinkingStartTime = Date.now();
@@ -5101,7 +5023,6 @@
 				if (state.firstContentTokenTime === null) state.firstContentTokenTime = Date.now();
 				return;
 			}
-			// 原生 reasoning（DeepSeek/Claude thinking_delta）
 			if (parsed.reasoning) {
 				if (!state.thinkingStartTime) {
 					state.thinkingStartTime = Date.now();
@@ -5111,7 +5032,6 @@
 				onChunk(state);
 				return;
 			}
-			// 内容处理
 			if (parsed.content) {
 				if (state.thinkingStartTime && state.thinkingDuration === null && state.phase === 'thinking') {
 					state.thinkingDuration = Date.now() - state.thinkingStartTime;
@@ -5153,7 +5073,6 @@
 					} catch (e) {}
 				}
 			}
-			// 处理未结束的 thinking
 			if (tagParser && tagParser.inThinking && tagParser.buffer) {
 				state.thinking += tagParser.buffer;
 			}
@@ -5198,13 +5117,10 @@
 			if (!provider) throw new Error('不支持的接口风格: ' + style);
 			return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal);
 		}
-		// 并行调用所有模型
 		async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 			const startTime = Date.now();
-			// 清除当前会话的旧生成状态（不影响其他会话）
 			clearSessionGenerations(sessionId);
 			const gens = getSessionGenerations(sessionId);
-			// 初始化每个模型的状态和AbortController
 			modelIds.forEach(id => {
 				gens.set(id, {
 					abortController: new AbortController(),
@@ -5216,7 +5132,6 @@
 					thinkingDuration: null
 				});
 			});
-			// 并行调用所有模型
 			const promises = modelIds.map(async id => {
 				const info = findModelById(groups, id);
 				const state = gens.get(id);
@@ -5305,7 +5220,6 @@
 			return Promise.all(promises);
 		}
 		// ========== Main Logic ==========
-		// 全局默认模型集管理
 		function loadDefaultSelectedModels() {
 			try {
 				const saved = localStorage.getItem('defaultSelectedModels');
@@ -5318,18 +5232,15 @@
 		function saveDefaultSelectedModels(models) {
 			localStorage.setItem('defaultSelectedModels', JSON.stringify(models));
 		}
-		// 初始化时加载
 		let defaultSelectedModels = loadDefaultSelectedModels();
 		let currentSession = null;
 		let selectedModels = []; // 当前选中模型ID数组
 		let sessionGenerations = new Map(); // 按会话隔离的生成状态：Map<sessionId, Map<modelId, state>>
 		let lastUserMessage = null;
-		// 附件管理
 		let pendingAttachments = []; // 待发送的附件列表
 		async function init() {
 			initDividers();
 			initScrollNav();
-			// 发送快捷键设置（从 localStorage 加载）
 			let sendOnEnter = localStorage.getItem('sendMode') !== 'ctrl-enter';
 			const chatInput = $('#chat-input');
 			chatInput.on('keydown', e => {
@@ -5664,9 +5575,7 @@
 			const targetSessionId = currentSession.id;
 			// 显示"思考中"状态卡片（使用 targetSessionId 标记）
 			showThinkingCards(selectedModels, groups, targetSessionId);
-			// 记录已排序的模型（只排序一次）
 			const sortedModels = new Set();
-			// 并行调用所有模型
 			const responses = await callAllModels(groups, selectedModels, messages, (modelId, partialContent, firstTokenTime) => {
 				updateStreamingCard(modelId, partialContent, firstTokenTime, groups, targetSessionId);
 				// 只在firstTokenTime首次有值时排序一次
@@ -5676,13 +5585,10 @@
 					reorderSelectorTagsBySpeed();
 				}
 			}, targetSessionId);
-			// 全部完成后保存助手消息到发起请求时的会话
 			await addMessage(targetSessionId, 'assistant', null, {
 				responses
 			});
-			// 清理该会话的生成状态（回复已完成）
 			sessionGenerations.delete(targetSessionId);
-			// 如果用户还在这个会话，刷新显示
 			if (currentSession?.id === targetSessionId) {
 				currentSession = await loadSession(targetSessionId);
 				setButtonState(false, false);
@@ -5693,7 +5599,6 @@
 
 		function showThinkingCards(modelIds, groups, sessionId) {
 			const container = $('#chat-messages');
-			// 先清理当前会话已有的流式卡片容器（防止重复）
 			const existingCards = $(`#streaming-multi-response[data-session-id="${sessionId}"]`);
 			if (existingCards) {
 				existingCards.remove();
@@ -5704,7 +5609,6 @@
 			const hint = fromTemplate('tpl-multi-response-hint', '.multi-response-hint');
 			$('.hint-text', hint).textContent = `${modelIds.length}个模型正在思考...`;
 			msgEl.addChild(hint);
-			// 绑定停止按钮事件
 			const stopBtn = $('#btn-stop-inline', hint);
 			if (stopBtn) {
 				stopBtn.onclick = () => {
@@ -5730,11 +5634,8 @@
 		}
 
 		function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) {
-			// 直接更新DOM，不用requestAnimationFrame（避免并行时排队显示）
-			// 使用 sessionId + modelId 组合选择器，确保只更新当前会话的卡片
 			const card = $(`.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
 			if (!card) return;
-			// thinking区块处理
 			const thinkingBlock = $('.thinking-block', card);
 			if (thinkingBlock) {
 				if (state.thinking && state.thinking.trim()) {
@@ -5744,7 +5645,6 @@
 					if (thinkingContent) {
 						thinkingContent.textContent = state.thinking;
 					}
-					// 创建thinking header（如果不存在）
 					let thinkingHeader = $('.thinking-header', thinkingBlock);
 					if (!thinkingHeader) {
 						thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
@@ -5755,7 +5655,6 @@
 						$('.thinking-duration', thinkingHeader).textContent = durationText;
 						thinkingBlock.insertBefore(thinkingHeader, thinkingBlock.firstChild);
 					}
-					// 更新thinkingDuration
 					if (state.thinkingDuration) {
 						const thinkingDurationEl = $('.thinking-duration', thinkingHeader);
 						if (thinkingDurationEl) {
@@ -5763,21 +5662,16 @@
 						}
 					}
 				} else {
-					// thinking为空，隐藏思考块
 					thinkingBlock.style.display = 'none';
 				}
 			}
-			// content区块处理
 			const contentEl = $('.response.card-content', card);
 			if (contentEl) {
 				contentEl.textContent = state.content || '';
 			}
-			// meta信息处理（duration等）
 			if (firstTokenTime !== null) {
 				const meta = $('.response.meta', card);
 				if (meta) {
-					// 收到第一个token时不停止动画，保持转动直到完成
-					// 添加duration显示（如果不存在）
 					if (!$('.response.duration', meta)) {
 						const durationEl = mk('span', `response duration ${getSpeedClass(firstTokenTime)}`);
 						durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
@@ -5789,17 +5683,15 @@
 				}
 			}
 		}
-		// Update streaming card status (for failed/stopped/completed models)
+
 		function updateCardStatus(modelId, status, error, state = null, sessionId = null) {
 			requestAnimationFrame(() => {
-				// 使用 sessionId + modelId 组合选择器
 				const selector = sessionId ? `.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.response.card[data-model-id="${modelId}"]`;
 				const card = $(selector);
 				if (!card) return;
 				card.classList.remove('thinking');
 				const contentEl = $('.response.card-content', card);
 				const meta = $('.response.meta', card);
-				// Update status icon with color class
 				const icon = meta ? $('.model.status-icon', meta) : null;
 				if (icon) {
 					icon.classList.remove('spinning');
@@ -5807,7 +5699,6 @@
 					icon.classList.add(status);
 					icon.textContent = getStatusText(status);
 				}
-				// Update content and add error message for failed models
 				if (status === 'failed') {
 					if (contentEl) {
 						contentEl.textContent = ''; // Empty content for failed
@@ -5820,11 +5711,7 @@
 							statusEl.insertAdjacentElement('afterend', errorEl);
 						}
 					}
-				} else if (status === 'stopped') {
-					// Keep partial content if exists
-				} else if (status === 'completed') {
-					// Content already updated via updateStreamingCard
-					// 更新thinking区块的duration显示
+				} else if (status === 'stopped') {} else if (status === 'completed') {
 					if (state && state.thinkingDuration) {
 						const thinkingBlock = $('.thinking-block', card);
 						if (thinkingBlock) {
@@ -5836,12 +5723,10 @@
 							}
 						}
 					}
-					// 更新totalDuration显示
 					if (state && state.totalDuration) {
 						let totalEl = $('.response.total', meta);
 						if (!totalEl) {
 							totalEl = mk('span', 'response total');
-							// 插入到meta末尾或icon后面
 							const insertAfter = $('.response.status', meta) || $('.model.status-icon', meta);
 							if (insertAfter) {
 								insertAfter.insertAdjacentElement('afterend', totalEl);
@@ -5875,36 +5760,27 @@
 			if (!summaryEl) return;
 			const tags = Array.from(summaryEl.querySelectorAll('.model.tag.selected'));
 			if (tags.length === 0) return;
-			// 保存原始顺序（sort会原地修改）
 			const originalTags = [...tags];
-			// 按速度排序
 			const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
 			const sortedTags = tags.sort((a, b) => {
 				const aTime = gens ? gens.get(a.dataset.model)?.firstTokenTime : undefined;
 				const bTime = gens ? gens.get(b.dataset.model)?.firstTokenTime : undefined;
 				return (aTime ?? Infinity) - (bTime ?? Infinity);
 			});
-			// 检查是否需要排序（用原始顺序比较）
 			const needsReorder = sortedTags.some((tag, i) => tag !== originalTags[i]);
 			if (!needsReorder) return;
-			// 同步更新 selectedModels 数组顺序（不持久化）
 			selectedModels = sortedTags.map(tag => tag.dataset.model);
-			// 重新排列 DOM
 			sortedTags.forEach(tag => summaryEl.appendChild(tag));
 		}
 		async function handleNewSession() {
 			currentSession = null;
-			selectedModels = [...defaultSelectedModels]; // 新会话继承全局默认
+			selectedModels = [...defaultSelectedModels];
 			lastUserMessage = null;
 			await refreshUI();
-			// 新建会话后输入框自动获得焦点
 			const inputEl = $('#chat-input');
 			if (inputEl) inputEl.focus();
 		}
-		// 启动
 		init();
-
 	</script>
-
-
-</body></html>
+</body>
+</html>
