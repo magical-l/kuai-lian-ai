@@ -505,7 +505,27 @@
 							max_tokens: 1
 						}
 					};
-				}
+				},
+				buildEmbeddingRequest(baseUrl, apiKey, model, input) {
+					return {
+						url: baseUrl + '/v1/embeddings',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': 'Bearer ' + apiKey
+						},
+						body: {
+							model,
+							input,
+							encoding_format: 'float'
+						}
+					};
+				},
+				parseEmbeddingResponse(json) {
+					if (json.data && json.data[0] && json.data[0].embedding) {
+						return { embedding: json.data[0].embedding, model: json.model, usage: json.usage };
+					}
+					throw new Error('embedding response format error');
+				},
 			},
 			claude: {
 				buildRequest(baseUrl, apiKey, model, messages) {
@@ -1778,6 +1798,19 @@
 					copyBtn.remove();
 				}
 				card.addChild(meta);
+				if (r.embeddingResult) {
+					const embedDiv = mk('div', 'embedding-result');
+					embedDiv.innerHTML = '<div class="embedding-header">🔢 嵌入向量</div><div class="embedding-meta"><span>模型: ' + r.embeddingResult.model + '</span><span>维度: ' + r.embeddingResult.dim + '</span>' + (r.embeddingResult.usage ? '<span>Token: ' + r.embeddingResult.usage.total_tokens + '</span>' : '') + '</div><div class="embedding-preview">' + r.embeddingResult.preview + '</div><button class="embedding-copy-btn" data-full="' + r.embeddingResult.fullJson.replace(/'/g, '\\\'') + '">📋 复制完整向量</button>';
+					const copyBtn = embedDiv.querySelector('.embedding-copy-btn');
+					copyBtn.onclick = () => {
+						navigator.clipboard.writeText(copyBtn.dataset.full);
+						copyBtn.textContent = '✓ 已复制';
+						setTimeout(() => { copyBtn.textContent = '📋 复制完整向量'; }, 2000);
+					};
+					card.addChild(embedDiv);
+					cards.addChild(card);
+					return;
+				}
 				if (r.thinking && r.thinking.trim()) {
 					const thinkingBlock = mk('div', 'thinking-block collapsed');
 					const thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
@@ -2879,6 +2912,26 @@
 			if (!provider) throw new Error('不支持的接口风格: ' + style);
 			return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal);
 		}
+
+			async function callEmbedding(style, baseUrl, apiKey, model, input) {
+			const provider = providers[style];
+			if (!provider) throw new Error('不支持的接口风格: ' + style);
+			if (!provider.buildEmbeddingRequest) throw new Error('该接口不支持嵌入');
+			const req = provider.buildEmbeddingRequest(baseUrl, apiKey, model, input);
+			console.log('Embed req:', req.url, JSON.stringify(req.headers));
+			const res = await fetchWithTimeout(req.url, {
+				method: 'POST',
+				headers: req.headers,
+				body: JSON.stringify(req.body)
+			}, 60000);
+			if (!res.ok) {
+				const err = await res.text().catch(() => '');
+				throw new Error('嵌入请求失败: ' + res.status + (err ? ' - ' + err : ''));
+			}
+			const data = await res.json();
+			return provider.parseEmbeddingResponse(data);
+		}
+
 		async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 			const startTime = Date.now();
 			clearSessionGenerations(sessionId);
@@ -3005,15 +3058,18 @@
 			initScrollNav();
 			initScrollPaddingObserver();
 			let sendOnEnter = localStorage.getItem('sendMode') !== 'ctrl-enter';
+			let inputMode = "chat"; // "chat" | "embedding"
 			const chatInput = $('#chat-input');
 			chatInput.on('keydown', e => {
 				if (e.key === 'Enter') {
 					if (sendOnEnter && !e.shiftKey && !e.ctrlKey) {
 						e.preventDefault();
-						handleSend();
+						if (inputMode === "embedding") handleEmbeddingSend();
+						else handleSend();
 					} else if (!sendOnEnter && e.ctrlKey) {
 						e.preventDefault();
-						handleSend();
+						if (inputMode === "embedding") handleEmbeddingSend();
+						else handleSend();
 					}
 				}
 			});
@@ -3074,7 +3130,25 @@
 				await refreshUI();
 			}
 			$('#btn-add-group').onclick = handleAddGroup;
-			$('#btn-send').onclick = handleSend;
+			$('#btn-send').onclick = () => {
+				if (inputMode === 'embedding') {
+					handleEmbeddingSend();
+				} else {
+					handleSend();
+				}
+			};
+			document.querySelectorAll('#mode-selector .mode-option').forEach(el => {
+				el.onclick = () => {
+					document.querySelector('#mode-selector .selected')?.classList.remove('selected');
+					el.classList.add('selected');
+					inputMode = el.dataset.mode;
+					console.log("Mode:", inputMode);
+					const input = $('#chat-input');
+					input.placeholder = inputMode === 'chat' ? '输入消息...' : '输入要嵌入的文本...';
+					$('#btn-attach').style.display = inputMode === 'chat' ? '' : 'none';
+					$('#file-input').style.display = inputMode === 'chat' ? '' : 'none';
+				};
+			});
 			$('#btn-stop').onclick = () => {
 				stopAllGenerations();
 				setButtonState(false, false);
@@ -3373,8 +3447,88 @@
 				setButtonState(false, false);
 				renderModelSelector(groups, selectedModels, false);
 				await refreshUI();
+		}
+		}
+
+
+
+
+		async function handleEmbeddingSend() {
+			const input = $('#chat-input');
+			const text = input.value.trim();
+			if (!text) return;
+			if (selectedModels.length === 0) {
+				selectorExpanded = true;
+				renderModelSelector(getGroups(), selectedModels, false);
+				return;
+			}
+			const modelId = selectedModels[0];
+			const info = findModelById(getGroups(), modelId);
+			if (!info) {
+				console.error('模型不存在:', modelId);
+				return;
+			}
+			clearInput();
+			if (!currentSession) {
+				currentSession = await createSession(null, []);
+			}
+			await addMessage(currentSession.id, 'user', [{ type: 'text', text: '🔢 嵌入: ' + text }], {
+				targetModels: [modelId]
+			});
+			renderMessages(currentSession.messages, getGroups(), handleCopy);
+			const container = $('#chat-messages');
+			const msgEl = mk('article', 'message layout-y-queue res msg');
+			msgEl.id = 'streaming-embedding';
+			const hint = mk('div', 'embedding-thinking');
+			hint.textContent = '🔢 计算嵌入向量...';
+			msgEl.addChild(hint);
+			container.appendChild(msgEl);
+			container.scrollTop = container.scrollHeight;
+			try {
+				const result = await callEmbedding(info.group.style, info.group.baseUrl, info.group.key, info.model.name, text);
+				const card = $('#streaming-embedding');
+				if (card) card.remove();
+				const emb = result.embedding;
+				const dim = emb.length;
+				const preview = '[' + emb.slice(0, 5).map(v => v.toFixed(6)).join(', ') + ', ...]';
+				const fullJson = JSON.stringify(emb);
+				await addMessage(currentSession.id, 'assistant', null, {
+					responses: [{
+						modelId: modelId,
+						status: 'completed',
+						content: '',
+						embeddingResult: {
+							dim,
+							preview,
+							fullJson,
+							model: result.model || info.model.name,
+							usage: result.usage
+						}
+					}]
+				});
+				if (currentSession) {
+					currentSession = await loadSession(currentSession.id);
+					await refreshUI();
+				}
+			} catch (err) {
+				const card = $('#streaming-embedding');
+				if (card) card.remove();
+				console.error('嵌入失败:', err);
+				await addMessage(currentSession.id, 'assistant', null, {
+					responses: [{
+						modelId: modelId,
+						status: 'failed',
+						error: err.message
+					}]
+				});
+				if (currentSession) {
+					currentSession = await loadSession(currentSession.id);
+					await refreshUI();
+				}
 			}
 		}
+
+
 
 		function showThinkingCards(modelIds, groups, sessionId) {
 			const container = $('#chat-messages');
