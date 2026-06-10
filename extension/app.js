@@ -1,5 +1,47 @@
 		// ========== 统一存储模块 ==========
 		let storage, currentMode;
+			// IndexedDB handle storage (for persisting directory handle)
+			const DIRECTORY_DB = 'endpoint-manager';
+			const HANDLE_STORE = 'handles';
+			let directoryHandle = null;
+			async function openHandleDB() {
+				return new Promise((resolve, reject) => {
+					const request = indexedDB.open(DIRECTORY_DB, 1);
+					request.onerror = () => reject(request.error);
+					request.onsuccess = () => resolve(request.result);
+					request.onupgradeneeded = e => {
+						const db = e.target.result;
+						if (!db.objectStoreNames.contains(HANDLE_STORE)) db.createObjectStore(HANDLE_STORE);
+					};
+				});
+			}
+			async function saveHandleToIndexedDB(handle) {
+				const db = await openHandleDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction(HANDLE_STORE, "readwrite");
+					tx.objectStore(HANDLE_STORE).put(handle, "directory");
+					tx.oncomplete = () => resolve();
+					tx.onerror = () => reject(tx.error);
+				});
+			}
+			async function loadHandleFromIndexedDB() {
+				const db = await openHandleDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction(HANDLE_STORE, "readonly");
+					const req = tx.objectStore(HANDLE_STORE).get("directory");
+					req.onsuccess = () => resolve(req.result);
+					req.onerror = () => reject(req.error);
+				});
+			}
+			async function clearHandleFromIndexedDB() {
+				const db = await openHandleDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction(HANDLE_STORE, "readwrite");
+					tx.objectStore(HANDLE_STORE).delete("directory");
+					tx.oncomplete = () => resolve();
+					tx.onerror = () => reject(tx.error);
+				});
+			}
 		if (!window.__IS_EXTENSION__) {
 			const BrowserStorage = {
 				_db: null,
@@ -108,48 +150,7 @@
 					await this._delete('settings');
 				}
 			};
-			// IndexedDB handle storage (for persisting directory handle)
-			const DIRECTORY_DB = 'endpoint-manager';
-			const HANDLE_STORE = 'handles';
-			let directoryHandle = null;
-			async function openHandleDB() {
-				return new Promise((resolve, reject) => {
-					const request = indexedDB.open(DIRECTORY_DB, 1);
-					request.onerror = () => reject(request.error);
-					request.onsuccess = () => resolve(request.result);
-					request.onupgradeneeded = e => {
-						const db = e.target.result;
-						if (!db.objectStoreNames.contains(HANDLE_STORE)) db.createObjectStore(HANDLE_STORE);
-					};
-				});
-			}
-			async function saveHandleToIndexedDB(handle) {
-				const db = await openHandleDB();
-				return new Promise((resolve, reject) => {
-					const tx = db.transaction(HANDLE_STORE, 'readwrite');
-					tx.objectStore(HANDLE_STORE).put(handle, 'directory');
-					tx.oncomplete = () => resolve();
-					tx.onerror = () => reject(tx.error);
-				});
-			}
-			async function loadHandleFromIndexedDB() {
-				const db = await openHandleDB();
-				return new Promise((resolve, reject) => {
-					const tx = db.transaction(HANDLE_STORE, 'readonly');
-					const req = tx.objectStore(HANDLE_STORE).get('directory');
-					req.onsuccess = () => resolve(req.result);
-					req.onerror = () => reject(req.error);
-				});
-			}
-			async function clearHandleFromIndexedDB() {
-				const db = await openHandleDB();
-				return new Promise((resolve, reject) => {
-					const tx = db.transaction(HANDLE_STORE, 'readwrite');
-					tx.objectStore(HANDLE_STORE).delete('directory');
-					tx.oncomplete = () => resolve();
-					tx.onerror = () => reject(tx.error);
-				});
-			}
+			
 			const DirectoryStorage = {
 				async loadEndpoints() {
 					if (!directoryHandle) return {
@@ -791,6 +792,12 @@
 			};
 		}
 		// ========== UI Functions ==========
+		// .sticky-bottom 的最小高度，作为布局约束的单一数据源
+		function stickyMinHeight() {
+			const sb = $('.sticky-bottom');
+			return sb ? parseInt(getComputedStyle(sb).minHeight) || 126 : 126;
+		}
+
 		function initDividers() {
 			// 水平分隔线
 			const dividerHorizontal = $('.divider.row');
@@ -804,7 +811,7 @@
 			localStorage.removeItem('chat-messages-flex');
 			const savedMessagesHeight = localStorage.getItem('chat-messages-height');
 			if (savedMessagesHeight) {
-				const maxH = mainContent.offsetHeight - chatHeader.offsetHeight - dividerHorizontal.offsetHeight - 120;
+				const maxH = mainContent.offsetHeight - chatHeader.offsetHeight - stickyMinHeight();
 				const clamped = Math.max(100, Math.min(parseInt(savedMessagesHeight), maxH));
 				chatMsg.style.height = clamped + 'px';
 				chatMsg.style.flex = '0 0 auto';
@@ -853,8 +860,7 @@
 					const dy = e.clientY - startY;
 					const newHeight = startMessagesHeight + dy;
 					const minMessages = 100;
-					const minInput = 120;
-					const maxMessages = startMainHeight - minInput;
+					const maxMessages = startMainHeight - stickyMinHeight();
 					const clamped = Math.max(minMessages, Math.min(maxMessages, newHeight));
 					chatMsg.style.height = clamped + 'px';
 					chatMsg.style.flex = '0 0 auto';
@@ -918,19 +924,18 @@
 			doc.on('mouseup', stopDrag);
 		}
 		// 视口变化时重新 clamp 拖拽高度，防止 F12 等场景下输入区被挤出
-		window.addEventListener('resize', () => {
+		function clampSavedHeight() {
 			const savedH = localStorage.getItem('chat-messages-height');
 			if (!savedH) return;
 			const cm = $('#chat-messages');
-			if (!cm || cm.style.flex !== '0 0 auto') return;
 			const mc = $('#main-content');
 			const ch = $('#chat-header');
-			const dh = $('.divider.row');
-			if (!mc || !ch || !dh) return;
-			const maxH = mc.offsetHeight - ch.offsetHeight - dh.offsetHeight - 120;
-			const clamped = Math.max(100, Math.min(parseInt(savedH), maxH));
-			cm.style.height = clamped + 'px';
-		});
+			if (!cm || !mc || !ch) return;
+			const maxH = mc.offsetHeight - ch.offsetHeight - stickyMinHeight();
+			cm.style.height = Math.max(100, Math.min(parseInt(savedH), maxH)) + 'px';
+			cm.style.flex = '0 0 auto';
+		}
+		window.addEventListener('resize', clampSavedHeight);
 		// ========== Scroll Navigation ==========
 		function scrollToBottom() {
 			const el = $('#chat-messages');
@@ -968,6 +973,21 @@
 			});
 			checkScrollable();
 		}
+		// sticky 区高度变化时，同步更新消息区 scroll-padding-bottom，防止最后一条消息被遮挡
+		function syncScrollPadding() {
+			const sticky = $('.sticky-bottom');
+			const msg = $('#chat-messages');
+			if (sticky && msg) msg.style.scrollPaddingBottom = sticky.offsetHeight + 'px';
+		}
+		window.addEventListener('resize', syncScrollPadding);
+		// 在 init 中初始化 Observer（DOM ready 后）
+		function initScrollPaddingObserver() {
+			const sticky = $('.sticky-bottom');
+			if (!sticky) return;
+			syncScrollPadding();
+			new ResizeObserver(syncScrollPadding).observe(sticky);
+		}
+
 		// ========== Thinking Block Toggle ==========
 		function toggleThinking(headerEl) {
 			const block = headerEl.closest('.thinking-block');
@@ -2983,6 +3003,7 @@
 		async function init() {
 			initDividers();
 			initScrollNav();
+			initScrollPaddingObserver();
 			let sendOnEnter = localStorage.getItem('sendMode') !== 'ctrl-enter';
 			const chatInput = $('#chat-input');
 			chatInput.on('keydown', e => {

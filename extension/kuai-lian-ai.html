@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
+<!DOCTYPE html><html lang="zh-CN"><head>
 	<!--
 		Copyright (c) 2026 magicall
 		快连AI (Kuai Lian AI) is licensed under Mulan PSL v2.
@@ -373,9 +371,10 @@
 
 		/* ========== Chat Messages ========== */
 		#chat-messages {
-			flex: 1 0 auto;
+			flex: 1 1 auto;
 			overflow-y: auto;
 			padding: var(--space-6);
+			scroll-padding-bottom: 130px;
 			gap: var(--space-5);
 			background: var(--bg-subtle);
 			min-height: 100px;
@@ -387,7 +386,7 @@
 			z-index: 5;
 			display: flex;
 			flex-direction: column;
-			flex: 1 0 auto;
+			flex: 1 1 auto;
 			min-height: 126px;
 		}
 
@@ -395,7 +394,7 @@
 			padding: 4px 8px;
 			border-top: 1px solid var(--border-subtle);
 			background: var(--bg-base);
-			flex: 1 0 auto;
+			flex: 1 1 auto;
 			min-height: 120px;
 		}
 
@@ -2341,5 +2340,6 @@
 	<script src="storage-core.js"></script>
 	<script src="cors-proxy.js"></script>
 	<script src="app.js"></script>
-</body>
-</html>
+
+
+</body></html>
