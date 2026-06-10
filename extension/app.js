@@ -337,7 +337,7 @@
 						savedMode = await BrowserStorage._get('__mode');
 					} catch (e) {}
 					if (savedMode === 'directory') {
-						const ok = window.__IS_EXTENSION__ ? false : await DirectoryStorage.restoreHandle();
+						const ok = await DirectoryStorage.restoreHandle();
 						if (ok) {
 							currentMode = 'directory';
 							return {
@@ -2108,7 +2108,7 @@
 			const restoreBtn = $('#btn-restore-dir', dialog);
 			if (restoreBtn) {
 				restoreBtn.onclick = async () => {
-					const ok = window.__IS_EXTENSION__ ? false : await DirectoryStorage.restoreHandle();
+			const ok = await storage.restoreDirectory();
 					if (ok) {
 						currentMode = 'directory';
 						await storage._saveModePref();
@@ -3155,7 +3155,7 @@
 				renderModelSelector(getGroups(), selectedModels, false);
 			};
 			$('#btn-help').onclick = async () => {
-				const saved = window.__IS_EXTENSION__ ? false : await loadHandleFromIndexedDB().catch(() => null);
+				const saved = await storage.hasSavedHandle();
 				showHelpDialog(false, !!saved);
 			};
 			$('#btn-new-session-header').onclick = handleNewSession;

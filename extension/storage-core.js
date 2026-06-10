@@ -425,13 +425,7 @@
 			}
 
 			if (savedMode === 'directory') {
-				// 扩展环境不支持目录存储，降级到浏览器存储
-				if (isChromeExtension) {
-					currentMode = 'browser';
-					await this._saveModePref();
-					return { mode: 'browser', needUserAction: false };
-				}
-				// 尝试恢复目录
+				// 尝试恢复目录（扩展页也是安全上下文，支持 File System Access API）
 				const ok = await DirectoryStorage.restoreHandle();
 				if (ok) {
 					currentMode = 'directory';
@@ -524,6 +518,21 @@
 				return { text: name || '未选择目录', title: '目录存储: ' + (name || '') };
 			}
 			return { text: '浏览器存储', title: '存储位置: 浏览器内部 (' + (isChromeExtension ? 'chrome.storage' : 'IndexedDB') + ')' };
+		},
+
+		// 检查是否已保存目录句柄
+		async hasSavedHandle() {
+			try {
+				const handle = await loadHandleFromIndexedDB();
+				return !!handle;
+			} catch (e) {
+				return false;
+			}
+		},
+
+		// 尝试恢复已保存的目录句柄
+		async restoreDirectory() {
+			return await DirectoryStorage.restoreHandle();
 		}
 	};
 
