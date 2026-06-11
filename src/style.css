@@ -167,17 +167,37 @@ button:hover:not(:disabled):not(.danger) {
 }
 
 /* 尺寸修饰类 */
-button.navbar {
+button.navbar, a.navbar {
 	border: 1px solid var(--border-subtle);
 	padding: var(--space-1);
 	height: 24px;
 	min-width: 24px;
 }
 
-button.navbar:hover:not(:disabled):not(.danger) {
+button.navbar:hover:not(:disabled):not(.danger), a.navbar:hover {
 	background: var(--accent-light);
 	border-color: var(--accent-primary);
 	color: var(--accent-primary);
+}
+
+a.navbar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	border-radius: var(--radius-sm);
+	text-decoration: none;
+	transition: all var(--transition-fast);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+a.navbar:hover {
+	color: var(--accent-primary);
+}
+
+a.navbar img {
+	display: block;
 }
 
 header > button {

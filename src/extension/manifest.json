@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "快连AI",
-	"version": "3.1.0",
+	"version": "3.2.0",
 	"description": "快速连接大模型，管理与测试端点，多模型同时对话",
 	"author": "magicall",
 	"homepage_url": "https://github.com/magicall/kuai-lian-ai",
@@ -29,6 +29,6 @@
 		}
 	},
 	"content_security_policy": {
-		"extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:"
+		"extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://github.com https://github.githubassets.com https://gitee.com"
 	}
 }
