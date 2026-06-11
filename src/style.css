@@ -1950,7 +1950,7 @@ button.toggle-key:hover:not(:disabled) {
 	/* 模式选择器（聊天/嵌入） */
 	.mode-selector {
 		display: inline-flex;
-		border: 1px solid var(--border);
+		border: 1px solid var(--border-default);
 		border-radius: 6px;
 		overflow: hidden;
 		& .mode-option {
@@ -1963,11 +1963,11 @@ button.toggle-key:hover:not(:disabled) {
 			user-select: none;
 			& input { display: none; }
 			& + .mode-option {
-				border-left: 1px solid var(--border);
+				border-left: 1px solid var(--border-default);
 			}
 			&.selected {
 				background: var(--bg-active);
-				color: var(--text);
+				color: var(--text-primary);
 				font-weight: 500;
 			}
 			&:hover:not(.selected) {
@@ -2098,11 +2098,11 @@ button.toggle-key:hover:not(:disabled) {
 	& .embedding-preview {
 		word-break: break-all;
 		margin-bottom: 8px;
-		color: var(--text);
+		color: var(--text-secondary);
 	}
 	& .embedding-copy-btn {
 		background: var(--bg-elevated);
-		border: 1px solid var(--border);
+		border: 1px solid var(--border-default);
 		border-radius: 4px;
 		padding: 4px 10px;
 		cursor: pointer;
