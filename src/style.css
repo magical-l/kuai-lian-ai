@@ -368,7 +368,7 @@ aside .content {
 	display: flex;
 	flex-direction: column;
 	flex: 1 1 auto;
-	min-height: 126px;
+	min-height: 145px;
 }
 
 .chat-input-area {

@@ -1,5 +1,6 @@
 // ========== UI Functions ==========
 // .sticky-bottom 的最小高度，作为布局约束的单一数据源
+// 用 CSS minHeight，scrollHeight 在 flex:1 子元素被撑满时不正确
 function stickyMinHeight() {
 	const sb = $('.sticky-bottom');
 	return sb ? parseInt(getComputedStyle(sb).minHeight) || 126 : 126;

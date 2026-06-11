@@ -62,6 +62,7 @@ const layout = read(SRC, 'layout.html');
 // ====== 1. 单页面 HTML ======
 const mainHTML = buildHTML(layout, read(SRC, 'style.css'), read(SRC, 'modules', 'boot.js'), concatModules());
 fs.writeFileSync(path.join(DST, 'kuai-lian-ai.html'), mainHTML, 'utf8');
+fs.copyFileSync(path.join(DST, 'kuai-lian-ai.html'), 'kuai-lian-ai.html');
 console.log(`Built ${DST}/kuai-lian-ai.html`);
 
 // ====== 2. Chrome 扩展 ======
