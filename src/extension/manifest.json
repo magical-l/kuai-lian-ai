@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "快连AI",
-	"version": "3.0.2",
+	"version": "3.1.0",
 	"description": "快速连接大模型，管理与测试端点，多模型同时对话",
 	"author": "magicall",
 	"homepage_url": "https://github.com/magicall/kuai-lian-ai",
