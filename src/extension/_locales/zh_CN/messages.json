@@ -1,0 +1,8 @@
+{
+	"appName": {
+		"message": "快连AI"
+	},
+	"appDesc": {
+		"message": "快速连接大模型，管理与测试端点，多模型同时对话"
+	}
+}

@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const SRC = 'src';
 const DST = 'dist';
@@ -104,4 +105,14 @@ for (const f of fs.readdirSync('vendor')) {
 copy('恋-人脸、ai.svg', path.join(extDir, '恋-人脸、ai.svg'));
 
 console.log(`Built ${extDir}/`);
+
+// ====== 3. 打包为 zip ======
+const zipPath = path.resolve(DST, 'kuai-lian-ai.zip');
+const extDirResolved = path.resolve(extDir);
+execSync(
+	`powershell -Command "Compress-Archive -Path '${extDirResolved}\\*' -DestinationPath '${zipPath}' -Force"`,
+	{ stdio: 'inherit' }
+);
+console.log(`Packaged ${zipPath}`);
+
 console.log('Done.');
