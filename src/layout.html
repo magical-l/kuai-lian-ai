@@ -25,7 +25,7 @@
 				<div class="logo layout-x-queue">
 					<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 				</div>
-				<span class="brand">快连AI</span><span class="version">v3.2.0</span>
+				<span class="brand">快连AI</span><span class="version">v3.3.0</span>
 			</div>
 			<div class="center layout-x-queue">
 				<span class="directory-label">当前存储目录：</span>
@@ -174,10 +174,13 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14" alt
 		</div>
 	</template>
 	<template id="tpl-add-model-inline">
-		<div class="add-model-inline layout-x-queue">
+		<div class="add-model-inline layout-y-queue">
 			<input type="text" placeholder="模型名" class="add-model-input">
-			<button class="add-model-confirm action-sm">✓</button>
-			<button class="add-model-cancel action-sm">✗</button>
+			<div class="add-model-row layout-x-queue">
+				<input type="text" placeholder="备注（选填）" class="add-model-remark-input">
+				<button class="add-model-confirm action-sm">✓</button>
+				<button class="add-model-cancel action-sm">✗</button>
+			</div>
 		</div>
 	</template>
 	<template id="tpl-user-meta">

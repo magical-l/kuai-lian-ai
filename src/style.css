@@ -1013,11 +1013,31 @@ button.batch-test.testing .spin {
 }
 
 .add-model-inline {
-	align-items: center;
 	gap: var(--space-1);
 	padding: var(--space-1) var(--space-2);
 	background: var(--bg-muted);
 	border-radius: var(--radius-sm);
+}
+.add-model-row {
+	gap: var(--space-1);
+	align-items: center;
+}
+.add-model-remark-input {
+	flex: 1;
+	padding: var(--space-1) var(--space-2);
+	border: 1px solid var(--border-default);
+	border-radius: var(--radius-sm);
+	font-size: 12px;
+	background: var(--bg-base);
+	color: var(--text-muted);
+	min-width: 0;
+}
+.add-model-remark-input:focus {
+	outline: none;
+	border-color: var(--accent-primary);
+	box-shadow: 0 0 0 2px var(--accent-light);
+	color: var(--text-primary);
+}
 	margin-bottom: var(--space-1);
 	flex-grow: 1;
 }
@@ -1063,6 +1083,11 @@ button.add-model-cancel.action-sm {
 
 .model.name {
 	flex: 1;
+}
+.model-remark {
+	color: var(--text-muted);
+	font-size: 0.85em;
+	white-space: nowrap;
 }
 
 .model.actions {

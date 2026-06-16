@@ -23,7 +23,8 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 			const genState = gens ? gens.get(id) : null;
 			const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : '';
 			const classes = ['model', 'tag', 'selected', statusClass, speedClass ? `speed-${speedClass}` : ''].filter(Boolean).join(' ');
-			return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.group.name}</span> ${info.model.name}</span>`;
+			const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : '';
+			return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.group.name}</span> ${info.model.name}${remarkHtml}</span>`;
 		}).join('');
 		expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
 	}
@@ -34,7 +35,8 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 				const isSelected = selectedModels.includes(`${g.id}:${m.id}`);
 				const statusClass = getTagStatusClass(`${g.id}:${m.id}`);
 				const cls = isSelected ? (statusClass ? `selected ${statusClass}` : 'selected') : 'unselected';
-				return `<span class="model tag ${cls}" data-model="${g.id}:${m.id}">${m.name}</span>`;
+				const mRemark = m.remark ? `<span class="model-remark"> ${m.remark}</span>` : '';
+				return `<span class="model tag ${cls}" data-model="${g.id}:${m.id}">${m.name}${mRemark}</span>`;
 			}).join('');
 			return `<div class="selector group-label">${g.name}</div><div class="selector models-row layout-x-queue">${tags}</div>`;
 		}).join('');
@@ -359,15 +361,20 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 				$$('.model.item', models).forEach(el => el.classList.remove('drag-over'));
 			});
 			const modelName = mk('span', 'model name');
-			modelName.textContent = model.name;
+			modelName.innerHTML = model.remark ? `${model.name}<span class="model-remark"> ${model.remark}</span>` : model.name;
 			const modelTooltipId = `tooltip-model-${group.id}-${model.id}`;
-			const modelTooltipHTML = `
-<div class="tooltip-row layout-x-queue">
-	<span class="tooltip-label">模型：</span>
-	<span class="tooltip-value">${model.name}</span>
-	<button class="tooltip-copy" data-copy="${model.name}" title="复制">⧉</button>
-</div>
-`;
+			const tooltipRows = `
+	<div class="tooltip-row layout-x-queue">
+		<span class="tooltip-label">模型：</span>
+		<span class="tooltip-value">${model.name}</span>
+		<button class="tooltip-copy" data-copy="${model.name}" title="复制">⧉</button>
+	</div>` + (model.remark ? `
+	<div class="tooltip-row layout-x-queue">
+		<span class="tooltip-label">备注：</span>
+		<span class="tooltip-value">${model.remark}</span>
+		<button class="tooltip-copy" data-copy="${model.remark}" title="复制">⧉</button>
+	</div>` : "");
+			const modelTooltipHTML = tooltipRows;
 			const modelTooltip = createTooltip(modelTooltipId, modelTooltipHTML);
 			modelName.on('mouseenter', () => modelTooltip.show(modelName));
 			modelName.on('mouseleave', () => modelTooltip.hide());
@@ -405,6 +412,11 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 				const inputEl = $('.add-model-input', inlineEdit);
 				inputEl.value = model.name;
 				inputEl.placeholder = '模型名';
+				const remarkEl = $('.add-model-remark-input', inlineEdit);
+				if (remarkEl) {
+					remarkEl.value = model.remark || '';
+					remarkEl.placeholder = '备注（仅用于显示）';
+				}
 				modelDragHandle.style.display = 'none';
 				modelName.style.display = 'none';
 				modelActions.style.display = 'none';
@@ -414,12 +426,13 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 				$('.add-model-confirm', inlineEdit).on('click', async e2 => {
 					e2.stopPropagation();
 					const newName = inputEl.value.trim();
-					if (newName && newName !== model.name) {
+					const newRemark = remarkEl ? remarkEl.value.trim() : '';
+					if (newName) {
 						inlineEdit.remove();
 						modelDragHandle.style.display = '';
 						modelName.style.display = '';
 						modelActions.style.display = '';
-						onModelEdit(group.id, model.id, newName);
+						onModelEdit(group.id, model.id, newName, newRemark);
 					} else {
 						inlineEdit.remove();
 						modelDragHandle.style.display = '';
@@ -434,7 +447,7 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 					modelName.style.display = '';
 					modelActions.style.display = '';
 				});
-				inputEl.on('keydown', e2 => {
+				const onInlineKeydown = e2 => {
 					if (e2.key === 'Enter') {
 						e2.preventDefault();
 						$('.add-model-confirm', inlineEdit).click();
@@ -444,7 +457,9 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 						modelName.style.display = '';
 						modelActions.style.display = '';
 					}
-				});
+				};
+				inputEl.on('keydown', onInlineKeydown);
+				if (remarkEl) remarkEl.on('keydown', onInlineKeydown);
 			});
 			const modelDeleteBtn = mk('button', 'action-sm danger');
 			modelDeleteBtn.innerHTML = SVG.del(10);
@@ -483,36 +498,53 @@ function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit,
 			});
 			models.addChild(modelEl);
 		});
+		// 安全移除内联编辑框，若其父元素是模型项则恢复隐藏的元素
+		function removeInlineEdit(el) {
+			const parent = el.parentElement;
+			if (parent && parent.classList.contains('model')) {
+				const dh = parent.querySelector('.drag-handle');
+				const mn = parent.querySelector('.model.name');
+				const ma = parent.querySelector('.model.actions');
+				if (dh) dh.style.display = '';
+				if (mn) mn.style.display = '';
+				if (ma) ma.style.display = '';
+			}
+			el.remove();
+		}
 		const addModelBtn = mk('div', 'add-model-link');
 		addModelBtn.textContent = '+ 添加模型';
 		addModelBtn.on('click', e => {
 			e.stopPropagation();
 			const existInput = $('.add-model-inline', models);
-			if (existInput) existInput.remove();
+			if (existInput) removeInlineEdit(existInput);
 			const inlineInput = fromTemplate('tpl-add-model-inline', '.add-model-inline');
 			models.insertBefore(inlineInput, addModelBtn);
 			const inputEl = $('.add-model-input', inlineInput);
+			const remarkEl = $('.add-model-remark-input', inlineInput);
 			inputEl.focus();
 			$('.add-model-confirm', inlineInput).on('click', async e2 => {
 				e2.stopPropagation();
 				const name = inputEl.value.trim();
+				const remark = remarkEl ? remarkEl.value.trim() : '';
 				if (name) {
 					inlineInput.remove();
-					onAddModel(group.id, name);
+					onAddModel(group.id, name, remark);
 				}
 			});
 			$('.add-model-cancel', inlineInput).on('click', e2 => {
 				e2.stopPropagation();
 				inlineInput.remove();
 			});
-			inputEl.on('keydown', e2 => {
+			const onInlineKeydown = e2 => {
 				if (e2.key === 'Enter') {
 					e2.preventDefault();
 					$('.add-model-confirm', inlineInput).click();
 				} else if (e2.key === 'Escape') {
 					inlineInput.remove();
 				}
-			});
+			};
+			inputEl.on('keydown', onInlineKeydown);
+			if (remarkEl) remarkEl.on('keydown', onInlineKeydown);
 		});
 		models.addChild(addModelBtn);
 		groupEl.addChild(headerEl);
@@ -711,8 +743,9 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
 	const modelName = info ? `${info.group.name} / ${info.model.name}` : '未知模型';
+	const modelRemark = info?.model?.remark || '';
 	const meta = fromTemplate('tpl-response-meta', '.response.meta');
-	$('.response.model-name', meta).textContent = modelName;
+	$('.response.model-name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
 	$('.response.time', meta).textContent = timeStr;
 	const copyBtn = $('.copy-btn', meta);
 	copyBtn.onclick = () => {
@@ -746,6 +779,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 		const card = mk('div', 'response card');
 		const info = findModelById(groups, r.modelId);
 		const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
+		const remark = info?.model?.remark || '';
 		const meta = fromTemplate('tpl-multi-response-meta', '.response.meta');
 		const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
 		const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
@@ -753,7 +787,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 		const responseTimeStr = r.timestamp ? formatDateTime(r.timestamp) : '';
 		const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
 		const speedClass = getSpeedClass(r.firstTokenTime);
-		$('.response.model-name', meta).textContent = name;
+		$('.response.model-name', meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
 		$('.response.time', meta).textContent = responseTimeStr;
 		const durationEl = $('.response.duration', meta);
 		durationEl.textContent = durationStr;

@@ -129,7 +129,7 @@ async function reorderGroups(draggedId, targetId, insertBefore = true) {
 	}
 	return false;
 }
-async function addModel(groupId, modelName) {
+async function addModel(groupId, modelName, remark) {
 	if (!endpointsData) endpointsData = {
 		groups: []
 	};
@@ -139,20 +139,22 @@ async function addModel(groupId, modelName) {
 			id: generateUUID(),
 			name: modelName
 		};
+		if (remark) model.remark = remark;
 		group.models.push(model);
 		await saveEndpoints();
 		return model;
 	}
 	return null;
 }
-async function updateModel(groupId, modelId, newName) {
+async function updateModel(groupId, modelId, data) {
 	if (!endpointsData) endpointsData = {
 		groups: []
 	};
 	const group = endpointsData.groups.find(g => g.id === groupId);
 	const model = group?.models?.find(m => m.id === modelId);
 	if (model) {
-		model.name = newName;
+		if (data.name !== undefined) model.name = data.name;
+		if (data.remark !== undefined) model.remark = data.remark || '';
 		await saveEndpoints();
 		return model;
 	}

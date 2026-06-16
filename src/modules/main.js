@@ -309,9 +309,9 @@ async function handleGroupDelete(groupId) {
 	await deleteGroup(groupId);
 	await refreshUI();
 }
-async function handleAddModelForGroup(groupId, modelName) {
+async function handleAddModelForGroup(groupId, modelName, remark) {
 	if (modelName) {
-		await addModel(groupId, modelName);
+		await addModel(groupId, modelName, remark);
 		await refreshUI();
 	}
 }
@@ -322,9 +322,9 @@ function handleCopy(content) {
 	});
 }
 
-function handleModelEdit(groupId, modelId, newName) {
-	// 原地编辑模式：直接更新模型名
-	updateModel(groupId, modelId, newName).then(() => refreshUI());
+function handleModelEdit(groupId, modelId, newName, newRemark) {
+	// 原地编辑模式：更新模型名和备注
+	updateModel(groupId, modelId, { name: newName, remark: newRemark }).then(() => refreshUI());
 }
 async function handleModelDelete(groupId, modelId) {
 	// 清理 selectedModels 中的该模型
