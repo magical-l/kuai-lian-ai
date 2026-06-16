@@ -24,22 +24,26 @@ const providers = {
 			};
 		},
 		testConfig(baseUrl, apiKey, model) {
-			return {
-				url: baseUrl + '/v1/chat/completions',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': 'Bearer ' + apiKey
-				},
-				body: {
-					model,
-					messages: [{
-						role: 'user',
-						content: 'hi'
-					}],
-					max_tokens: 1
-				}
-			};
-		},
+            return {
+                url: baseUrl + "/v1/chat/completions",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + apiKey
+                },
+
+                body: {
+                    model,
+
+                    messages: [{
+                        role: "user",
+                        content: "hi"
+                    }],
+
+                    max_tokens: 3
+                }
+            };
+        },
 		buildEmbeddingRequest(baseUrl, apiKey, model, input) {
 			return {
 				url: baseUrl + '/v1/embeddings',
@@ -131,7 +135,7 @@ const providers = {
 				},
 				body: {
 					model,
-					max_tokens: 1,
+					max_tokens: 3,
 					messages: [{
 						role: 'user',
 						content: 'hi'
