@@ -1033,8 +1033,8 @@ button.action.join-session.joined {
 	color: var(--success);
 }
 button.action.join-session.joined:hover:not(:disabled) {
-	background: var(--success);
-	color: white;
+	background: var(--success-light);
+	color: var(--success);
 }
 
 /* 已选模型标签上的移除叉 */

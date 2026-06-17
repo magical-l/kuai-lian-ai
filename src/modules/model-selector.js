@@ -95,6 +95,7 @@ function bindSelectorEvents() {
 			}
 			saveDefaultSelectedModels(selectedModels);
 			renderModelSelector(getGroups(), selectedModels, false);
+			syncJoinBtnState(id.split(':')[0]);
 		};
 	});
 	// 标签上的小叉：移除该模型
@@ -109,17 +110,24 @@ function bindSelectorEvents() {
 			selectedModels = selectedModels.filter(function(x) { return x !== id; });
 			saveDefaultSelectedModels(selectedModels);
 			renderModelSelector(getGroups(), selectedModels, false);
-			// 同步左侧栏对应节点的加入按钮状态
-			var nid = id && id.split(':')[0];
-			if (nid) {
-				var eg = document.querySelector('.endpoint-group[data-node-id="' + nid + '"]');
-				if (eg) {
-					var jb = eg.querySelector('.join-session');
-					if (jb) { jb.title = '加入当前会话'; jb.className = 'action join-session'; }
-				}
-			}
+			syncJoinBtnState(id.split(':')[0]);
 		};
 	});
+}
+function syncJoinBtnState(nid) {
+	if (!nid) return;
+	var eg = document.querySelector('.endpoint-group[data-node-id="' + nid + '"]');
+	if (!eg) return;
+	var jb = eg.querySelector('.join-session');
+	if (!jb) return;
+	var mid = nid + ':' + '__node__';
+	if (selectedModels.indexOf(mid) >= 0) {
+		jb.title = '已加入当前会话';
+		jb.className = 'action join-session joined';
+	} else {
+		jb.title = '加入当前会话';
+		jb.className = 'action join-session';
+	}
 }
 // 收起展开的模型选择器（用户点击外部区域时）
 doc.on('click', e => {
