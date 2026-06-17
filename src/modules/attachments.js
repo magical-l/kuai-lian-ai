@@ -229,6 +229,25 @@ function showEditGroupDialog(node, parentId, onSave) {
 			toggleBtn.innerHTML = isPw ? SVG.eyeOff : SVG.eye;
 		};
 	}
+	// Enter → 切到下一个输入框
+	var formFields = [nameInput, urlInput, styleSel, keyInput, modelidInput, remarkInput];
+	var form = dialog.querySelector('form');
+	if (form) {
+		form.addEventListener('keydown', function(e) {
+			if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey) return;
+			var idx = formFields.indexOf(document.activeElement);
+			if (idx >= 0 && idx < formFields.length - 1) {
+				e.preventDefault();
+				formFields[idx + 1].focus();
+				formFields[idx + 1].select?.();
+			} else if (idx === formFields.length - 1) {
+				// 最后一个输入框 → 保存
+				e.preventDefault();
+				var saveBtn = $('#dialog-save', dialog);
+				if (saveBtn) saveBtn.click();
+			}
+		});
+	}
 	onClick({
 		'#dialog-cancel': function() { dialog.remove(); },
 		'#dialog-save': function() {

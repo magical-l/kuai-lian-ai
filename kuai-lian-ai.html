@@ -41,7 +41,7 @@
 					<div class="logo layout-x-queue">
 						<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 					</div>
-					<span class="brand">快连AI</span><span class="version">v4.1.0</span>
+					<span class="brand">快连AI</span><span class="version">v4.1.1</span>
 				</div>
 				<div class="center layout-x-queue">
 					<span class="directory-label">当前存储目录：</span>
@@ -187,7 +187,7 @@
 	<label class="layout-y-queue">API Key（选填）:
 	<div class="key-input-wrapper layout-x-queue">
 	<input id="dialog-group-key" type="password" placeholder="">
-	<button class="toggle-key" title="显示/隐藏">
+	<button type="button" class="toggle-key" title="显示/隐藏">
 	<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 	<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
 	<circle cx="12" cy="12" r="3"></circle>
@@ -2571,6 +2571,25 @@ function showEditGroupDialog(node, parentId, onSave) {
 			keyInput.type = isPw ? 'text' : 'password';
 			toggleBtn.innerHTML = isPw ? SVG.eyeOff : SVG.eye;
 		};
+	}
+	// Enter → 切到下一个输入框
+	var formFields = [nameInput, urlInput, styleSel, keyInput, modelidInput, remarkInput];
+	var form = dialog.querySelector('form');
+	if (form) {
+		form.addEventListener('keydown', function(e) {
+			if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey) return;
+			var idx = formFields.indexOf(document.activeElement);
+			if (idx >= 0 && idx < formFields.length - 1) {
+				e.preventDefault();
+				formFields[idx + 1].focus();
+				formFields[idx + 1].select?.();
+			} else if (idx === formFields.length - 1) {
+				// 最后一个输入框 → 保存
+				e.preventDefault();
+				var saveBtn = $('#dialog-save', dialog);
+				if (saveBtn) saveBtn.click();
+			}
+		});
 	}
 	onClick({
 		'#dialog-cancel': function() { dialog.remove(); },
