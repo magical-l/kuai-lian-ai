@@ -409,6 +409,23 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 				});
 			}
 
+			// 加入会话按钮（四要素齐全的节点可直接加入当前会话）
+			var joinBtn = null;
+			if (isSelfTestable) {
+				joinBtn = mk('button', 'action join-session');
+				joinBtn.innerHTML = '→';
+				joinBtn.title = '加入当前会话';
+				joinBtn.on('click', function(e) {
+					e.stopPropagation();
+					var mid = node.id + ':__node__';
+					if (!selectedModels.includes(mid)) {
+						selectedModels.push(mid);
+						saveDefaultSelectedModels(selectedModels);
+						renderModelSelector(getGroups(), selectedModels, false);
+					}
+				});
+			}
+
 			var editBtn = mk('button', 'action');
 			editBtn.innerHTML = SVG.edit(12);
 			editBtn.title = '编辑节点';
@@ -426,6 +443,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 
 			actionsEl.addChild(addChildBtn);
 			if (batchTestBtn) actionsEl.addChild(batchTestBtn);
+			if (joinBtn) actionsEl.addChild(joinBtn);
 			actionsEl.addChild(editBtn);
 			actionsEl.addChild(deleteBtn);
 

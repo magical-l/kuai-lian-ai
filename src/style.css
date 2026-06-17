@@ -1018,6 +1018,15 @@ button.action.batch-test.failed {
 	background: var(--danger-light) !important;
 }
 
+/* 加入会话按钮 */
+button.action.join-session {
+	color: var(--accent-primary);
+	font-weight: 600;
+}
+button.action.join-session:hover:not(:disabled) {
+	background: var(--accent-light);
+}
+
 .group-models {
 	padding-left: var(--space-3);
 	margin-top: var(--space-1);
