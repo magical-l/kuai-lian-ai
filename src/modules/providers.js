@@ -44,6 +44,20 @@ const providers = {
                 }
             };
         },
+		testEmbeddingConfig(baseUrl, apiKey, model) {
+			return {
+				url: baseUrl + '/v1/embeddings',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': 'Bearer ' + apiKey
+				},
+				body: {
+					model,
+					input: 'hi',
+					encoding_format: 'float'
+				}
+			};
+		},
 		buildEmbeddingRequest(baseUrl, apiKey, model, input) {
 			return {
 				url: baseUrl + '/v1/embeddings',

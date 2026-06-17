@@ -310,7 +310,9 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 
             function isNodeTestable(n) {
                 var cfg = resolveNodeConfig(n.id);
-                return cfg && cfg.baseUrl && cfg.key !== undefined && cfg.key !== null && cfg.modelId;
+                if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId) return false;
+                var mtype = detectModelType(cfg.modelId);
+                return mtype === 'chat' || mtype === 'embedding';
             }
 
             function collectTestable(nds, out) {
@@ -598,21 +600,26 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                     status: "disconnected"
                 };
 
-                var testBtn = mk("button");
-                testBtn.className = "action-sm connection " + statusData.status;
-                testBtn.title = getConnectionStatusText(statusKey);
-                testBtn.innerHTML = "<span>🔗</span>";
+                var modelType = model.type || "chat";
+                var testBtn = null;
 
-                if (statusData.status === "testing") {
-                    $("span", testBtn).classList.add("spin");
+                if (modelType === "chat" || modelType === "embedding") {
+                    testBtn = mk("button");
+                    testBtn.className = "action-sm connection " + statusData.status;
+                    testBtn.title = getConnectionStatusText(statusKey);
+                    testBtn.innerHTML = "<span>🔗</span>";
+
+                    if (statusData.status === "testing") {
+                        $("span", testBtn).classList.add("spin");
+                    }
+
+                    testBtn.on("click", function(e) {
+                        e.stopPropagation();
+
+                        if (onTestConnection)
+                            onTestConnection(node.id, model.id);
+                    });
                 }
-
-                testBtn.on("click", function(e) {
-                    e.stopPropagation();
-
-                    if (onTestConnection)
-                        onTestConnection(node.id, model.id);
-                });
 
                 var modelEditBtn = mk("button", "action-sm");
                 modelEditBtn.innerHTML = SVG.edit(10);
@@ -696,7 +703,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                     });
                 });
 
-                modelActions.addChild(testBtn);
+                if (testBtn) modelActions.addChild(testBtn);
                 modelActions.addChild(modelEditBtn);
                 modelActions.addChild(modelDeleteBtn);
                 modelEl.addChild(modelDragHandle);
@@ -817,7 +824,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
 
-                if (rcfg && rcfg.baseUrl)
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && detectModelType(rcfg.modelId) === 'chat' || detectModelType(rcfg.modelId) === 'embedding')
                     testableIds.push(n.id);
 
                 if (n.children)

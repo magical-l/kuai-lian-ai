@@ -436,7 +436,9 @@ async function testConnection(nodeId, modelId) {
 	connectionStatus.set(key, { status: 'testing', timestamp: null });
 	renderEndpointList(getGroups(), null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 	try {
-		var tcfg = provider.testConfig(rcfg.baseUrl, rcfg.key, modelName);
+		var modelType = model ? (model.type || detectModelType(modelName)) : detectModelType(modelName);
+		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig : provider.testConfig;
+		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
 		var res = await fetchWithTimeout(tcfg.url, {
 			method: 'POST',
 			headers: tcfg.headers,

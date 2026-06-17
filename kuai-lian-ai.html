@@ -41,7 +41,7 @@
 					<div class="logo layout-x-queue">
 						<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 					</div>
-					<span class="brand">快连AI</span><span class="version">v4.4.0</span>
+					<span class="brand">快连AI</span><span class="version">v4.5.0</span>
 				</div>
 				<div class="center layout-x-queue">
 					<span class="directory-label">当前存储目录：</span>
@@ -835,6 +835,20 @@ const providers = {
                 }
             };
         },
+		testEmbeddingConfig(baseUrl, apiKey, model) {
+			return {
+				url: baseUrl + '/v1/embeddings',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': 'Bearer ' + apiKey
+				},
+				body: {
+					model,
+					input: 'hi',
+					encoding_format: 'float'
+				}
+			};
+		},
 		buildEmbeddingRequest(baseUrl, apiKey, model, input) {
 			return {
 				url: baseUrl + '/v1/embeddings',
@@ -1610,7 +1624,9 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
             });
             function isNodeTestable(n) {
                 var cfg = resolveNodeConfig(n.id);
-                return cfg && cfg.baseUrl && cfg.key !== undefined && cfg.key !== null && cfg.modelId;
+                if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId) return false;
+                var mtype = detectModelType(cfg.modelId);
+                return mtype === 'chat' || mtype === 'embedding';
             }
             function collectTestable(nds, out) {
                 nds.forEach(function(n) {
@@ -1836,18 +1852,22 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 var statusData = connectionStatus.get(statusKey) || {
                     status: "disconnected"
                 };
-                var testBtn = mk("button");
-                testBtn.className = "action-sm connection " + statusData.status;
-                testBtn.title = getConnectionStatusText(statusKey);
-                testBtn.innerHTML = "<span>🔗</span>";
-                if (statusData.status === "testing") {
-                    $("span", testBtn).classList.add("spin");
+                var modelType = model.type || "chat";
+                var testBtn = null;
+                if (modelType === "chat" || modelType === "embedding") {
+                    testBtn = mk("button");
+                    testBtn.className = "action-sm connection " + statusData.status;
+                    testBtn.title = getConnectionStatusText(statusKey);
+                    testBtn.innerHTML = "<span>🔗</span>";
+                    if (statusData.status === "testing") {
+                        $("span", testBtn).classList.add("spin");
+                    }
+                    testBtn.on("click", function(e) {
+                        e.stopPropagation();
+                        if (onTestConnection)
+                            onTestConnection(node.id, model.id);
+                    });
                 }
-                testBtn.on("click", function(e) {
-                    e.stopPropagation();
-                    if (onTestConnection)
-                        onTestConnection(node.id, model.id);
-                });
                 var modelEditBtn = mk("button", "action-sm");
                 modelEditBtn.innerHTML = SVG.edit(10);
                 modelEditBtn.title = "编辑模型";
@@ -1915,7 +1935,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                         onModelDelete(node.id, model.id);
                     });
                 });
-                modelActions.addChild(testBtn);
+                if (testBtn) modelActions.addChild(testBtn);
                 modelActions.addChild(modelEditBtn);
                 modelActions.addChild(modelDeleteBtn);
                 modelEl.addChild(modelDragHandle);
@@ -2012,7 +2032,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
         function collectTestable(ns) {
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
-                if (rcfg && rcfg.baseUrl)
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && detectModelType(rcfg.modelId) === 'chat' || detectModelType(rcfg.modelId) === 'embedding')
                     testableIds.push(n.id);
                 if (n.children)
                     collectTestable(n.children);
@@ -2849,7 +2869,9 @@ async function testConnection(nodeId, modelId) {
 	connectionStatus.set(key, { status: 'testing', timestamp: null });
 	renderEndpointList(getGroups(), null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 	try {
-		var tcfg = provider.testConfig(rcfg.baseUrl, rcfg.key, modelName);
+		var modelType = model ? (model.type || detectModelType(modelName)) : detectModelType(modelName);
+		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig : provider.testConfig;
+		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
 		var res = await fetchWithTimeout(tcfg.url, {
 			method: 'POST',
 			headers: tcfg.headers,
@@ -2944,11 +2966,19 @@ function findModelById(nodes, referenceId) {
 	if (!result) return null;
 	const { node } = result;
 	if (modelId === '__node__') {
-		return { node, model: { id: '__node__', name: node.modelId || '', remark: '' } };
+		return { node, model: { id: '__node__', name: node.modelId || '', remark: '', type: 'chat' } };
 	}
 	const model = node.models?.find(m => m.id === modelId);
 	if (model) return { node, model };
 	return null;
+}
+// 从模型名自动推断类型
+function detectModelType(name) {
+	if (!name) return 'chat';
+	var lower = name.toLowerCase();
+	if (lower.indexOf('embedding') >= 0 || lower.indexOf('text-embedding') >= 0) return 'embedding';
+	if (lower.indexOf('rerank') >= 0 || lower.indexOf('re-rank') >= 0) return 'rerank';
+	return 'chat';
 }
 // 递归展平所有模型引用（用于清理已删除的引用）
 function collectAllModelRefs(nodes) {
@@ -2977,6 +3007,7 @@ function migrateEndpoints(data) {
 			children: (g.models || []).map(m => ({
 				id: m.id,
 				name: m.name,
+				type: detectModelType(m.name),
 				baseUrl: '',
 				style: '',
 				key: '',
@@ -3175,6 +3206,7 @@ async function addModel(nodeId, modelName, remark) {
 	const node = findNodeInTree(endpointsData.nodes, nodeId);
 	if (node) {
 		const model = { id: generateUUID(), name: modelName };
+		model.type = detectModelType(modelName);
 		if (remark) model.remark = remark;
 		node.models.push(model);
 		await saveEndpoints();
@@ -3187,7 +3219,7 @@ async function updateModel(nodeId, modelId, data) {
 	const node = findNodeInTree(endpointsData.nodes, nodeId);
 	const model = node?.models?.find(m => m.id === modelId);
 	if (model) {
-		if (data.name !== undefined) model.name = data.name;
+		if (data.name !== undefined) { model.name = data.name; model.type = detectModelType(data.name); }
 		if (data.remark !== undefined) model.remark = data.remark || '';
 		await saveEndpoints();
 		return model;

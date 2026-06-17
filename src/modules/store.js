@@ -46,11 +46,20 @@ function findModelById(nodes, referenceId) {
 	if (!result) return null;
 	const { node } = result;
 	if (modelId === '__node__') {
-		return { node, model: { id: '__node__', name: node.modelId || '', remark: '' } };
+		return { node, model: { id: '__node__', name: node.modelId || '', remark: '', type: 'chat' } };
 	}
 	const model = node.models?.find(m => m.id === modelId);
 	if (model) return { node, model };
 	return null;
+}
+
+// 从模型名自动推断类型
+function detectModelType(name) {
+	if (!name) return 'chat';
+	var lower = name.toLowerCase();
+	if (lower.indexOf('embedding') >= 0 || lower.indexOf('text-embedding') >= 0) return 'embedding';
+	if (lower.indexOf('rerank') >= 0 || lower.indexOf('re-rank') >= 0) return 'rerank';
+	return 'chat';
 }
 
 // 递归展平所有模型引用（用于清理已删除的引用）
@@ -81,6 +90,7 @@ function migrateEndpoints(data) {
 			children: (g.models || []).map(m => ({
 				id: m.id,
 				name: m.name,
+				type: detectModelType(m.name),
 				baseUrl: '',
 				style: '',
 				key: '',
@@ -296,6 +306,7 @@ async function addModel(nodeId, modelName, remark) {
 	const node = findNodeInTree(endpointsData.nodes, nodeId);
 	if (node) {
 		const model = { id: generateUUID(), name: modelName };
+		model.type = detectModelType(modelName);
 		if (remark) model.remark = remark;
 		node.models.push(model);
 		await saveEndpoints();
@@ -309,7 +320,7 @@ async function updateModel(nodeId, modelId, data) {
 	const node = findNodeInTree(endpointsData.nodes, nodeId);
 	const model = node?.models?.find(m => m.id === modelId);
 	if (model) {
-		if (data.name !== undefined) model.name = data.name;
+		if (data.name !== undefined) { model.name = data.name; model.type = detectModelType(data.name); }
 		if (data.remark !== undefined) model.remark = data.remark || '';
 		await saveEndpoints();
 		return model;

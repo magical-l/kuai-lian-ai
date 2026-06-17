@@ -1,35 +1,35 @@
 {
-	"manifest_version": 3,
-	"default_locale": "zh_CN",
-	"name": "快连AI",
-	"version": "4.4.0",
-	"description": "快速连接大模型，管理与测试端点，多模型同时对话",
-	"author": "magicall",
-	"homepage_url": "https://github.com/magicall/kuai-lian-ai",
-	"icons": {
-		"16": "icons/icon-16.png",
-		"48": "icons/icon-48.png",
-		"128": "icons/icon-128.png"
-	},
-	"permissions": [
-		"storage"
-	],
-	"host_permissions": [
-		"https://*/*",
-		"http://*/*"
-	],
-	"background": {
-		"service_worker": "background.js"
-	},
-	"action": {
-		"default_title": "快连AI",
-		"default_icon": {
-			"16": "icons/icon-16.png",
-			"48": "icons/icon-48.png",
-			"128": "icons/icon-128.png"
-		}
-	},
-	"content_security_policy": {
-		"extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://github.com https://github.githubassets.com https://gitee.com"
-	}
+  "manifest_version": 3,
+  "default_locale": "zh_CN",
+  "name": "\u5feb\u8fdeAI",
+  "version": "4.5.0",
+  "description": "\u5feb\u901f\u8fde\u63a5\u5927\u6a21\u578b\uff0c\u7ba1\u7406\u4e0e\u6d4b\u8bd5\u7aef\u70b9\uff0c\u591a\u6a21\u578b\u540c\u65f6\u5bf9\u8bdd",
+  "author": "magicall",
+  "homepage_url": "https://github.com/magicall/kuai-lian-ai",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "\u5feb\u8fdeAI",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://github.com https://github.githubassets.com https://gitee.com"
+  }
 }
