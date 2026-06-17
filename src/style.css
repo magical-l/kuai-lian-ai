@@ -1027,6 +1027,14 @@ button.action.join-session:hover:not(:disabled) {
 	background: var(--accent-light);
 }
 
+/* 移除会话按钮 */
+button.action.cancel-session {
+	color: var(--danger);
+}
+button.action.cancel-session:hover:not(:disabled) {
+	background: var(--danger-light);
+}
+
 .group-models {
 	padding-left: var(--space-3);
 	margin-top: var(--space-1);

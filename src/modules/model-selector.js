@@ -409,20 +409,34 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 				});
 			}
 
-			// 加入会话按钮（四要素齐全的节点可直接加入当前会话）
+			// 加入/移除会话按钮（四要素齐全的节点可切换）
 			var joinBtn = null;
 			if (isSelfTestable) {
-				joinBtn = mk('button', 'action join-session');
-				joinBtn.innerHTML = '→';
-				joinBtn.title = '加入当前会话';
+				function refreshJoinBtn() {
+					var mid = node.id + ':__node__';
+					if (selectedModels.includes(mid)) {
+						joinBtn.innerHTML = SVG.bubbleCancel(12);
+						joinBtn.title = '从当前会话移除';
+						joinBtn.className = 'action cancel-session';
+					} else {
+						joinBtn.innerHTML = SVG.bubble(12);
+						joinBtn.title = '加入当前会话';
+						joinBtn.className = 'action join-session';
+					}
+				}
+				joinBtn = mk('button', 'action');
+				refreshJoinBtn();
 				joinBtn.on('click', function(e) {
 					e.stopPropagation();
 					var mid = node.id + ':__node__';
-					if (!selectedModels.includes(mid)) {
+					if (selectedModels.includes(mid)) {
+						selectedModels = selectedModels.filter(function(x) { return x !== mid; });
+					} else {
 						selectedModels.push(mid);
-						saveDefaultSelectedModels(selectedModels);
-						renderModelSelector(getGroups(), selectedModels, false);
 					}
+					saveDefaultSelectedModels(selectedModels);
+					renderModelSelector(getGroups(), selectedModels, false);
+					refreshJoinBtn();
 				});
 			}
 
