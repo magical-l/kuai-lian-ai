@@ -429,3 +429,28 @@ async function testConnection(nodeId, modelId) {
 	}
 	renderEndpointList(getGroups(), null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 }
+
+// 递归收集所有子节点 ID
+function collectDescendantIds(nodeId) {
+	var ids = [nodeId];
+	var node = getNode(nodeId);
+	if (node && node.children) {
+		node.children.forEach(function(child) {
+			ids.push.apply(ids, collectDescendantIds(child.id));
+		});
+	}
+	return ids;
+}
+
+// 清空指定节点及其所有子节点的测试连接结果
+function clearTestResults(nodeId) {
+	var ids = collectDescendantIds(nodeId);
+	var prefixSet = {};
+	ids.forEach(function(id) { prefixSet[id + ':'] = true; });
+	for (var key of connectionStatus.keys()) {
+		var colonIdx = key.indexOf(':');
+		if (colonIdx > 0 && prefixSet[key.substring(0, colonIdx + 1)]) {
+			connectionStatus.delete(key);
+		}
+	}
+}

@@ -298,6 +298,7 @@ function handleNodeEdit(nodeId) {
 	const node = getNode(nodeId);
 	if (!node) return;
 	showEditGroupDialog(node, null, async (data) => {
+		clearTestResults(nodeId);
 		await updateNode(nodeId, data);
 		await refreshUI();
 	});
@@ -326,19 +327,23 @@ function handleCopy(content) {
 }
 
 function handleModelEdit(nodeId, modelId, newName, newRemark) {
+	clearTestResults(nodeId);
 	updateModel(nodeId, modelId, { name: newName, remark: newRemark }).then(() => refreshUI());
 }
 async function handleModelDelete(nodeId, modelId) {
 	selectedModels = selectedModels.filter(id => id !== `${nodeId}:${modelId}`);
 	saveDefaultSelectedModels(selectedModels);
+	connectionStatus.delete(nodeId + ':' + modelId);
 	await deleteModel(nodeId, modelId);
 	await refreshUI();
 }
 async function handleReorderNode(draggedId, targetId, insertBefore) {
+	clearTestResults(draggedId);
 	await reorderNode(draggedId, targetId, insertBefore);
 	await refreshUI();
 }
 async function handleMoveNodeAsChild(draggedId, targetParentId) {
+	clearTestResults(draggedId);
 	await moveNodeAsChild(draggedId, targetParentId);
 	await refreshUI();
 }
