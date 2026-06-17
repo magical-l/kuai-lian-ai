@@ -368,7 +368,6 @@ async function handleSend() {
 	const content = await getInputMessage();
 	if (!content || content.length === 0) return; // 处理失败或无文本无附件
 	if (selectedModels.length === 0) {
-		selectorExpanded = true;
 		renderModelSelector(getGroups(), selectedModels, false);
 		return;
 	}
@@ -389,8 +388,6 @@ async function handleSend() {
 	clearInput();
 	clearAttachments();
 	setButtonState(true, true);
-	// 发送后自动收起模型选择区
-	selectorExpanded = false;
 	renderModelSelector(getGroups(), selectedModels, true);
 	const groups = getGroups();
 	const messages = currentSession.messages.map(m => {
@@ -445,7 +442,6 @@ async function handleEmbeddingSend() {
 	const text = input.value.trim();
 	if (!text) return;
 	if (selectedModels.length === 0) {
-		selectorExpanded = true;
 		renderModelSelector(getGroups(), selectedModels, false);
 		return;
 	}

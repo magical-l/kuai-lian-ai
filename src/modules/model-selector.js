@@ -1,19 +1,11 @@
 // ========== Model Selector Functions ==========
-let selectorExpanded = false;
-
 function renderModelSelector(groups, selectedModels, isGenerating) {
 	const container = $('#model-selector');
 	const summaryEl = $('#selector-summary');
-	const listEl = $('#selector-list');
-	const expandBtnText = $('#expand-btn-text');
 	if (!container) return;
-	// 更新容器状态
-	container.classList.toggle('collapsed', !selectorExpanded);
 	container.classList.toggle('generating', isGenerating);
-	// 收起状态摘要
 	if (selectedModels.length === 0) {
 		summaryEl.innerHTML = '<span class="selector empty-hint">请选择模型</span>';
-		expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开选择';
 	} else {
 		summaryEl.innerHTML = selectedModels.map(id => {
 			const info = findModelById(groups, id);
@@ -26,31 +18,10 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 			const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : '';
 			return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.node.name}</span> ${info.model.name}${remarkHtml}<span class="tag-remove" data-model="${id}">✕</span></span>`;
 		}).join('');
-		expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
-	}
-	// 展开状态列表（递归树形）
-	if (selectorExpanded) {
-		var parts = [];
-		(function renderSubtree(nodes, depth) {
-			nodes.forEach(function(n) {
-				parts.push('<div class="selector group-label" style="padding-left:' + (depth * 14) + 'px">' + n.name + '</div>');
-				if (n.models && n.models.length > 0) {
-					var tags = n.models.map(function(m) {
-						var isSelected = selectedModels.indexOf(n.id + ':' + m.id) >= 0;
-						var statusClass = getTagStatusClass(n.id + ':' + m.id);
-						var cls = isSelected ? (statusClass ? 'selected ' + statusClass : 'selected') : 'unselected';
-						var mRemark = m.remark ? '<span class="model-remark"> ' + m.remark + '</span>' : '';
-						return '<span class="model tag ' + cls + '" data-model="' + n.id + ':' + m.id + '">' + m.name + mRemark + '</span>';
-					}).join('');
-					parts.push('<div class="selector models-row layout-x-queue">' + tags + '</div>');
-				}
-				if (n.children) renderSubtree(n.children, depth + 1);
-			});
-		})(groups, 0);
-		listEl.innerHTML = parts.join('');
 	}
 	bindSelectorEvents();
 }
+
 
 // findModelById is defined in store.js (recursive tree version)
 
@@ -65,17 +36,6 @@ function getTagStatusClass(modelId) {
 }
 // getStatusIcon 已取消：选中模型的转圈功能不再需要
 function bindSelectorEvents() {
-	const expandBtn = $('#selector-expand-btn');
-	if (expandBtn) {
-		expandBtn.onclick = () => {
-			// 实时检查生成状态
-			const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-			const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === 'generating');
-			if (isGenerating) return;
-			selectorExpanded = !selectorExpanded;
-			renderModelSelector(getGroups(), selectedModels, false);
-		};
-	}
 	// Make entire model tag clickable for toggle selection
 	$$('.model.tag').forEach(tag => {
 		tag.onclick = e => {
@@ -129,15 +89,6 @@ function syncJoinBtnState(nid) {
 		jb.className = 'action join-session';
 	}
 }
-// 收起展开的模型选择器（用户点击外部区域时）
-doc.on('click', e => {
-	if (!selectorExpanded) return;
-	const selector = $('#model-selector');
-	if (selector && !selector.contains(e.target)) {
-		selectorExpanded = false;
-		renderModelSelector(getGroups(), selectedModels, false);
-	}
-});
 const collapsedEndpoints = new Set();
 
 function collapseAllEndpointNodes() {
