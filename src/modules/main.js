@@ -96,6 +96,19 @@ async function init() {
 	$('#btn-add-group').onclick = handleAddGroup;
 	$('#btn-collapse-all').onclick = collapseAllEndpointNodes;
 	$('#btn-collapse-all').innerHTML = SVG.collapseAll;
+	$('#btn-test-all').onclick = function() {
+		var allIds = [];
+		function collectIds(nodes) {
+			nodes.forEach(function(n) {
+				var rcfg = resolveNodeConfig(n.id);
+				if (rcfg && rcfg.baseUrl) allIds.push(n.id);
+				if (n.children) collectIds(n.children);
+			});
+		}
+		collectIds(getGroups());
+		allIds.forEach(function(id) { testConnection(id, '__node__'); });
+	};
+	$('#btn-test-all').innerHTML = SVG.testAll;
 	$('#btn-send').onclick = () => {
 		if (inputMode === 'embedding') {
 			handleEmbeddingSend();

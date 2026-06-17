@@ -671,6 +671,38 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 	}
 
 	renderTreeNode(nodes, container, 0);
+	// 更新「测试全部」按钮状态
+	var testAllBtn = $('#btn-test-all');
+	if (testAllBtn && typeof getGroups === 'function') {
+		var testableIds = [];
+		function collectTestable(ns) {
+			ns.forEach(function(n) {
+				var rcfg = resolveNodeConfig(n.id);
+				if (rcfg && rcfg.baseUrl) testableIds.push(n.id);
+				if (n.children) collectTestable(n.children);
+			});
+		}
+		collectTestable(getGroups());
+		var hasTesting = false, hasFail = false, hasSuccess = false;
+		testableIds.forEach(function(id) {
+			var sd = connectionStatus.get(id + ':__node__');
+			if (sd) {
+				if (sd.status === 'testing') hasTesting = true;
+				else if (sd.status === 'connected') hasSuccess = true;
+				else if (sd.status === 'failed' || sd.status === 'cors_blocked') hasFail = true;
+			}
+		});
+		testAllBtn.className = 'action batch-test btn-icon';
+		var spanEl = $('span', testAllBtn);
+		if (hasTesting) {
+			testAllBtn.classList.add('testing');
+			if (spanEl) spanEl.classList.add('spin');
+		} else {
+			if (spanEl) spanEl.classList.remove('spin');
+			if (hasFail && !hasSuccess) testAllBtn.classList.add('failed');
+			else if (hasSuccess && !hasFail) testAllBtn.classList.add('connected');
+		}
+	}
 }
 
 
