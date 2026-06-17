@@ -1297,27 +1297,23 @@ button.connection.cors_blocked {
 
 /* ========== Scrollbar ========== */
 aside .content::-webkit-scrollbar,
-#chat-messages::-webkit-scrollbar,
-.selector.list::-webkit-scrollbar {
+#chat-messages::-webkit-scrollbar {
 	width: 5px;
 }
 
 aside .content::-webkit-scrollbar-track,
-#chat-messages::-webkit-scrollbar-track,
-.selector.list::-webkit-scrollbar-track {
+#chat-messages::-webkit-scrollbar-track {
 	background: transparent;
 }
 
 aside .content::-webkit-scrollbar-thumb,
-#chat-messages::-webkit-scrollbar-thumb,
-.selector.list::-webkit-scrollbar-thumb {
+#chat-messages::-webkit-scrollbar-thumb {
 	background: var(--border-default);
 	border-radius: 3px;
 }
 
 aside .content::-webkit-scrollbar-thumb:hover,
-#chat-messages::-webkit-scrollbar-thumb:hover,
-.selector.list::-webkit-scrollbar-thumb:hover {
+#chat-messages::-webkit-scrollbar-thumb:hover {
 	background: var(--border-strong);
 }
 
@@ -1627,41 +1623,14 @@ button.toggle-key:hover:not(:disabled) {
 	border-bottom: none;
 }
 
-/* 展开状态：列表从底部向上悬浮展开 */
-.model.selector:not(.collapsed) .selector.list {
-	position: absolute;
-	bottom: calc(100% + 1px);
-	left: -1px;
-	right: -1px;
-	background: var(--bg-base);
-	box-shadow: var(--shadow-lg);
-	border: 1px solid var(--border-default);
-	border-radius: var(--radius-md);
-	max-height: 240px;
-	overflow-y: auto;
-	z-index: 20;
-	display: block;
-	padding: var(--space-2);
-}
-
 .endpoint.name-color {
 	color: var(--text-secondary);
 	font-weight: 500;
 }
 
-.model.selector.collapsed .selector.list {
-	display: none;
-}
-
-.model.selector.generating .selector.expand-btn,
 .model.selector.generating .model.tag {
 	cursor: not-allowed;
 	opacity: 0.6;
-}
-
-.selector.header {
-	align-items: center;
-	gap: var(--space-2);
 }
 
 .selector.summary {
@@ -1671,37 +1640,6 @@ button.toggle-key:hover:not(:disabled) {
 	flex: 1;
 	min-width: 0;
 	overflow: hidden;
-}
-
-.selector.expand-btn {
-	font-size: 11px;
-	color: var(--text-muted);
-	cursor: pointer;
-	padding: 2px 4px;
-	border-radius: var(--radius-sm);
-	flex-shrink: 0;
-	white-space: nowrap;
-}
-
-.selector.expand-btn:hover {
-	color: var(--accent-primary);
-	background: var(--accent-light);
-}
-
-.selector.group-label {
-	font-size: 10px;
-	color: var(--text-muted);
-	margin-bottom: var(--space-3);
-	margin-top: var(--space-2);
-}
-
-.selector.group-label:first-child {
-	margin-top: 0;
-}
-
-.selector.models-row {
-	gap: var(--space-2);
-	flex-wrap: wrap;
 }
 
 /* 模型标签样式 */

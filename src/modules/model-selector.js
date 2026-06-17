@@ -35,44 +35,37 @@ function getTagStatusClass(modelId) {
 	return '';
 }
 // getStatusIcon 已取消：选中模型的转圈功能不再需要
+function toggleModelSelection(id, forceRemove) {
+    if (!id) return;
+    const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+    const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === 'generating');
+    if (isGenerating) return;
+    if (forceRemove || selectedModels.includes(id)) {
+        selectedModels = selectedModels.filter(x => x !== id);
+    } else {
+        if (!selectedModels.includes(id)) {
+            selectedModels.push(id);
+        }
+    }
+    saveDefaultSelectedModels(selectedModels);
+    renderModelSelector(getGroups(), selectedModels, false);
+    syncJoinBtnState(id.split(':')[0]);
+}
 function bindSelectorEvents() {
-	// Make entire model tag clickable for toggle selection
-	$$('.model.tag').forEach(tag => {
-		tag.onclick = e => {
-			e.stopPropagation();
-			// 实时检查生成状态（放在点击时检查，而非绑定时）
-			const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-			const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === 'generating');
-			if (isGenerating) return;
-			const id = tag.dataset.model;
-			if (!id) return;
-			if (selectedModels.includes(id)) {
-				selectedModels = selectedModels.filter(x => x !== id);
-			} else {
-				if (!selectedModels.includes(id)) {
-					selectedModels.push(id);
-				}
-			}
-			saveDefaultSelectedModels(selectedModels);
-			renderModelSelector(getGroups(), selectedModels, false);
-			syncJoinBtnState(id.split(':')[0]);
-		};
-	});
-	// 标签上的小叉：移除该模型
-	$$('.tag-remove').forEach(function(btn) {
-		btn.onclick = function(e) {
-			e.stopPropagation();
-			var gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-			var isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(function(s) { return s.status === 'generating'; });
-			if (isGenerating) return;
-			var id = btn.dataset.model;
-			if (!id) return;
-			selectedModels = selectedModels.filter(function(x) { return x !== id; });
-			saveDefaultSelectedModels(selectedModels);
-			renderModelSelector(getGroups(), selectedModels, false);
-			syncJoinBtnState(id.split(':')[0]);
-		};
-	});
+    // Make entire model tag clickable for toggle selection
+    $$('.model.tag').forEach(tag => {
+        tag.onclick = e => {
+            e.stopPropagation();
+            toggleModelSelection(tag.dataset.model);
+        };
+    });
+    // 标签上的小叉：移除该模型
+    $$('.tag-remove').forEach(function(btn) {
+        btn.onclick = function(e) {
+            e.stopPropagation();
+            toggleModelSelection(btn.dataset.model, true);
+        };
+    });
 }
 function syncJoinBtnState(nid) {
 	if (!nid) return;
@@ -80,13 +73,17 @@ function syncJoinBtnState(nid) {
 	if (!eg) return;
 	var jb = eg.querySelector('.join-session');
 	if (!jb) return;
+	applyJoinBtnUI(jb, nid);
+}
+function applyJoinBtnUI(btn, nid) {
+	if (!btn || !nid) return;
 	var mid = nid + ':' + '__node__';
 	if (selectedModels.indexOf(mid) >= 0) {
-		jb.title = '已加入当前会话';
-		jb.className = 'action join-session joined';
+		btn.title = '已加入当前会话';
+		btn.className = 'action join-session joined';
 	} else {
-		jb.title = '加入当前会话';
-		jb.className = 'action join-session';
+		btn.title = '加入当前会话';
+		btn.className = 'action join-session';
 	}
 }
 const collapsedEndpoints = new Set();
@@ -184,538 +181,684 @@ function showAttachmentPreview(att) {
 }
 
 function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, onNodeEdit, onNodeDelete, onAddModel, onModelDelete, onReorderNodes, onReorderModels, onTestConnection, onMoveNode) {
-	var container = $('#endpoint-list');
-	$$('.endpoint-group', container).forEach(function(el) {
-		var nodeId = el.dataset.nodeId;
-		var content = $('.node-content', el);
-		if (content && content.style.display === 'none') {
-			collapsedEndpoints.add(nodeId);
-		} else {
-			collapsedEndpoints['delete'](nodeId);
-		}
-	});
-	container.innerHTML = '';
+    var container = $("#endpoint-list");
 
-	function renderTreeNode(nodes, parentEl, depth) {
-		nodes.forEach(function(node, index) {
-			var hasChildren = node.children && node.children.length > 0;
-			var hasModels = node.models && node.models.length > 0;
-			var isCollapsed = collapsedEndpoints.has(node.id);
-			var hasContent = hasChildren || hasModels;
+    container.innerHTML = "";
 
-			var nodeEl = mk('section', 'endpoint-group');
-			nodeEl.dataset.nodeId = node.id;
-			nodeEl.dataset.nodeIndex = index;
+    function renderTreeNode(nodes, parentEl, depth) {
+        nodes.forEach(function(node, index) {
+            var hasChildren = node.children && node.children.length > 0;
+            var hasModels = node.models && node.models.length > 0;
+            var isCollapsed = collapsedEndpoints.has(node.id);
+            var hasContent = hasChildren || hasModels;
+            var nodeEl = mk("section", "endpoint-group");
+            nodeEl.dataset.nodeId = node.id;
+            nodeEl.dataset.nodeIndex = index;
+            var headerEl = mk("div", "group-header layout-x-queue");
+            headerEl.style.paddingLeft = (depth * 12 + 4) + "px";
+            var dragHandle = mk("span", "drag-handle layout-x-queue");
+            dragHandle.innerHTML = SVG.drag(14);
+            dragHandle.title = "拖动排序";
+            dragHandle.draggable = true;
 
-			var headerEl = mk('div', 'group-header layout-x-queue');
-			headerEl.style.paddingLeft = (depth * 12 + 4) + 'px';
+            dragHandle.on("dragstart", function(e) {
+                e.dataTransfer.setData("text/plain", node.id);
+                e.dataTransfer.effectAllowed = "move";
+                nodeEl.classList.add("dragging");
+            });
 
-			var dragHandle = mk('span', 'drag-handle layout-x-queue');
-			dragHandle.innerHTML = SVG.drag(14);
-			dragHandle.title = '拖动排序';
-			dragHandle.draggable = true;
-			dragHandle.on('dragstart', function(e) {
-				e.dataTransfer.setData('text/plain', node.id);
-				e.dataTransfer.effectAllowed = 'move';
-				nodeEl.classList.add('dragging');
-			});
-			dragHandle.on('dragend', function() {
-				nodeEl.classList.remove('dragging');
-				$$('.endpoint-group', container).forEach(function(el) { el.classList.remove('drag-over', 'drag-over-child', 'drag-over-before', 'drag-over-after'); });
-			});
+            dragHandle.on("dragend", function() {
+                nodeEl.classList.remove("dragging");
 
-			var toggleSpan = mk('span', 'group-toggle');
-			toggleSpan.textContent = isCollapsed || !hasContent ? '▶' : '▼';
-			if (!hasContent) toggleSpan.style.visibility = 'hidden';
-			toggleSpan.on('click', function(e) {
-				e.stopPropagation();
-				var ct = $('.node-content', nodeEl);
-				if (!ct) return;
-				if (ct.style.display === 'none') {
-					ct.style.display = '';
-					toggleSpan.textContent = '▼';
-				} else {
-					ct.style.display = 'none';
-					toggleSpan.textContent = '▶';
-				}
-			});
+                $$(".endpoint-group", container).forEach(function(el) {
+                    el.classList.remove("drag-over", "drag-over-child", "drag-over-before", "drag-over-after");
+                });
+            });
 
-			var nameSpan = mk('span', 'group-name');
-			var rcfg = resolveNodeConfig(node.id);
-			nameSpan.textContent = node.name;
-			if (node.remark) {
-				var remSpan = document.createElement('span');
-				remSpan.className = 'model-remark';
-				remSpan.textContent = ' ' + node.remark;
-				nameSpan.appendChild(remSpan);
-			}
+            var toggleSpan = mk("span", "group-toggle");
+            toggleSpan.textContent = isCollapsed || !hasContent ? "▶" : "▼";
 
+            if (!hasContent)
+                toggleSpan.style.visibility = "hidden";
 
-			var tooltipId = 'tooltip-' + node.id;
-			var styleLabels = { 'openai': 'OpenAI', 'claude': 'Claude', 'gemini': 'Gemini' };
-			// 判断每个字段是自设还是继承
-			function inherited(val, own) { return val && val !== own ? '↑ ' : ''; }
-			var tipName = node.name + (node.remark ? ' ' + node.remark : '');
-			var tipBaseUrl = inherited(rcfg.baseUrl, node.baseUrl) + (rcfg.baseUrl || '');
-			var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? '(已设置)' : '');
-			var tipStyle = inherited(rcfg.style, node.style) ? '↑ ' + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || '');
-			var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || '');
-			var tooltipHTML =
-				'<div class="tooltip-row layout-x-queue">' +
-				'<span class="tooltip-label">名称：</span>' +
-				'<span class="tooltip-value">' + tipName + '</span>' +
-				'<button class="tooltip-copy" data-copy="' + tipName + '" title="复制">⧉</button></div>' +
-				'<div class="tooltip-row layout-x-queue">' +
-				'<span class="tooltip-label">地址：</span>' +
-				'<span class="tooltip-value">' + tipBaseUrl + '</span>' +
-				'<button class="tooltip-copy" data-copy="' + (rcfg.baseUrl || '') + '" title="复制">⧉</button></div>' +
-				'<div class="tooltip-row layout-x-queue">' +
-				'<span class="tooltip-label">格式：</span>' +
-				'<span class="tooltip-value">' + tipStyle + '</span>' +
-				'<button class="tooltip-copy" data-copy="' + (rcfg.style || '') + '" title="复制">⧉</button></div>' +
-				(rcfg.key ? '<div class="tooltip-row layout-x-queue"><span class="tooltip-label">Key：</span><span class="tooltip-value">' + tipKey + '</span><button class="tooltip-copy" data-copy="' + (rcfg.key || '') + '" title="复制">⧉</button></div>' : '') +
-				'<div class="tooltip-row layout-x-queue"><span class="tooltip-label">模型：</span><span class="tooltip-value">' + (tipModel || '-') + '</span><button class="tooltip-copy" data-copy="' + (rcfg.modelId || '') + '" title="复制">⧉</button></div>';
-			var tooltip = createTooltip(tooltipId, tooltipHTML);
-			nameSpan.on('mouseenter', function() { tooltip.show(nameSpan); });
-			nameSpan.on('mouseleave', function() { tooltip.hide(); });
-			nameSpan.on('click', function() {
-				tooltip.hide();
-				var ct = $('.node-content', nodeEl);
-				if (ct) {
-					if (ct.style.display === 'none') {
-						ct.style.display = '';
-						toggleSpan.textContent = '▼';
-					} else {
-						ct.style.display = 'none';
-						toggleSpan.textContent = '▶';
-					}
-				}
-			});
+            toggleSpan.on("click", function(e) {
+                e.stopPropagation();
+                var ct = $(".node-content", nodeEl);
 
-			var actionsEl = mk('div', 'group-actions layout-x-queue');
+                if (!ct)
+                    return;
 
-			// 添加子节点
-			var addChildBtn = mk('button', 'action');
-			addChildBtn.textContent = '+';
-			addChildBtn.title = '添加子节点';
-			addChildBtn.on('click', function(e) {
-				e.stopPropagation();
-				showEditGroupDialog(null, node.id, function(data) {
-					addNode(node.id, data).then(function() { refreshUI(); });
-				});
-			});
+                if (ct.style.display === "none") {
+                    ct.style.display = "";
+                    toggleSpan.textContent = "▼";
+                    collapsedEndpoints["delete"](node.id);
+                } else {
+                    ct.style.display = "none";
+                    toggleSpan.textContent = "▶";
+                    collapsedEndpoints.add(node.id);
+                }
+            });
 
-			// 收集子树中所有可测试的节点
-			function isNodeTestable(n) {
-				var cfg = resolveNodeConfig(n.id);
-				return cfg && cfg.baseUrl && cfg.key !== undefined && cfg.key !== null && cfg.modelId;
-			}
-			function collectTestable(nds, out) {
-				nds.forEach(function(n) {
-					if (isNodeTestable(n)) out.push(n.id);
-					if (n.children) collectTestable(n.children, out);
-				});
-			}
-			var testableIds = [];
-			collectTestable([node], testableIds);
-			var isSelfTestable = testableIds.indexOf(node.id) >= 0;
-			var childTestable = testableIds.length - (isSelfTestable ? 1 : 0);
+            var nameSpan = mk("span", "group-name");
+            var rcfg = resolveNodeConfig(node.id);
+            nameSpan.textContent = node.name;
 
-			// 子树测试状态汇总
-			var hasTesting = false, allOk = true, anyFailed = false;
-			testableIds.forEach(function(id) {
-				var sd = connectionStatus.get(id + ':' + '__node__');
-				if (sd) {
-					if (sd.status === 'testing') hasTesting = true;
-					if (sd.status === 'connected') {} // ok
-					else if (sd.status === 'testing') {}
-					else { allOk = false; if (sd.status !== 'disconnected') anyFailed = true; }
-				} else { allOk = false; }
-			});
-			// 只有全部已有测试记录且全部成功才显示绿色
-			var batchStatus = '';
-			if (testableIds.length > 0) {
-				var allTested = testableIds.every(function(id) {
-					var sd = connectionStatus.get(id + ':' + '__node__');
-					return sd && sd.status !== 'disconnected' && sd.status !== undefined;
-				});
-				if (allTested && allOk) batchStatus = 'connected';
-				else if (anyFailed || (allTested && !allOk)) batchStatus = 'failed';
-			}
-			var batchTestBtn = null;
-			if (testableIds.length > 0) {
-				batchTestBtn = mk('button');
-				batchTestBtn.className = "action batch-test" + (batchStatus ? ' ' + batchStatus : '');
-				batchTestBtn.innerHTML = '<span>🔗</span>';
-				if (hasTesting) {
-					batchTestBtn.classList.add("testing");
-					$("span", batchTestBtn).classList.add("spin");
-				}
-				if (!hasTesting) {
-					// 收集测试状态信息用于title
-					var successCount = 0, failCount = 0, firstError = null;
-					testableIds.forEach(function(id) {
-						var sd = connectionStatus.get(id + ':__node__');
-						if (sd) {
-							if (sd.status === 'connected') successCount++;
-							else if (sd.status === 'failed' || sd.status === 'cors_blocked') {
-								failCount++;
-								if (!firstError && sd.error) firstError = sd.error;
-							}
-						}
-					});
-					var testSummary = '';
-					if (failCount > 0) {
-						testSummary = '✗ ' + failCount + '个失败';
-						if (firstError) testSummary += '：' + firstError;
-					} else if (successCount > 0 && successCount === testableIds.length) {
-						testSummary = '✓ 全部成功';
-					}
+            if (node.remark) {
+                var remSpan = document.createElement("span");
+                remSpan.className = "model-remark";
+                remSpan.textContent = " " + node.remark;
+                nameSpan.appendChild(remSpan);
+            }
 
-					if (childTestable > 0) {
-						batchTestBtn.title = '测试连接（含' + (testableIds.length) + '个端点）' + (testSummary ? ' — ' + testSummary : '');
-					} else {
-						// 只有自己一个端点，直接用 getConnectionStatusText 显示详情
-						batchTestBtn.title = getConnectionStatusText(node.id + ':__node__');
-					}
-				} else {
-					batchTestBtn.title = '测试中...';
-				}
-				batchTestBtn.on('click', function(e) {
-					e.stopPropagation();
-					if (onTestConnection) {
-						testableIds.forEach(function(id) {
-							onTestConnection(id, '__node__');
-						});
-					}
-				});
-			}
+            var tooltipId = "tooltip-" + node.id;
 
-			// 加入/移除会话按钮（四要素齐全的节点可切换）
-			var joinBtn = null;
-			if (isSelfTestable) {
-				function refreshJoinBtn() {
-					var mid = node.id + ':__node__';
-					if (selectedModels.includes(mid)) {
-						joinBtn.title = '已加入当前会话';
-						joinBtn.className = 'action join-session joined';
-					} else {
-						joinBtn.title = '加入当前会话';
-						joinBtn.className = 'action join-session';
-					}
-				}
-				joinBtn = mk('button', 'action');
-				joinBtn.innerHTML = SVG.bubble(12);
-				refreshJoinBtn();
-				joinBtn.on('click', function(e) {
-					e.stopPropagation();
-					var mid = node.id + ':__node__';
-					if (selectedModels.includes(mid)) {
-						selectedModels = selectedModels.filter(function(x) { return x !== mid; });
-					} else {
-						selectedModels.push(mid);
-					}
-					saveDefaultSelectedModels(selectedModels);
-					renderModelSelector(getGroups(), selectedModels, false);
-					refreshJoinBtn();
-				});
-			}
+            var styleLabels = {
+                "openai": "OpenAI",
+                "claude": "Claude",
+                "gemini": "Gemini"
+            };
 
-			var editBtn = mk('button', 'action');
-			editBtn.innerHTML = SVG.edit(12);
-			editBtn.title = '编辑节点';
-			editBtn.on('click', function(e) {
-				e.stopPropagation();
-				onNodeEdit(node.id);
-			});
-			var deleteBtn = mk('button', 'action danger');
-			deleteBtn.innerHTML = SVG.del(12);
-			deleteBtn.title = '删除节点及其子节点';
-			deleteBtn.on('click', function(e) {
-				e.stopPropagation();
-				confirmAction('确定删除节点「' + node.name + '」及其所有子节点和模型？', function() { onNodeDelete(node.id); });
-			});
+            function inherited(val, own) {
+                return val && val !== own ? "↑ " : "";
+            }
 
-			actionsEl.addChild(addChildBtn);
-			if (batchTestBtn) actionsEl.addChild(batchTestBtn);
-			if (joinBtn) actionsEl.addChild(joinBtn);
-			actionsEl.addChild(editBtn);
-			actionsEl.addChild(deleteBtn);
+            var tipName = node.name + (node.remark ? " " + node.remark : "");
+            var tipBaseUrl = inherited(rcfg.baseUrl, node.baseUrl) + (rcfg.baseUrl || "");
+            var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? "(已设置)" : "");
+            var tipStyle = inherited(rcfg.style, node.style) ? "↑ " + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || "");
+            var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || "");
+            var tooltipHTML = "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">名称：</span>" + "<span class=\"tooltip-value\">" + tipName + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + tipName + "\" title=\"复制\">⧉</button></div>" + "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">地址：</span>" + "<span class=\"tooltip-value\">" + tipBaseUrl + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\">⧉</button></div>" + "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">格式：</span>" + "<span class=\"tooltip-value\">" + tipStyle + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\">⧉</button></div>" + (rcfg.key ? "<div class=\"tooltip-row layout-x-queue\"><span class=\"tooltip-label\">Key：</span><span class=\"tooltip-value\">" + tipKey + "</span><button class=\"tooltip-copy\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\">⧉</button></div>" : "") + "<div class=\"tooltip-row layout-x-queue\"><span class=\"tooltip-label\">模型：</span><span class=\"tooltip-value\">" + (tipModel || "-") + "</span><button class=\"tooltip-copy\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\">⧉</button></div>";
+            var tooltip = createTooltip(tooltipId, tooltipHTML);
 
-			headerEl.addChild(dragHandle);
-			headerEl.addChild(toggleSpan);
-			headerEl.addChild(nameSpan);
-			headerEl.addChild(actionsEl);
-			nodeEl.addChild(headerEl);
+            nameSpan.on("mouseenter", function() {
+                tooltip.show(nameSpan);
+            });
 
-			// 拖放事件 — 用 e.stopPropagation() 防止子节点事件冒泡到父节点
-			nodeEl.on('dragover', function(e) {
-				e.preventDefault();
-				e.stopPropagation();
-				e.dataTransfer.dropEffect = 'move';
-				var draggingEl = $('.dragging', container);
-				if (!draggingEl || draggingEl === nodeEl || draggingEl.dataset.modelId) return;
-				var header = $('.group-header', nodeEl);
-				var headerRect = header.getBoundingClientRect();
-				nodeEl.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-child');
-				// 鼠标在 header 区域内：上半→插入前面，下半→作为子级
-				if (e.clientY >= headerRect.top && e.clientY <= headerRect.bottom) {
-					if (e.clientY < headerRect.top + headerRect.height / 2) {
-						nodeEl.classList.add('drag-over-before');
-					} else {
-						nodeEl.classList.add('drag-over-child');
-					}
-				} else {
-					// 鼠标在内容区域（子节点已通过 stopPropagation 拦截），统一视为「作为子级」
-					nodeEl.classList.add('drag-over-child');
-				}
-			});
-			nodeEl.on('dragleave', function() {
-				nodeEl.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-child');
-			});
-			nodeEl.on('drop', function(e) {
-				e.preventDefault();
-				e.stopPropagation();
-				var willMoveAsChild = nodeEl.classList.contains('drag-over-child');
-				nodeEl.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-child');
-				var draggedId = e.dataTransfer.getData('text/plain');
-				if (!draggedId || draggedId === node.id) return;
-				if (willMoveAsChild) {
-					if (onMoveNode) onMoveNode(draggedId, node.id);
-				} else {
-					if (onReorderNodes) onReorderNodes(draggedId, node.id, true);
-				}
-			});
+            nameSpan.on("mouseleave", function() {
+                tooltip.hide();
+            });
 
-			var contentEl = mk('div', 'node-content layout-y-queue');
-			if (isCollapsed) {
-				contentEl.style.display = 'none';
-			}
+            nameSpan.on("click", function() {
+                tooltip.hide();
+                var ct = $(".node-content", nodeEl);
 
-			// 模型列表
-			var models = mk('div', 'group-models layout-y-queue');
-			models.style.paddingLeft = (depth * 12 + 8) + 'px';
-			node.models.forEach(function(model) {
-				var modelEl = mk('div', 'model item layout-x-queue');
-				modelEl.dataset.modelId = model.id;
-				modelEl.dataset.nodeId = node.id;
-				if (model.id === selectedModelId) {
-					modelEl.classList.add('selected');
-				}
-				var modelDragHandle = mk('span', 'drag-handle');
-				modelDragHandle.innerHTML = SVG.drag(14);
-				modelDragHandle.title = '拖动排序';
-				modelDragHandle.draggable = true;
-				modelDragHandle.on('dragstart', function(e) {
-					e.dataTransfer.setData('text/plain', node.id + ':' + model.id);
-					e.dataTransfer.effectAllowed = 'move';
-					modelEl.classList.add('dragging');
-				});
-				modelDragHandle.on('dragend', function() {
-					modelEl.classList.remove('dragging');
-					$$('.model.item', models).forEach(function(el) { el.classList.remove('drag-over'); });
-				});
-				var modelName = mk('span', 'model name');
-				modelName.innerHTML = model.remark ? model.name + '<span class="model-remark"> ' + model.remark + '</span>' : model.name;
-				var modelTooltipId = 'tooltip-model-' + node.id + '-' + model.id;
-				var tooltipRows =
-					'<div class="tooltip-row layout-x-queue">' +
-					'<span class="tooltip-label">模型：</span>' +
-					'<span class="tooltip-value">' + model.name + '</span>' +
-					'<button class="tooltip-copy" data-copy="' + model.name + '" title="复制">⧉</button></div>' +
-					(model.remark ?
-					'<div class="tooltip-row layout-x-queue">' +
-					'<span class="tooltip-label">备注：</span>' +
-					'<span class="tooltip-value">' + model.remark + '</span>' +
-					'<button class="tooltip-copy" data-copy="' + model.remark + '" title="复制">⧉</button></div>' : '');
-				var modelTooltip = createTooltip(modelTooltipId, tooltipRows);
-				modelName.on('mouseenter', function() { modelTooltip.show(modelName); });
-				modelName.on('mouseleave', function() { modelTooltip.hide(); });
-				modelName.on('click', function() {
-					modelTooltip.hide();
-					if (onModelSelect) onModelSelect(node.id, model.id);
-				});
+                if (ct) {
+                    if (ct.style.display === "none") {
+                        ct.style.display = "";
+                        toggleSpan.textContent = "▼";
+                    } else {
+                        ct.style.display = "none";
+                        toggleSpan.textContent = "▶";
+                    }
+                }
+            });
 
-				var modelActions = mk('div', 'model actions layout-x-queue');
-				var statusKey = node.id + ':' + model.id;
-				var statusData = connectionStatus.get(statusKey) || { status: 'disconnected' };
-				var testBtn = mk('button');
-				testBtn.className = 'action-sm connection ' + statusData.status;
-				testBtn.title = getConnectionStatusText(statusKey);
-				testBtn.innerHTML = '<span>🔗</span>';
-				if (statusData.status === "testing") {
-					$("span", testBtn).classList.add("spin");
-				}
-				testBtn.on('click', function(e) {
-					e.stopPropagation();
-					if (onTestConnection) onTestConnection(node.id, model.id);
-				});
-				var modelEditBtn = mk('button', 'action-sm');
-				modelEditBtn.innerHTML = SVG.edit(10);
-				modelEditBtn.title = '编辑模型';
-				modelEditBtn.on('click', function(e) {
-					e.stopPropagation();
-					modelTooltip.hide();
-					var existEdit = $('.add-model-inline', modelEl);
-					if (existEdit) existEdit.remove();
-					var inlineEdit = fromTemplate('tpl-add-model-inline', '.add-model-inline');
-					var inputEl = $('.add-model-input', inlineEdit);
-					inputEl.value = model.name;
-					inputEl.placeholder = '模型名';
-					var remarkEl = $('.add-model-remark-input', inlineEdit);
-					if (remarkEl) {
-						remarkEl.value = model.remark || '';
-						remarkEl.placeholder = '备注（仅用于显示）';
-					}
-					modelDragHandle.style.display = 'none';
-					modelName.style.display = 'none';
-					modelActions.style.display = 'none';
-					modelEl.insertBefore(inlineEdit, modelActions);
-					inputEl.focus();
-					inputEl.select();
-					$('.add-model-confirm', inlineEdit).on('click', function(e2) {
-						e2.stopPropagation();
-						var newName = inputEl.value.trim();
-						var newRemark = remarkEl ? remarkEl.value.trim() : '';
-						if (newName) {
-							inlineEdit.remove();
-							modelDragHandle.style.display = '';
-							modelName.style.display = '';
-							modelActions.style.display = '';
-							onModelEdit(node.id, model.id, newName, newRemark);
-						}
-					});
-					$('.add-model-cancel', inlineEdit).on('click', function(e2) {
-						e2.stopPropagation();
-						inlineEdit.remove();
-						modelDragHandle.style.display = '';
-						modelName.style.display = '';
-						modelActions.style.display = '';
-					});
-					var onInlineKeydown = function(e2) {
-						if (e2.key === 'Enter') { e2.preventDefault(); $('.add-model-confirm', inlineEdit).click(); }
-						else if (e2.key === 'Escape') { inlineEdit.remove(); modelDragHandle.style.display = ''; modelName.style.display = ''; modelActions.style.display = ''; }
-					};
-					inputEl.on('keydown', onInlineKeydown);
-					if (remarkEl) remarkEl.on('keydown', onInlineKeydown);
-				});
-				var modelDeleteBtn = mk('button', 'action-sm danger');
-				modelDeleteBtn.innerHTML = SVG.del(10);
-				modelDeleteBtn.title = '删除模型';
-				modelDeleteBtn.on('click', function(e) {
-					e.stopPropagation();
-					confirmAction('确定删除该模型？', function() { onModelDelete(node.id, model.id); });
-				});
-				modelActions.addChild(testBtn);
-				modelActions.addChild(modelEditBtn);
-				modelActions.addChild(modelDeleteBtn);
-				modelEl.addChild(modelDragHandle);
-				modelEl.addChild(modelName);
-				modelEl.addChild(modelActions);
-				modelEl.on('dragover', function(e) {
-					e.preventDefault();
-					e.dataTransfer.dropEffect = 'move';
-					var draggingEl = $('.dragging', models);
-					if (draggingEl && draggingEl !== modelEl) {
-						modelEl.classList.add('drag-over');
-					}
-				});
-				modelEl.on('dragleave', function() { modelEl.classList.remove('drag-over'); });
-				modelEl.on('drop', function(e) {
-					e.preventDefault();
-					e.stopPropagation();
-					modelEl.classList.remove('drag-over');
-					var data = e.dataTransfer.getData('text/plain');
-					var parts = data.split(':');
-					var draggedNodeId = parts[0], draggedModelId = parts[1];
-					if (draggedNodeId === node.id && draggedModelId !== model.id && onReorderModels) {
-						var rect = modelEl.getBoundingClientRect();
-						onReorderModels(node.id, draggedModelId, model.id, e.clientY < (rect.top + rect.height / 2));
-					}
-				});
-				models.addChild(modelEl);
-			});
+            var actionsEl = mk("div", "group-actions layout-x-queue");
+            var addChildBtn = mk("button", "action");
+            addChildBtn.textContent = "+";
+            addChildBtn.title = "添加子节点";
 
-			var addModelBtn = mk('div', 'add-model-link');
-			addModelBtn.textContent = '+ 添加模型';
-			addModelBtn.on('click', function(e) {
-				e.stopPropagation();
-				var existInput = $('.add-model-inline', models);
-				if (existInput) existInput.remove();
-				var inlineInput = fromTemplate('tpl-add-model-inline', '.add-model-inline');
-				models.insertBefore(inlineInput, addModelBtn);
-				var inputEl = $('.add-model-input', inlineInput);
-				var remarkEl = $('.add-model-remark-input', inlineInput);
-				inputEl.focus();
-				$('.add-model-confirm', inlineInput).on('click', function(e2) {
-					e2.stopPropagation();
-					var name = inputEl.value.trim();
-					var remark = remarkEl ? remarkEl.value.trim() : '';
-					if (name) {
-						inlineInput.remove();
-						onAddModel(node.id, name, remark);
-					}
-				});
-				$('.add-model-cancel', inlineInput).on('click', function(e2) {
-					e2.stopPropagation();
-					inlineInput.remove();
-				});
-				inputEl.on('keydown', function(e2) {
-					if (e2.key === 'Enter') { e2.preventDefault(); $('.add-model-confirm', inlineInput).click(); }
-					else if (e2.key === 'Escape') { inlineInput.remove(); }
-				});
-				if (remarkEl) remarkEl.on('keydown', function(e2) {
-					if (e2.key === 'Enter') { e2.preventDefault(); $('.add-model-confirm', inlineInput).click(); }
-					else if (e2.key === 'Escape') { inlineInput.remove(); }
-				});
-			});
-			models.addChild(addModelBtn);
-			if (hasModels) contentEl.addChild(models);
+            addChildBtn.on("click", function(e) {
+                e.stopPropagation();
 
-			if (hasChildren) {
-				var childrenWrapper = mk('div', 'node-children');
-				renderTreeNode(node.children, childrenWrapper, depth + 1);
-				contentEl.addChild(childrenWrapper);
-			}
+                showEditGroupDialog(null, node.id, function(data) {
+                    addNode(node.id, data).then(function() {
+                        refreshUI();
+                    });
+                });
+            });
 
-			nodeEl.addChild(contentEl);
-			parentEl.addChild(nodeEl);
-		});
-	}
+            function isNodeTestable(n) {
+                var cfg = resolveNodeConfig(n.id);
+                return cfg && cfg.baseUrl && cfg.key !== undefined && cfg.key !== null && cfg.modelId;
+            }
 
-	renderTreeNode(nodes, container, 0);
-	// 更新「测试全部」按钮状态
-	var testAllBtn = $('#btn-test-all');
-	if (testAllBtn && typeof getGroups === 'function') {
-		var testableIds = [];
-		function collectTestable(ns) {
-			ns.forEach(function(n) {
-				var rcfg = resolveNodeConfig(n.id);
-				if (rcfg && rcfg.baseUrl) testableIds.push(n.id);
-				if (n.children) collectTestable(n.children);
-			});
-		}
-		collectTestable(getGroups());
-		var hasTesting = false, hasFail = false, hasSuccess = false;
-		testableIds.forEach(function(id) {
-			var sd = connectionStatus.get(id + ':__node__');
-			if (sd) {
-				if (sd.status === 'testing') hasTesting = true;
-				else if (sd.status === 'connected') hasSuccess = true;
-				else if (sd.status === 'failed' || sd.status === 'cors_blocked') hasFail = true;
-			}
-		});
-		testAllBtn.className = 'action batch-test btn-icon';
-		var spanEl = $('span', testAllBtn);
-		if (hasTesting) {
-			testAllBtn.classList.add('testing');
-			if (spanEl) spanEl.classList.add('spin');
-		} else {
-			if (spanEl) spanEl.classList.remove('spin');
-			if (hasFail && !hasSuccess) testAllBtn.classList.add('failed');
-			else if (hasSuccess && !hasFail) testAllBtn.classList.add('connected');
-		}
-	}
+            function collectTestable(nds, out) {
+                nds.forEach(function(n) {
+                    if (isNodeTestable(n))
+                        out.push(n.id);
+
+                    if (n.children)
+                        collectTestable(n.children, out);
+                });
+            }
+
+            var testableIds = [];
+            collectTestable([node], testableIds);
+            var isSelfTestable = testableIds.indexOf(node.id) >= 0;
+            var childTestable = testableIds.length - (isSelfTestable ? 1 : 0);
+            var hasTesting = false, allOk = true, anyFailed = false;
+
+            testableIds.forEach(function(id) {
+                var sd = connectionStatus.get(id + ":" + "__node__");
+
+                if (sd) {
+                    if (sd.status === "testing")
+                        hasTesting = true;
+
+                    if (sd.status === "connected")
+                        {} else if (sd.status === "testing")
+                        {} else {
+                        allOk = false;
+
+                        if (sd.status !== "disconnected")
+                            anyFailed = true;
+                    }
+                } else {
+                    allOk = false;
+                }
+            });
+
+            var batchStatus = "";
+
+            if (testableIds.length > 0) {
+                var allTested = testableIds.every(function(id) {
+                    var sd = connectionStatus.get(id + ":" + "__node__");
+                    return sd && sd.status !== "disconnected" && sd.status !== undefined;
+                });
+
+                if (allTested && allOk)
+                    batchStatus = "connected";
+                else if (anyFailed || (allTested && !allOk))
+                    batchStatus = "failed";
+            }
+
+            var batchTestBtn = null;
+
+            if (testableIds.length > 0) {
+                batchTestBtn = mk("button");
+                batchTestBtn.className = "action batch-test" + (batchStatus ? " " + batchStatus : "");
+                batchTestBtn.innerHTML = "<span>🔗</span>";
+
+                if (hasTesting) {
+                    batchTestBtn.classList.add("testing");
+                    $("span", batchTestBtn).classList.add("spin");
+                }
+
+                if (!hasTesting) {
+                    var successCount = 0, failCount = 0, firstError = null;
+
+                    testableIds.forEach(function(id) {
+                        var sd = connectionStatus.get(id + ":__node__");
+
+                        if (sd) {
+                            if (sd.status === "connected")
+                                successCount++;
+                            else if (sd.status === "failed" || sd.status === "cors_blocked") {
+                                failCount++;
+
+                                if (!firstError && sd.error)
+                                    firstError = sd.error;
+                            }
+                        }
+                    });
+
+                    var testSummary = "";
+
+                    if (failCount > 0) {
+                        testSummary = "✗ " + failCount + "个失败";
+
+                        if (firstError)
+                            testSummary += "：" + firstError;
+                    } else if (successCount > 0 && successCount === testableIds.length) {
+                        testSummary = "✓ 全部成功";
+                    }
+
+                    if (childTestable > 0) {
+                        batchTestBtn.title = "测试连接（含" + (testableIds.length) + "个端点）" + (testSummary ? " — " + testSummary : "");
+                    } else {
+                        batchTestBtn.title = getConnectionStatusText(node.id + ":__node__");
+                    }
+                } else {
+                    batchTestBtn.title = "测试中...";
+                }
+
+                batchTestBtn.on("click", function(e) {
+                    e.stopPropagation();
+
+                    if (onTestConnection) {
+                        testableIds.forEach(function(id) {
+                            onTestConnection(id, "__node__");
+                        });
+                    }
+                });
+            }
+
+            var joinBtn = null;
+
+            if (isSelfTestable) {
+                joinBtn = mk("button", "action join-session");
+                joinBtn.innerHTML = SVG.bubble(12);
+                applyJoinBtnUI(joinBtn, node.id);
+
+                joinBtn.on("click", function(e) {
+                    e.stopPropagation();
+                    var mid = node.id + ":__node__";
+
+                    if (selectedModels.includes(mid)) {
+                        selectedModels = selectedModels.filter(function(x) {
+                            return x !== mid;
+                        });
+                    } else {
+                        selectedModels.push(mid);
+                    }
+
+                    saveDefaultSelectedModels(selectedModels);
+                    renderModelSelector(getGroups(), selectedModels, false);
+                    applyJoinBtnUI(joinBtn, node.id);
+                });
+            }
+
+            var editBtn = mk("button", "action");
+            editBtn.innerHTML = SVG.edit(12);
+            editBtn.title = "编辑节点";
+
+            editBtn.on("click", function(e) {
+                e.stopPropagation();
+                onNodeEdit(node.id);
+            });
+
+            var deleteBtn = mk("button", "action danger");
+            deleteBtn.innerHTML = SVG.del(12);
+            deleteBtn.title = "删除节点及其子节点";
+
+            deleteBtn.on("click", function(e) {
+                e.stopPropagation();
+
+                confirmAction("确定删除节点「" + node.name + "」及其所有子节点和模型？", function() {
+                    onNodeDelete(node.id);
+                });
+            });
+
+            actionsEl.addChild(addChildBtn);
+
+            if (batchTestBtn)
+                actionsEl.addChild(batchTestBtn);
+
+            if (joinBtn)
+                actionsEl.addChild(joinBtn);
+
+            actionsEl.addChild(editBtn);
+            actionsEl.addChild(deleteBtn);
+            headerEl.addChild(dragHandle);
+            headerEl.addChild(toggleSpan);
+            headerEl.addChild(nameSpan);
+            headerEl.addChild(actionsEl);
+            nodeEl.addChild(headerEl);
+
+            nodeEl.on("dragover", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = "move";
+                var draggingEl = $(".dragging", container);
+
+                if (!draggingEl || draggingEl === nodeEl || draggingEl.dataset.modelId)
+                    return;
+
+                var header = $(".group-header", nodeEl);
+                var headerRect = header.getBoundingClientRect();
+                nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
+
+                if (e.clientY >= headerRect.top && e.clientY <= headerRect.bottom) {
+                    if (e.clientY < headerRect.top + headerRect.height / 2) {
+                        nodeEl.classList.add("drag-over-before");
+                    } else {
+                        nodeEl.classList.add("drag-over-child");
+                    }
+                } else {
+                    nodeEl.classList.add("drag-over-child");
+                }
+            });
+
+            nodeEl.on("dragleave", function() {
+                nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
+            });
+
+            nodeEl.on("drop", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var willMoveAsChild = nodeEl.classList.contains("drag-over-child");
+                nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
+                var draggedId = e.dataTransfer.getData("text/plain");
+
+                if (!draggedId || draggedId === node.id)
+                    return;
+
+                if (willMoveAsChild) {
+                    if (onMoveNode)
+                        onMoveNode(draggedId, node.id);
+                } else {
+                    if (onReorderNodes)
+                        onReorderNodes(draggedId, node.id, true);
+                }
+            });
+
+            var contentEl = mk("div", "node-content layout-y-queue");
+
+            if (isCollapsed) {
+                contentEl.style.display = "none";
+            }
+
+            var models = mk("div", "group-models layout-y-queue");
+            models.style.paddingLeft = (depth * 12 + 8) + "px";
+
+            node.models.forEach(function(model) {
+                var modelEl = mk("div", "model item layout-x-queue");
+                modelEl.dataset.modelId = model.id;
+                modelEl.dataset.nodeId = node.id;
+
+                if (model.id === selectedModelId) {
+                    modelEl.classList.add("selected");
+                }
+
+                var modelDragHandle = mk("span", "drag-handle");
+                modelDragHandle.innerHTML = SVG.drag(14);
+                modelDragHandle.title = "拖动排序";
+                modelDragHandle.draggable = true;
+
+                modelDragHandle.on("dragstart", function(e) {
+                    e.dataTransfer.setData("text/plain", node.id + ":" + model.id);
+                    e.dataTransfer.effectAllowed = "move";
+                    modelEl.classList.add("dragging");
+                });
+
+                modelDragHandle.on("dragend", function() {
+                    modelEl.classList.remove("dragging");
+
+                    $$(".model.item", models).forEach(function(el) {
+                        el.classList.remove("drag-over");
+                    });
+                });
+
+                var modelName = mk("span", "model name");
+                modelName.innerHTML = model.remark ? model.name + "<span class=\"model-remark\"> " + model.remark + "</span>" : model.name;
+                var modelTooltipId = "tooltip-model-" + node.id + "-" + model.id;
+                var tooltipRows = "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">模型：</span>" + "<span class=\"tooltip-value\">" + model.name + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + model.name + "\" title=\"复制\">⧉</button></div>" + (model.remark ? "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">备注：</span>" + "<span class=\"tooltip-value\">" + model.remark + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + model.remark + "\" title=\"复制\">⧉</button></div>" : "");
+                var modelTooltip = createTooltip(modelTooltipId, tooltipRows);
+
+                modelName.on("mouseenter", function() {
+                    modelTooltip.show(modelName);
+                });
+
+                modelName.on("mouseleave", function() {
+                    modelTooltip.hide();
+                });
+
+                modelName.on("click", function() {
+                    modelTooltip.hide();
+
+                    if (onModelSelect)
+                        onModelSelect(node.id, model.id);
+                });
+
+                var modelActions = mk("div", "model actions layout-x-queue");
+                var statusKey = node.id + ":" + model.id;
+
+                var statusData = connectionStatus.get(statusKey) || {
+                    status: "disconnected"
+                };
+
+                var testBtn = mk("button");
+                testBtn.className = "action-sm connection " + statusData.status;
+                testBtn.title = getConnectionStatusText(statusKey);
+                testBtn.innerHTML = "<span>🔗</span>";
+
+                if (statusData.status === "testing") {
+                    $("span", testBtn).classList.add("spin");
+                }
+
+                testBtn.on("click", function(e) {
+                    e.stopPropagation();
+
+                    if (onTestConnection)
+                        onTestConnection(node.id, model.id);
+                });
+
+                var modelEditBtn = mk("button", "action-sm");
+                modelEditBtn.innerHTML = SVG.edit(10);
+                modelEditBtn.title = "编辑模型";
+
+                modelEditBtn.on("click", function(e) {
+                    e.stopPropagation();
+                    modelTooltip.hide();
+                    var existEdit = $(".add-model-inline", modelEl);
+
+                    if (existEdit)
+                        existEdit.remove();
+
+                    var inlineEdit = fromTemplate("tpl-add-model-inline", ".add-model-inline");
+                    var inputEl = $(".add-model-input", inlineEdit);
+                    inputEl.value = model.name;
+                    inputEl.placeholder = "模型名";
+                    var remarkEl = $(".add-model-remark-input", inlineEdit);
+
+                    if (remarkEl) {
+                        remarkEl.value = model.remark || "";
+                        remarkEl.placeholder = "备注（仅用于显示）";
+                    }
+
+                    modelDragHandle.style.display = "none";
+                    modelName.style.display = "none";
+                    modelActions.style.display = "none";
+                    modelEl.insertBefore(inlineEdit, modelActions);
+                    inputEl.focus();
+                    inputEl.select();
+
+                    $(".add-model-confirm", inlineEdit).on("click", function(e2) {
+                        e2.stopPropagation();
+                        var newName = inputEl.value.trim();
+                        var newRemark = remarkEl ? remarkEl.value.trim() : "";
+
+                        if (newName) {
+                            inlineEdit.remove();
+                            modelDragHandle.style.display = "";
+                            modelName.style.display = "";
+                            modelActions.style.display = "";
+                            onModelEdit(node.id, model.id, newName, newRemark);
+                        }
+                    });
+
+                    $(".add-model-cancel", inlineEdit).on("click", function(e2) {
+                        e2.stopPropagation();
+                        inlineEdit.remove();
+                        modelDragHandle.style.display = "";
+                        modelName.style.display = "";
+                        modelActions.style.display = "";
+                    });
+
+                    var onInlineKeydown = function(e2) {
+                        if (e2.key === "Enter") {
+                            e2.preventDefault();
+                            $(".add-model-confirm", inlineEdit).click();
+                        } else if (e2.key === "Escape") {
+                            inlineEdit.remove();
+                            modelDragHandle.style.display = "";
+                            modelName.style.display = "";
+                            modelActions.style.display = "";
+                        }
+                    };
+
+                    inputEl.on("keydown", onInlineKeydown);
+
+                    if (remarkEl)
+                        remarkEl.on("keydown", onInlineKeydown);
+                });
+
+                var modelDeleteBtn = mk("button", "action-sm danger");
+                modelDeleteBtn.innerHTML = SVG.del(10);
+                modelDeleteBtn.title = "删除模型";
+
+                modelDeleteBtn.on("click", function(e) {
+                    e.stopPropagation();
+
+                    confirmAction("确定删除该模型？", function() {
+                        onModelDelete(node.id, model.id);
+                    });
+                });
+
+                modelActions.addChild(testBtn);
+                modelActions.addChild(modelEditBtn);
+                modelActions.addChild(modelDeleteBtn);
+                modelEl.addChild(modelDragHandle);
+                modelEl.addChild(modelName);
+                modelEl.addChild(modelActions);
+
+                modelEl.on("dragover", function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    var draggingEl = $(".dragging", models);
+
+                    if (draggingEl && draggingEl !== modelEl) {
+                        modelEl.classList.add("drag-over");
+                    }
+                });
+
+                modelEl.on("dragleave", function() {
+                    modelEl.classList.remove("drag-over");
+                });
+
+                modelEl.on("drop", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    modelEl.classList.remove("drag-over");
+                    var data = e.dataTransfer.getData("text/plain");
+                    var parts = data.split(":");
+                    var draggedNodeId = parts[0], draggedModelId = parts[1];
+
+                    if (draggedNodeId === node.id && draggedModelId !== model.id && onReorderModels) {
+                        var rect = modelEl.getBoundingClientRect();
+
+                        onReorderModels(
+                            node.id,
+                            draggedModelId,
+                            model.id,
+                            e.clientY < (rect.top + rect.height / 2)
+                        );
+                    }
+                });
+
+                models.addChild(modelEl);
+            });
+
+            var addModelBtn = mk("div", "add-model-link");
+            addModelBtn.textContent = "+ 添加模型";
+
+            addModelBtn.on("click", function(e) {
+                e.stopPropagation();
+                var existInput = $(".add-model-inline", models);
+
+                if (existInput)
+                    existInput.remove();
+
+                var inlineInput = fromTemplate("tpl-add-model-inline", ".add-model-inline");
+                models.insertBefore(inlineInput, addModelBtn);
+                var inputEl = $(".add-model-input", inlineInput);
+                var remarkEl = $(".add-model-remark-input", inlineInput);
+                inputEl.focus();
+
+                $(".add-model-confirm", inlineInput).on("click", function(e2) {
+                    e2.stopPropagation();
+                    var name = inputEl.value.trim();
+                    var remark = remarkEl ? remarkEl.value.trim() : "";
+
+                    if (name) {
+                        inlineInput.remove();
+                        onAddModel(node.id, name, remark);
+                    }
+                });
+
+                $(".add-model-cancel", inlineInput).on("click", function(e2) {
+                    e2.stopPropagation();
+                    inlineInput.remove();
+                });
+
+                inputEl.on("keydown", function(e2) {
+                    if (e2.key === "Enter") {
+                        e2.preventDefault();
+                        $(".add-model-confirm", inlineInput).click();
+                    } else if (e2.key === "Escape") {
+                        inlineInput.remove();
+                    }
+                });
+
+                if (remarkEl) remarkEl.on("keydown", function(e2) {
+                    if (e2.key === "Enter") {
+                        e2.preventDefault();
+                        $(".add-model-confirm", inlineInput).click();
+                    } else if (e2.key === "Escape") {
+                        inlineInput.remove();
+                    }
+                });
+            });
+
+            models.addChild(addModelBtn);
+
+            if (hasModels)
+                contentEl.addChild(models);
+
+            if (hasChildren) {
+                var childrenWrapper = mk("div", "node-children");
+                renderTreeNode(node.children, childrenWrapper, depth + 1);
+                contentEl.addChild(childrenWrapper);
+            }
+
+            nodeEl.addChild(contentEl);
+            parentEl.addChild(nodeEl);
+        });
+    }
+
+    renderTreeNode(nodes, container, 0);
+    var testAllBtn = $("#btn-test-all");
+
+    if (testAllBtn && typeof getGroups === "function") {
+        var testableIds = [];
+
+        function collectTestable(ns) {
+            ns.forEach(function(n) {
+                var rcfg = resolveNodeConfig(n.id);
+
+                if (rcfg && rcfg.baseUrl)
+                    testableIds.push(n.id);
+
+                if (n.children)
+                    collectTestable(n.children);
+            });
+        }
+
+        collectTestable(getGroups());
+        var hasTesting = false, hasFail = false, hasSuccess = false;
+
+        testableIds.forEach(function(id) {
+            var sd = connectionStatus.get(id + ":__node__");
+
+            if (sd) {
+                if (sd.status === "testing")
+                    hasTesting = true;
+                else if (sd.status === "connected")
+                    hasSuccess = true;
+                else if (sd.status === "failed" || sd.status === "cors_blocked")
+                    hasFail = true;
+            }
+        });
+
+        testAllBtn.className = "action batch-test btn-icon";
+        var spanEl = $("span", testAllBtn);
+
+        if (hasTesting) {
+            testAllBtn.classList.add("testing");
+
+            if (spanEl)
+                spanEl.classList.add("spin");
+        } else {
+            if (spanEl)
+                spanEl.classList.remove("spin");
+
+            if (hasFail && !hasSuccess)
+                testAllBtn.classList.add("failed");
+            else if (hasSuccess && !hasFail)
+                testAllBtn.classList.add("connected");
+        }
+    }
 }
 
 
