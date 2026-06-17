@@ -239,7 +239,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 			});
 			dragHandle.on('dragend', function() {
 				nodeEl.classList.remove('dragging');
-				$$('.endpoint-group', container).forEach(function(el) { el.classList.remove('drag-over', 'drag-over-child'); });
+				$$('.endpoint-group', container).forEach(function(el) { el.classList.remove('drag-over', 'drag-over-child', 'drag-over-before', 'drag-over-after'); });
 			});
 
 			var toggleSpan = mk('span', 'group-toggle');
@@ -369,10 +369,35 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 					batchTestBtn.classList.add("testing");
 					$("span", batchTestBtn).classList.add("spin");
 				}
-				if (childTestable > 0) {
-					batchTestBtn.title = hasTesting ? '测试中...' : '批量测试连接（含' + (testableIds.length) + '个端点）';
+				if (!hasTesting) {
+					// 收集测试状态信息用于title
+					var successCount = 0, failCount = 0, firstError = null;
+					testableIds.forEach(function(id) {
+						var sd = connectionStatus.get(id + ':__node__');
+						if (sd) {
+							if (sd.status === 'connected') successCount++;
+							else if (sd.status === 'failed' || sd.status === 'cors_blocked') {
+								failCount++;
+								if (!firstError && sd.error) firstError = sd.error;
+							}
+						}
+					});
+					var testSummary = '';
+					if (failCount > 0) {
+						testSummary = '✗ ' + failCount + '个失败';
+						if (firstError) testSummary += '：' + firstError;
+					} else if (successCount > 0 && successCount === testableIds.length) {
+						testSummary = '✓ 全部成功';
+					}
+
+					if (childTestable > 0) {
+						batchTestBtn.title = '测试连接（含' + (testableIds.length) + '个端点）' + (testSummary ? ' — ' + testSummary : '');
+					} else {
+						// 只有自己一个端点，直接用 getConnectionStatusText 显示详情
+						batchTestBtn.title = getConnectionStatusText(node.id + ':__node__');
+					}
 				} else {
-					batchTestBtn.title = hasTesting ? '测试中...' : '测试连接';
+					batchTestBtn.title = '测试中...';
 				}
 				batchTestBtn.on('click', function(e) {
 					e.stopPropagation();
@@ -410,41 +435,42 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 			headerEl.addChild(actionsEl);
 			nodeEl.addChild(headerEl);
 
-			// 拖放事件
+			// 拖放事件 — 用 e.stopPropagation() 防止子节点事件冒泡到父节点
 			nodeEl.on('dragover', function(e) {
 				e.preventDefault();
+				e.stopPropagation();
 				e.dataTransfer.dropEffect = 'move';
 				var draggingEl = $('.dragging', container);
 				if (!draggingEl || draggingEl === nodeEl || draggingEl.dataset.modelId) return;
-				var rect = nodeEl.getBoundingClientRect();
-				var relY = (e.clientY - rect.top) / rect.height;
-				nodeEl.classList.remove('drag-over', 'drag-over-child');
-				delete nodeEl.dataset.insertAfter;
-				if (relY < 0.25) {
-					nodeEl.classList.add('drag-over');
-				} else if (relY > 0.75) {
-					nodeEl.classList.add('drag-over');
-					nodeEl.dataset.insertAfter = 'true';
+				var header = $('.group-header', nodeEl);
+				var headerRect = header.getBoundingClientRect();
+				nodeEl.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-child');
+				// 鼠标在 header 区域内：上半→插入前面，下半→作为子级
+				if (e.clientY >= headerRect.top && e.clientY <= headerRect.bottom) {
+					if (e.clientY < headerRect.top + headerRect.height / 2) {
+						nodeEl.classList.add('drag-over-before');
+					} else {
+						nodeEl.classList.add('drag-over-child');
+					}
 				} else {
+					// 鼠标在内容区域（子节点已通过 stopPropagation 拦截），统一视为「作为子级」
 					nodeEl.classList.add('drag-over-child');
 				}
 			});
 			nodeEl.on('dragleave', function() {
-				nodeEl.classList.remove('drag-over', 'drag-over-child');
-				delete nodeEl.dataset.insertAfter;
+				nodeEl.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-child');
 			});
 			nodeEl.on('drop', function(e) {
 				e.preventDefault();
-				nodeEl.classList.remove('drag-over', 'drag-over-child');
+				e.stopPropagation();
+				var willMoveAsChild = nodeEl.classList.contains('drag-over-child');
+				nodeEl.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-child');
 				var draggedId = e.dataTransfer.getData('text/plain');
 				if (!draggedId || draggedId === node.id) return;
-				var wasChildDrop = nodeEl.classList.contains('drag-over-child');
-				var insertAfter = nodeEl.dataset.insertAfter === 'true';
-				delete nodeEl.dataset.insertAfter;
-				if (wasChildDrop) {
+				if (willMoveAsChild) {
 					if (onMoveNode) onMoveNode(draggedId, node.id);
 				} else {
-					if (onReorderNodes) onReorderNodes(draggedId, node.id, !insertAfter);
+					if (onReorderNodes) onReorderNodes(draggedId, node.id, true);
 				}
 			});
 

@@ -828,7 +828,7 @@ button.outline:hover:not(:disabled) {
 .endpoint-group {
 	background: var(--bg-elevated);
 	border-radius: 0;
-	margin-bottom: var(--space-1);
+	margin-bottom: var(--space-3);
 	border: 1px solid var(--border-subtle);
 	box-shadow: var(--shadow-sm);
 }
@@ -841,14 +841,15 @@ button.outline:hover:not(:disabled) {
 	opacity: 0.5;
 }
 
-.endpoint-group.drag-over {
-	border-top: 2px solid var(--accent-primary);
+.endpoint-group.drag-over-before {
+	border-top: 3px solid var(--accent-primary);
 }
 
 .endpoint-group.drag-over-child {
 	outline: 2px dashed var(--accent-primary);
 	outline-offset: -2px;
 	border-radius: var(--radius-sm);
+	box-shadow: inset 3px 0 0 0 var(--accent-primary);
 }
 
 .node-content {
@@ -1085,7 +1086,7 @@ button.action.batch-test.failed {
 	box-shadow: 0 0 0 2px var(--accent-light);
 	color: var(--text-primary);
 }
-	margin-bottom: var(--space-1);
+	margin-bottom: var(--space-3);
 	flex-grow: 1;
 }
 
@@ -1186,7 +1187,7 @@ button.connection.cors_blocked {
 /* ========== Session List ========== */
 .session.item {
 	padding: var(--space-3);
-	margin-bottom: var(--space-1);
+	margin-bottom: var(--space-3);
 	cursor: pointer;
 	border-radius: var(--radius-md);
 	border: 1px solid transparent;
@@ -1497,7 +1498,7 @@ button.toggle-key:hover:not(:disabled) {
 }
 
 #help-dialog .help-section li {
-	margin-bottom: var(--space-1);
+	margin-bottom: var(--space-3);
 }
 
 #help-dialog .dialog-buttons {
@@ -1643,7 +1644,7 @@ button.toggle-key:hover:not(:disabled) {
 .selector.group-label {
 	font-size: 10px;
 	color: var(--text-muted);
-	margin-bottom: var(--space-1);
+	margin-bottom: var(--space-3);
 	margin-top: var(--space-2);
 }
 

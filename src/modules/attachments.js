@@ -238,13 +238,15 @@ function showEditGroupDialog(node, parentId, onSave) {
 				alert('请填写名称');
 				return;
 			}
-			onSave({
-				name: theName,
-				modelId: theModelId,
-				baseUrl: urlInput.value.trim(),
-				style: styleSel.value,
-				key: keyInput.value.trim()
-			});
+			var saveData = { name: theName, style: styleSel.value };
+			// 可继承字段：节点原本有值则直接保存（含清空为""）；
+			// 节点原本无值则仅当用户手动输入了不同于继承值的值时才保存，否则不传以保持继承
+			var theUrl = urlInput.value.trim();
+			if (node && node.baseUrl || theUrl !== (rcfg && rcfg.baseUrl || '')) saveData.baseUrl = theUrl;
+			var theKey = keyInput.value.trim();
+			if (node && node.key || theKey !== (rcfg && rcfg.key || '')) saveData.key = theKey;
+			if (node && node.modelId || theModelId !== (rcfg && rcfg.modelId || '')) saveData.modelId = theModelId;
+			onSave(saveData);
 			dialog.remove();
 		}
 	}, dialog);
