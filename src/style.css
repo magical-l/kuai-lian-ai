@@ -200,14 +200,14 @@ a.navbar img {
 	display: block;
 }
 
-header > button {
+header button, header > button {
 	border: 1px solid var(--border-subtle);
 	padding: 0;
 	height: 24px;
 	min-width: 24px;
 }
 
-header > button:hover:not(:disabled) {
+header button:hover:not(:disabled), header > button:hover:not(:disabled) {
 	background: var(--accent-light);
 	border-color: var(--accent-primary);
 	color: var(--accent-primary);

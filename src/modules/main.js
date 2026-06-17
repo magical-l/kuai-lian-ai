@@ -94,6 +94,8 @@ async function init() {
 		await refreshUI();
 	}
 	$('#btn-add-group').onclick = handleAddGroup;
+	$('#btn-collapse-all').onclick = collapseAllEndpointNodes;
+	$('#btn-collapse-all').innerHTML = SVG.collapseAll;
 	$('#btn-send').onclick = () => {
 		if (inputMode === 'embedding') {
 			handleEmbeddingSend();

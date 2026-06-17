@@ -108,6 +108,27 @@ doc.on('click', e => {
 	}
 });
 const collapsedEndpoints = new Set();
+
+function collapseAllEndpointNodes() {
+	// 收集所有节点ID
+	var ids = [];
+	function collectIds(nodes) {
+		nodes.forEach(function(n) {
+			ids.push(n.id);
+			if (n.children) collectIds(n.children);
+		});
+	}
+	collectIds(getGroups());
+	ids.forEach(function(id) { collapsedEndpoints.add(id); });
+	// 直接操作DOM收起
+	$$('.endpoint-group').forEach(function(el) {
+		var toggle = $('.group-toggle', el);
+		var content = $('.node-content', el);
+		if (content) content.style.display = 'none';
+		if (toggle) toggle.textContent = '▶';
+	});
+}
+
 let attachmentTooltip = null;
 
 function showAttachmentTooltip(name, targetEl) {
