@@ -24,7 +24,7 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 			const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : '';
 			const classes = ['model', 'tag', 'selected', statusClass, speedClass ? `speed-${speedClass}` : ''].filter(Boolean).join(' ');
 			const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : '';
-			return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.node.name}</span> ${info.model.name}${remarkHtml}</span>`;
+			return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.node.name}</span> ${info.model.name}${remarkHtml}<span class="tag-remove" data-model="${id}">✕</span></span>`;
 		}).join('');
 		expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
 	}
@@ -95,6 +95,29 @@ function bindSelectorEvents() {
 			}
 			saveDefaultSelectedModels(selectedModels);
 			renderModelSelector(getGroups(), selectedModels, false);
+		};
+	});
+	// 标签上的小叉：移除该模型
+	$$('.tag-remove').forEach(function(btn) {
+		btn.onclick = function(e) {
+			e.stopPropagation();
+			var gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+			var isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(function(s) { return s.status === 'generating'; });
+			if (isGenerating) return;
+			var id = btn.dataset.model;
+			if (!id) return;
+			selectedModels = selectedModels.filter(function(x) { return x !== id; });
+			saveDefaultSelectedModels(selectedModels);
+			renderModelSelector(getGroups(), selectedModels, false);
+			// 同步左侧栏对应节点的加入按钮状态
+			var nid = id && id.split(':')[0];
+			if (nid) {
+				var eg = document.querySelector('.endpoint-group[data-node-id="' + nid + '"]');
+				if (eg) {
+					var jb = eg.querySelector('.join-session');
+					if (jb) { jb.title = '加入当前会话'; jb.className = 'action join-session'; }
+				}
+			}
 		};
 	});
 }
@@ -415,16 +438,15 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 				function refreshJoinBtn() {
 					var mid = node.id + ':__node__';
 					if (selectedModels.includes(mid)) {
-						joinBtn.innerHTML = SVG.bubbleCancel(12);
-						joinBtn.title = '从当前会话移除';
-						joinBtn.className = 'action cancel-session';
+						joinBtn.title = '已加入当前会话';
+						joinBtn.className = 'action join-session joined';
 					} else {
-						joinBtn.innerHTML = SVG.bubble(12);
 						joinBtn.title = '加入当前会话';
 						joinBtn.className = 'action join-session';
 					}
 				}
 				joinBtn = mk('button', 'action');
+				joinBtn.innerHTML = SVG.bubble(12);
 				refreshJoinBtn();
 				joinBtn.on('click', function(e) {
 					e.stopPropagation();

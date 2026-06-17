@@ -1027,12 +1027,34 @@ button.action.join-session:hover:not(:disabled) {
 	background: var(--accent-light);
 }
 
-/* 移除会话按钮 */
-button.action.cancel-session {
-	color: var(--danger);
+/* 加入会话按钮 - 已加入状态 */
+button.action.join-session.joined {
+	background: var(--success-light);
+	color: var(--success);
 }
-button.action.cancel-session:hover:not(:disabled) {
+button.action.join-session.joined:hover:not(:disabled) {
+	background: var(--success);
+	color: white;
+}
+
+/* 已选模型标签上的移除叉 */
+.tag-remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: 4px;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	font-size: 10px;
+	cursor: pointer;
+	color: var(--text-muted);
+	transition: all var(--transition-fast);
+	flex-shrink: 0;
+}
+.tag-remove:hover {
 	background: var(--danger-light);
+	color: var(--danger);
 }
 
 .group-models {
