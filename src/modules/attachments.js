@@ -248,6 +248,19 @@ function showEditGroupDialog(node, parentId, onSave) {
 			}
 		});
 	}
+	// Esc → 关闭弹窗（监听 document，不管焦点在哪都生效）
+	var escHandler = function(e) {
+		if (e.key === 'Escape' && document.body.contains(dialog)) {
+			dialog.remove();
+		}
+	};
+	doc.addEventListener('keydown', escHandler);
+	// 弹窗销毁时清理监听器
+	var origRemove = dialog.remove;
+	dialog.remove = function() {
+		doc.removeEventListener('keydown', escHandler);
+		origRemove.call(this);
+	};
 	onClick({
 		'#dialog-cancel': function() { dialog.remove(); },
 		'#dialog-save': function() {

@@ -41,7 +41,7 @@
 					<div class="logo layout-x-queue">
 						<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 					</div>
-					<span class="brand">快连AI</span><span class="version">v4.1.1</span>
+					<span class="brand">快连AI</span><span class="version">v4.2.0</span>
 				</div>
 				<div class="center layout-x-queue">
 					<span class="directory-label">当前存储目录：</span>
@@ -2591,6 +2591,19 @@ function showEditGroupDialog(node, parentId, onSave) {
 			}
 		});
 	}
+	// Esc → 关闭弹窗（监听 document，不管焦点在哪都生效）
+	var escHandler = function(e) {
+		if (e.key === 'Escape' && document.body.contains(dialog)) {
+			dialog.remove();
+		}
+	};
+	doc.addEventListener('keydown', escHandler);
+	// 弹窗销毁时清理监听器
+	var origRemove = dialog.remove;
+	dialog.remove = function() {
+		doc.removeEventListener('keydown', escHandler);
+		origRemove.call(this);
+	};
 	onClick({
 		'#dialog-cancel': function() { dialog.remove(); },
 		'#dialog-save': function() {
