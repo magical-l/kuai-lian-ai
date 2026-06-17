@@ -92,7 +92,7 @@
 
 		// ---- 端点 ----
 		async loadEndpoints() {
-			return await this._get('endpoints') || { groups: [] };
+			return await this._get('endpoints') || { nodes: [] };
 		},
 
 		async saveEndpoints(data) {
@@ -141,7 +141,7 @@
 		// ---- 导出/导入 ----
 		async exportAll() {
 			return {
-				endpoints: await this._get('endpoints') || { groups: [] },
+				endpoints: await this._get('endpoints') || { nodes: [] },
 				sessions: await this._get('sessions') || {},
 				settings: await this._get('settings') || {},
 				exportedAt: Date.now()
@@ -150,7 +150,7 @@
 
 		async importAll(data) {
 			if (!data || typeof data !== 'object') throw new Error('无效的导入数据');
-			await this._set('endpoints', data.endpoints || { groups: [] });
+			await this._set('endpoints', data.endpoints || { nodes: [] });
 			await this._set('sessions', data.sessions || {});
 			if (data.settings) await this._set('settings', data.settings);
 		},
@@ -222,15 +222,15 @@
 
 		// ---- 端点 ----
 		async loadEndpoints() {
-			if (!directoryHandle) return { groups: [] };
+			if (!directoryHandle) return { nodes: [] };
 			try {
 				const fileHandle = await directoryHandle.getFileHandle('endpoints.json', { create: true });
 				const file = await fileHandle.getFile();
 				const text = await file.text();
-				return text ? JSON.parse(text) : { groups: [] };
+				return text ? JSON.parse(text) : { nodes: [] };
 			} catch (err) {
 				console.error('加载端点配置失败:', err);
-				return { groups: [] };
+				return { nodes: [] };
 			}
 		},
 

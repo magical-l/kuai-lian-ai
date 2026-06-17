@@ -113,48 +113,142 @@ function setButtonState(sendDisabled, stopEnabled) {
 	stopBtn.textContent = stopEnabled ? '全部停止' : '停止';
 }
 
-function showEditGroupDialog(group = null, onSave) {
-	const exist = $('#edit-dialog');
+function addInheritIcon(inputEl) {
+	if (inputEl._inheritIconAdded) return;
+	inputEl._inheritIconAdded = true;
+	inputEl.style.flex = '1';
+	var icon = document.createElement('span');
+	icon.className = 'inherit-icon';
+	icon.textContent = '↑';
+	icon.title = '继承自父级';
+	icon.style.cssText = 'cursor:help;font-size:12px;color:var(--text-muted);flex-shrink:0;margin-right:3px;';
+	var parent = inputEl.parentNode;
+	if (parent.classList.contains('input-row') || parent.classList.contains('key-input-wrapper')) {
+		parent.insertBefore(icon, inputEl);
+		return;
+	}
+	var row = document.createElement('div');
+	row.className = 'input-row';
+	row.style.cssText = 'display:flex;align-items:center;gap:2px;';
+	parent.insertBefore(row, inputEl);
+	row.appendChild(icon);
+	row.appendChild(inputEl);
+}
+
+function showEditGroupDialog(node, parentId, onSave) {
+	var exist = $('#edit-dialog');
 	if (exist) exist.remove();
-	const dialog = fromTemplate('tpl-edit-group-dialog', '#edit-dialog');
-	$('h3', dialog).textContent = group ? '编辑端点' : '新增端点';
+	var dialog = fromTemplate('tpl-edit-group-dialog', '#edit-dialog');
+	var isEdit = !!node;
+	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
+	var keyInput = $('#dialog-group-key', dialog);
+	var nameInput = $('#dialog-group-name', dialog);
+	var urlInput = $('#dialog-group-url', dialog);
+	var modelidInput = $('#dialog-group-modelid', dialog);
+	var styleSel = $('#dialog-group-style', dialog);
+
 	setValues(dialog, {
-		'#dialog-group-name': group?.name,
-		'#dialog-group-url': group?.baseUrl,
-		'#dialog-group-style': group?.style ?? 'openai',
-		'#dialog-group-key': group?.key
+		'#dialog-group-name': node ? node.name : '',
+		'#dialog-group-modelid': node ? node.modelId || '' : '',
+		'#dialog-group-url': node ? node.baseUrl || '' : '',
+		'#dialog-group-style': node ? node.style || '' : '',
+		'#dialog-group-key': node ? node.key || '' : ''
 	});
-	const keyInput = $('#dialog-group-key', dialog);
-	doc.body.addChild(dialog);
-	const toggleBtn = $('button.toggle-key', dialog);
-	toggleBtn.onclick = e => {
-		e.preventDefault();
-		const isPassword = keyInput.type === 'password';
-		keyInput.type = isPassword ? 'text' : 'password';
-		toggleBtn.innerHTML = isPassword ? SVG.eyeOff : SVG.eye;
+
+	// 继承值填入
+	// 对编辑：从 node.id 走 resolveNodeConfig（沿祖先链往上找）
+	// 对新增：从 parentId 走 resolveNodeConfig（直接拿到父节点的有效配置）
+	var inheritId = isEdit ? node.id : parentId;
+	if (inheritId) {
+		var hasParent = false;
+		try {
+			var _r = findNodeWithAncestors(endpointsData.nodes, inheritId);
+			hasParent = isEdit ? (_r && _r.ancestors.length > 0) : !!parentId;
+		} catch(e) { hasParent = !!parentId; }
+		var rcfg = resolveNodeConfig(inheritId);
+		if (rcfg) {
+			(function applyInherit(inputEl, ownVal, rcfgVal) {
+				if (!ownVal && rcfgVal) {
+					inputEl.value = rcfgVal;
+					if (hasParent) addInheritIcon(inputEl);
+				}
+			})(urlInput, node ? node.baseUrl : '', rcfg.baseUrl);
+			(function applyInherit(inputEl, ownVal, rcfgVal) {
+				if (!ownVal && rcfgVal) {
+					inputEl.value = rcfgVal;
+					if (hasParent) addInheritIcon(inputEl);
+				}
+			})(keyInput, node ? node.key : '', rcfg.key);
+			(function applyInherit(inputEl, ownVal, rcfgVal) {
+				if (!ownVal && rcfgVal) {
+					inputEl.value = rcfgVal;
+					if (hasParent) addInheritIcon(inputEl);
+				}
+			})(modelidInput, node ? node.modelId : '', rcfg.modelId);
+			// style
+			if (!(node ? node.style : '') && rcfg.style) {
+				styleSel.value = '';
+				if (hasParent) {
+					var inheritOpt = styleSel.querySelector('option[value=""]');
+					if (inheritOpt) inheritOpt.textContent = '继承自父级（' + rcfg.style + '）';
+				}
+			}
+		}
+	}
+
+	// 名称 ↔ 模型名连续同步（用 _syncing 防止循环触发）
+	var _nameUserEdited = false;
+	var _syncing = false;
+	nameInput.oninput = function() {
+		if (!_syncing) _nameUserEdited = true;
 	};
+	function removeIcon(el) {
+		var ic = el.parentNode.querySelector('.inherit-icon');
+		if (ic) ic.remove();
+	}
+	modelidInput.oninput = function() {
+		removeIcon(this);
+		if (!_nameUserEdited) {
+			_syncing = true;
+			nameInput.value = this.value;
+			_syncing = false;
+		}
+	};
+	urlInput.oninput = function() { removeIcon(this); };
+	keyInput.oninput = function() { removeIcon(this); };
+
+	doc.body.addChild(dialog);
+	var toggleBtn = $('button.toggle-key', dialog);
+	if (toggleBtn) {
+		toggleBtn.onclick = function(e) {
+			e.preventDefault();
+			var isPw = keyInput.type === 'password';
+			keyInput.type = isPw ? 'text' : 'password';
+			toggleBtn.innerHTML = isPw ? SVG.eyeOff : SVG.eye;
+		};
+	}
 	onClick({
-		'#dialog-cancel': () => dialog.remove(),
-		'#dialog-save': () => {
-			const name = $('#dialog-group-name', dialog).value.trim();
-			const baseUrl = $('#dialog-group-url', dialog).value.trim();
-			const style = $('#dialog-group-style', dialog).value;
-			const key = keyInput.value.trim();
-			if (!name || !baseUrl) {
-				alert('请填写名称和Base URL');
+		'#dialog-cancel': function() { dialog.remove(); },
+		'#dialog-save': function() {
+			var theName = nameInput.value.trim();
+			var theModelId = modelidInput.value.trim();
+			if (!theName && theModelId) {
+				theName = theModelId;
+			} else if (!theName) {
+				alert('请填写名称');
 				return;
 			}
 			onSave({
-				name,
-				baseUrl,
-				style,
-				key
+				name: theName,
+				modelId: theModelId,
+				baseUrl: urlInput.value.trim(),
+				style: styleSel.value,
+				key: keyInput.value.trim()
 			});
 			dialog.remove();
 		}
 	}, dialog);
 }
-
 function showDirectoryPrompt(hasPendingHandle = false) {
 	showHelpDialog(true, hasPendingHandle);
 }
@@ -282,60 +376,54 @@ function getConnectionStatusText(key) {
 	const errorInfo = data.error ? ` (${data.error})` : '';
 	return data.status === 'testing' ? '测试连接：测试中...' : `测试连接：${text}${errorInfo}（${timeStr}）`;
 }
-async function testConnection(groupId, modelId) {
-	const group = getGroup(groupId);
-	const model = getModel(groupId, modelId);
-	if (!group || !model) return;
-	const provider = providers[group.style];
+async function testConnection(nodeId, modelId) {
+	var node = getNode(nodeId);
+	if (!node) return;
+	var modelName;
+	if (modelId === '__node__') {
+		var rcfg = resolveNodeConfig(nodeId);
+		if (!rcfg || !rcfg.modelId) return;
+		modelName = rcfg.modelId;
+	} else {
+		var model = getModel(nodeId, modelId);
+		if (!model) return;
+		modelName = model.name;
+	}
+	var rcfg = resolveNodeConfig(nodeId);
+	if (!rcfg || !rcfg.baseUrl || (rcfg.key === undefined || rcfg.key === null)) return;
+	var provider = providers[rcfg.style || 'openai'];
 	if (!provider) return;
-	const key = groupId + ':' + modelId;
-	connectionStatus.set(key, {
-		status: 'testing',
-		timestamp: null
-	});
-	renderEndpointList(getGroups(), null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+	var key = nodeId + ':' + modelId;
+	connectionStatus.set(key, { status: 'testing', timestamp: null });
+	renderEndpointList(getGroups(), null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 	try {
-		const config = provider.testConfig(group.baseUrl, group.key, model.name);
-		const res = await fetchWithTimeout(config.url, {
+		var tcfg = provider.testConfig(rcfg.baseUrl, rcfg.key, modelName);
+		var res = await fetchWithTimeout(tcfg.url, {
 			method: 'POST',
-			headers: config.headers,
-			body: JSON.stringify(config.body)
+			headers: tcfg.headers,
+			body: JSON.stringify(tcfg.body)
 		}, 30000);
 		if (res && res.ok) {
-			connectionStatus.set(key, {
-				status: 'connected',
-				timestamp: Date.now()
-			});
+			connectionStatus.set(key, { status: 'connected', timestamp: Date.now() });
 		} else {
-			let errorMsg = 'HTTP ' + res.status;
+			var errorMsg = 'HTTP ' + res.status;
 			try {
-				const errorBody = await res.text();
+				var errorBody = await res.text();
 				try {
-					const errorJson = JSON.parse(errorBody);
-					if (errorJson.error && errorJson.error.message) {
-						errorMsg = errorJson.error.message;
-					} else if (errorJson.message) {
-						errorMsg = errorJson.message;
-					}
-				} catch (e) {
-					if (errorBody && errorBody.length < 100) {
-						errorMsg = errorBody;
-					}
-				}
-			} catch (e) {}
-			connectionStatus.set(key, {
-				status: 'failed',
-				timestamp: Date.now(),
-				error: errorMsg
-			});
+					var errorJson = JSON.parse(errorBody);
+					if (errorJson.error && errorJson.error.message) errorMsg = errorJson.error.message;
+					else if (errorJson.message) errorMsg = errorJson.message;
+				} catch(e) { if (errorBody && errorBody.length < 100) errorMsg = errorBody; }
+			} catch(e) {}
+			connectionStatus.set(key, { status: 'failed', timestamp: Date.now(), error: errorMsg });
 		}
 	} catch (err) {
-		const isCorsError = err instanceof TypeError && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.name === 'TypeError');
+		var isCorsError = err instanceof TypeError && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.name === 'TypeError');
 		connectionStatus.set(key, {
 			status: isCorsError ? 'cors_blocked' : 'failed',
 			timestamp: Date.now(),
 			error: isCorsError ? null : err.message
 		});
 	}
-	renderEndpointList(getGroups(), null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+	renderEndpointList(getGroups(), null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 }

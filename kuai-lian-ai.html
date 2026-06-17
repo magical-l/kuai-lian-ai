@@ -15,7 +15,7 @@
 	<title>快连AI</title>
 	<link rel="icon" href="恋-人脸、ai.svg" type="image/svg+xml">
 	<link rel="stylesheet" href="vendor/highlight-github.min.css">
-	<style>/* ========== Design Tokens ========== */:root {/* 背景层级 */--bg-base: #FFFFFF;--bg-subtle: #F9FAFB;--bg-muted: #F3F4F6;--bg-elevated: #FFFFFF;--bg-hover: #F3F4F6;--bg-active: #E5E7EB;/* 边框 */--border-subtle: #E5E7EB;--border-default: #D1D5DB;--border-strong: #9CA3AF;/* 文字 */--text-primary: #111827;--text-secondary: #374151;--text-muted: #6B7280;--text-placeholder: #9CA3AF;/* 强调色 */--accent-primary: #5B8DEF;--accent-primary-hover: #4A7BDE;--accent-light: rgba(91, 141, 239, 0.08);--accent-muted: rgba(91, 141, 239, 0.15);/* 功能色 */--success: #059669;--success-light: rgba(5, 150, 105, 0.1);--danger: #DC2626;--danger-light: rgba(220, 38, 38, 0.08);--warning: #D97706;--warning-light: rgba(217, 119, 6, 0.1);/* 用户消息 */--user-msg-bg: #5B8DEF;--user-msg-text: #FFFFFF;/* 尺寸 */--radius-sm: 6px;--radius-md: 8px;--radius-lg: 12px;--radius-xl: 16px;--transition-fast: 120ms ease;--transition-normal: 180ms ease;--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);--shadow-md: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);--shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);--font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;/* 间距节奏 */--space-1: 4px;--space-2: 8px;--space-3: 12px;--space-4: 16px;--space-5: 20px;--space-6: 24px;--space-8: 32px;}/* ========== Layout Utilities ========== */.layout-y-queue {display: flex;flex-direction: column;}.layout-y-stack {display: flex;flex-direction: column-reverse;}.layout-x-queue {display: flex;flex-direction: row;}.layout-x-stack {display: flex;flex-direction: row-reverse;}/* ========== Base ========== */* {box-sizing: border-box;margin: 0;padding: 0;}html {height: 100%;}body {font-family: var(--font-sans);font-size: 14px;line-height: 1.55;color: var(--text-primary);background: var(--bg-base);height: 100dvh;overflow: hidden;-webkit-font-smoothing: antialiased;}/* ========== Layout ========== */main {height: 100%;overflow: hidden;background: var(--bg-subtle);}/* ========== App Header ========== */.app-header {align-items: center;justify-content: space-between;padding: var(--space-2) var(--space-4);background: var(--bg-muted);border-bottom: 1px solid var(--border-subtle);height: 36px;}.app-header .left {align-items: center;gap: var(--space-3);}.app-header .logo {width: 24px;height: 24px;align-items: center;justify-content: center;}.app-header .brand {font-weight: 600;font-size: 14px;color: var(--text-primary);}.app-header .version {font-size: 12px;color: var(--text-muted);margin-left: var(--space-1);}.app-header .center {align-items: center;gap: var(--space-2);flex: 1;justify-content: center;}.app-header .right {align-items: center;gap: var(--space-2);}/* ========== Buttons ========== */button {background: transparent;border: none;display: inline-flex;align-items: center;justify-content: center;cursor: pointer;border-radius: var(--radius-sm);transition: all var(--transition-fast);color: var(--text-muted);}button:hover:not(:disabled):not(.danger) {background: var(--bg-muted);color: var(--text-secondary);}/* 尺寸修饰类 */button.navbar, a.navbar {border: 1px solid var(--border-subtle);padding: var(--space-1);height: 24px;min-width: 24px;}button.navbar:hover:not(:disabled):not(.danger), a.navbar:hover {background: var(--accent-light);border-color: var(--accent-primary);color: var(--accent-primary);}a.navbar {display: inline-flex;align-items: center;justify-content: center;box-sizing: border-box;border-radius: var(--radius-sm);text-decoration: none;transition: all var(--transition-fast);color: var(--text-muted);cursor: pointer;}a.navbar:hover {color: var(--accent-primary);}a.navbar img {display: block;}header > button {border: 1px solid var(--border-subtle);padding: 0;height: 24px;min-width: 24px;}header > button:hover:not(:disabled) {background: var(--accent-light);border-color: var(--accent-primary);color: var(--accent-primary);}button.action {border: 1px solid transparent;padding: var(--space-1);height: 22px;min-width: 22px;}button.action:hover:not(:disabled) {border-color: var(--border-subtle);}button.action-sm {border: none;padding: 2px;height: 18px;min-width: 18px;}button.icon {border: 1px solid transparent;padding: var(--space-1);height: 24px;min-width: 24px;}button.icon:hover:not(:disabled) {border-color: var(--border-subtle);}button.icon svg {display: block;}button.icon.copied {color: var(--accent-success);background: transparent;}/* 颜色修饰类 */button.danger {color: var(--danger);}button.danger:hover:not(:disabled) {background: var(--danger-light);color: var(--danger);}button.navbar.danger:hover:not(:disabled) {border-color: var(--danger);}/* 功能修饰类 */button.help {font-size: 14px;font-weight: 600;}.directory-path {color: var(--text-muted);overflow: hidden;text-overflow: ellipsis;white-space: nowrap;font-size: 12px;}#main-row {flex: 1;min-height: 0;}/* ========== Sidebar ========== */aside {background: var(--bg-base);border-right: 1px solid var(--border-subtle);min-width: 180px;max-width: 33.33%;width: 260px;}aside.right {border-right: none;border-left: 1px solid var(--border-subtle);}aside.right.hidden {display: none;}.divider.column.control.sidebar.right.hidden {display: none;}aside > header {padding: var(--space-2) var(--space-3);font-weight: 600;font-size: 13px;color: var(--text-secondary);background: var(--bg-base);border-bottom: 1px solid var(--border-subtle);letter-spacing: -0.01em;justify-content: space-between;align-items: center;}aside .content {flex: 1;overflow-y: auto;padding: var(--space-1);scrollbar-gutter: stable;}/* ========== Divider ========== */.divider {background: var(--border-subtle);flex-shrink: 0;transition: background var(--transition-fast);position: relative;}.divider:hover {background: var(--accent-primary);}.divider.column {width: 6px;cursor: col-resize;z-index: 10;}.divider.row {height: 6px;cursor: row-resize;z-index: 15;}/* ========== Main Content ========== */#main-content {flex: 1;min-width: 400px;background: var(--bg-base);}#chat-header {padding: var(--space-4) var(--space-6);background: var(--bg-base);border-bottom: 1px solid var(--border-subtle);align-items: center;gap: var(--space-2);height: 56px;}#chat-header .prefix {color: var(--text-muted);font-size: 13px;}/* ========== Chat Messages ========== */#chat-messages {flex: 1 1 auto;overflow-y: auto;padding: var(--space-6);scroll-padding-bottom: 130px;gap: var(--space-5);background: var(--bg-subtle);min-height: 100px;}.sticky-bottom {position: sticky;bottom: 0;z-index: 5;display: flex;flex-direction: column;flex: 1 1 auto;min-height: 145px;}.chat-input-area {padding: 4px 8px;border-top: 1px solid var(--border-subtle);background: var(--bg-base);flex: 1 1 auto;min-height: 120px;}/* 输入框容器（包含textarea和发送按钮） */.input-wrapper {flex: 1;min-height: 0;}.input-wrapper textarea {flex: 1;}#chat-input {width: 100%;height: 100%;min-height: 56px;padding: var(--space-2) var(--space-3);border: 1px solid var(--border-default);border-radius: 0 0 var(--radius-md) var(--radius-md);resize: none;font-family: var(--font-sans);font-size: 14px;line-height: 1.55;background: var(--bg-base);color: var(--text-primary);transition: border-color var(--transition-fast), box-shadow var(--transition-fast);box-sizing: border-box;}#chat-input:focus {outline: none;border-color: var(--accent-primary);box-shadow: 0 0 0 2px var(--accent-light);}#chat-input::placeholder {color: var(--text-placeholder);}/* 停止按钮样式 */button.stop {background: var(--danger-light);color: var(--danger);border: 1px solid var(--danger);padding: 2px 8px;height: 20px;font-size: 11px;margin-left: var(--space-2);}button.stop:hover:not(:disabled) {background: var(--danger);color: white;}button.stop:disabled {opacity: 0.5;cursor: not-allowed;}/* ========== Dialog Buttons ========== */.dialog-buttons button {border: none;border-radius: var(--radius-md);background: var(--bg-muted);color: var(--text-secondary);font-size: 13px;font-weight: 500;padding: var(--space-2) var(--space-4);height: 32px;}.dialog-buttons button:hover:not(:disabled) {background: var(--bg-active);color: var(--text-primary);}.dialog-buttons button.primary {background: var(--accent-primary);color: white;}.dialog-buttons button.primary:hover:not(:disabled) {background: var(--accent-primary-hover);}button:active:not(:disabled) {transform: scale(0.97);}button:focus-visible {outline: 2px solid var(--accent-primary);outline-offset: 2px;}button:disabled {opacity: 0.45;cursor: not-allowed;transform: none;}button.outline {background: transparent;border: 1px solid var(--border-default);color: var(--text-secondary);padding: var(--space-1) var(--space-3);font-size: 13px;}button.outline:hover:not(:disabled) {background: var(--bg-muted);border-color: var(--border-strong);}/* 停止按钮 */#btn-stop {background: var(--danger-light);color: var(--danger);}#btn-stop:hover:not(:disabled) {background: var(--danger);color: white;}/* ========== Scroll Navigation Buttons ========== */#scroll-nav-buttons {gap: var(--space-1);opacity: 0;transition: opacity var(--transition-normal);margin-left: auto;}#scroll-nav-buttons.visible {opacity: 1;}.scroll-btn {background: var(--bg-elevated);border: 1px solid var(--border-subtle);width: 24px;height: 24px;padding: 0;font-size: 12px;font-weight: 600;}.scroll-btn:hover:not(:disabled) {background: var(--accent-light);color: var(--accent-primary);border-color: var(--accent-primary);}.scroll-btn:active {transform: scale(0.95);}/* 高亮闪烁动画 */.message-user.highlight-flash {animation: flash-highlight 0.6s ease-in-out 3;}@keyframes flash-highlight {0%, 100% {box-shadow: none;}50% {box-shadow: 0 0 0 3px var(--accent-primary), 0 0 12px var(--accent-primary);}}/* ========== Messages ========== */.message {gap: var(--space-1);}/* 用户消息：靠右，左侧空隙 */.message.req.msg {align-self: flex-end;max-width: 90%;}/* 助手消息：靠左，右侧空隙 */.message.res.msg {align-self: flex-start;max-width: 90%;}.message-user {background: var(--user-msg-bg);padding: var(--space-3) var(--space-4);border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);color: var(--user-msg-text);font-weight: 500;word-wrap: break-word;overflow-wrap: break-word;}/* 消息中的附件展示 */.message-attachments {flex-wrap: wrap;gap: var(--space-2);margin-top: var(--space-2);padding-top: var(--space-2);border-top: 1px dashed var(--border-subtle);}/* 用户消息中的附件靠右对齐 */.message.req.msg .message-attachments {justify-content: flex-end;}.message-attachment {align-items: center;gap: var(--space-1);padding: var(--space-1) var(--space-2);background: var(--bg-muted);border-radius: var(--radius-sm);font-size: 12px;cursor: pointer;}.message-attachment.image {padding: 2px;}.message-attachment-thumb {width: 32px;height: 32px;border-radius: var(--radius-sm);object-fit: cover;background: var(--bg-subtle);}.message-attachment-name {color: var(--text-secondary);max-width: 100px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}.image-preview-overlay {position: fixed;top: 0;left: 0;right: 0;bottom: 0;background: rgba(0, 0, 0, 0.8);align-items: center;justify-content: center;z-index: 1000;cursor: pointer;}.image-preview-overlay img {max-width: 90%;max-height: 90%;border-radius: 8px;}.message-assistant {background: var(--bg-base);padding: var(--space-3) var(--space-4);border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);color: var(--text-primary);border: 1px solid var(--border-subtle);box-shadow: var(--shadow-sm);word-wrap: break-word;overflow-wrap: break-word;}/* ========== Markdown 渲染样式 ========== */.message-assistant pre {background: #f6f8fa;border-radius: 6px;padding: 12px 16px;margin: 8px 0;overflow-x: auto;position: relative;}.message-assistant code {font-family: 'Consolas', 'Monaco', 'Menlo', monospace;font-size: 13px;}.message-assistant pre code {background: transparent;padding: 0;}.message-assistant p code {background: #f6f8fa;padding: 2px 6px;border-radius: 4px;}.message-assistant ul,.message-assistant ol {margin: 8px 0;padding-left: 0;list-style-position: inside;}.message-assistant li {margin: 4px 0;}.message-assistant h1,.message-assistant h2,.message-assistant h3,.message-assistant h4 {margin: 16px 0 8px;font-weight: 600;}.message-assistant h1 {font-size: 1.5em;}.message-assistant h2 {font-size: 1.3em;}.message-assistant h3 {font-size: 1.1em;}.message-assistant blockquote {border-left: 4px solid var(--border-default);margin: 8px 0;padding-left: 16px;color: var(--text-secondary);}.message-assistant table {border-collapse: collapse;margin: 8px 0;}.message-assistant th,.message-assistant td {border: 1px solid var(--border-subtle);padding: 8px 12px;}.message-assistant th {background: var(--bg-muted);font-weight: 600;}.message-assistant a {color: var(--accent-primary);text-decoration: none;}.message-assistant a:hover {text-decoration: underline;}/* 代码块复制按钮 */.code-copy-btn {position: absolute;top: 8px;right: 8px;background: transparent;border: 1px solid var(--border-subtle);border-radius: 4px;padding: 4px 8px;cursor: pointer;opacity: 0.6;transition: opacity 0.2s;}.code-copy-btn:hover {opacity: 1;background: var(--bg-hover);}.code-copy-btn.copied {opacity: 1;color: var(--success);border-color: var(--success);}/* 复制按钮反馈 */.copy-btn .copy-icon,.code-copy-btn .copy-icon {}.copy-btn.copied .copy-icon,.code-copy-btn.copied .copy-icon {display: none;}.copy-btn .copy-check,.code-copy-btn .copy-check {display: none;}.copy-btn.copied .copy-check,.code-copy-btn.copied .copy-check {display: inline;}.message-meta {font-size: 11px;color: var(--text-muted);padding-left: 0;align-items: center;gap: var(--space-2);}.message-status-bar {align-items: center;gap: var(--space-1);margin-top: var(--space-1);padding-left: 0;}.message-usage {font-size: 11px;color: var(--text-muted);margin-left: auto;}/* ========== Endpoint Groups ========== */.endpoint-group {background: var(--bg-elevated);border-radius: 0;margin-bottom: var(--space-1);border: 1px solid var(--border-subtle);box-shadow: var(--shadow-sm);}.endpoint-group:last-child {margin-bottom: 0;}.endpoint-group.dragging {opacity: 0.5;}.endpoint-group.drag-over {border-top: 2px solid var(--accent-primary);}.drag-handle {cursor: grab;color: var(--text-muted);padding: 2px;margin-right: 4px;align-items: center;opacity: 0.4;transition: opacity var(--transition-fast);flex-shrink: 0;}.drag-handle:hover {opacity: 1;color: var(--text-secondary);}.drag-handle:active {cursor: grabbing;}.group-header {padding: var(--space-1) var(--space-2);background: transparent;border-radius: 0;cursor: pointer;align-items: flex-start;gap: var(--space-1);border: none;transition: all var(--transition-fast);}.group-header:hover {background: var(--bg-muted);}.group-name {flex: 1;min-width: 0;overflow-wrap: break-word;font-size: 13px;font-weight: 500;color: var(--text-primary);word-break: break-all;cursor: pointer;}/* tooltip弹层（使用fixed定位，脱离sidebar的overflow） */.group-tooltip {position: fixed;z-index: 1000;background: var(--bg-base);border: 1px solid var(--border-default);border-radius: var(--radius-md);padding: var(--space-2);box-shadow: var(--shadow-lg);min-width: 200px;max-width: 300px;display: none;font-size: 12px;}/* 复制按钮 */button.tooltip-copy {font-size: 12px;padding: 0;width: 18px;height: 18px;opacity: 0.6;}button.tooltip-copy:hover {opacity: 1;color: var(--accent-primary);}button.tooltip-copy.copied {color: var(--accent-success);opacity: 1;}.tooltip-row {align-items: center;gap: var(--space-1);padding: 2px 0;}.tooltip-label {color: var(--text-muted);flex-shrink: 0;width: 40px;}.group-actions {gap: 2px;flex-shrink: 0;}/* 批量测试按钮 */button.batch-test {color: var(--text-muted);}button.batch-test:hover:not(:disabled) {background: var(--accent-light);color: var(--accent-primary);}button.batch-test.testing {background: var(--accent-light);color: var(--accent-primary);}button.batch-test.testing .spin {animation: spin 0.5s linear infinite !important;display: inline-block;}.group-models {padding-left: var(--space-3);margin-top: var(--space-1);gap: 0;}.model.item {padding: var(--space-1) var(--space-2);cursor: pointer;border-radius: 0;color: var(--text-secondary);font-size: 12px;transition: all var(--transition-fast);align-items: center;justify-content: space-between;}.model.item:hover {background: var(--bg-muted);color: var(--text-primary);}.model.item.selected {background: var(--accent-light);color: var(--accent-primary);font-weight: 500;}.model.item.dragging {opacity: 0.5;}.model.item.drag-over {border-top: 2px solid var(--accent-primary);}.add-model-link {padding: var(--space-1) var(--space-2);color: var(--text-muted);font-size: 12px;cursor: pointer;border-radius: 0;transition: all var(--transition-fast);}.add-model-link:hover {background: var(--bg-muted);color: var(--accent-primary);}.add-model-inline {gap: var(--space-1);padding: var(--space-1) var(--space-2);background: var(--bg-muted);border-radius: var(--radius-sm);}.add-model-row {gap: var(--space-1);align-items: center;}.add-model-remark-input {flex: 1;padding: var(--space-1) var(--space-2);border: 1px solid var(--border-default);border-radius: var(--radius-sm);font-size: 12px;background: var(--bg-base);color: var(--text-muted);min-width: 0;}.add-model-remark-input:focus {outline: none;border-color: var(--accent-primary);box-shadow: 0 0 0 2px var(--accent-light);color: var(--text-primary);}margin-bottom: var(--space-1);flex-grow: 1;}button.add-model-confirm.action-sm {background: var(--success-light);color: var(--success);border: 1px solid transparent;}.add-model-confirmbutton.action-sm:hover:not(:disabled) {background: var(--success);color: white;}button.add-model-cancel.action-sm {background: var(--bg-muted);color: var(--text-muted);border: 1px solid var(--border-subtle);}.add-model-cancelbutton.action-sm:hover:not(:disabled) {background: var(--bg-active);color: var(--text-secondary);}.add-model-input {flex: 1;padding: var(--space-1) var(--space-2);border: 1px solid var(--border-default);border-radius: var(--radius-sm);font-size: 12px;background: var(--bg-base);color: var(--text-primary);min-width: 0;}.add-model-input:focus {outline: none;border-color: var(--accent-primary);box-shadow: 0 0 0 2px var(--accent-light);}.model.name {flex: 1;}.model-remark {color: var(--text-muted);font-size: 0.85em;white-space: nowrap;}.model.actions {gap: var(--space-1);}/* 连接状态按钮样式 */button.connection {background: transparent;color: var(--text-muted);}button.connection:hover {transform: none;}button.connection.testing {background: var(--accent-light);color: var(--accent-primary);}button.connection.testing .spin {animation: spin 2s linear infinite !important;display: inline-block;}/* 通用的.spin类 */.spin {animation: spin 1s linear infinite !important;display: inline-block;will-change: transform;}button.connection.connected {background: var(--success-light);color: var(--success);}button.connection.failed {background: var(--danger-light);color: var(--danger);}button.connection.cors_blocked {background: rgba(217, 119, 6, 0.15);color: var(--warning);}/* ========== Session List ========== */.session.item {padding: var(--space-3);margin-bottom: var(--space-1);cursor: pointer;border-radius: var(--radius-md);border: 1px solid transparent;transition: all var(--transition-fast);}.session.item:hover {background: var(--bg-hover);}.session.item.selected {background: var(--accent-light);border-color: rgba(37, 99, 235, 0.3);}.session.title {font-size: 13px;font-weight: 500;color: var(--text-primary);overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}.session.item.selected .session.title {color: var(--accent-primary);}.session.title-edit {font-size: 13px;font-weight: 500;padding: 2px 6px;border: 1px solid var(--accent-primary);border-radius: var(--radius-sm);background: var(--bg-base);color: var(--text-primary);flex: 1;min-width: 0;}.session.title-edit:focus {outline: none;box-shadow: 0 0 0 2px var(--accent-light);}.session.meta {align-items: center;justify-content: space-between;margin-top: var(--space-1);}.session.time {font-size: 11px;color: var(--text-muted);}.session.actions {gap: var(--space-1);}/* ========== Scrollbar ========== */aside .content::-webkit-scrollbar,#chat-messages::-webkit-scrollbar,.selector.list::-webkit-scrollbar {width: 5px;}aside .content::-webkit-scrollbar-track,#chat-messages::-webkit-scrollbar-track,.selector.list::-webkit-scrollbar-track {background: transparent;}aside .content::-webkit-scrollbar-thumb,#chat-messages::-webkit-scrollbar-thumb,.selector.list::-webkit-scrollbar-thumb {background: var(--border-default);border-radius: 3px;}aside .content::-webkit-scrollbar-thumb:hover,#chat-messages::-webkit-scrollbar-thumb:hover,.selector.list::-webkit-scrollbar-thumb:hover {background: var(--border-strong);}/* ========== Dialogs ========== */#edit-dialog {position: fixed;top: 50%;left: 50%;transform: translate(-50%, -50%) scale(0.95);background: var(--bg-base);padding: var(--space-6);border-radius: var(--radius-xl);box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);border: 1px solid var(--border-subtle);z-index: 1000;min-width: 360px;animation: dialog-in var(--transition-normal) ease forwards;}@keyframes dialog-in {to {transform: translate(-50%, -50%) scale(1);opacity: 1;}}#edit-dialog h3 {margin-bottom: var(--space-5);font-weight: 600;font-size: 16px;color: var(--text-primary);}.dialog-form {gap: var(--space-4);}#edit-dialog label {gap: var(--space-2);font-size: 13px;font-weight: 500;color: var(--text-secondary);}#edit-dialog input,#edit-dialog select {padding: var(--space-2) var(--space-3);border: 1px solid var(--border-default);border-radius: var(--radius-md);background: var(--bg-base);color: var(--text-primary);font-family: var(--font-sans);font-size: 14px;transition: border-color var(--transition-fast), box-shadow var(--transition-fast);}#edit-dialog input:focus,#edit-dialog select:focus {outline: none;border-color: var(--accent-primary);box-shadow: 0 0 0 3px var(--accent-light);}.key-input-wrapper {align-items: center;gap: var(--space-1);}.key-input-wrapper input {flex: 1;}button.toggle-key {background: var(--bg-base);border: 1px solid var(--border-default);border-radius: var(--radius-md);padding: 6px 8px;}button.toggle-key:hover:not(:disabled) {background: var(--bg-muted);color: var(--text-secondary);border-color: var(--border-subtle);}.dialog-buttons {margin-top: var(--space-5);gap: var(--space-2);justify-content: flex-end;}#help-dialog {position: fixed;top: 50%;left: 50%;transform: translate(-50%, -50%);background: var(--bg-base);padding: var(--space-6);border-radius: var(--radius-lg);box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);border: 1px solid var(--border-subtle);z-index: 1001;max-width: 800px;width: 90%;}.dialog-overlay {position: fixed;top: 0;left: 0;right: 0;bottom: 0;background: rgba(0, 0, 0, 0.3);z-index: 1000;}#help-dialog h3 {margin-bottom: var(--space-4);font-weight: 600;font-size: 18px;color: var(--text-primary);}#help-dialog .help-content {color: var(--text-secondary);font-size: 14px;line-height: 1.6;}#help-dialog .help-section {margin-bottom: var(--space-4);}#help-dialog .help-section-directory {background: var(--bg-muted);padding: var(--space-3);border-radius: var(--radius-md);margin-bottom: var(--space-5);}#help-dialog .help-section-directory h4 {margin-bottom: var(--space-2);}#help-dialog .directory-info {align-items: center;gap: var(--space-3);justify-content: space-between;flex-wrap: wrap;}#help-dialog .directory-buttons {gap: var(--space-2);}#btn-restore-dir {background: var(--success);color: white;border: none;padding: var(--space-2) var(--space-3);font-size: 13px;font-weight: 500;height: 28px;cursor: pointer;border-radius: var(--radius-sm);}#btn-restore-dir:hover {background: #047857;}#btn-change-dir-help {background: var(--accent-primary);color: white;border: none;padding: var(--space-2) var(--space-3);font-size: 13px;font-weight: 500;height: 28px;cursor: pointer;border-radius: var(--radius-sm);}#btn-change-dir-help:hover {background: var(--accent-primary-hover);}#btn-use-browser-storage {background: #2563EB;color: #fff;border: none;padding: 6px 14px;border-radius: var(--radius-sm);cursor: pointer;font-size: 13px;font-weight: 500;transition: background var(--transition-fast);}#btn-use-browser-storage:hover {background: #1D4ED8;}.browser-storage-hint {font-size: 12px;color: var(--text-muted);margin-top: 6px;}#help-dialog .directory-warning {color: var(--warning);font-size: 13px;margin-top: var(--space-2);}#help-dialog .help-section h4 {font-weight: 600;font-size: 14px;color: var(--text-primary);margin-bottom: var(--space-2);}#help-dialog .help-section ul {margin-left: var(--space-4);}#help-dialog .help-section li {margin-bottom: var(--space-1);}#help-dialog .dialog-buttons {margin-top: var(--space-5);}/* ========== Streaming Animation ========== */#streaming-message::after {content: '●';color: var(--accent-primary);margin-left: var(--space-1);animation: blink 1s ease-in-out infinite;font-size: 10px;}@keyframes blink {0%, 100% {opacity: 1;}50% {opacity: 0.3;}}@keyframes spin {from {transform: rotate(0deg);}to {transform: rotate(360deg);}}/* ========== Reduced Motion ========== */@media (prefers-reduced-motion: reduce) {*, *::before, *::after {animation-duration: 0.01ms !important;transition-duration: 0.01ms !important;}}/* ========== Responsive ========== */@media (max-width: 900px) {aside {width: 200px;min-width: 160px;}}@media (max-width: 768px) {aside.right {display: none;}#chat-messages {padding: var(--space-4);}.chat-input-area {padding: 8px;}.message.req.msg,.message.res.msg {max-width: 95%;}}/* ========== Model Selector ========== */.model.selector {position: relative;width: 100%;background: var(--bg-muted);border-radius: var(--radius-md) var(--radius-md) 0 0;padding: var(--space-1) var(--space-2);border: 1px solid var(--border-subtle);border-bottom: none;}/* 展开状态：列表从底部向上悬浮展开 */.model.selector:not(.collapsed) .selector.list {position: absolute;bottom: calc(100% + 1px);left: -1px;right: -1px;background: var(--bg-base);box-shadow: var(--shadow-lg);border: 1px solid var(--border-default);border-radius: var(--radius-md);max-height: 240px;overflow-y: auto;z-index: 20;display: block;padding: var(--space-2);}.endpoint.name-color {color: var(--text-secondary);font-weight: 500;}.model.selector.collapsed .selector.list {display: none;}.model.selector.generating .selector.expand-btn,.model.selector.generating .model.tag {cursor: not-allowed;opacity: 0.6;}.selector.header {align-items: center;gap: var(--space-2);}.selector.summary {align-items: center;gap: var(--space-1);flex-wrap: wrap;flex: 1;min-width: 0;overflow: hidden;}.selector.expand-btn {font-size: 11px;color: var(--text-muted);cursor: pointer;padding: 2px 4px;border-radius: var(--radius-sm);flex-shrink: 0;white-space: nowrap;}.selector.expand-btn:hover {color: var(--accent-primary);background: var(--accent-light);}.selector.group-label {font-size: 10px;color: var(--text-muted);margin-bottom: var(--space-1);margin-top: var(--space-2);}.selector.group-label:first-child {margin-top: 0;}.selector.models-row {gap: var(--space-2);flex-wrap: wrap;}/* 模型标签样式 */.model.tag {display: inline-flex;align-items: center;gap: var(--space-1);padding: var(--space-1) var(--space-2);border-radius: var(--radius-sm);font-size: 12px;cursor: pointer;transition: all var(--transition-fast);border: 1px solid transparent;}.model.tag.unselected {background: var(--bg-muted);color: var(--text-muted);border-color: var(--border-subtle);}.model.tag.unselected:hover {background: var(--bg-hover);color: var(--text-secondary);}.model.tag.selected {background: var(--accent-light);color: var(--accent-primary);border: 1px solid var(--accent-primary);padding: var(--space-1) var(--space-3);box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);}.model.tag.selected:hover {background: var(--accent-muted);}/* Failed/stopped models show color in selector tags to alert user */.model.tag.selected.failed {background: var(--danger-light);color: var(--danger);border-color: var(--danger);}.model.tag.selected.stopped {background: var(--bg-muted);color: var(--text-muted);border-color: var(--border-subtle);}/* 速度样式 - 与消息框反应时间颜色统一 */.model.tag.selected.speed-fast {background: var(--success-light);border-color: var(--success);}.model.tag.selected.speed-medium {background: var(--warning-light);border-color: var(--warning);}.model.tag.selected.speed-slow {background: #fed7aa;border-color: #ea580c;}/* 状态图标 */.model.status-icon {font-size: 10px;}.model.status-icon.spinning {animation: spin 1s linear infinite !important;display: inline-block;will-change: transform;}/* 选择器空状态提示 */.selector.empty-hint {color: var(--danger);font-size: 12px;font-weight: 500;}/* ========== Multi-Model Response Cards ========== */.multi-response-hint {font-size: 11px;color: var(--text-muted);margin-bottom: var(--space-2);}.multi-response-cards {gap: var(--space-3);}.response.card {background: var(--bg-base);border: 1px solid var(--border-subtle);border-radius: var(--radius-md);padding: var(--space-3);}.response.meta {align-items: center;gap: var(--space-2);font-size: 11px;color: var(--text-muted);padding-bottom: var(--space-2);}.response.meta .copy-btn {margin-left: auto;}/* 用户消息 meta 行 */.request.meta {align-items: center;gap: var(--space-2);font-size: 11px;color: var(--text-muted);padding-bottom: var(--space-2);justify-content: flex-end;}.request.meta .copy-btn {margin-left: var(--space-2);}.request.time {color: var(--text-muted);}.response.time {color: var(--text-muted);}.response.duration {color: var(--text-secondary);}/* Response speed colors */.response.duration.fast {color: var(--success);}.response.duration.medium {color: var(--warning);}.response.duration.slow {color: #ea580c;}.response.total {color: var(--text-secondary);}.response.model-name {font-weight: 500;}.response.status {font-size: 10px;}/* 通用状态颜色 */.status.completed {color: var(--success);}.status.failed {color: var(--danger);}.status.stopped {color: var(--text-muted);}.response.error {color: var(--danger);font-size: 12px;margin-left: 4px;}.response.card-content {font-size: 13px;line-height: 1.5;}.response.card-content ul,.response.card-content ol {margin: 8px 0;padding-left: 1.2em;list-style-position: inside;}.response.card-content li {margin: 2px 0;}.response.card-content pre {background: #f6f8fa;border-radius: 6px;padding: 12px 16px;margin: 8px 0;overflow-x: auto;position: relative;}.response.card-content code {font-family: 'Consolas', 'Monaco', 'Menlo', monospace;font-size: 13px;}.response.card-content pre code {background: transparent;padding: 0;}.response.card-content p code {background: #f6f8fa;padding: 2px 6px;border-radius: 4px;}.response.card-content a {color: var(--accent-primary);}.response.card-content blockquote {border-left: 3px solid var(--border-default);margin: 8px 0;padding-left: 12px;color: var(--text-secondary);}/* ========== Thinking Block ========== */.thinking-block {background: var(--bg-muted);border-radius: var(--radius-sm);margin-bottom: var(--space-2);}.thinking-header {align-items: center;gap: var(--space-2);padding: var(--space-2);cursor: pointer;color: var(--text-muted);font-size: 12px;border-radius: var(--radius-sm) var(--radius-sm) 0 0;}.thinking-header:hover {background: var(--bg-hover);color: var(--text-secondary);}.thinking-icon {font-size: 10px;transition: transform var(--transition-fast);width: 12px;text-align: center;}.thinking-block.collapsed .thinking-icon::before {content: "▶";}.thinking-block:not(.collapsed) .thinking-icon::before {content: "▼";}.thinking-label {color: var(--text-secondary);font-weight: 500;}.thinking-duration {color: var(--text-muted);font-size: 11px;margin-left: auto;}.thinking-content {padding: var(--space-2) var(--space-3);color: var(--text-secondary);font-size: 13px;line-height: 1.5;border-top: 1px solid var(--border-subtle);}.thinking-block.collapsed .thinking-content {display: none;}/* 流式思考状态 - 实时显示时不折叠 */.thinking-block.streaming {background: var(--bg-subtle);border: 1px solid var(--border-default);}.thinking-block.streaming .thinking-content {display: block;border-top: none;}/* ========== 附件缩略图 ========== */.attachment-thumb {position: relative;width: 40px;height: 40px;border-radius: var(--radius-sm);background: var(--bg-muted);align-items: center;justify-content: center;cursor: pointer;flex-shrink: 0;border: 1px solid var(--border-subtle);}.attachment-thumb.image {background-size: cover;background-position: center;}.attachment-thumb.file {font-size: 20px;color: var(--text-muted);}.attachment-remove {position: absolute;top: -4px;right: -4px;width: 16px;height: 16px;background: var(--danger);color: white;border-radius: 50%;font-size: 10px;line-height: 16px;text-align: center;cursor: pointer;display: none;}.attachment-thumb:hover .attachment-remove {display: block;}.attachment-remove:hover {background: #b91c1c;}/* 操作栏按钮统一40px高度 */.action-btn {border: 1px solid var(--border-subtle);padding: 0 12px;height: 40px;min-width: 40px;background: var(--bg-muted);border-radius: var(--radius-sm);align-items: center;justify-content: center;cursor: pointer;}.action-btn:hover:not(:disabled) {background: var(--bg-hover);}.action-btn.primary {background: var(--accent-primary);color: white;border-color: var(--accent-primary);}.action-btn.primary:hover:not(:disabled) {background: var(--accent-primary-hover);color: white;}/* 模式选择器（聊天/嵌入） */.mode-selector {display: inline-flex;border: 1px solid var(--border-default);border-radius: 6px;overflow: hidden;& .mode-option {padding: 4px 10px;cursor: pointer;font-size: 13px;color: var(--text-muted);background: var(--bg-base);transition: none;user-select: none;& input { display: none; }& + .mode-option {border-left: 1px solid var(--border-default);}&.selected {background: var(--bg-active);color: var(--text-primary);font-weight: 500;}&:hover:not(.selected) {background: var(--bg-hover);}}}/* 分裂式按钮（发送 + 模式切换） */.split-btn {position: relative;display: inline-flex;height: 40px;}.split-btn-main {height: 40px;padding: 0 12px;border: 1px solid var(--accent-primary);border-right: none;border-radius: 6px 0 0 6px;background: var(--accent-primary);color: white;cursor: pointer;align-items: center;justify-content: center;}.split-btn-main:hover {background: var(--accent-primary-hover);}.split-btn-main:disabled {opacity: 0.5;cursor: not-allowed;}.split-btn-drop {height: 40px;width: 28px;border: 1px solid var(--accent-primary);border-left-color: rgba(255, 255, 255, 0.4);border-radius: 0 6px 6px 0;background: var(--accent-primary);color: white;cursor: pointer;align-items: center;justify-content: center;padding: 0;}.split-btn-drop:hover {background: var(--accent-primary-hover);}.split-btn.open .split-btn-main,.split-btn.open .split-btn-drop {background: var(--accent-primary-hover);}.split-btn-menu {position: absolute;bottom: 100%;right: 0;margin-bottom: 4px;min-width: 140px;background: var(--bg-base);border: 1px solid var(--border-subtle);border-radius: 6px;box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);display: none;z-index: 100;}.split-btn.open .split-btn-menu {display: block;}.split-btn-option {padding: 8px 12px;cursor: pointer;font-size: 13px;color: var(--text-base);transition: background 0.15s;}.split-btn-option:hover {background: var(--bg-hover);}.split-btn-option.selected {color: var(--accent-primary);font-weight: 500;}/* 隐藏的文件输入 */#file-input {display: none;}.shhhh {color: gray;text-decoration: line-through;text-decoration-style: double;}/* 嵌入结果 */.embedding-result {background: var(--bg-subtle);border: 1px solid var(--border-subtle);border-radius: 8px;padding: 12px;margin: 8px 0;font-family: var(--font-mono, monospace);font-size: 13px;& .embedding-header {font-weight: 600;margin-bottom: 8px;font-family: var(--font-ui, sans-serif);}& .embedding-meta {display: flex;gap: 16px;margin-bottom: 8px;color: var(--text-muted);font-family: var(--font-ui, sans-serif);font-size: 12px;}& .embedding-preview {word-break: break-all;margin-bottom: 8px;color: var(--text-secondary);}& .embedding-copy-btn {background: var(--bg-elevated);border: 1px solid var(--border-default);border-radius: 4px;padding: 4px 10px;cursor: pointer;font-size: 12px;&:hover {background: var(--bg-hover);}}}</style>
+	<style>/* ========== Design Tokens ========== */:root {/* 背景层级 */--bg-base: #FFFFFF;--bg-subtle: #F9FAFB;--bg-muted: #F3F4F6;--bg-elevated: #FFFFFF;--bg-hover: #F3F4F6;--bg-active: #E5E7EB;/* 边框 */--border-subtle: #E5E7EB;--border-default: #D1D5DB;--border-strong: #9CA3AF;/* 文字 */--text-primary: #111827;--text-secondary: #374151;--text-muted: #6B7280;--text-placeholder: #9CA3AF;/* 强调色 */--accent-primary: #5B8DEF;--accent-primary-hover: #4A7BDE;--accent-light: rgba(91, 141, 239, 0.08);--accent-muted: rgba(91, 141, 239, 0.15);/* 功能色 */--success: #059669;--success-light: rgba(5, 150, 105, 0.1);--danger: #DC2626;--danger-light: rgba(220, 38, 38, 0.08);--warning: #D97706;--warning-light: rgba(217, 119, 6, 0.1);/* 用户消息 */--user-msg-bg: #5B8DEF;--user-msg-text: #FFFFFF;/* 尺寸 */--radius-sm: 6px;--radius-md: 8px;--radius-lg: 12px;--radius-xl: 16px;--transition-fast: 120ms ease;--transition-normal: 180ms ease;--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);--shadow-md: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);--shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);--font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;/* 间距节奏 */--space-1: 4px;--space-2: 8px;--space-3: 12px;--space-4: 16px;--space-5: 20px;--space-6: 24px;--space-8: 32px;}/* ========== Layout Utilities ========== */.layout-y-queue {display: flex;flex-direction: column;}.layout-y-stack {display: flex;flex-direction: column-reverse;}.layout-x-queue {display: flex;flex-direction: row;}.layout-x-stack {display: flex;flex-direction: row-reverse;}/* ========== Base ========== */* {box-sizing: border-box;margin: 0;padding: 0;}html {height: 100%;}body {font-family: var(--font-sans);font-size: 14px;line-height: 1.55;color: var(--text-primary);background: var(--bg-base);height: 100dvh;overflow: hidden;-webkit-font-smoothing: antialiased;}/* ========== Layout ========== */main {height: 100%;overflow: hidden;background: var(--bg-subtle);}/* ========== App Header ========== */.app-header {align-items: center;justify-content: space-between;padding: var(--space-2) var(--space-4);background: var(--bg-muted);border-bottom: 1px solid var(--border-subtle);height: 36px;}.app-header .left {align-items: center;gap: var(--space-3);}.app-header .logo {width: 24px;height: 24px;align-items: center;justify-content: center;}.app-header .brand {font-weight: 600;font-size: 14px;color: var(--text-primary);}.app-header .version {font-size: 12px;color: var(--text-muted);margin-left: var(--space-1);}.app-header .center {align-items: center;gap: var(--space-2);flex: 1;justify-content: center;}.app-header .right {align-items: center;gap: var(--space-2);}/* ========== Buttons ========== */button {background: transparent;border: none;display: inline-flex;align-items: center;justify-content: center;cursor: pointer;border-radius: var(--radius-sm);transition: all var(--transition-fast);color: var(--text-muted);}button:hover:not(:disabled):not(.danger) {background: var(--bg-muted);color: var(--text-secondary);}/* 尺寸修饰类 */button.navbar, a.navbar {border: 1px solid var(--border-subtle);padding: var(--space-1);height: 24px;min-width: 24px;}button.navbar:hover:not(:disabled):not(.danger), a.navbar:hover {background: var(--accent-light);border-color: var(--accent-primary);color: var(--accent-primary);}a.navbar {display: inline-flex;align-items: center;justify-content: center;box-sizing: border-box;border-radius: var(--radius-sm);text-decoration: none;transition: all var(--transition-fast);color: var(--text-muted);cursor: pointer;}a.navbar:hover {color: var(--accent-primary);}a.navbar img {display: block;}header > button {border: 1px solid var(--border-subtle);padding: 0;height: 24px;min-width: 24px;}header > button:hover:not(:disabled) {background: var(--accent-light);border-color: var(--accent-primary);color: var(--accent-primary);}button.action {border: 1px solid transparent;padding: var(--space-1);height: 22px;min-width: 22px;}button.action:hover:not(:disabled) {border-color: var(--border-subtle);}button.action-sm {border: none;padding: 2px;height: 18px;min-width: 18px;}button.icon {border: 1px solid transparent;padding: var(--space-1);height: 24px;min-width: 24px;}button.icon:hover:not(:disabled) {border-color: var(--border-subtle);}button.icon svg {display: block;}button.icon.copied {color: var(--accent-success);background: transparent;}/* 颜色修饰类 */button.danger {color: var(--danger);}button.danger:hover:not(:disabled) {background: var(--danger-light);color: var(--danger);}button.navbar.danger:hover:not(:disabled) {border-color: var(--danger);}/* 功能修饰类 */button.help {font-size: 14px;font-weight: 600;}.directory-path {color: var(--text-muted);overflow: hidden;text-overflow: ellipsis;white-space: nowrap;font-size: 12px;}#main-row {flex: 1;min-height: 0;}/* ========== Sidebar ========== */aside {background: var(--bg-base);border-right: 1px solid var(--border-subtle);min-width: 180px;max-width: 33.33%;width: 260px;}aside.right {border-right: none;border-left: 1px solid var(--border-subtle);}aside.right.hidden {display: none;}.divider.column.control.sidebar.right.hidden {display: none;}aside > header {padding: var(--space-2) var(--space-3);font-weight: 600;font-size: 13px;color: var(--text-secondary);background: var(--bg-base);border-bottom: 1px solid var(--border-subtle);letter-spacing: -0.01em;justify-content: space-between;align-items: center;}aside .content {flex: 1;overflow-y: auto;padding: var(--space-1);scrollbar-gutter: stable;}/* ========== Divider ========== */.divider {background: var(--border-subtle);flex-shrink: 0;transition: background var(--transition-fast);position: relative;}.divider:hover {background: var(--accent-primary);}.divider.column {width: 6px;cursor: col-resize;z-index: 10;}.divider.row {height: 6px;cursor: row-resize;z-index: 15;}/* ========== Main Content ========== */#main-content {flex: 1;min-width: 400px;background: var(--bg-base);}#chat-header {padding: var(--space-4) var(--space-6);background: var(--bg-base);border-bottom: 1px solid var(--border-subtle);align-items: center;gap: var(--space-2);height: 56px;}#chat-header .prefix {color: var(--text-muted);font-size: 13px;}/* ========== Chat Messages ========== */#chat-messages {flex: 1 1 auto;overflow-y: auto;padding: var(--space-6);scroll-padding-bottom: 130px;gap: var(--space-5);background: var(--bg-subtle);min-height: 100px;}.sticky-bottom {position: sticky;bottom: 0;z-index: 5;display: flex;flex-direction: column;flex: 1 1 auto;min-height: 145px;}.chat-input-area {padding: 4px 8px;border-top: 1px solid var(--border-subtle);background: var(--bg-base);flex: 1 1 auto;min-height: 120px;}/* 输入框容器（包含textarea和发送按钮） */.input-wrapper {flex: 1;min-height: 0;}.input-wrapper textarea {flex: 1;}#chat-input {width: 100%;height: 100%;min-height: 56px;padding: var(--space-2) var(--space-3);border: 1px solid var(--border-default);border-radius: 0 0 var(--radius-md) var(--radius-md);resize: none;font-family: var(--font-sans);font-size: 14px;line-height: 1.55;background: var(--bg-base);color: var(--text-primary);transition: border-color var(--transition-fast), box-shadow var(--transition-fast);box-sizing: border-box;}#chat-input:focus {outline: none;border-color: var(--accent-primary);box-shadow: 0 0 0 2px var(--accent-light);}#chat-input::placeholder {color: var(--text-placeholder);}/* 停止按钮样式 */button.stop {background: var(--danger-light);color: var(--danger);border: 1px solid var(--danger);padding: 2px 8px;height: 20px;font-size: 11px;margin-left: var(--space-2);}button.stop:hover:not(:disabled) {background: var(--danger);color: white;}button.stop:disabled {opacity: 0.5;cursor: not-allowed;}/* ========== Dialog Buttons ========== */.dialog-buttons button {border: none;border-radius: var(--radius-md);background: var(--bg-muted);color: var(--text-secondary);font-size: 13px;font-weight: 500;padding: var(--space-2) var(--space-4);height: 32px;}.dialog-buttons button:hover:not(:disabled) {background: var(--bg-active);color: var(--text-primary);}.dialog-buttons button.primary {background: var(--accent-primary);color: white;}.dialog-buttons button.primary:hover:not(:disabled) {background: var(--accent-primary-hover);}button:active:not(:disabled) {transform: scale(0.97);}button:focus-visible {outline: 2px solid var(--accent-primary);outline-offset: 2px;}button:disabled {opacity: 0.45;cursor: not-allowed;transform: none;}button.outline {background: transparent;border: 1px solid var(--border-default);color: var(--text-secondary);padding: var(--space-1) var(--space-3);font-size: 13px;}button.outline:hover:not(:disabled) {background: var(--bg-muted);border-color: var(--border-strong);}/* 停止按钮 */#btn-stop {background: var(--danger-light);color: var(--danger);}#btn-stop:hover:not(:disabled) {background: var(--danger);color: white;}/* ========== Scroll Navigation Buttons ========== */#scroll-nav-buttons {gap: var(--space-1);opacity: 0;transition: opacity var(--transition-normal);margin-left: auto;}#scroll-nav-buttons.visible {opacity: 1;}.scroll-btn {background: var(--bg-elevated);border: 1px solid var(--border-subtle);width: 24px;height: 24px;padding: 0;font-size: 12px;font-weight: 600;}.scroll-btn:hover:not(:disabled) {background: var(--accent-light);color: var(--accent-primary);border-color: var(--accent-primary);}.scroll-btn:active {transform: scale(0.95);}/* 高亮闪烁动画 */.message-user.highlight-flash {animation: flash-highlight 0.6s ease-in-out 3;}@keyframes flash-highlight {0%, 100% {box-shadow: none;}50% {box-shadow: 0 0 0 3px var(--accent-primary), 0 0 12px var(--accent-primary);}}/* ========== Messages ========== */.message {gap: var(--space-1);}/* 用户消息：靠右，左侧空隙 */.message.req.msg {align-self: flex-end;max-width: 90%;}/* 助手消息：靠左，右侧空隙 */.message.res.msg {align-self: flex-start;max-width: 90%;}.message-user {background: var(--user-msg-bg);padding: var(--space-3) var(--space-4);border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);color: var(--user-msg-text);font-weight: 500;word-wrap: break-word;overflow-wrap: break-word;}/* 消息中的附件展示 */.message-attachments {flex-wrap: wrap;gap: var(--space-2);margin-top: var(--space-2);padding-top: var(--space-2);border-top: 1px dashed var(--border-subtle);}/* 用户消息中的附件靠右对齐 */.message.req.msg .message-attachments {justify-content: flex-end;}.message-attachment {align-items: center;gap: var(--space-1);padding: var(--space-1) var(--space-2);background: var(--bg-muted);border-radius: var(--radius-sm);font-size: 12px;cursor: pointer;}.message-attachment.image {padding: 2px;}.message-attachment-thumb {width: 32px;height: 32px;border-radius: var(--radius-sm);object-fit: cover;background: var(--bg-subtle);}.message-attachment-name {color: var(--text-secondary);max-width: 100px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}.image-preview-overlay {position: fixed;top: 0;left: 0;right: 0;bottom: 0;background: rgba(0, 0, 0, 0.8);align-items: center;justify-content: center;z-index: 1000;cursor: pointer;}.image-preview-overlay img {max-width: 90%;max-height: 90%;border-radius: 8px;}.message-assistant {background: var(--bg-base);padding: var(--space-3) var(--space-4);border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);color: var(--text-primary);border: 1px solid var(--border-subtle);box-shadow: var(--shadow-sm);word-wrap: break-word;overflow-wrap: break-word;}/* ========== Markdown 渲染样式 ========== */.message-assistant pre {background: #f6f8fa;border-radius: 6px;padding: 12px 16px;margin: 8px 0;overflow-x: auto;position: relative;}.message-assistant code {font-family: 'Consolas', 'Monaco', 'Menlo', monospace;font-size: 13px;}.message-assistant pre code {background: transparent;padding: 0;}.message-assistant p code {background: #f6f8fa;padding: 2px 6px;border-radius: 4px;}.message-assistant ul,.message-assistant ol {margin: 8px 0;padding-left: 0;list-style-position: inside;}.message-assistant li {margin: 4px 0;}.message-assistant h1,.message-assistant h2,.message-assistant h3,.message-assistant h4 {margin: 16px 0 8px;font-weight: 600;}.message-assistant h1 {font-size: 1.5em;}.message-assistant h2 {font-size: 1.3em;}.message-assistant h3 {font-size: 1.1em;}.message-assistant blockquote {border-left: 4px solid var(--border-default);margin: 8px 0;padding-left: 16px;color: var(--text-secondary);}.message-assistant table {border-collapse: collapse;margin: 8px 0;}.message-assistant th,.message-assistant td {border: 1px solid var(--border-subtle);padding: 8px 12px;}.message-assistant th {background: var(--bg-muted);font-weight: 600;}.message-assistant a {color: var(--accent-primary);text-decoration: none;}.message-assistant a:hover {text-decoration: underline;}/* 代码块复制按钮 */.code-copy-btn {position: absolute;top: 8px;right: 8px;background: transparent;border: 1px solid var(--border-subtle);border-radius: 4px;padding: 4px 8px;cursor: pointer;opacity: 0.6;transition: opacity 0.2s;}.code-copy-btn:hover {opacity: 1;background: var(--bg-hover);}.code-copy-btn.copied {opacity: 1;color: var(--success);border-color: var(--success);}/* 复制按钮反馈 */.copy-btn .copy-icon,.code-copy-btn .copy-icon {}.copy-btn.copied .copy-icon,.code-copy-btn.copied .copy-icon {display: none;}.copy-btn .copy-check,.code-copy-btn .copy-check {display: none;}.copy-btn.copied .copy-check,.code-copy-btn.copied .copy-check {display: inline;}.message-meta {font-size: 11px;color: var(--text-muted);padding-left: 0;align-items: center;gap: var(--space-2);}.message-status-bar {align-items: center;gap: var(--space-1);margin-top: var(--space-1);padding-left: 0;}.message-usage {font-size: 11px;color: var(--text-muted);margin-left: auto;}/* ========== Endpoint Groups ========== */.endpoint-group {background: var(--bg-elevated);border-radius: 0;margin-bottom: var(--space-1);border: 1px solid var(--border-subtle);box-shadow: var(--shadow-sm);}.endpoint-group:last-child {margin-bottom: 0;}.endpoint-group.dragging {opacity: 0.5;}.endpoint-group.drag-over {border-top: 2px solid var(--accent-primary);}.endpoint-group.drag-over-child {outline: 2px dashed var(--accent-primary);outline-offset: -2px;border-radius: var(--radius-sm);}.node-content {gap: var(--space-1);}.node-children {gap: var(--space-1);margin-top: var(--space-1);}.node-model-badge {font-size: 10px;color: var(--text-muted);margin-left: 4px;font-weight: 400;}.inherit-hint {font-size: 11px;color: var(--text-muted);margin-top: 2px;display: block;}.field-hint {font-size: 11px;color: var(--text-muted);margin-top: 2px;display: block;line-height: 1.4;}.drag-handle {cursor: grab;color: var(--text-muted);padding: 2px;margin-right: 4px;align-items: center;opacity: 0.4;transition: opacity var(--transition-fast);flex-shrink: 0;}.drag-handle:hover {opacity: 1;color: var(--text-secondary);}.drag-handle:active {cursor: grabbing;}.group-header {padding: var(--space-1) var(--space-2);background: transparent;border-radius: 0;cursor: pointer;align-items: flex-start;gap: var(--space-1);border: none;transition: all var(--transition-fast);}.group-header:hover {background: var(--bg-muted);}.group-name {flex: 1;min-width: 0;overflow-wrap: break-word;font-size: 13px;font-weight: 500;color: var(--text-primary);word-break: break-all;cursor: pointer;}/* tooltip弹层（使用fixed定位，脱离sidebar的overflow） */.group-tooltip {position: fixed;z-index: 1000;background: var(--bg-base);border: 1px solid var(--border-default);border-radius: var(--radius-md);padding: var(--space-2);box-shadow: var(--shadow-lg);min-width: 200px;max-width: 300px;display: none;font-size: 12px;}/* 复制按钮 */button.tooltip-copy {font-size: 12px;padding: 0;width: 18px;height: 18px;opacity: 0.6;}button.tooltip-copy:hover {opacity: 1;color: var(--accent-primary);}button.tooltip-copy.copied {color: var(--accent-success);opacity: 1;}.tooltip-row {align-items: center;gap: var(--space-1);padding: 2px 0;}.tooltip-label {color: var(--text-muted);flex-shrink: 0;width: 40px;}.group-actions {gap: 2px;flex-shrink: 0;}/* 批量测试按钮 */button.batch-test {color: var(--text-muted);}button.batch-test:hover:not(:disabled) {background: var(--accent-light);color: var(--accent-primary);}button.batch-test.testing {background: var(--accent-light);color: var(--accent-primary);}button.batch-test.testing .spin {animation: spin 0.5s linear infinite !important;display: inline-block;}button.action.batch-test.connected {color: var(--success) !important;background: var(--success-light) !important;}button.action.batch-test.failed {color: var(--danger) !important;background: var(--danger-light) !important;}.group-models {padding-left: var(--space-3);margin-top: var(--space-1);gap: 0;}.model.item {padding: var(--space-1) var(--space-2);cursor: pointer;border-radius: 0;color: var(--text-secondary);font-size: 12px;transition: all var(--transition-fast);align-items: center;justify-content: space-between;}.model.item:hover {background: var(--bg-muted);color: var(--text-primary);}.model.item.selected {background: var(--accent-light);color: var(--accent-primary);font-weight: 500;}.model.item.dragging {opacity: 0.5;}.model.item.drag-over {border-top: 2px solid var(--accent-primary);}.add-model-link {padding: var(--space-1) var(--space-2);color: var(--text-muted);font-size: 12px;cursor: pointer;border-radius: 0;transition: all var(--transition-fast);}.add-model-link:hover {background: var(--bg-muted);color: var(--accent-primary);}.add-model-inline {gap: var(--space-1);padding: var(--space-1) var(--space-2);background: var(--bg-muted);border-radius: var(--radius-sm);}.add-model-row {gap: var(--space-1);align-items: center;}.add-model-remark-input {flex: 1;padding: var(--space-1) var(--space-2);border: 1px solid var(--border-default);border-radius: var(--radius-sm);font-size: 12px;background: var(--bg-base);color: var(--text-muted);min-width: 0;}.add-model-remark-input:focus {outline: none;border-color: var(--accent-primary);box-shadow: 0 0 0 2px var(--accent-light);color: var(--text-primary);}margin-bottom: var(--space-1);flex-grow: 1;}button.add-model-confirm.action-sm {background: var(--success-light);color: var(--success);border: 1px solid transparent;}.add-model-confirmbutton.action-sm:hover:not(:disabled) {background: var(--success);color: white;}button.add-model-cancel.action-sm {background: var(--bg-muted);color: var(--text-muted);border: 1px solid var(--border-subtle);}.add-model-cancelbutton.action-sm:hover:not(:disabled) {background: var(--bg-active);color: var(--text-secondary);}.add-model-input {flex: 1;padding: var(--space-1) var(--space-2);border: 1px solid var(--border-default);border-radius: var(--radius-sm);font-size: 12px;background: var(--bg-base);color: var(--text-primary);min-width: 0;}.add-model-input:focus {outline: none;border-color: var(--accent-primary);box-shadow: 0 0 0 2px var(--accent-light);}.model.name {flex: 1;}.model-remark {color: var(--text-muted);font-size: 0.85em;white-space: nowrap;}.model.actions {gap: var(--space-1);}/* 连接状态按钮样式 */button.connection {background: transparent;color: var(--text-muted);}button.connection:hover {transform: none;}button.connection.testing {background: var(--accent-light);color: var(--accent-primary);}button.connection.testing .spin {animation: spin 2s linear infinite !important;display: inline-block;}/* 通用的.spin类 */.spin {animation: spin 1s linear infinite !important;display: inline-block;will-change: transform;}button.connection.connected {background: var(--success-light);color: var(--success);}button.connection.failed {background: var(--danger-light);color: var(--danger);}button.connection.cors_blocked {background: rgba(217, 119, 6, 0.15);color: var(--warning);}/* ========== Session List ========== */.session.item {padding: var(--space-3);margin-bottom: var(--space-1);cursor: pointer;border-radius: var(--radius-md);border: 1px solid transparent;transition: all var(--transition-fast);}.session.item:hover {background: var(--bg-hover);}.session.item.selected {background: var(--accent-light);border-color: rgba(37, 99, 235, 0.3);}.session.title {font-size: 13px;font-weight: 500;color: var(--text-primary);overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}.session.item.selected .session.title {color: var(--accent-primary);}.session.title-edit {font-size: 13px;font-weight: 500;padding: 2px 6px;border: 1px solid var(--accent-primary);border-radius: var(--radius-sm);background: var(--bg-base);color: var(--text-primary);flex: 1;min-width: 0;}.session.title-edit:focus {outline: none;box-shadow: 0 0 0 2px var(--accent-light);}.session.meta {align-items: center;justify-content: space-between;margin-top: var(--space-1);}.session.time {font-size: 11px;color: var(--text-muted);}.session.actions {gap: var(--space-1);}/* ========== Scrollbar ========== */aside .content::-webkit-scrollbar,#chat-messages::-webkit-scrollbar,.selector.list::-webkit-scrollbar {width: 5px;}aside .content::-webkit-scrollbar-track,#chat-messages::-webkit-scrollbar-track,.selector.list::-webkit-scrollbar-track {background: transparent;}aside .content::-webkit-scrollbar-thumb,#chat-messages::-webkit-scrollbar-thumb,.selector.list::-webkit-scrollbar-thumb {background: var(--border-default);border-radius: 3px;}aside .content::-webkit-scrollbar-thumb:hover,#chat-messages::-webkit-scrollbar-thumb:hover,.selector.list::-webkit-scrollbar-thumb:hover {background: var(--border-strong);}/* ========== Dialogs ========== */#edit-dialog {position: fixed;top: 50%;left: 50%;transform: translate(-50%, -50%) scale(0.95);background: var(--bg-base);padding: var(--space-6);border-radius: var(--radius-xl);box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);border: 1px solid var(--border-subtle);z-index: 1000;min-width: 360px;animation: dialog-in var(--transition-normal) ease forwards;}@keyframes dialog-in {to {transform: translate(-50%, -50%) scale(1);opacity: 1;}}#edit-dialog h3 {margin-bottom: var(--space-5);font-weight: 600;font-size: 16px;color: var(--text-primary);}.dialog-form {gap: var(--space-4);}#edit-dialog label {gap: var(--space-2);font-size: 13px;font-weight: 500;color: var(--text-secondary);}#edit-dialog input,#edit-dialog select {padding: var(--space-2) var(--space-3);border: 1px solid var(--border-default);border-radius: var(--radius-md);background: var(--bg-base);color: var(--text-primary);font-family: var(--font-sans);font-size: 14px;transition: border-color var(--transition-fast), box-shadow var(--transition-fast);}#edit-dialog input:focus,#edit-dialog select:focus {outline: none;border-color: var(--accent-primary);box-shadow: 0 0 0 3px var(--accent-light);}.key-input-wrapper {align-items: center;gap: var(--space-1);}.key-input-wrapper input {flex: 1;}button.toggle-key {background: var(--bg-base);border: 1px solid var(--border-default);border-radius: var(--radius-md);padding: 6px 8px;}button.toggle-key:hover:not(:disabled) {background: var(--bg-muted);color: var(--text-secondary);border-color: var(--border-subtle);}.dialog-buttons {margin-top: var(--space-5);gap: var(--space-2);justify-content: flex-end;}#help-dialog {position: fixed;top: 50%;left: 50%;transform: translate(-50%, -50%);background: var(--bg-base);padding: var(--space-6);border-radius: var(--radius-lg);box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);border: 1px solid var(--border-subtle);z-index: 1001;max-width: 800px;width: 90%;}.dialog-overlay {position: fixed;top: 0;left: 0;right: 0;bottom: 0;background: rgba(0, 0, 0, 0.3);z-index: 1000;}#help-dialog h3 {margin-bottom: var(--space-4);font-weight: 600;font-size: 18px;color: var(--text-primary);}#help-dialog .help-content {color: var(--text-secondary);font-size: 14px;line-height: 1.6;}#help-dialog .help-section {margin-bottom: var(--space-4);}#help-dialog .help-section-directory {background: var(--bg-muted);padding: var(--space-3);border-radius: var(--radius-md);margin-bottom: var(--space-5);}#help-dialog .help-section-directory h4 {margin-bottom: var(--space-2);}#help-dialog .directory-info {align-items: center;gap: var(--space-3);justify-content: space-between;flex-wrap: wrap;}#help-dialog .directory-buttons {gap: var(--space-2);}#btn-restore-dir {background: var(--success);color: white;border: none;padding: var(--space-2) var(--space-3);font-size: 13px;font-weight: 500;height: 28px;cursor: pointer;border-radius: var(--radius-sm);}#btn-restore-dir:hover {background: #047857;}#btn-change-dir-help {background: var(--accent-primary);color: white;border: none;padding: var(--space-2) var(--space-3);font-size: 13px;font-weight: 500;height: 28px;cursor: pointer;border-radius: var(--radius-sm);}#btn-change-dir-help:hover {background: var(--accent-primary-hover);}#btn-use-browser-storage {background: #2563EB;color: #fff;border: none;padding: 6px 14px;border-radius: var(--radius-sm);cursor: pointer;font-size: 13px;font-weight: 500;transition: background var(--transition-fast);}#btn-use-browser-storage:hover {background: #1D4ED8;}.browser-storage-hint {font-size: 12px;color: var(--text-muted);margin-top: 6px;}#help-dialog .directory-warning {color: var(--warning);font-size: 13px;margin-top: var(--space-2);}#help-dialog .help-section h4 {font-weight: 600;font-size: 14px;color: var(--text-primary);margin-bottom: var(--space-2);}#help-dialog .help-section ul {margin-left: var(--space-4);}#help-dialog .help-section li {margin-bottom: var(--space-1);}#help-dialog .dialog-buttons {margin-top: var(--space-5);}/* ========== Streaming Animation ========== */#streaming-message::after {content: '●';color: var(--accent-primary);margin-left: var(--space-1);animation: blink 1s ease-in-out infinite;font-size: 10px;}@keyframes blink {0%, 100% {opacity: 1;}50% {opacity: 0.3;}}@keyframes spin {from {transform: rotate(0deg);}to {transform: rotate(360deg);}}/* ========== Reduced Motion ========== */@media (prefers-reduced-motion: reduce) {*, *::before, *::after {animation-duration: 0.01ms !important;transition-duration: 0.01ms !important;}}/* ========== Responsive ========== */@media (max-width: 900px) {aside {width: 200px;min-width: 160px;}}@media (max-width: 768px) {aside.right {display: none;}#chat-messages {padding: var(--space-4);}.chat-input-area {padding: 8px;}.message.req.msg,.message.res.msg {max-width: 95%;}}/* ========== Model Selector ========== */.model.selector {position: relative;width: 100%;background: var(--bg-muted);border-radius: var(--radius-md) var(--radius-md) 0 0;padding: var(--space-1) var(--space-2);border: 1px solid var(--border-subtle);border-bottom: none;}/* 展开状态：列表从底部向上悬浮展开 */.model.selector:not(.collapsed) .selector.list {position: absolute;bottom: calc(100% + 1px);left: -1px;right: -1px;background: var(--bg-base);box-shadow: var(--shadow-lg);border: 1px solid var(--border-default);border-radius: var(--radius-md);max-height: 240px;overflow-y: auto;z-index: 20;display: block;padding: var(--space-2);}.endpoint.name-color {color: var(--text-secondary);font-weight: 500;}.model.selector.collapsed .selector.list {display: none;}.model.selector.generating .selector.expand-btn,.model.selector.generating .model.tag {cursor: not-allowed;opacity: 0.6;}.selector.header {align-items: center;gap: var(--space-2);}.selector.summary {align-items: center;gap: var(--space-1);flex-wrap: wrap;flex: 1;min-width: 0;overflow: hidden;}.selector.expand-btn {font-size: 11px;color: var(--text-muted);cursor: pointer;padding: 2px 4px;border-radius: var(--radius-sm);flex-shrink: 0;white-space: nowrap;}.selector.expand-btn:hover {color: var(--accent-primary);background: var(--accent-light);}.selector.group-label {font-size: 10px;color: var(--text-muted);margin-bottom: var(--space-1);margin-top: var(--space-2);}.selector.group-label:first-child {margin-top: 0;}.selector.models-row {gap: var(--space-2);flex-wrap: wrap;}/* 模型标签样式 */.model.tag {display: inline-flex;align-items: center;gap: var(--space-1);padding: var(--space-1) var(--space-2);border-radius: var(--radius-sm);font-size: 12px;cursor: pointer;transition: all var(--transition-fast);border: 1px solid transparent;}.model.tag.unselected {background: var(--bg-muted);color: var(--text-muted);border-color: var(--border-subtle);}.model.tag.unselected:hover {background: var(--bg-hover);color: var(--text-secondary);}.model.tag.selected {background: var(--accent-light);color: var(--accent-primary);border: 1px solid var(--accent-primary);padding: var(--space-1) var(--space-3);box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);}.model.tag.selected:hover {background: var(--accent-muted);}/* Failed/stopped models show color in selector tags to alert user */.model.tag.selected.failed {background: var(--danger-light);color: var(--danger);border-color: var(--danger);}.model.tag.selected.stopped {background: var(--bg-muted);color: var(--text-muted);border-color: var(--border-subtle);}/* 速度样式 - 与消息框反应时间颜色统一 */.model.tag.selected.speed-fast {background: var(--success-light);border-color: var(--success);}.model.tag.selected.speed-medium {background: var(--warning-light);border-color: var(--warning);}.model.tag.selected.speed-slow {background: #fed7aa;border-color: #ea580c;}/* 状态图标 */.model.status-icon {font-size: 10px;}.model.status-icon.spinning {animation: spin 1s linear infinite !important;display: inline-block;will-change: transform;}/* 选择器空状态提示 */.selector.empty-hint {color: var(--danger);font-size: 12px;font-weight: 500;}/* ========== Multi-Model Response Cards ========== */.multi-response-hint {font-size: 11px;color: var(--text-muted);margin-bottom: var(--space-2);}.multi-response-cards {gap: var(--space-3);}.response.card {background: var(--bg-base);border: 1px solid var(--border-subtle);border-radius: var(--radius-md);padding: var(--space-3);}.response.meta {align-items: center;gap: var(--space-2);font-size: 11px;color: var(--text-muted);padding-bottom: var(--space-2);}.response.meta .copy-btn {margin-left: auto;}/* 用户消息 meta 行 */.request.meta {align-items: center;gap: var(--space-2);font-size: 11px;color: var(--text-muted);padding-bottom: var(--space-2);justify-content: flex-end;}.request.meta .copy-btn {margin-left: var(--space-2);}.request.time {color: var(--text-muted);}.response.time {color: var(--text-muted);}.response.duration {color: var(--text-secondary);}/* Response speed colors */.response.duration.fast {color: var(--success);}.response.duration.medium {color: var(--warning);}.response.duration.slow {color: #ea580c;}.response.total {color: var(--text-secondary);}.response.model-name {font-weight: 500;}.response.status {font-size: 10px;}/* 通用状态颜色 */.status.completed {color: var(--success);}.status.failed {color: var(--danger);}.status.stopped {color: var(--text-muted);}.response.error {color: var(--danger);font-size: 12px;margin-left: 4px;}.response.card-content {font-size: 13px;line-height: 1.5;}.response.card-content ul,.response.card-content ol {margin: 8px 0;padding-left: 1.2em;list-style-position: inside;}.response.card-content li {margin: 2px 0;}.response.card-content pre {background: #f6f8fa;border-radius: 6px;padding: 12px 16px;margin: 8px 0;overflow-x: auto;position: relative;}.response.card-content code {font-family: 'Consolas', 'Monaco', 'Menlo', monospace;font-size: 13px;}.response.card-content pre code {background: transparent;padding: 0;}.response.card-content p code {background: #f6f8fa;padding: 2px 6px;border-radius: 4px;}.response.card-content a {color: var(--accent-primary);}.response.card-content blockquote {border-left: 3px solid var(--border-default);margin: 8px 0;padding-left: 12px;color: var(--text-secondary);}/* ========== Thinking Block ========== */.thinking-block {background: var(--bg-muted);border-radius: var(--radius-sm);margin-bottom: var(--space-2);}.thinking-header {align-items: center;gap: var(--space-2);padding: var(--space-2);cursor: pointer;color: var(--text-muted);font-size: 12px;border-radius: var(--radius-sm) var(--radius-sm) 0 0;}.thinking-header:hover {background: var(--bg-hover);color: var(--text-secondary);}.thinking-icon {font-size: 10px;transition: transform var(--transition-fast);width: 12px;text-align: center;}.thinking-block.collapsed .thinking-icon::before {content: "▶";}.thinking-block:not(.collapsed) .thinking-icon::before {content: "▼";}.thinking-label {color: var(--text-secondary);font-weight: 500;}.thinking-duration {color: var(--text-muted);font-size: 11px;margin-left: auto;}.thinking-content {padding: var(--space-2) var(--space-3);color: var(--text-secondary);font-size: 13px;line-height: 1.5;border-top: 1px solid var(--border-subtle);}.thinking-block.collapsed .thinking-content {display: none;}/* 流式思考状态 - 实时显示时不折叠 */.thinking-block.streaming {background: var(--bg-subtle);border: 1px solid var(--border-default);}.thinking-block.streaming .thinking-content {display: block;border-top: none;}/* ========== 附件缩略图 ========== */.attachment-thumb {position: relative;width: 40px;height: 40px;border-radius: var(--radius-sm);background: var(--bg-muted);align-items: center;justify-content: center;cursor: pointer;flex-shrink: 0;border: 1px solid var(--border-subtle);}.attachment-thumb.image {background-size: cover;background-position: center;}.attachment-thumb.file {font-size: 20px;color: var(--text-muted);}.attachment-remove {position: absolute;top: -4px;right: -4px;width: 16px;height: 16px;background: var(--danger);color: white;border-radius: 50%;font-size: 10px;line-height: 16px;text-align: center;cursor: pointer;display: none;}.attachment-thumb:hover .attachment-remove {display: block;}.attachment-remove:hover {background: #b91c1c;}/* 操作栏按钮统一40px高度 */.action-btn {border: 1px solid var(--border-subtle);padding: 0 12px;height: 40px;min-width: 40px;background: var(--bg-muted);border-radius: var(--radius-sm);align-items: center;justify-content: center;cursor: pointer;}.action-btn:hover:not(:disabled) {background: var(--bg-hover);}.action-btn.primary {background: var(--accent-primary);color: white;border-color: var(--accent-primary);}.action-btn.primary:hover:not(:disabled) {background: var(--accent-primary-hover);color: white;}/* 模式选择器（聊天/嵌入） */.mode-selector {display: inline-flex;border: 1px solid var(--border-default);border-radius: 6px;overflow: hidden;& .mode-option {padding: 4px 10px;cursor: pointer;font-size: 13px;color: var(--text-muted);background: var(--bg-base);transition: none;user-select: none;& input { display: none; }& + .mode-option {border-left: 1px solid var(--border-default);}&.selected {background: var(--bg-active);color: var(--text-primary);font-weight: 500;}&:hover:not(.selected) {background: var(--bg-hover);}}}/* 分裂式按钮（发送 + 模式切换） */.split-btn {position: relative;display: inline-flex;height: 40px;}.split-btn-main {height: 40px;padding: 0 12px;border: 1px solid var(--accent-primary);border-right: none;border-radius: 6px 0 0 6px;background: var(--accent-primary);color: white;cursor: pointer;align-items: center;justify-content: center;}.split-btn-main:hover {background: var(--accent-primary-hover);}.split-btn-main:disabled {opacity: 0.5;cursor: not-allowed;}.split-btn-drop {height: 40px;width: 28px;border: 1px solid var(--accent-primary);border-left-color: rgba(255, 255, 255, 0.4);border-radius: 0 6px 6px 0;background: var(--accent-primary);color: white;cursor: pointer;align-items: center;justify-content: center;padding: 0;}.split-btn-drop:hover {background: var(--accent-primary-hover);}.split-btn.open .split-btn-main,.split-btn.open .split-btn-drop {background: var(--accent-primary-hover);}.split-btn-menu {position: absolute;bottom: 100%;right: 0;margin-bottom: 4px;min-width: 140px;background: var(--bg-base);border: 1px solid var(--border-subtle);border-radius: 6px;box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);display: none;z-index: 100;}.split-btn.open .split-btn-menu {display: block;}.split-btn-option {padding: 8px 12px;cursor: pointer;font-size: 13px;color: var(--text-base);transition: background 0.15s;}.split-btn-option:hover {background: var(--bg-hover);}.split-btn-option.selected {color: var(--accent-primary);font-weight: 500;}/* 隐藏的文件输入 */#file-input {display: none;}.shhhh {color: gray;text-decoration: line-through;text-decoration-style: double;}/* 嵌入结果 */.embedding-result {background: var(--bg-subtle);border: 1px solid var(--border-subtle);border-radius: 8px;padding: 12px;margin: 8px 0;font-family: var(--font-mono, monospace);font-size: 13px;& .embedding-header {font-weight: 600;margin-bottom: 8px;font-family: var(--font-ui, sans-serif);}& .embedding-meta {display: flex;gap: 16px;margin-bottom: 8px;color: var(--text-muted);font-family: var(--font-ui, sans-serif);font-size: 12px;}& .embedding-preview {word-break: break-all;margin-bottom: 8px;color: var(--text-secondary);}& .embedding-copy-btn {background: var(--bg-elevated);border: 1px solid var(--border-default);border-radius: 4px;padding: 4px 10px;cursor: pointer;font-size: 12px;&:hover {background: var(--bg-hover);}}}</style>
 	</head><body><script>// 扩展环境检测 + 按需适配
 (function() {
 	const isExt = typeof chrome !== 'undefined' && chrome.storage && chrome.runtime && chrome.runtime.id;
@@ -41,7 +41,7 @@
 				<div class="logo layout-x-queue">
 					<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 				</div>
-				<span class="brand">快连AI</span><span class="version">v3.3.0</span>
+				<span class="brand">快连AI</span><span class="version">v4.0.0</span>
 			</div>
 			<div class="center layout-x-queue">
 				<span class="directory-label">当前存储目录：</span>
@@ -166,29 +166,41 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14" alt
 	</main>
 	<!-- ========== Templates ========== -->
 	<template id="tpl-edit-group-dialog">
-		<div id="edit-dialog">
-			<h3></h3>
-			<form class="dialog-form layout-y-queue">
-				<label class="layout-y-queue">名称: <input id="dialog-group-name"></label>
-				<label class="layout-y-queue">Base URL: <input id="dialog-group-url"></label>
-				<label class="layout-y-queue">接口风格:
-					<select id="dialog-group-style">
-						<option value="openai">OpenAI</option>
-						<option value="claude">Claude</option>
-						<option value="gemini">Gemini</option>
-					</select>
-				</label>
-				<label class="layout-y-queue">API Key: <div class="key-input-wrapper layout-x-queue"><input id="dialog-group-key" type="password"><button class="toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-								<circle cx="12" cy="12" r="3"></circle>
-							</svg></button></div></label>
-			</form>
-			<footer class="dialog-buttons layout-x-queue">
-				<button id="dialog-cancel">✗</button>
-				<button id="dialog-save" class="primary">✓</button>
-			</footer>
-		</div>
-	</template>
+<div id="edit-dialog">
+<h3></h3>
+<form class="dialog-form layout-y-queue">
+<label class="layout-y-queue">名称: <input id="dialog-group-name"></label>
+<label class="layout-y-queue">Base URL（选填）:
+<input id="dialog-group-url" placeholder="https://api.example.com">
+<span id="dialog-inherited-url" class="inherit-hint"></span></label>
+<label class="layout-y-queue">接口风格:
+<select id="dialog-group-style">
+<option value="">（继承）</option>
+<option value="openai">OpenAI</option>
+<option value="claude">Claude</option>
+<option value="gemini">Gemini</option>
+</select></label>
+<label class="layout-y-queue">API Key（选填）:
+<div class="key-input-wrapper layout-x-queue">
+<input id="dialog-group-key" type="password" placeholder="">
+<button class="toggle-key" title="显示/隐藏">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+<circle cx="12" cy="12" r="3"></circle>
+</svg></button></div>
+<span id="dialog-inherited-key" class="inherit-hint"></span></label>
+<label class="layout-y-queue">模型名（选填）:
+<input id="dialog-group-modelid" placeholder="如 gpt-4o">
+
+<span id="dialog-inherited-modelid" class="inherit-hint"></span></label>
+</form>
+<div class="dialog-footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
+<footer class="dialog-buttons layout-x-queue">
+<button id="dialog-cancel">✗</button>
+<button id="dialog-save" class="primary">✓</button>
+</footer>
+</div>
+</template>
 	<template id="tpl-add-model-inline">
 		<div class="add-model-inline layout-y-queue">
 			<input type="text" placeholder="模型名" class="add-model-input">
@@ -399,7 +411,7 @@ if (!window.__IS_EXTENSION__) {
 		},
 		async loadEndpoints() {
 			return await this._get('endpoints') || {
-				groups: []
+				nodes: []
 			};
 		},
 		async saveEndpoints(data) {
@@ -472,12 +484,12 @@ if (!window.__IS_EXTENSION__) {
 				const file = await fileHandle.getFile();
 				const text = await file.text();
 				return text ? JSON.parse(text) : {
-					groups: []
+					nodes: []
 				};
 			} catch (err) {
 				console.error('加载端点失败:', err);
 				return {
-					groups: []
+					nodes: []
 				};
 			}
 		},
@@ -1340,35 +1352,34 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 			const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : '';
 			const classes = ['model', 'tag', 'selected', statusClass, speedClass ? `speed-${speedClass}` : ''].filter(Boolean).join(' ');
 			const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : '';
-			return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.group.name}</span> ${info.model.name}${remarkHtml}</span>`;
+			return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.node.name}</span> ${info.model.name}${remarkHtml}</span>`;
 		}).join('');
 		expandBtnText.textContent = selectorExpanded ? '▲ 收起' : '▼ 展开';
 	}
-	// 展开状态列表
+	// 展开状态列表（递归树形）
 	if (selectorExpanded) {
-		listEl.innerHTML = groups.map(g => {
-			const tags = g.models.map(m => {
-				const isSelected = selectedModels.includes(`${g.id}:${m.id}`);
-				const statusClass = getTagStatusClass(`${g.id}:${m.id}`);
-				const cls = isSelected ? (statusClass ? `selected ${statusClass}` : 'selected') : 'unselected';
-				const mRemark = m.remark ? `<span class="model-remark"> ${m.remark}</span>` : '';
-				return `<span class="model tag ${cls}" data-model="${g.id}:${m.id}">${m.name}${mRemark}</span>`;
-			}).join('');
-			return `<div class="selector group-label">${g.name}</div><div class="selector models-row layout-x-queue">${tags}</div>`;
-		}).join('');
+		var parts = [];
+		(function renderSubtree(nodes, depth) {
+			nodes.forEach(function(n) {
+				parts.push('<div class="selector group-label" style="padding-left:' + (depth * 14) + 'px">' + n.name + '</div>');
+				if (n.models && n.models.length > 0) {
+					var tags = n.models.map(function(m) {
+						var isSelected = selectedModels.indexOf(n.id + ':' + m.id) >= 0;
+						var statusClass = getTagStatusClass(n.id + ':' + m.id);
+						var cls = isSelected ? (statusClass ? 'selected ' + statusClass : 'selected') : 'unselected';
+						var mRemark = m.remark ? '<span class="model-remark"> ' + m.remark + '</span>' : '';
+						return '<span class="model tag ' + cls + '" data-model="' + n.id + ':' + m.id + '">' + m.name + mRemark + '</span>';
+					}).join('');
+					parts.push('<div class="selector models-row layout-x-queue">' + tags + '</div>');
+				}
+				if (n.children) renderSubtree(n.children, depth + 1);
+			});
+		})(groups, 0);
+		listEl.innerHTML = parts.join('');
 	}
 	bindSelectorEvents();
 }
-function findModelById(groups, modelId) {
-	for (const g of groups) {
-		const m = g.models.find(x => `${g.id}:${x.id}` === modelId);
-		if (m) return {
-			group: g,
-			model: m
-		};
-	}
-	return null;
-}
+// findModelById is defined in store.js (recursive tree version)
 function getTagStatusClass(modelId) {
 	const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
 	const gen = gens ? gens.get(modelId) : null;
@@ -1490,376 +1501,427 @@ function showAttachmentPreview(att) {
 		if (!att.previewUrl) URL.revokeObjectURL(link.href);
 	}
 }
-function renderEndpointList(groups, selectedModelId, onModelSelect, onModelEdit, onGroupEdit, onGroupDelete, onAddModel, onModelDelete, onReorderGroups, onReorderModels, onTestConnection) {
-	const container = $('#endpoint-list');
-	// 保存当前收起状态
-	$$('.endpoint-group', container).forEach(el => {
-		const groupId = el.dataset.groupId;
-		const models = $('.group-models', el);
-		if (models && models.style.display === 'none') {
-			collapsedEndpoints.add(groupId);
+function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, onNodeEdit, onNodeDelete, onAddModel, onModelDelete, onReorderNodes, onReorderModels, onTestConnection, onMoveNode) {
+	var container = $('#endpoint-list');
+	$$('.endpoint-group', container).forEach(function(el) {
+		var nodeId = el.dataset.nodeId;
+		var content = $('.node-content', el);
+		if (content && content.style.display === 'none') {
+			collapsedEndpoints.add(nodeId);
 		} else {
-			collapsedEndpoints.delete(groupId);
+			collapsedEndpoints['delete'](nodeId);
 		}
 	});
 	container.innerHTML = '';
-	groups.forEach((group, groupIndex) => {
-		const groupEl = mk('section', 'endpoint-group');
-		groupEl.dataset.groupId = group.id;
-		groupEl.dataset.groupIndex = groupIndex;
-		groupEl.draggable = false;
-		const headerEl = mk('div', 'group-header layout-x-queue');
-		// 拖动手柄
-		const dragHandle = mk('span', 'drag-handle layout-x-queue');
-		dragHandle.innerHTML = SVG.drag(14);
-		dragHandle.title = '拖动排序';
-		dragHandle.draggable = true;
-		dragHandle.on('dragstart', e => {
-			e.dataTransfer.setData('text/plain', group.id);
-			e.dataTransfer.effectAllowed = 'move';
-			groupEl.classList.add('dragging');
-		});
-		dragHandle.on('dragend', () => {
-			groupEl.classList.remove('dragging');
-			$$('.endpoint-group', container).forEach(el => el.classList.remove('drag-over'));
-		});
-		// 收展三角放前面
-		const toggleSpan = mk('span', 'group-toggle');
-		const isCollapsed = collapsedEndpoints.has(group.id);
-		toggleSpan.textContent = isCollapsed ? '▶' : '▼';
-		toggleSpan.on('click', e => {
-			e.stopPropagation();
-			const models = $('.group-models', groupEl);
-			if (models.style.display === 'none') {
-				models.style.display = 'block';
-				toggleSpan.textContent = '▼';
-			} else {
-				models.style.display = 'none';
-				toggleSpan.textContent = '▶';
-			}
-		});
-		// 组名
-		const nameSpan = mk('span', 'group-name');
-		nameSpan.textContent = group.name;
-		const tooltipId = `tooltip-${group.id}`;
-		const styleLabels = {
-			'openai': 'OpenAI',
-			'claude': 'Claude',
-			'gemini': 'Gemini'
-		};
-		const tooltipHTML = `
-<div class="tooltip-row layout-x-queue">
-<span class="tooltip-label">名称：</span>
-<span class="tooltip-value">${group.name}</span>
-<button class="tooltip-copy" data-copy="${group.name}" title="复制">⧉</button>
-</div>
-<div class="tooltip-row layout-x-queue">
-<span class="tooltip-label">地址：</span>
-<span class="tooltip-value">${group.baseUrl}</span>
-<button class="tooltip-copy" data-copy="${group.baseUrl}" title="复制">⧉</button>
-</div>
-<div class="tooltip-row layout-x-queue">
-<span class="tooltip-label">格式：</span>
-<span class="tooltip-value">${styleLabels[group.style] || group.style}</span>
-<button class="tooltip-copy" data-copy="${group.style}" title="复制">⧉</button>
-</div>
-`;
-		const tooltip = createTooltip(tooltipId, tooltipHTML);
-		nameSpan.on('mouseenter', () => tooltip.show(nameSpan));
-		nameSpan.on('mouseleave', () => tooltip.hide());
-		nameSpan.on('click', () => {
-			tooltip.hide();
-			const models = $('.group-models', groupEl);
-			if (models) {
-				if (models.style.display === 'none') {
-					models.style.display = 'block';
+	function renderTreeNode(nodes, parentEl, depth) {
+		nodes.forEach(function(node, index) {
+			var hasChildren = node.children && node.children.length > 0;
+			var hasModels = node.models && node.models.length > 0;
+			var isCollapsed = collapsedEndpoints.has(node.id);
+			var hasContent = hasChildren || hasModels;
+			var nodeEl = mk('section', 'endpoint-group');
+			nodeEl.dataset.nodeId = node.id;
+			nodeEl.dataset.nodeIndex = index;
+			var headerEl = mk('div', 'group-header layout-x-queue');
+			headerEl.style.paddingLeft = (depth * 12 + 4) + 'px';
+			var dragHandle = mk('span', 'drag-handle layout-x-queue');
+			dragHandle.innerHTML = SVG.drag(14);
+			dragHandle.title = '拖动排序';
+			dragHandle.draggable = true;
+			dragHandle.on('dragstart', function(e) {
+				e.dataTransfer.setData('text/plain', node.id);
+				e.dataTransfer.effectAllowed = 'move';
+				nodeEl.classList.add('dragging');
+			});
+			dragHandle.on('dragend', function() {
+				nodeEl.classList.remove('dragging');
+				$$('.endpoint-group', container).forEach(function(el) { el.classList.remove('drag-over', 'drag-over-child'); });
+			});
+			var toggleSpan = mk('span', 'group-toggle');
+			toggleSpan.textContent = isCollapsed || !hasContent ? '▶' : '▼';
+			if (!hasContent) toggleSpan.style.visibility = 'hidden';
+			toggleSpan.on('click', function(e) {
+				e.stopPropagation();
+				var ct = $('.node-content', nodeEl);
+				if (!ct) return;
+				if (ct.style.display === 'none') {
+					ct.style.display = '';
 					toggleSpan.textContent = '▼';
 				} else {
-					models.style.display = 'none';
+					ct.style.display = 'none';
 					toggleSpan.textContent = '▶';
 				}
-			}
-		});
-		const actionsEl = mk('div', 'group-actions layout-x-queue');
-		// 批量测试连接按钮
-		const hasTesting = group.models.some(model => {
-			const statusKey = `${group.id}:${model.id}`;
-			const statusData = connectionStatus.get(statusKey);
-			return statusData && statusData.status === 'testing';
-		});
-		const batchTestBtn = mk('button');
-		batchTestBtn.className = "action batch-test";
-		batchTestBtn.innerHTML = '<span>🔗</span>';
-		if (hasTesting) {
-			batchTestBtn.classList.add("testing");
-			$("span", batchTestBtn).classList.add("spin");
-		}
-		batchTestBtn.title = hasTesting ? "测试中..." : "批量测试连接";
-		batchTestBtn.on('click', e => {
-			e.stopPropagation();
-			if (onTestConnection) {
-				// 测试该端点下所有模型
-				group.models.forEach(model => {
-					onTestConnection(group.id, model.id);
-				});
-			}
-		});
-		const editBtn = mk('button', 'action');
-		editBtn.innerHTML = SVG.edit(12);
-		editBtn.title = '编辑端点';
-		editBtn.on('click', e => {
-			e.stopPropagation();
-			onGroupEdit(group.id);
-		});
-		const deleteBtn = mk('button', 'action danger');
-		deleteBtn.innerHTML = SVG.del(12);
-		deleteBtn.title = '删除端点';
-		deleteBtn.on('click', e => {
-			e.stopPropagation();
-			confirmAction('确定删除该端点及其所有模型？', () => onGroupDelete(group.id));
-		});
-		actionsEl.addChild(batchTestBtn);
-		actionsEl.addChild(editBtn);
-		actionsEl.addChild(deleteBtn);
-		headerEl.addChild(dragHandle);
-		headerEl.addChild(toggleSpan);
-		headerEl.addChild(nameSpan);
-		headerEl.addChild(actionsEl);
-		groupEl.on('dragover', e => {
-			e.preventDefault();
-			e.dataTransfer.dropEffect = 'move';
-			const draggingEl = $('.dragging', container);
-			if (draggingEl && draggingEl !== groupEl) {
-				groupEl.classList.add('drag-over');
-			}
-		});
-		groupEl.on('dragleave', () => groupEl.classList.remove('drag-over'));
-		groupEl.on('drop', e => {
-			e.preventDefault();
-			groupEl.classList.remove('drag-over');
-			const draggedGroupId = e.dataTransfer.getData('text/plain');
-			if (draggedGroupId !== group.id) {
-				const rect = groupEl.getBoundingClientRect();
-				const midY = rect.top + rect.height / 2;
-				const insertBefore = e.clientY < midY;
-				onReorderGroups(draggedGroupId, group.id, insertBefore);
-			}
-		});
-		const models = mk('div', 'group-models layout-y-queue');
-		if (isCollapsed) {
-			models.style.display = 'none';
-		}
-		group.models.forEach((model, modelIndex) => {
-			const modelEl = mk('div', 'model item layout-x-queue');
-			modelEl.dataset.modelId = model.id;
-			modelEl.dataset.groupId = group.id;
-			if (model.id === selectedModelId) {
-				modelEl.classList.add('selected');
-			}
-			const modelDragHandle = mk('span', 'drag-handle');
-			modelDragHandle.innerHTML = SVG.drag(14);
-			modelDragHandle.title = '拖动排序';
-			modelDragHandle.draggable = true;
-			modelDragHandle.on('dragstart', e => {
-				e.dataTransfer.setData('text/plain', `${group.id}:${model.id}`);
-				e.dataTransfer.effectAllowed = 'move';
-				modelEl.classList.add('dragging');
 			});
-			modelDragHandle.on('dragend', () => {
-				modelEl.classList.remove('dragging');
-				$$('.model.item', models).forEach(el => el.classList.remove('drag-over'));
-			});
-			const modelName = mk('span', 'model name');
-			modelName.innerHTML = model.remark ? `${model.name}<span class="model-remark"> ${model.remark}</span>` : model.name;
-			const modelTooltipId = `tooltip-model-${group.id}-${model.id}`;
-			const tooltipRows = `
-	<div class="tooltip-row layout-x-queue">
-		<span class="tooltip-label">模型：</span>
-		<span class="tooltip-value">${model.name}</span>
-		<button class="tooltip-copy" data-copy="${model.name}" title="复制">⧉</button>
-	</div>` + (model.remark ? `
-	<div class="tooltip-row layout-x-queue">
-		<span class="tooltip-label">备注：</span>
-		<span class="tooltip-value">${model.remark}</span>
-		<button class="tooltip-copy" data-copy="${model.remark}" title="复制">⧉</button>
-	</div>` : "");
-			const modelTooltipHTML = tooltipRows;
-			const modelTooltip = createTooltip(modelTooltipId, modelTooltipHTML);
-			modelName.on('mouseenter', () => modelTooltip.show(modelName));
-			modelName.on('mouseleave', () => modelTooltip.hide());
-			modelName.on('click', () => {
-				modelTooltip.hide();
-				if (onModelSelect) onModelSelect(group.id, model.id);
-			});
-			const modelActions = mk('div', 'model actions layout-x-queue');
-			const statusKey = `${group.id}:${model.id}`;
-			const statusData = connectionStatus.get(statusKey) || {
-				status: 'disconnected'
-			};
-			const status = statusData.status;
-			const testBtn = mk('button');
-			testBtn.className = 'action-sm connection ' + status;
-			testBtn.title = getConnectionStatusText(statusKey);
-			testBtn.innerHTML = '<span>🔗</span>';
-			if (status === "testing") {
-				$("span", testBtn).classList.add("spin");
+			var nameSpan = mk('span', 'group-name');
+			var rcfg = resolveNodeConfig(node.id);
+			nameSpan.textContent = node.name;
+			if (node.remark) {
+				var remSpan = document.createElement('span');
+				remSpan.className = 'model-remark';
+				remSpan.textContent = ' ' + node.remark;
+				nameSpan.appendChild(remSpan);
 			}
-			testBtn.on('click', e => {
-				e.stopPropagation();
-				if (onTestConnection) onTestConnection(group.id, model.id);
-			});
-			const modelEditBtn = mk('button', 'action-sm');
-			modelEditBtn.innerHTML = SVG.edit(10);
-			modelEditBtn.title = '编辑模型';
-			modelEditBtn.on('click', e => {
-				e.stopPropagation();
-				modelTooltip.hide();
-				// 原地编辑：将模型名替换为输入框
-				const existEdit = $('.add-model-inline', modelEl);
-				if (existEdit) existEdit.remove();
-				const inlineEdit = fromTemplate('tpl-add-model-inline', '.add-model-inline');
-				const inputEl = $('.add-model-input', inlineEdit);
-				inputEl.value = model.name;
-				inputEl.placeholder = '模型名';
-				const remarkEl = $('.add-model-remark-input', inlineEdit);
-				if (remarkEl) {
-					remarkEl.value = model.remark || '';
-					remarkEl.placeholder = '备注（仅用于显示）';
-				}
-				modelDragHandle.style.display = 'none';
-				modelName.style.display = 'none';
-				modelActions.style.display = 'none';
-				modelEl.insertBefore(inlineEdit, modelActions);
-				inputEl.focus();
-				inputEl.select();
-				$('.add-model-confirm', inlineEdit).on('click', async e2 => {
-					e2.stopPropagation();
-					const newName = inputEl.value.trim();
-					const newRemark = remarkEl ? remarkEl.value.trim() : '';
-					if (newName) {
-						inlineEdit.remove();
-						modelDragHandle.style.display = '';
-						modelName.style.display = '';
-						modelActions.style.display = '';
-						onModelEdit(group.id, model.id, newName, newRemark);
+			var tooltipId = 'tooltip-' + node.id;
+			var styleLabels = { 'openai': 'OpenAI', 'claude': 'Claude', 'gemini': 'Gemini' };
+			// 判断每个字段是自设还是继承
+			function inherited(val, own) { return val && val !== own ? '↑ ' : ''; }
+			var tipName = node.name + (node.remark ? ' ' + node.remark : '');
+			var tipBaseUrl = inherited(rcfg.baseUrl, node.baseUrl) + (rcfg.baseUrl || '');
+			var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? '(已设置)' : '');
+			var tipStyle = inherited(rcfg.style, node.style) ? '↑ ' + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || '');
+			var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || '');
+			var tooltipHTML =
+				'<div class="tooltip-row layout-x-queue">' +
+				'<span class="tooltip-label">名称：</span>' +
+				'<span class="tooltip-value">' + tipName + '</span>' +
+				'<button class="tooltip-copy" data-copy="' + tipName + '" title="复制">⧉</button></div>' +
+				'<div class="tooltip-row layout-x-queue">' +
+				'<span class="tooltip-label">地址：</span>' +
+				'<span class="tooltip-value">' + tipBaseUrl + '</span>' +
+				'<button class="tooltip-copy" data-copy="' + (rcfg.baseUrl || '') + '" title="复制">⧉</button></div>' +
+				'<div class="tooltip-row layout-x-queue">' +
+				'<span class="tooltip-label">格式：</span>' +
+				'<span class="tooltip-value">' + tipStyle + '</span>' +
+				'<button class="tooltip-copy" data-copy="' + (rcfg.style || '') + '" title="复制">⧉</button></div>' +
+				(rcfg.key ? '<div class="tooltip-row layout-x-queue"><span class="tooltip-label">Key：</span><span class="tooltip-value">' + tipKey + '</span><button class="tooltip-copy" data-copy="' + (rcfg.key || '') + '" title="复制">⧉</button></div>' : '') +
+				'<div class="tooltip-row layout-x-queue"><span class="tooltip-label">模型：</span><span class="tooltip-value">' + (tipModel || '-') + '</span><button class="tooltip-copy" data-copy="' + (rcfg.modelId || '') + '" title="复制">⧉</button></div>';
+			var tooltip = createTooltip(tooltipId, tooltipHTML);
+			nameSpan.on('mouseenter', function() { tooltip.show(nameSpan); });
+			nameSpan.on('mouseleave', function() { tooltip.hide(); });
+			nameSpan.on('click', function() {
+				tooltip.hide();
+				var ct = $('.node-content', nodeEl);
+				if (ct) {
+					if (ct.style.display === 'none') {
+						ct.style.display = '';
+						toggleSpan.textContent = '▼';
 					} else {
-						inlineEdit.remove();
-						modelDragHandle.style.display = '';
-						modelName.style.display = '';
-						modelActions.style.display = '';
+						ct.style.display = 'none';
+						toggleSpan.textContent = '▶';
 					}
-				});
-				$('.add-model-cancel', inlineEdit).on('click', e2 => {
-					e2.stopPropagation();
-					inlineEdit.remove();
-					modelDragHandle.style.display = '';
-					modelName.style.display = '';
-					modelActions.style.display = '';
-				});
-				const onInlineKeydown = e2 => {
-					if (e2.key === 'Enter') {
-						e2.preventDefault();
-						$('.add-model-confirm', inlineEdit).click();
-					} else if (e2.key === 'Escape') {
-						inlineEdit.remove();
-						modelDragHandle.style.display = '';
-						modelName.style.display = '';
-						modelActions.style.display = '';
-					}
-				};
-				inputEl.on('keydown', onInlineKeydown);
-				if (remarkEl) remarkEl.on('keydown', onInlineKeydown);
+				}
 			});
-			const modelDeleteBtn = mk('button', 'action-sm danger');
-			modelDeleteBtn.innerHTML = SVG.del(10);
-			modelDeleteBtn.title = '删除模型';
-			modelDeleteBtn.on('click', e => {
+			var actionsEl = mk('div', 'group-actions layout-x-queue');
+			// 添加子节点
+			var addChildBtn = mk('button', 'action');
+			addChildBtn.textContent = '+';
+			addChildBtn.title = '添加子节点';
+			addChildBtn.on('click', function(e) {
 				e.stopPropagation();
-				confirmAction('确定删除该模型？', () => onModelDelete(group.id, model.id));
+				showEditGroupDialog(null, node.id, function(data) {
+					addNode(node.id, data).then(function() { refreshUI(); });
+				});
 			});
-			modelActions.addChild(testBtn);
-			modelActions.addChild(modelEditBtn);
-			modelActions.addChild(modelDeleteBtn);
-			modelEl.addChild(modelDragHandle);
-			modelEl.addChild(modelName);
-			modelEl.addChild(modelActions);
-			modelEl.on('dragover', e => {
+			// 收集子树中所有可测试的节点
+			function isNodeTestable(n) {
+				var cfg = resolveNodeConfig(n.id);
+				return cfg && cfg.baseUrl && cfg.key !== undefined && cfg.key !== null && cfg.modelId;
+			}
+			function collectTestable(nds, out) {
+				nds.forEach(function(n) {
+					if (isNodeTestable(n)) out.push(n.id);
+					if (n.children) collectTestable(n.children, out);
+				});
+			}
+			var testableIds = [];
+			collectTestable([node], testableIds);
+			var isSelfTestable = testableIds.indexOf(node.id) >= 0;
+			var childTestable = testableIds.length - (isSelfTestable ? 1 : 0);
+			// 子树测试状态汇总
+			var hasTesting = false, allOk = true, anyFailed = false;
+			testableIds.forEach(function(id) {
+				var sd = connectionStatus.get(id + ':' + '__node__');
+				if (sd) {
+					if (sd.status === 'testing') hasTesting = true;
+					if (sd.status === 'connected') {} // ok
+					else if (sd.status === 'testing') {}
+					else { allOk = false; if (sd.status !== 'disconnected') anyFailed = true; }
+				} else { allOk = false; }
+			});
+			// 只有全部已有测试记录且全部成功才显示绿色
+			var batchStatus = '';
+			if (testableIds.length > 0) {
+				var allTested = testableIds.every(function(id) {
+					var sd = connectionStatus.get(id + ':' + '__node__');
+					return sd && sd.status !== 'disconnected' && sd.status !== undefined;
+				});
+				if (allTested && allOk) batchStatus = 'connected';
+				else if (anyFailed || (allTested && !allOk)) batchStatus = 'failed';
+			}
+			var batchTestBtn = null;
+			if (testableIds.length > 0) {
+				batchTestBtn = mk('button');
+				batchTestBtn.className = "action batch-test" + (batchStatus ? ' ' + batchStatus : '');
+				batchTestBtn.innerHTML = '<span>🔗</span>';
+				if (hasTesting) {
+					batchTestBtn.classList.add("testing");
+					$("span", batchTestBtn).classList.add("spin");
+				}
+				if (childTestable > 0) {
+					batchTestBtn.title = hasTesting ? '测试中...' : '批量测试连接（含' + (testableIds.length) + '个端点）';
+				} else {
+					batchTestBtn.title = hasTesting ? '测试中...' : '测试连接';
+				}
+				batchTestBtn.on('click', function(e) {
+					e.stopPropagation();
+					if (onTestConnection) {
+						testableIds.forEach(function(id) {
+							onTestConnection(id, '__node__');
+						});
+					}
+				});
+			}
+			var editBtn = mk('button', 'action');
+			editBtn.innerHTML = SVG.edit(12);
+			editBtn.title = '编辑节点';
+			editBtn.on('click', function(e) {
+				e.stopPropagation();
+				onNodeEdit(node.id);
+			});
+			var deleteBtn = mk('button', 'action danger');
+			deleteBtn.innerHTML = SVG.del(12);
+			deleteBtn.title = '删除节点及其子节点';
+			deleteBtn.on('click', function(e) {
+				e.stopPropagation();
+				confirmAction('确定删除节点「' + node.name + '」及其所有子节点和模型？', function() { onNodeDelete(node.id); });
+			});
+			actionsEl.addChild(addChildBtn);
+			if (batchTestBtn) actionsEl.addChild(batchTestBtn);
+			actionsEl.addChild(editBtn);
+			actionsEl.addChild(deleteBtn);
+			headerEl.addChild(dragHandle);
+			headerEl.addChild(toggleSpan);
+			headerEl.addChild(nameSpan);
+			headerEl.addChild(actionsEl);
+			nodeEl.addChild(headerEl);
+			// 拖放事件
+			nodeEl.on('dragover', function(e) {
 				e.preventDefault();
 				e.dataTransfer.dropEffect = 'move';
-				const draggingEl = $('.dragging', models);
-				if (draggingEl && draggingEl !== modelEl) {
-					modelEl.classList.add('drag-over');
+				var draggingEl = $('.dragging', container);
+				if (!draggingEl || draggingEl === nodeEl || draggingEl.dataset.modelId) return;
+				var rect = nodeEl.getBoundingClientRect();
+				var relY = (e.clientY - rect.top) / rect.height;
+				nodeEl.classList.remove('drag-over', 'drag-over-child');
+				delete nodeEl.dataset.insertAfter;
+				if (relY < 0.25) {
+					nodeEl.classList.add('drag-over');
+				} else if (relY > 0.75) {
+					nodeEl.classList.add('drag-over');
+					nodeEl.dataset.insertAfter = 'true';
+				} else {
+					nodeEl.classList.add('drag-over-child');
 				}
 			});
-			modelEl.on('dragleave', () => modelEl.classList.remove('drag-over'));
-			modelEl.on('drop', e => {
+			nodeEl.on('dragleave', function() {
+				nodeEl.classList.remove('drag-over', 'drag-over-child');
+				delete nodeEl.dataset.insertAfter;
+			});
+			nodeEl.on('drop', function(e) {
 				e.preventDefault();
-				e.stopPropagation();
-				modelEl.classList.remove('drag-over');
-				const data = e.dataTransfer.getData('text/plain');
-				const [draggedGroupId, draggedModelId] = data.split(':');
-				if (draggedGroupId === group.id && draggedModelId !== model.id && onReorderModels) {
-					const rect = modelEl.getBoundingClientRect();
-					const midY = rect.top + rect.height / 2;
-					const insertBefore = e.clientY < midY;
-					onReorderModels(group.id, draggedModelId, model.id, insertBefore);
+				nodeEl.classList.remove('drag-over', 'drag-over-child');
+				var draggedId = e.dataTransfer.getData('text/plain');
+				if (!draggedId || draggedId === node.id) return;
+				var wasChildDrop = nodeEl.classList.contains('drag-over-child');
+				var insertAfter = nodeEl.dataset.insertAfter === 'true';
+				delete nodeEl.dataset.insertAfter;
+				if (wasChildDrop) {
+					if (onMoveNode) onMoveNode(draggedId, node.id);
+				} else {
+					if (onReorderNodes) onReorderNodes(draggedId, node.id, !insertAfter);
 				}
 			});
-			models.addChild(modelEl);
-		});
-		// 安全移除内联编辑框，若其父元素是模型项则恢复隐藏的元素
-		function removeInlineEdit(el) {
-			const parent = el.parentElement;
-			if (parent && parent.classList.contains('model')) {
-				const dh = parent.querySelector('.drag-handle');
-				const mn = parent.querySelector('.model.name');
-				const ma = parent.querySelector('.model.actions');
-				if (dh) dh.style.display = '';
-				if (mn) mn.style.display = '';
-				if (ma) ma.style.display = '';
+			var contentEl = mk('div', 'node-content layout-y-queue');
+			if (isCollapsed) {
+				contentEl.style.display = 'none';
 			}
-			el.remove();
-		}
-		const addModelBtn = mk('div', 'add-model-link');
-		addModelBtn.textContent = '+ 添加模型';
-		addModelBtn.on('click', e => {
-			e.stopPropagation();
-			const existInput = $('.add-model-inline', models);
-			if (existInput) removeInlineEdit(existInput);
-			const inlineInput = fromTemplate('tpl-add-model-inline', '.add-model-inline');
-			models.insertBefore(inlineInput, addModelBtn);
-			const inputEl = $('.add-model-input', inlineInput);
-			const remarkEl = $('.add-model-remark-input', inlineInput);
-			inputEl.focus();
-			$('.add-model-confirm', inlineInput).on('click', async e2 => {
-				e2.stopPropagation();
-				const name = inputEl.value.trim();
-				const remark = remarkEl ? remarkEl.value.trim() : '';
-				if (name) {
-					inlineInput.remove();
-					onAddModel(group.id, name, remark);
+			// 模型列表
+			var models = mk('div', 'group-models layout-y-queue');
+			models.style.paddingLeft = (depth * 12 + 8) + 'px';
+			node.models.forEach(function(model) {
+				var modelEl = mk('div', 'model item layout-x-queue');
+				modelEl.dataset.modelId = model.id;
+				modelEl.dataset.nodeId = node.id;
+				if (model.id === selectedModelId) {
+					modelEl.classList.add('selected');
 				}
-			});
-			$('.add-model-cancel', inlineInput).on('click', e2 => {
-				e2.stopPropagation();
-				inlineInput.remove();
-			});
-			const onInlineKeydown = e2 => {
-				if (e2.key === 'Enter') {
-					e2.preventDefault();
-					$('.add-model-confirm', inlineInput).click();
-				} else if (e2.key === 'Escape') {
-					inlineInput.remove();
+				var modelDragHandle = mk('span', 'drag-handle');
+				modelDragHandle.innerHTML = SVG.drag(14);
+				modelDragHandle.title = '拖动排序';
+				modelDragHandle.draggable = true;
+				modelDragHandle.on('dragstart', function(e) {
+					e.dataTransfer.setData('text/plain', node.id + ':' + model.id);
+					e.dataTransfer.effectAllowed = 'move';
+					modelEl.classList.add('dragging');
+				});
+				modelDragHandle.on('dragend', function() {
+					modelEl.classList.remove('dragging');
+					$$('.model.item', models).forEach(function(el) { el.classList.remove('drag-over'); });
+				});
+				var modelName = mk('span', 'model name');
+				modelName.innerHTML = model.remark ? model.name + '<span class="model-remark"> ' + model.remark + '</span>' : model.name;
+				var modelTooltipId = 'tooltip-model-' + node.id + '-' + model.id;
+				var tooltipRows =
+					'<div class="tooltip-row layout-x-queue">' +
+					'<span class="tooltip-label">模型：</span>' +
+					'<span class="tooltip-value">' + model.name + '</span>' +
+					'<button class="tooltip-copy" data-copy="' + model.name + '" title="复制">⧉</button></div>' +
+					(model.remark ?
+					'<div class="tooltip-row layout-x-queue">' +
+					'<span class="tooltip-label">备注：</span>' +
+					'<span class="tooltip-value">' + model.remark + '</span>' +
+					'<button class="tooltip-copy" data-copy="' + model.remark + '" title="复制">⧉</button></div>' : '');
+				var modelTooltip = createTooltip(modelTooltipId, tooltipRows);
+				modelName.on('mouseenter', function() { modelTooltip.show(modelName); });
+				modelName.on('mouseleave', function() { modelTooltip.hide(); });
+				modelName.on('click', function() {
+					modelTooltip.hide();
+					if (onModelSelect) onModelSelect(node.id, model.id);
+				});
+				var modelActions = mk('div', 'model actions layout-x-queue');
+				var statusKey = node.id + ':' + model.id;
+				var statusData = connectionStatus.get(statusKey) || { status: 'disconnected' };
+				var testBtn = mk('button');
+				testBtn.className = 'action-sm connection ' + statusData.status;
+				testBtn.title = getConnectionStatusText(statusKey);
+				testBtn.innerHTML = '<span>🔗</span>';
+				if (statusData.status === "testing") {
+					$("span", testBtn).classList.add("spin");
 				}
-			};
-			inputEl.on('keydown', onInlineKeydown);
-			if (remarkEl) remarkEl.on('keydown', onInlineKeydown);
+				testBtn.on('click', function(e) {
+					e.stopPropagation();
+					if (onTestConnection) onTestConnection(node.id, model.id);
+				});
+				var modelEditBtn = mk('button', 'action-sm');
+				modelEditBtn.innerHTML = SVG.edit(10);
+				modelEditBtn.title = '编辑模型';
+				modelEditBtn.on('click', function(e) {
+					e.stopPropagation();
+					modelTooltip.hide();
+					var existEdit = $('.add-model-inline', modelEl);
+					if (existEdit) existEdit.remove();
+					var inlineEdit = fromTemplate('tpl-add-model-inline', '.add-model-inline');
+					var inputEl = $('.add-model-input', inlineEdit);
+					inputEl.value = model.name;
+					inputEl.placeholder = '模型名';
+					var remarkEl = $('.add-model-remark-input', inlineEdit);
+					if (remarkEl) {
+						remarkEl.value = model.remark || '';
+						remarkEl.placeholder = '备注（仅用于显示）';
+					}
+					modelDragHandle.style.display = 'none';
+					modelName.style.display = 'none';
+					modelActions.style.display = 'none';
+					modelEl.insertBefore(inlineEdit, modelActions);
+					inputEl.focus();
+					inputEl.select();
+					$('.add-model-confirm', inlineEdit).on('click', function(e2) {
+						e2.stopPropagation();
+						var newName = inputEl.value.trim();
+						var newRemark = remarkEl ? remarkEl.value.trim() : '';
+						if (newName) {
+							inlineEdit.remove();
+							modelDragHandle.style.display = '';
+							modelName.style.display = '';
+							modelActions.style.display = '';
+							onModelEdit(node.id, model.id, newName, newRemark);
+						}
+					});
+					$('.add-model-cancel', inlineEdit).on('click', function(e2) {
+						e2.stopPropagation();
+						inlineEdit.remove();
+						modelDragHandle.style.display = '';
+						modelName.style.display = '';
+						modelActions.style.display = '';
+					});
+					var onInlineKeydown = function(e2) {
+						if (e2.key === 'Enter') { e2.preventDefault(); $('.add-model-confirm', inlineEdit).click(); }
+						else if (e2.key === 'Escape') { inlineEdit.remove(); modelDragHandle.style.display = ''; modelName.style.display = ''; modelActions.style.display = ''; }
+					};
+					inputEl.on('keydown', onInlineKeydown);
+					if (remarkEl) remarkEl.on('keydown', onInlineKeydown);
+				});
+				var modelDeleteBtn = mk('button', 'action-sm danger');
+				modelDeleteBtn.innerHTML = SVG.del(10);
+				modelDeleteBtn.title = '删除模型';
+				modelDeleteBtn.on('click', function(e) {
+					e.stopPropagation();
+					confirmAction('确定删除该模型？', function() { onModelDelete(node.id, model.id); });
+				});
+				modelActions.addChild(testBtn);
+				modelActions.addChild(modelEditBtn);
+				modelActions.addChild(modelDeleteBtn);
+				modelEl.addChild(modelDragHandle);
+				modelEl.addChild(modelName);
+				modelEl.addChild(modelActions);
+				modelEl.on('dragover', function(e) {
+					e.preventDefault();
+					e.dataTransfer.dropEffect = 'move';
+					var draggingEl = $('.dragging', models);
+					if (draggingEl && draggingEl !== modelEl) {
+						modelEl.classList.add('drag-over');
+					}
+				});
+				modelEl.on('dragleave', function() { modelEl.classList.remove('drag-over'); });
+				modelEl.on('drop', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+					modelEl.classList.remove('drag-over');
+					var data = e.dataTransfer.getData('text/plain');
+					var parts = data.split(':');
+					var draggedNodeId = parts[0], draggedModelId = parts[1];
+					if (draggedNodeId === node.id && draggedModelId !== model.id && onReorderModels) {
+						var rect = modelEl.getBoundingClientRect();
+						onReorderModels(node.id, draggedModelId, model.id, e.clientY < (rect.top + rect.height / 2));
+					}
+				});
+				models.addChild(modelEl);
+			});
+			var addModelBtn = mk('div', 'add-model-link');
+			addModelBtn.textContent = '+ 添加模型';
+			addModelBtn.on('click', function(e) {
+				e.stopPropagation();
+				var existInput = $('.add-model-inline', models);
+				if (existInput) existInput.remove();
+				var inlineInput = fromTemplate('tpl-add-model-inline', '.add-model-inline');
+				models.insertBefore(inlineInput, addModelBtn);
+				var inputEl = $('.add-model-input', inlineInput);
+				var remarkEl = $('.add-model-remark-input', inlineInput);
+				inputEl.focus();
+				$('.add-model-confirm', inlineInput).on('click', function(e2) {
+					e2.stopPropagation();
+					var name = inputEl.value.trim();
+					var remark = remarkEl ? remarkEl.value.trim() : '';
+					if (name) {
+						inlineInput.remove();
+						onAddModel(node.id, name, remark);
+					}
+				});
+				$('.add-model-cancel', inlineInput).on('click', function(e2) {
+					e2.stopPropagation();
+					inlineInput.remove();
+				});
+				inputEl.on('keydown', function(e2) {
+					if (e2.key === 'Enter') { e2.preventDefault(); $('.add-model-confirm', inlineInput).click(); }
+					else if (e2.key === 'Escape') { inlineInput.remove(); }
+				});
+				if (remarkEl) remarkEl.on('keydown', function(e2) {
+					if (e2.key === 'Enter') { e2.preventDefault(); $('.add-model-confirm', inlineInput).click(); }
+					else if (e2.key === 'Escape') { inlineInput.remove(); }
+				});
+			});
+			models.addChild(addModelBtn);
+			if (hasModels) contentEl.addChild(models);
+			if (hasChildren) {
+				var childrenWrapper = mk('div', 'node-children');
+				renderTreeNode(node.children, childrenWrapper, depth + 1);
+				contentEl.addChild(childrenWrapper);
+			}
+			nodeEl.addChild(contentEl);
+			parentEl.addChild(nodeEl);
 		});
-		models.addChild(addModelBtn);
-		groupEl.addChild(headerEl);
-		groupEl.addChild(models);
-		container.addChild(groupEl);
-	});
+	}
+	renderTreeNode(nodes, container, 0);
 }
 function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessionEdit, onSessionDelete) {
 	const container = $('#session-list');
@@ -2046,7 +2108,7 @@ function renderMessages(messages, groups, onCopy) {
 function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
-	const modelName = info ? `${info.group.name} / ${info.model.name}` : '未知模型';
+	const modelName = info ? `${info.node.name} / ${info.model.name}` : '未知模型';
 	const modelRemark = info?.model?.remark || '';
 	const meta = fromTemplate('tpl-response-meta', '.response.meta');
 	$('.response.model-name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
@@ -2081,7 +2143,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 	sorted.forEach(r => {
 		const card = mk('div', 'response card');
 		const info = findModelById(groups, r.modelId);
-		const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
+		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
 		const remark = info?.model?.remark || '';
 		const meta = fromTemplate('tpl-multi-response-meta', '.response.meta');
 		const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
@@ -2348,42 +2410,132 @@ function setButtonState(sendDisabled, stopEnabled) {
 	stopBtn.disabled = !stopEnabled;
 	stopBtn.textContent = stopEnabled ? '全部停止' : '停止';
 }
-function showEditGroupDialog(group = null, onSave) {
-	const exist = $('#edit-dialog');
+function addInheritIcon(inputEl) {
+	if (inputEl._inheritIconAdded) return;
+	inputEl._inheritIconAdded = true;
+	inputEl.style.flex = '1';
+	var icon = document.createElement('span');
+	icon.className = 'inherit-icon';
+	icon.textContent = '↑';
+	icon.title = '继承自父级';
+	icon.style.cssText = 'cursor:help;font-size:12px;color:var(--text-muted);flex-shrink:0;margin-right:3px;';
+	var parent = inputEl.parentNode;
+	if (parent.classList.contains('input-row') || parent.classList.contains('key-input-wrapper')) {
+		parent.insertBefore(icon, inputEl);
+		return;
+	}
+	var row = document.createElement('div');
+	row.className = 'input-row';
+	row.style.cssText = 'display:flex;align-items:center;gap:2px;';
+	parent.insertBefore(row, inputEl);
+	row.appendChild(icon);
+	row.appendChild(inputEl);
+}
+function showEditGroupDialog(node, parentId, onSave) {
+	var exist = $('#edit-dialog');
 	if (exist) exist.remove();
-	const dialog = fromTemplate('tpl-edit-group-dialog', '#edit-dialog');
-	$('h3', dialog).textContent = group ? '编辑端点' : '新增端点';
+	var dialog = fromTemplate('tpl-edit-group-dialog', '#edit-dialog');
+	var isEdit = !!node;
+	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
+	var keyInput = $('#dialog-group-key', dialog);
+	var nameInput = $('#dialog-group-name', dialog);
+	var urlInput = $('#dialog-group-url', dialog);
+	var modelidInput = $('#dialog-group-modelid', dialog);
+	var styleSel = $('#dialog-group-style', dialog);
 	setValues(dialog, {
-		'#dialog-group-name': group?.name,
-		'#dialog-group-url': group?.baseUrl,
-		'#dialog-group-style': group?.style ?? 'openai',
-		'#dialog-group-key': group?.key
+		'#dialog-group-name': node ? node.name : '',
+		'#dialog-group-modelid': node ? node.modelId || '' : '',
+		'#dialog-group-url': node ? node.baseUrl || '' : '',
+		'#dialog-group-style': node ? node.style || '' : '',
+		'#dialog-group-key': node ? node.key || '' : ''
 	});
-	const keyInput = $('#dialog-group-key', dialog);
-	doc.body.addChild(dialog);
-	const toggleBtn = $('button.toggle-key', dialog);
-	toggleBtn.onclick = e => {
-		e.preventDefault();
-		const isPassword = keyInput.type === 'password';
-		keyInput.type = isPassword ? 'text' : 'password';
-		toggleBtn.innerHTML = isPassword ? SVG.eyeOff : SVG.eye;
+	// 继承值填入
+	// 对编辑：从 node.id 走 resolveNodeConfig（沿祖先链往上找）
+	// 对新增：从 parentId 走 resolveNodeConfig（直接拿到父节点的有效配置）
+	var inheritId = isEdit ? node.id : parentId;
+	if (inheritId) {
+		var hasParent = false;
+		try {
+			var _r = findNodeWithAncestors(endpointsData.nodes, inheritId);
+			hasParent = isEdit ? (_r && _r.ancestors.length > 0) : !!parentId;
+		} catch(e) { hasParent = !!parentId; }
+		var rcfg = resolveNodeConfig(inheritId);
+		if (rcfg) {
+			(function applyInherit(inputEl, ownVal, rcfgVal) {
+				if (!ownVal && rcfgVal) {
+					inputEl.value = rcfgVal;
+					if (hasParent) addInheritIcon(inputEl);
+				}
+			})(urlInput, node ? node.baseUrl : '', rcfg.baseUrl);
+			(function applyInherit(inputEl, ownVal, rcfgVal) {
+				if (!ownVal && rcfgVal) {
+					inputEl.value = rcfgVal;
+					if (hasParent) addInheritIcon(inputEl);
+				}
+			})(keyInput, node ? node.key : '', rcfg.key);
+			(function applyInherit(inputEl, ownVal, rcfgVal) {
+				if (!ownVal && rcfgVal) {
+					inputEl.value = rcfgVal;
+					if (hasParent) addInheritIcon(inputEl);
+				}
+			})(modelidInput, node ? node.modelId : '', rcfg.modelId);
+			// style
+			if (!(node ? node.style : '') && rcfg.style) {
+				styleSel.value = '';
+				if (hasParent) {
+					var inheritOpt = styleSel.querySelector('option[value=""]');
+					if (inheritOpt) inheritOpt.textContent = '继承自父级（' + rcfg.style + '）';
+				}
+			}
+		}
+	}
+	// 名称 ↔ 模型名连续同步（用 _syncing 防止循环触发）
+	var _nameUserEdited = false;
+	var _syncing = false;
+	nameInput.oninput = function() {
+		if (!_syncing) _nameUserEdited = true;
 	};
+	function removeIcon(el) {
+		var ic = el.parentNode.querySelector('.inherit-icon');
+		if (ic) ic.remove();
+	}
+	modelidInput.oninput = function() {
+		removeIcon(this);
+		if (!_nameUserEdited) {
+			_syncing = true;
+			nameInput.value = this.value;
+			_syncing = false;
+		}
+	};
+	urlInput.oninput = function() { removeIcon(this); };
+	keyInput.oninput = function() { removeIcon(this); };
+	doc.body.addChild(dialog);
+	var toggleBtn = $('button.toggle-key', dialog);
+	if (toggleBtn) {
+		toggleBtn.onclick = function(e) {
+			e.preventDefault();
+			var isPw = keyInput.type === 'password';
+			keyInput.type = isPw ? 'text' : 'password';
+			toggleBtn.innerHTML = isPw ? SVG.eyeOff : SVG.eye;
+		};
+	}
 	onClick({
-		'#dialog-cancel': () => dialog.remove(),
-		'#dialog-save': () => {
-			const name = $('#dialog-group-name', dialog).value.trim();
-			const baseUrl = $('#dialog-group-url', dialog).value.trim();
-			const style = $('#dialog-group-style', dialog).value;
-			const key = keyInput.value.trim();
-			if (!name || !baseUrl) {
-				alert('请填写名称和Base URL');
+		'#dialog-cancel': function() { dialog.remove(); },
+		'#dialog-save': function() {
+			var theName = nameInput.value.trim();
+			var theModelId = modelidInput.value.trim();
+			if (!theName && theModelId) {
+				theName = theModelId;
+			} else if (!theName) {
+				alert('请填写名称');
 				return;
 			}
 			onSave({
-				name,
-				baseUrl,
-				style,
-				key
+				name: theName,
+				modelId: theModelId,
+				baseUrl: urlInput.value.trim(),
+				style: styleSel.value,
+				key: keyInput.value.trim()
 			});
 			dialog.remove();
 		}
@@ -2513,93 +2665,165 @@ function getConnectionStatusText(key) {
 	const errorInfo = data.error ? ` (${data.error})` : '';
 	return data.status === 'testing' ? '测试连接：测试中...' : `测试连接：${text}${errorInfo}（${timeStr}）`;
 }
-async function testConnection(groupId, modelId) {
-	const group = getGroup(groupId);
-	const model = getModel(groupId, modelId);
-	if (!group || !model) return;
-	const provider = providers[group.style];
+async function testConnection(nodeId, modelId) {
+	var node = getNode(nodeId);
+	if (!node) return;
+	var modelName;
+	if (modelId === '__node__') {
+		var rcfg = resolveNodeConfig(nodeId);
+		if (!rcfg || !rcfg.modelId) return;
+		modelName = rcfg.modelId;
+	} else {
+		var model = getModel(nodeId, modelId);
+		if (!model) return;
+		modelName = model.name;
+	}
+	var rcfg = resolveNodeConfig(nodeId);
+	if (!rcfg || !rcfg.baseUrl || (rcfg.key === undefined || rcfg.key === null)) return;
+	var provider = providers[rcfg.style || 'openai'];
 	if (!provider) return;
-	const key = groupId + ':' + modelId;
-	connectionStatus.set(key, {
-		status: 'testing',
-		timestamp: null
-	});
-	renderEndpointList(getGroups(), null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+	var key = nodeId + ':' + modelId;
+	connectionStatus.set(key, { status: 'testing', timestamp: null });
+	renderEndpointList(getGroups(), null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 	try {
-		const config = provider.testConfig(group.baseUrl, group.key, model.name);
-		const res = await fetchWithTimeout(config.url, {
+		var tcfg = provider.testConfig(rcfg.baseUrl, rcfg.key, modelName);
+		var res = await fetchWithTimeout(tcfg.url, {
 			method: 'POST',
-			headers: config.headers,
-			body: JSON.stringify(config.body)
+			headers: tcfg.headers,
+			body: JSON.stringify(tcfg.body)
 		}, 30000);
 		if (res && res.ok) {
-			connectionStatus.set(key, {
-				status: 'connected',
-				timestamp: Date.now()
-			});
+			connectionStatus.set(key, { status: 'connected', timestamp: Date.now() });
 		} else {
-			let errorMsg = 'HTTP ' + res.status;
+			var errorMsg = 'HTTP ' + res.status;
 			try {
-				const errorBody = await res.text();
+				var errorBody = await res.text();
 				try {
-					const errorJson = JSON.parse(errorBody);
-					if (errorJson.error && errorJson.error.message) {
-						errorMsg = errorJson.error.message;
-					} else if (errorJson.message) {
-						errorMsg = errorJson.message;
-					}
-				} catch (e) {
-					if (errorBody && errorBody.length < 100) {
-						errorMsg = errorBody;
-					}
-				}
-			} catch (e) {}
-			connectionStatus.set(key, {
-				status: 'failed',
-				timestamp: Date.now(),
-				error: errorMsg
-			});
+					var errorJson = JSON.parse(errorBody);
+					if (errorJson.error && errorJson.error.message) errorMsg = errorJson.error.message;
+					else if (errorJson.message) errorMsg = errorJson.message;
+				} catch(e) { if (errorBody && errorBody.length < 100) errorMsg = errorBody; }
+			} catch(e) {}
+			connectionStatus.set(key, { status: 'failed', timestamp: Date.now(), error: errorMsg });
 		}
 	} catch (err) {
-		const isCorsError = err instanceof TypeError && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.name === 'TypeError');
+		var isCorsError = err instanceof TypeError && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.name === 'TypeError');
 		connectionStatus.set(key, {
 			status: isCorsError ? 'cors_blocked' : 'failed',
 			timestamp: Date.now(),
 			error: isCorsError ? null : err.message
 		});
 	}
-	renderEndpointList(getGroups(), null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
-}
-// ========== Store Functions ==========
+	renderEndpointList(getGroups(), null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
+}// ========== Store Functions ==========
 let endpointsData = null;
 let sessionsCache = new Map();
+// ========== 树形工具函数 ==========
+// 递归查找节点及其祖先链
+function findNodeWithAncestors(nodes, nodeId, ancestors = []) {
+	for (const node of nodes) {
+		if (node.id === nodeId) return { node, ancestors };
+		if (node.children && node.children.length > 0) {
+			const found = findNodeWithAncestors(node.children, nodeId, [...ancestors, node]);
+			if (found) return found;
+		}
+	}
+	return null;
+}
+function findNodeInTree(nodes, nodeId) {
+	const r = findNodeWithAncestors(nodes, nodeId);
+	return r ? r.node : null;
+}
+// 解析节点的有效配置（沿祖先链继承）
+function resolveNodeConfig(nodeId) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const result = findNodeWithAncestors(endpointsData.nodes, nodeId);
+	if (!result) return null;
+	const { node, ancestors } = result;
+	const fields = ['baseUrl', 'style', 'key', 'modelId'];
+	const config = {};
+	for (const f of fields) config[f] = node[f] || '';
+	// 从最近祖先往上走，填补缺失字段
+	for (let i = ancestors.length - 1; i >= 0; i--) {
+		for (const f of fields) {
+			if (!config[f] && ancestors[i][f]) config[f] = ancestors[i][f];
+		}
+	}
+	return config;
+}
+// 递归查找模型引用 "nodeId:modelId"
+function findModelById(nodes, referenceId) {
+	const [nodeId, modelId] = referenceId.split(':');
+	const result = findNodeWithAncestors(nodes, nodeId);
+	if (!result) return null;
+	const { node } = result;
+	if (modelId === '__node__') {
+		return { node, model: { id: '__node__', name: node.modelId || '', remark: '' } };
+	}
+	const model = node.models?.find(m => m.id === modelId);
+	if (model) return { node, model };
+	return null;
+}
+// 递归展平所有模型引用（用于清理已删除的引用）
+function collectAllModelRefs(nodes) {
+	const refs = [];
+	for (const n of nodes) {
+		if (n.models) n.models.forEach(m => refs.push(`${n.id}:${m.id}`));
+		if (n.modelId) refs.push(`${n.id}:__node__`);
+		if (n.children) refs.push(...collectAllModelRefs(n.children));
+	}
+	return refs;
+}
+// ========== 旧数据迁移 ==========
+function migrateEndpoints(data) {
+	if (!data) data = { nodes: [] };
+	if (data.groups && !data.nodes) {
+		console.log('[store] 迁移旧 groups 格式到 nodes（旧 models 逐个转节点）');
+		data.nodes = data.groups.map(g => ({
+			id: g.id,
+			name: g.name,
+			baseUrl: g.baseUrl || '',
+			style: g.style || 'openai',
+			key: g.key || '',
+			modelId: '',
+			remark: '',
+			models: [],
+			children: (g.models || []).map(m => ({
+				id: m.id,
+				name: m.name,
+				baseUrl: '',
+				style: '',
+				key: '',
+				modelId: m.name,
+				remark: m.remark || '',
+				models: [],
+				children: []
+			}))
+		}));
+		delete data.groups;
+	}
+	return data;
+}
+// ========== 数据操作 ==========
 async function clearDirectory() {
-	endpointsData = {
-		groups: []
-	};
+	endpointsData = { nodes: [] };
 	sessionsCache.clear();
 	await storage.clearAll();
 	updateDirectoryDisplay();
 	await refreshUI();
 }
-// 尝试恢复已保存的目录
 async function tryRestoreDirectory() {
 	const result = await storage.init();
 	if (result.mode === null) {
-		return {
-			success: false,
-			needUserAction: true
-		};
+		return { success: false, needUserAction: true };
 	}
-	endpointsData = await storage.loadEndpoints();
+	endpointsData = migrateEndpoints(await storage.loadEndpoints());
 	const sessions = await storage.loadSessions();
 	sessions.forEach(s => sessionsCache.set(s.id, s));
 	updateDirectoryDisplay();
 	await refreshUI();
-	return {
-		success: true
-	};
-} // 用户点击后请求权限并恢复目录
+	return { success: true };
+}
 function generateUUID() {
 	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
 		const r = Math.random() * 16 | 0;
@@ -2609,9 +2833,7 @@ function generateUUID() {
 }
 async function selectDirectory() {
 	try {
-		const handle = await window.showDirectoryPicker({
-			mode: 'readwrite'
-		});
+		const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
 		await storage.selectMode('directory', handle);
 		await loadEndpoints();
 		await loadSessionsIndex();
@@ -2622,107 +2844,162 @@ async function selectDirectory() {
 	}
 }
 async function loadEndpoints() {
-	endpointsData = await storage.loadEndpoints();
+	endpointsData = migrateEndpoints(await storage.loadEndpoints());
 	return endpointsData;
 }
 async function saveEndpoints() {
 	return await storage.saveEndpoints(endpointsData);
 }
 function getGroups() {
-	if (!endpointsData) endpointsData = {
-		groups: []
-	};
-	return endpointsData.groups || [];
+	if (!endpointsData) endpointsData = { nodes: [] };
+	return endpointsData.nodes || [];
 }
-async function addGroup(name, baseUrl, style, key) {
-	if (!endpointsData) endpointsData = {
-		groups: []
-	};
+// ========== 节点 CRUD ==========
+async function addNode(parentId, data) {
+	if (!endpointsData) endpointsData = { nodes: [] };
 	if (storage.mode !== 'browser' && !storage.getDirectoryName()) {
 		alert('请先选择存储位置');
 		return null;
 	}
-	const group = {
+	const node = {
 		id: generateUUID(),
-		name,
-		baseUrl,
-		style,
-		key,
-		models: []
+		name: data.name,
+		baseUrl: data.baseUrl || '',
+		style: data.style || '',
+		key: data.key || '',
+		modelId: data.modelId || '',
+		remark: data.remark || '',
+		models: [],
+		children: []
 	};
-	endpointsData.groups.push(group);
+	if (parentId) {
+		const parent = findNodeInTree(endpointsData.nodes, parentId);
+		if (parent) {
+			parent.children.push(node);
+		} else {
+			endpointsData.nodes.push(node);
+		}
+	} else {
+		endpointsData.nodes.push(node);
+	}
 	await saveEndpoints();
-	return group;
+	return node;
 }
-async function updateGroup(groupId, updates) {
-	if (!endpointsData) endpointsData = {
-		groups: []
-	};
-	const group = endpointsData.groups.find(g => g.id === groupId);
-	if (group) {
-		Object.assign(group, updates);
+async function updateNode(nodeId, updates) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const node = findNodeInTree(endpointsData.nodes, nodeId);
+	if (node) {
+		Object.assign(node, updates);
 		await saveEndpoints();
-		return group;
+		return node;
 	}
 	return null;
 }
-async function deleteGroup(groupId) {
-	if (!endpointsData) endpointsData = {
-		groups: []
+// 递归删除节点及其所有子代
+async function deleteNode(nodeId) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const removeRecursive = (nodes, id) => {
+		const index = nodes.findIndex(n => n.id === id);
+		if (index >= 0) {
+			// 收集要删除的所有模型引用 key
+			const keysToRemove = new Set();
+			const collectKeys = (node) => {
+				node.models?.forEach(m => keysToRemove.add(`${node.id}:${m.id}`));
+				if (node.modelId) keysToRemove.add(`${node.id}:__node__`);
+				node.children?.forEach(collectKeys);
+			};
+			collectKeys(nodes[index]);
+			// 从 selectedModels 中移除
+			selectedModels = selectedModels.filter(id => !keysToRemove.has(id));
+			saveDefaultSelectedModels(selectedModels);
+			nodes.splice(index, 1);
+			return true;
+		}
+		for (const n of nodes) {
+			if (n.children && removeRecursive(n.children, id)) return true;
+		}
+		return false;
 	};
-	const index = endpointsData.groups.findIndex(g => g.id === groupId);
-	if (index >= 0) {
-		endpointsData.groups.splice(index, 1);
-		await saveEndpoints();
-		return true;
-	}
-	return false;
+	const ok = removeRecursive(endpointsData.nodes, nodeId);
+	if (ok) await saveEndpoints();
+	return ok;
 }
-async function reorderGroups(draggedId, targetId, insertBefore = true) {
-	if (!endpointsData) endpointsData = {
-		groups: []
-	};
-	const draggedIndex = endpointsData.groups.findIndex(g => g.id === draggedId);
-	const targetIndex = endpointsData.groups.findIndex(g => g.id === targetId);
-	if (draggedIndex >= 0 && targetIndex >= 0) {
-		const [draggedGroup] = endpointsData.groups.splice(draggedIndex, 1);
-		// 如果从前往后拖且insertBefore为true，需要调整位置
-		// 如果从后往前拖且insertBefore为false，也需要调整
+// 重新排序：将节点插入到同级目标位置
+async function reorderNode(draggedId, targetId, insertBefore = true) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const moveInSiblings = (siblings) => {
+		const draggedIndex = siblings.findIndex(n => n.id === draggedId);
+		const targetIndex = siblings.findIndex(n => n.id === targetId);
+		if (draggedIndex < 0 || targetIndex < 0) return false;
+		const [dragged] = siblings.splice(draggedIndex, 1);
 		let insertIndex = targetIndex;
 		if (draggedIndex < targetIndex) {
 			insertIndex = insertBefore ? targetIndex - 1 : targetIndex;
 		} else if (draggedIndex > targetIndex) {
 			insertIndex = insertBefore ? targetIndex : targetIndex + 1;
 		}
-		endpointsData.groups.splice(insertIndex, 0, draggedGroup);
-		await saveEndpoints();
+		siblings.splice(insertIndex, 0, dragged);
 		return true;
-	}
-	return false;
-}
-async function addModel(groupId, modelName, remark) {
-	if (!endpointsData) endpointsData = {
-		groups: []
 	};
-	const group = endpointsData.groups.find(g => g.id === groupId);
-	if (group) {
-		const model = {
-			id: generateUUID(),
-			name: modelName
-		};
+	// 尝试在每一层兄弟中查找
+	const searchSiblings = (siblings) => {
+		if (moveInSiblings(siblings)) return true;
+		for (const n of siblings) {
+			if (n.children && searchSiblings(n.children)) return true;
+		}
+		return false;
+	};
+	const ok = searchSiblings(endpointsData.nodes);
+	if (ok) await saveEndpoints();
+	return ok;
+}
+// 将节点移动为另一个节点的子节点
+async function moveNodeAsChild(draggedId, targetParentId) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const removeRecursive = (siblings) => {
+		const idx = siblings.findIndex(n => n.id === draggedId);
+		if (idx >= 0) return siblings.splice(idx, 1)[0];
+		for (const n of siblings) {
+			if (n.children) {
+				const found = removeRecursive(n.children);
+				if (found) return found;
+			}
+		}
+		return null;
+	};
+	const dragged = removeRecursive(endpointsData.nodes);
+	if (!dragged) return false;
+	const target = findNodeInTree(endpointsData.nodes, targetParentId);
+	if (target) {
+		if (!target.children) target.children = [];
+		target.children.push(dragged);
+	} else {
+		endpointsData.nodes.push(dragged);
+	}
+	await saveEndpoints();
+	return true;
+}
+// ========== 模型 CRUD（基于节点树） ==========
+function getNode(nodeId) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	return findNodeInTree(endpointsData.nodes, nodeId);
+}
+async function addModel(nodeId, modelName, remark) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const node = findNodeInTree(endpointsData.nodes, nodeId);
+	if (node) {
+		const model = { id: generateUUID(), name: modelName };
 		if (remark) model.remark = remark;
-		group.models.push(model);
+		node.models.push(model);
 		await saveEndpoints();
 		return model;
 	}
 	return null;
 }
-async function updateModel(groupId, modelId, data) {
-	if (!endpointsData) endpointsData = {
-		groups: []
-	};
-	const group = endpointsData.groups.find(g => g.id === groupId);
-	const model = group?.models?.find(m => m.id === modelId);
+async function updateModel(nodeId, modelId, data) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const node = findNodeInTree(endpointsData.nodes, nodeId);
+	const model = node?.models?.find(m => m.id === modelId);
 	if (model) {
 		if (data.name !== undefined) model.name = data.name;
 		if (data.remark !== undefined) model.remark = data.remark || '';
@@ -2731,56 +3008,45 @@ async function updateModel(groupId, modelId, data) {
 	}
 	return null;
 }
-async function deleteModel(groupId, modelId) {
-	if (!endpointsData) endpointsData = {
-		groups: []
-	};
-	const group = endpointsData.groups.find(g => g.id === groupId);
-	if (group) {
-		const index = group.models?.findIndex(m => m.id === modelId) ?? -1;
+async function deleteModel(nodeId, modelId) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const node = findNodeInTree(endpointsData.nodes, nodeId);
+	if (node) {
+		const index = node.models?.findIndex(m => m.id === modelId) ?? -1;
 		if (index >= 0) {
-			group.models.splice(index, 1);
+			node.models.splice(index, 1);
 			await saveEndpoints();
 			return true;
 		}
 	}
 	return false;
 }
-async function reorderModels(groupId, draggedModelId, targetModelId, insertBefore) {
-	if (!endpointsData) endpointsData = {
-		groups: []
-	};
-	const group = endpointsData.groups.find(g => g.id === groupId);
-	if (!group || !group.models) return false;
-	const draggedIndex = group.models.findIndex(m => m.id === draggedModelId);
-	const targetIndex = group.models.findIndex(m => m.id === targetModelId);
+async function reorderModels(nodeId, draggedModelId, targetModelId, insertBefore) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const node = findNodeInTree(endpointsData.nodes, nodeId);
+	if (!node || !node.models) return false;
+	const draggedIndex = node.models.findIndex(m => m.id === draggedModelId);
+	const targetIndex = node.models.findIndex(m => m.id === targetModelId);
 	if (draggedIndex >= 0 && targetIndex >= 0) {
-		const [draggedModel] = group.models.splice(draggedIndex, 1);
+		const [draggedModel] = node.models.splice(draggedIndex, 1);
 		let insertIndex = targetIndex;
 		if (draggedIndex < targetIndex) {
 			insertIndex = insertBefore ? targetIndex - 1 : targetIndex;
 		} else if (draggedIndex > targetIndex) {
 			insertIndex = insertBefore ? targetIndex : targetIndex + 1;
 		}
-		group.models.splice(insertIndex, 0, draggedModel);
+		node.models.splice(insertIndex, 0, draggedModel);
 		await saveEndpoints();
 		return true;
 	}
 	return false;
 }
-function getModel(groupId, modelId) {
-	if (!endpointsData) endpointsData = {
-		groups: []
-	};
-	const group = endpointsData.groups.find(g => g.id === groupId);
-	return group?.models?.find(m => m.id === modelId);
+function getModel(nodeId, modelId) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const node = findNodeInTree(endpointsData.nodes, nodeId);
+	return node?.models?.find(m => m.id === modelId);
 }
-function getGroup(groupId) {
-	if (!endpointsData) endpointsData = {
-		groups: []
-	};
-	return endpointsData.groups.find(g => g.id === groupId);
-}
+// ========== 会话管理（不变） ==========
 async function loadSessionsIndex() {
 	const sessions = await storage.loadSessions();
 	sessionsCache.clear();
@@ -2813,24 +3079,12 @@ async function createSession(firstMessage = null, targetModels = null) {
 		if (Array.isArray(firstMessage)) {
 			content = firstMessage;
 		} else if (typeof firstMessage === 'string') {
-			content = [{
-				type: 'text',
-				text: firstMessage
-			}];
+			content = [{ type: 'text', text: firstMessage }];
 		} else {
-			content = [{
-				type: 'text',
-				text: String(firstMessage)
-			}];
+			content = [{ type: 'text', text: String(firstMessage) }];
 		}
-		const msg = {
-			role: 'user',
-			content,
-			timestamp: Date.now()
-		};
-		if (targetModels) {
-			msg.targetModels = targetModels;
-		}
+		const msg = { role: 'user', content, timestamp: Date.now() };
+		if (targetModels) msg.targetModels = targetModels;
 		session.messages.push(msg);
 	}
 	sessionsCache.set(session.id, session);
@@ -2838,67 +3092,35 @@ async function createSession(firstMessage = null, targetModels = null) {
 	return session;
 }
 async function loadSession(sessionId) {
-	if (sessionsCache.has(sessionId)) {
-		return sessionsCache.get(sessionId);
-	}
+	if (sessionsCache.has(sessionId)) return sessionsCache.get(sessionId);
 	const session = await storage.loadSession(sessionId);
-	if (session) {
-		sessionsCache.set(session.id, session);
-	}
+	if (session) sessionsCache.set(session.id, session);
 	return session;
 }
 async function saveSession(session) {
 	return await storage.saveSession(session);
 }
-// 辅助函数：确保消息 content 为数组格式
 function normalizeMessageContent(msg) {
-	if (!msg.content) return [{
-		type: 'text',
-		text: ''
-	}];
-	if (typeof msg.content === 'string') {
-		return [{
-			type: 'text',
-			text: msg.content
-		}];
-	}
-	if (Array.isArray(msg.content)) {
-		return msg.content;
-	}
-	return [{
-		type: 'text',
-		text: String(msg.content)
-	}];
+	if (!msg.content) return [{ type: 'text', text: '' }];
+	if (typeof msg.content === 'string') return [{ type: 'text', text: msg.content }];
+	if (Array.isArray(msg.content)) return msg.content;
+	return [{ type: 'text', text: String(msg.content) }];
 }
 async function addMessage(sessionId, role, content, options = {}) {
 	const session = sessionsCache.get(sessionId);
 	if (!session) return null;
-	const message = {
-		role,
-		timestamp: Date.now()
-	};
-	// content 改造：支持字符串或数组
+	const message = { role, timestamp: Date.now() };
 	if (typeof content === 'string') {
-		message.content = [{
-			type: 'text',
-			text: content
-		}];
+		message.content = [{ type: 'text', text: content }];
 	} else if (Array.isArray(content)) {
 		message.content = content;
 	} else {
-		message.content = [{
-			type: 'text',
-			text: content || ''
-		}];
+		message.content = [{ type: 'text', text: content || '' }];
 	}
 	if (role === 'user') {
-		if (options.targetModels) {
-			message.targetModels = options.targetModels;
-		}
+		if (options.targetModels) message.targetModels = options.targetModels;
 	} else if (role === 'assistant') {
-		if (options.responses) {
-			message.responses = options.responses;
-		}
+		if (options.responses) message.responses = options.responses;
 		if (options.modelId && !options.responses) {
 			message.modelId = options.modelId;
 			message.endpointGroupId = options.endpointGroupId;
@@ -3251,7 +3473,8 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 			};
 		}
 		try {
-			const resultState = await callAPI(info.group.style, info.group.baseUrl, info.group.key, info.model.name, messages, chunkState => {
+			const config = resolveNodeConfig(info.node.id);
+			const resultState = await callAPI(config.style || 'openai', config.baseUrl, config.key, info.model.name, messages, chunkState => {
 				const genState = gens.get(id);
 				if (genState) {
 					genState.content = chunkState.content;
@@ -3534,7 +3757,7 @@ async function refreshUI() {
 	const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
 	const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === 'generating');
 	renderModelSelector(groups, selectedModels, isGenerating);
-	renderEndpointList(groups, null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+	renderEndpointList(groups, null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 	const sessions = getAllSessions();
 	renderSessionList(sessions, currentSession?.id, handleSessionSelect, handleSessionEdit, handleSessionDelete);
 	if (currentSession) {
@@ -3607,31 +3830,32 @@ async function handleSessionDelete(sessionId) {
 	await refreshUI();
 }
 function handleAddGroup() {
-	showEditGroupDialog(null, async (data) => {
-		await addGroup(data.name, data.baseUrl, data.style, data.key);
+	showEditGroupDialog(null, null, async (data) => {
+		await addNode(null, data);
 		await refreshUI();
 	});
 }
-function handleGroupEdit(groupId) {
-	const group = getGroup(groupId);
-	showEditGroupDialog(group, async (data) => {
-		await updateGroup(groupId, data);
+function handleNodeEdit(nodeId) {
+	const node = getNode(nodeId);
+	if (!node) return;
+	showEditGroupDialog(node, null, async (data) => {
+		await updateNode(nodeId, data);
 		await refreshUI();
 	});
 }
-async function handleGroupDelete(groupId) {
-	// 清理 selectedModels 中属于该组的模型
+async function handleNodeDelete(nodeId) {
+	// 清理 selectedModels 中属于该节点的模型
 	selectedModels = selectedModels.filter(id => {
 		const parts = id.split(':');
-		return parts[0] !== groupId;
+		return parts[0] !== nodeId;
 	});
 	saveDefaultSelectedModels(selectedModels);
-	await deleteGroup(groupId);
+	await deleteNode(nodeId);
 	await refreshUI();
 }
-async function handleAddModelForGroup(groupId, modelName, remark) {
+async function handleAddModelForGroup(nodeId, modelName, remark) {
 	if (modelName) {
-		await addModel(groupId, modelName, remark);
+		await addModel(nodeId, modelName, remark);
 		await refreshUI();
 	}
 }
@@ -3640,23 +3864,25 @@ function handleCopy(content) {
 		// 可选：显示复制成功提示
 	});
 }
-function handleModelEdit(groupId, modelId, newName, newRemark) {
-	// 原地编辑模式：更新模型名和备注
-	updateModel(groupId, modelId, { name: newName, remark: newRemark }).then(() => refreshUI());
+function handleModelEdit(nodeId, modelId, newName, newRemark) {
+	updateModel(nodeId, modelId, { name: newName, remark: newRemark }).then(() => refreshUI());
 }
-async function handleModelDelete(groupId, modelId) {
-	// 清理 selectedModels 中的该模型
-	selectedModels = selectedModels.filter(id => id !== `${groupId}:${modelId}`);
+async function handleModelDelete(nodeId, modelId) {
+	selectedModels = selectedModels.filter(id => id !== `${nodeId}:${modelId}`);
 	saveDefaultSelectedModels(selectedModels);
-	await deleteModel(groupId, modelId);
+	await deleteModel(nodeId, modelId);
 	await refreshUI();
 }
-async function handleReorderGroups(draggedId, targetId, insertBefore) {
-	await reorderGroups(draggedId, targetId, insertBefore);
+async function handleReorderNode(draggedId, targetId, insertBefore) {
+	await reorderNode(draggedId, targetId, insertBefore);
 	await refreshUI();
 }
-async function handleReorderModels(groupId, draggedModelId, targetModelId, insertBefore) {
-	await reorderModels(groupId, draggedModelId, targetModelId, insertBefore);
+async function handleMoveNodeAsChild(draggedId, targetParentId) {
+	await moveNodeAsChild(draggedId, targetParentId);
+	await refreshUI();
+}
+async function handleReorderModels(nodeId, draggedModelId, targetModelId, insertBefore) {
+	await reorderModels(nodeId, draggedModelId, targetModelId, insertBefore);
 	await refreshUI();
 }
 async function handleSend() {
@@ -3763,7 +3989,8 @@ async function handleEmbeddingSend() {
 	container.appendChild(msgEl);
 	container.scrollTop = container.scrollHeight;
 	try {
-		const result = await callEmbedding(info.group.style, info.group.baseUrl, info.group.key, info.model.name, text);
+		const cfg = resolveNodeConfig(info.node.id);
+		const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, info.model.name, text);
 		const card = $('#streaming-embedding');
 		if (card) card.remove();
 		const emb = result.embedding;
@@ -3832,7 +4059,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 		card.dataset.sessionId = sessionId;
 		card.dataset.modelId = id;
 		const info = findModelById(groups, id);
-		const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
+		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
 		$('.response.model-name', card).textContent = name;
 		cards.addChild(card);
 	});

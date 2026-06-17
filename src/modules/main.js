@@ -210,7 +210,7 @@ async function refreshUI() {
 	const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
 	const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === 'generating');
 	renderModelSelector(groups, selectedModels, isGenerating);
-	renderEndpointList(groups, null, null, handleModelEdit, handleGroupEdit, handleGroupDelete, handleAddModelForGroup, handleModelDelete, handleReorderGroups, handleReorderModels, testConnection);
+	renderEndpointList(groups, null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 	const sessions = getAllSessions();
 	renderSessionList(sessions, currentSession?.id, handleSessionSelect, handleSessionEdit, handleSessionDelete);
 	if (currentSession) {
@@ -286,32 +286,33 @@ async function handleSessionDelete(sessionId) {
 }
 
 function handleAddGroup() {
-	showEditGroupDialog(null, async (data) => {
-		await addGroup(data.name, data.baseUrl, data.style, data.key);
+	showEditGroupDialog(null, null, async (data) => {
+		await addNode(null, data);
 		await refreshUI();
 	});
 }
 
-function handleGroupEdit(groupId) {
-	const group = getGroup(groupId);
-	showEditGroupDialog(group, async (data) => {
-		await updateGroup(groupId, data);
+function handleNodeEdit(nodeId) {
+	const node = getNode(nodeId);
+	if (!node) return;
+	showEditGroupDialog(node, null, async (data) => {
+		await updateNode(nodeId, data);
 		await refreshUI();
 	});
 }
-async function handleGroupDelete(groupId) {
-	// 清理 selectedModels 中属于该组的模型
+async function handleNodeDelete(nodeId) {
+	// 清理 selectedModels 中属于该节点的模型
 	selectedModels = selectedModels.filter(id => {
 		const parts = id.split(':');
-		return parts[0] !== groupId;
+		return parts[0] !== nodeId;
 	});
 	saveDefaultSelectedModels(selectedModels);
-	await deleteGroup(groupId);
+	await deleteNode(nodeId);
 	await refreshUI();
 }
-async function handleAddModelForGroup(groupId, modelName, remark) {
+async function handleAddModelForGroup(nodeId, modelName, remark) {
 	if (modelName) {
-		await addModel(groupId, modelName, remark);
+		await addModel(nodeId, modelName, remark);
 		await refreshUI();
 	}
 }
@@ -322,23 +323,25 @@ function handleCopy(content) {
 	});
 }
 
-function handleModelEdit(groupId, modelId, newName, newRemark) {
-	// 原地编辑模式：更新模型名和备注
-	updateModel(groupId, modelId, { name: newName, remark: newRemark }).then(() => refreshUI());
+function handleModelEdit(nodeId, modelId, newName, newRemark) {
+	updateModel(nodeId, modelId, { name: newName, remark: newRemark }).then(() => refreshUI());
 }
-async function handleModelDelete(groupId, modelId) {
-	// 清理 selectedModels 中的该模型
-	selectedModels = selectedModels.filter(id => id !== `${groupId}:${modelId}`);
+async function handleModelDelete(nodeId, modelId) {
+	selectedModels = selectedModels.filter(id => id !== `${nodeId}:${modelId}`);
 	saveDefaultSelectedModels(selectedModels);
-	await deleteModel(groupId, modelId);
+	await deleteModel(nodeId, modelId);
 	await refreshUI();
 }
-async function handleReorderGroups(draggedId, targetId, insertBefore) {
-	await reorderGroups(draggedId, targetId, insertBefore);
+async function handleReorderNode(draggedId, targetId, insertBefore) {
+	await reorderNode(draggedId, targetId, insertBefore);
 	await refreshUI();
 }
-async function handleReorderModels(groupId, draggedModelId, targetModelId, insertBefore) {
-	await reorderModels(groupId, draggedModelId, targetModelId, insertBefore);
+async function handleMoveNodeAsChild(draggedId, targetParentId) {
+	await moveNodeAsChild(draggedId, targetParentId);
+	await refreshUI();
+}
+async function handleReorderModels(nodeId, draggedModelId, targetModelId, insertBefore) {
+	await reorderModels(nodeId, draggedModelId, targetModelId, insertBefore);
 	await refreshUI();
 }
 async function handleSend() {
@@ -449,7 +452,8 @@ async function handleEmbeddingSend() {
 	container.appendChild(msgEl);
 	container.scrollTop = container.scrollHeight;
 	try {
-		const result = await callEmbedding(info.group.style, info.group.baseUrl, info.group.key, info.model.name, text);
+		const cfg = resolveNodeConfig(info.node.id);
+		const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, info.model.name, text);
 		const card = $('#streaming-embedding');
 		if (card) card.remove();
 		const emb = result.embedding;
@@ -521,7 +525,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 		card.dataset.sessionId = sessionId;
 		card.dataset.modelId = id;
 		const info = findModelById(groups, id);
-		const name = info ? `${info.group.name} / ${info.model.name}` : '未知';
+		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
 		$('.response.model-name', card).textContent = name;
 		cards.addChild(card);
 	});

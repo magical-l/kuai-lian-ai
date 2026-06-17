@@ -845,6 +845,43 @@ button.outline:hover:not(:disabled) {
 	border-top: 2px solid var(--accent-primary);
 }
 
+.endpoint-group.drag-over-child {
+	outline: 2px dashed var(--accent-primary);
+	outline-offset: -2px;
+	border-radius: var(--radius-sm);
+}
+
+.node-content {
+	gap: var(--space-1);
+}
+
+.node-children {
+	gap: var(--space-1);
+	margin-top: var(--space-1);
+}
+
+.node-model-badge {
+	font-size: 10px;
+	color: var(--text-muted);
+	margin-left: 4px;
+	font-weight: 400;
+}
+
+.inherit-hint {
+	font-size: 11px;
+	color: var(--text-muted);
+	margin-top: 2px;
+	display: block;
+}
+
+.field-hint {
+	font-size: 11px;
+	color: var(--text-muted);
+	margin-top: 2px;
+	display: block;
+	line-height: 1.4;
+}
+
 .drag-handle {
 	cursor: grab;
 	color: var(--text-muted);
@@ -960,6 +997,16 @@ button.batch-test.testing {
 button.batch-test.testing .spin {
 	animation: spin 0.5s linear infinite !important;
 	display: inline-block;
+}
+
+button.action.batch-test.connected {
+	color: var(--success) !important;
+	background: var(--success-light) !important;
+}
+
+button.action.batch-test.failed {
+	color: var(--danger) !important;
+	background: var(--danger-light) !important;
 }
 
 .group-models {

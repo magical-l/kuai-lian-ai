@@ -25,7 +25,7 @@
 				<div class="logo layout-x-queue">
 					<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 				</div>
-				<span class="brand">快连AI</span><span class="version">v3.3.0</span>
+				<span class="brand">快连AI</span><span class="version">v4.0.0</span>
 			</div>
 			<div class="center layout-x-queue">
 				<span class="directory-label">当前存储目录：</span>
@@ -150,29 +150,41 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14" alt
 	</main>
 	<!-- ========== Templates ========== -->
 	<template id="tpl-edit-group-dialog">
-		<div id="edit-dialog">
-			<h3></h3>
-			<form class="dialog-form layout-y-queue">
-				<label class="layout-y-queue">名称: <input id="dialog-group-name"></label>
-				<label class="layout-y-queue">Base URL: <input id="dialog-group-url"></label>
-				<label class="layout-y-queue">接口风格:
-					<select id="dialog-group-style">
-						<option value="openai">OpenAI</option>
-						<option value="claude">Claude</option>
-						<option value="gemini">Gemini</option>
-					</select>
-				</label>
-				<label class="layout-y-queue">API Key: <div class="key-input-wrapper layout-x-queue"><input id="dialog-group-key" type="password"><button class="toggle-key" title="显示/隐藏"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-								<circle cx="12" cy="12" r="3"></circle>
-							</svg></button></div></label>
-			</form>
-			<footer class="dialog-buttons layout-x-queue">
-				<button id="dialog-cancel">✗</button>
-				<button id="dialog-save" class="primary">✓</button>
-			</footer>
-		</div>
-	</template>
+<div id="edit-dialog">
+<h3></h3>
+<form class="dialog-form layout-y-queue">
+<label class="layout-y-queue">名称: <input id="dialog-group-name"></label>
+<label class="layout-y-queue">Base URL（选填）:
+<input id="dialog-group-url" placeholder="https://api.example.com">
+<span id="dialog-inherited-url" class="inherit-hint"></span></label>
+<label class="layout-y-queue">接口风格:
+<select id="dialog-group-style">
+<option value="">（继承）</option>
+<option value="openai">OpenAI</option>
+<option value="claude">Claude</option>
+<option value="gemini">Gemini</option>
+</select></label>
+<label class="layout-y-queue">API Key（选填）:
+<div class="key-input-wrapper layout-x-queue">
+<input id="dialog-group-key" type="password" placeholder="">
+<button class="toggle-key" title="显示/隐藏">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+<circle cx="12" cy="12" r="3"></circle>
+</svg></button></div>
+<span id="dialog-inherited-key" class="inherit-hint"></span></label>
+<label class="layout-y-queue">模型名（选填）:
+<input id="dialog-group-modelid" placeholder="如 gpt-4o">
+
+<span id="dialog-inherited-modelid" class="inherit-hint"></span></label>
+</form>
+<div class="dialog-footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
+<footer class="dialog-buttons layout-x-queue">
+<button id="dialog-cancel">✗</button>
+<button id="dialog-save" class="primary">✓</button>
+</footer>
+</div>
+</template>
 	<template id="tpl-add-model-inline">
 		<div class="add-model-inline layout-y-queue">
 			<input type="text" placeholder="模型名" class="add-model-input">

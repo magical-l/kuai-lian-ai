@@ -89,7 +89,7 @@ if (!window.__IS_EXTENSION__) {
 		},
 		async loadEndpoints() {
 			return await this._get('endpoints') || {
-				groups: []
+				nodes: []
 			};
 		},
 		async saveEndpoints(data) {
@@ -163,12 +163,12 @@ if (!window.__IS_EXTENSION__) {
 				const file = await fileHandle.getFile();
 				const text = await file.text();
 				return text ? JSON.parse(text) : {
-					groups: []
+					nodes: []
 				};
 			} catch (err) {
 				console.error('加载端点失败:', err);
 				return {
-					groups: []
+					nodes: []
 				};
 			}
 		},
