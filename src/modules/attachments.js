@@ -141,18 +141,20 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var dialog = fromTemplate('tpl-edit-group-dialog', '#edit-dialog');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
-	var keyInput = $('#dialog-group-key', dialog);
-	var nameInput = $('#dialog-group-name', dialog);
+	var keyInput = $("#dialog-group-key", dialog);
+	var nameInput = $("#dialog-group-name", dialog);
 	var urlInput = $('#dialog-group-url', dialog);
 	var modelidInput = $('#dialog-group-modelid', dialog);
-	var styleSel = $('#dialog-group-style', dialog);
+	var styleSel = $("#dialog-group-style", dialog);
+	var remarkInput = $("#dialog-group-remark", dialog);
 
 	setValues(dialog, {
 		'#dialog-group-name': node ? node.name : '',
 		'#dialog-group-modelid': node ? node.modelId || '' : '',
 		'#dialog-group-url': node ? node.baseUrl || '' : '',
 		'#dialog-group-style': node ? node.style || '' : '',
-		'#dialog-group-key': node ? node.key || '' : ''
+		'#dialog-group-key': node ? node.key || '' : '',
+		'#dialog-group-remark': node ? node.remark || '' : ''
 	});
 
 	// 继承值填入
@@ -169,28 +171,28 @@ function showEditGroupDialog(node, parentId, onSave) {
 		if (rcfg) {
 			(function applyInherit(inputEl, ownVal, rcfgVal) {
 				if (!ownVal && rcfgVal) {
-					inputEl.value = rcfgVal;
-					if (hasParent) addInheritIcon(inputEl);
+				inputEl.value = rcfgVal;
+				if (hasParent) addInheritIcon(inputEl);
 				}
 			})(urlInput, node ? node.baseUrl : '', rcfg.baseUrl);
 			(function applyInherit(inputEl, ownVal, rcfgVal) {
 				if (!ownVal && rcfgVal) {
-					inputEl.value = rcfgVal;
-					if (hasParent) addInheritIcon(inputEl);
+				inputEl.value = rcfgVal;
+				if (hasParent) addInheritIcon(inputEl);
 				}
 			})(keyInput, node ? node.key : '', rcfg.key);
 			(function applyInherit(inputEl, ownVal, rcfgVal) {
 				if (!ownVal && rcfgVal) {
-					inputEl.value = rcfgVal;
-					if (hasParent) addInheritIcon(inputEl);
+				inputEl.value = rcfgVal;
+				if (hasParent) addInheritIcon(inputEl);
 				}
 			})(modelidInput, node ? node.modelId : '', rcfg.modelId);
 			// style
 			if (!(node ? node.style : '') && rcfg.style) {
 				styleSel.value = '';
 				if (hasParent) {
-					var inheritOpt = styleSel.querySelector('option[value=""]');
-					if (inheritOpt) inheritOpt.textContent = '继承自父级（' + rcfg.style + '）';
+				var inheritOpt = styleSel.querySelector('option[value=""]');
+				if (inheritOpt) inheritOpt.textContent = '继承自父级（' + rcfg.style + '）';
 				}
 			}
 		}
@@ -246,6 +248,9 @@ function showEditGroupDialog(node, parentId, onSave) {
 			var theKey = keyInput.value.trim();
 			if (node && node.key || theKey !== (rcfg && rcfg.key || '')) saveData.key = theKey;
 			if (node && node.modelId || theModelId !== (rcfg && rcfg.modelId || '')) saveData.modelId = theModelId;
+			var theRemark = remarkInput.value.trim();
+			if (theRemark) saveData.remark = theRemark;
+			else saveData.remark = '';
 			onSave(saveData);
 			dialog.remove();
 		}
@@ -412,9 +417,9 @@ async function testConnection(nodeId, modelId) {
 			try {
 				var errorBody = await res.text();
 				try {
-					var errorJson = JSON.parse(errorBody);
-					if (errorJson.error && errorJson.error.message) errorMsg = errorJson.error.message;
-					else if (errorJson.message) errorMsg = errorJson.message;
+				var errorJson = JSON.parse(errorBody);
+				if (errorJson.error && errorJson.error.message) errorMsg = errorJson.error.message;
+				else if (errorJson.message) errorMsg = errorJson.message;
 				} catch(e) { if (errorBody && errorBody.length < 100) errorMsg = errorBody; }
 			} catch(e) {}
 			connectionStatus.set(key, { status: 'failed', timestamp: Date.now(), error: errorMsg });
