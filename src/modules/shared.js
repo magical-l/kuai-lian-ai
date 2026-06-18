@@ -143,6 +143,31 @@ async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk,
 			const error = await res.text();
 			throw new Error('API错误: ' + res.status + ' - ' + error);
 		}
+		// 检测 HTTP 200 但返回了 HTML 错误页面的情况
+		const ct = res.headers.get('content-type') || '';
+		if (ct.includes('text/html')) {
+			const body = await res.text().catch(() => '');
+			const m = body.match(/<title>([^<]+)<\/title>/i);
+			throw new Error('服务器返回了HTML页面: ' + (m ? m[1] : body.slice(0, 100)));
+		}
+		if (ct.includes('application/json')) {
+			// 非流式响应 — 有些代理返回 200 + JSON 格式的错误
+			const body = await res.text();
+			try {
+				const json = JSON.parse(body);
+				if (json.error) {
+					throw new Error('API错误: ' + (json.error.message || JSON.stringify(json.error)));
+				}
+			} catch (e) {
+				if (e.message.startsWith('API错误')) throw e;
+			}
+			// 无 API 层错误，重新包装为 Response 供 SSE 解析
+			res = new Response(body, {
+				status: res.status,
+				statusText: res.statusText,
+				headers: res.headers
+			});
+		}
 		if (!res.body) {
 			throw new Error('Response body is empty');
 		}
@@ -163,23 +188,57 @@ async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal 
 }
 
 	async function callEmbedding(style, baseUrl, apiKey, model, input) {
-	const provider = providers[style];
-	if (!provider) throw new Error('不支持的接口风格: ' + style);
-	if (!provider.buildEmbeddingRequest) throw new Error('该接口不支持嵌入');
-	const req = provider.buildEmbeddingRequest(baseUrl, apiKey, model, input);
-	console.log('Embed req:', req.url, JSON.stringify(req.headers));
-	const res = await fetchWithTimeout(req.url, {
-		method: 'POST',
-		headers: req.headers,
-		body: JSON.stringify(req.body)
-	}, 60000);
-	if (!res.ok) {
-		const err = await res.text().catch(() => '');
-		throw new Error('嵌入请求失败: ' + res.status + (err ? ' - ' + err : ''));
-	}
-	const data = await res.json();
-	return provider.parseEmbeddingResponse(data);
-}
+        const provider = providers[style];
+
+        if (!provider)
+            throw new Error("不支持的接口风格: " + style);
+
+        if (!provider.buildEmbeddingRequest)
+            throw new Error("该接口不支持嵌入");
+
+        const req = provider.buildEmbeddingRequest(baseUrl, apiKey, model, input);
+        console.log("Embed req:", req.url, JSON.stringify(req.headers));
+
+        const res = await fetchWithTimeout(req.url, {
+            method: "POST",
+            headers: req.headers,
+            body: JSON.stringify(req.body)
+        }, 60000);
+
+        if (!res.ok) {
+            const err = await res.text().catch(() => "");
+            throw new Error("嵌入请求失败: " + res.status + (err ? " - " + err : ""));
+        }
+
+        const ct = res.headers.get("content-type") || "";
+
+        if (ct.includes("text/html")) {
+            const body = await res.text().catch(() => "");
+            const m = body.match(/<title>([^<]+)<\/title>/i);
+            throw new Error("嵌入请求失败: 服务器返回了HTML页面 — " + (m ? m[1] : body.slice(0, 100)));
+        }
+
+        if (!ct.includes("application/json")) {
+            const preview = await res.text().catch(() => "");
+            throw new Error("嵌入请求失败: 响应类型不是 JSON (" + ct + ") — " + preview.slice(0, 100));
+        }
+
+        const text = await res.text();
+        let data;
+
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            throw new Error("嵌入请求失败: 响应体不是有效 JSON — " + text.slice(0, 100));
+        }
+
+        if (data.error) {
+            const msg = data.error.message || data.error.code || JSON.stringify(data.error);
+            throw new Error("嵌入请求失败: " + msg);
+        }
+
+        return provider.parseEmbeddingResponse(data);
+    }
 
 async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 	const startTime = Date.now();

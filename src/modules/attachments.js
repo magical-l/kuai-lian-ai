@@ -445,7 +445,32 @@ async function testConnection(nodeId, modelId) {
 			body: JSON.stringify(tcfg.body)
 		}, 30000);
 		if (res && res.ok) {
-			connectionStatus.set(key, { status: 'connected', timestamp: Date.now() });
+			// 检测 HTTP 200 但返回了 HTML 错误页面的情况
+			var ct = (res.headers.get('content-type') || '');
+			if (ct.includes('text/html')) {
+				var errorBody = await res.text().catch(function() { return ''; });
+				var errorMsg = '返回了HTML页面（可能为错误页面）';
+				var m = errorBody.match(/<title>([^<]+)<\/title>/i);
+				if (m) errorMsg = m[1];
+				else if (errorBody && errorBody.length < 100) errorMsg = errorBody;
+				connectionStatus.set(key, { status: 'failed', timestamp: Date.now(), error: errorMsg });
+			} else if (ct.includes('application/json') || ct.includes('text/event-stream')) {
+				// 解析 JSON 响应体，检查 API 层错误（有些代理返回 200 + {"error":{...}}）
+				try {
+					var successBody = await res.text();
+					var successJson = JSON.parse(successBody);
+					if (successJson.error) {
+						var errMsg = successJson.error.message || successJson.error.code || JSON.stringify(successJson.error);
+						connectionStatus.set(key, { status: 'failed', timestamp: Date.now(), error: errMsg });
+					} else {
+						connectionStatus.set(key, { status: 'connected', timestamp: Date.now() });
+					}
+				} catch(e) {
+					connectionStatus.set(key, { status: 'connected', timestamp: Date.now() });
+				}
+			} else {
+				connectionStatus.set(key, { status: 'connected', timestamp: Date.now() });
+			}
 		} else {
 			var errorMsg = 'HTTP ' + res.status;
 			try {
