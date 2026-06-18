@@ -79,7 +79,7 @@ function initDividers() {
 			if (!mainRow) return;
 			const containerWidth = mainRow.offsetWidth;
 			const minWidth = 180;
-			const maxWidth = containerWidth * 0.333;
+			const maxWidth = containerWidth * 0.45;
 			const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 			curDiv.sidebar.style.width = clampedWidth + 'px';
 		}

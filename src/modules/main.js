@@ -209,31 +209,52 @@ async function updateDirectoryDisplay() {
 	dirPath.title = info.title;
 }
 async function refreshUI() {
-	const groups = getGroups();
-	// 清理在新存储中已不存在的已选模型
-	const availableIds = new Set();
-	groups.forEach(g => g.models.forEach(m => availableIds.add(`${g.id}:${m.id}`)));
-	const before = selectedModels.length;
-	selectedModels = availableIds.size > 0 ? selectedModels.filter(id => availableIds.has(id)) : [];
-	if (selectedModels.length !== before) {
-		saveDefaultSelectedModels(selectedModels);
-	}
-	// 清理在新存储中已不存在的当前会话
-	if (currentSession && !sessionsCache.has(currentSession.id)) {
-		currentSession = null;
-	}
-	const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-	const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === 'generating');
-	renderModelSelector(groups, selectedModels, isGenerating);
-	renderEndpointList(groups, null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
-	const sessions = getAllSessions();
-	renderSessionList(sessions, currentSession?.id, handleSessionSelect, handleSessionEdit, handleSessionDelete);
-	if (currentSession) {
-		renderMessages(currentSession.messages, groups, handleCopy);
-	} else {
-		$('#chat-messages').innerHTML = '';
-	}
-	updateChatTitleDisplay();
+    const groups = getGroups();
+    const before = selectedModels.length;
+    selectedModels = selectedModels.filter(id => !!findModelById(groups, id));
+
+    if (selectedModels.length !== before) {
+        saveDefaultSelectedModels(selectedModels);
+    }
+
+    if (currentSession && !sessionsCache.has(currentSession.id)) {
+        currentSession = null;
+    }
+
+    const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+    const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === "generating");
+    renderModelSelector(groups, selectedModels, isGenerating);
+
+    renderEndpointList(
+        groups,
+        null,
+        null,
+        handleModelEdit,
+        handleNodeEdit,
+        handleNodeDelete,
+        handleAddModelForGroup,
+        handleModelDelete,
+        handleReorderNode,
+        handleReorderModels,
+        testConnection,
+        handleMoveNodeAsChild
+    );
+
+    const sessions = getAllSessions();
+
+    renderSessionList(
+        sessions,
+        currentSession?.id,
+        handleSessionSelect,
+        handleSessionEdit,
+        handleSessionDelete
+    );
+
+    if (currentSession) {
+        renderMessages(currentSession.messages, groups, handleCopy);
+    } else {
+        $("#chat-messages").innerHTML = "";
+    }
 }
 
 function updateChatTitleDisplay() {

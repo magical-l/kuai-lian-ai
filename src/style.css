@@ -290,7 +290,7 @@ aside {
 	background: var(--bg-base);
 	border-right: 1px solid var(--border-subtle);
 	min-width: 180px;
-	max-width: 33.33%;
+	max-width: 45%;
 	width: 260px;
 }
 
