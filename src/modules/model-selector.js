@@ -1,25 +1,42 @@
 // ========== Model Selector Functions ==========
 function renderModelSelector(groups, selectedModels, isGenerating) {
-	const container = $('#model-selector');
-	const summaryEl = $('#selector-summary');
-	if (!container) return;
-	container.classList.toggle('generating', isGenerating);
-	if (selectedModels.length === 0) {
-		summaryEl.innerHTML = '<span class="selector empty-hint">请选择模型</span>';
-	} else {
-		summaryEl.innerHTML = selectedModels.map(id => {
-			const info = findModelById(groups, id);
-			if (!info) return '';
-			const statusClass = getTagStatusClass(id);
-			const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-			const genState = gens ? gens.get(id) : null;
-			const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : '';
-			const classes = ['model', 'tag', 'selected', statusClass, speedClass ? `speed-${speedClass}` : ''].filter(Boolean).join(' ');
-			const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : '';
-			return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.node.name}</span> ${info.model.name}${remarkHtml}<span class="tag-remove" data-model="${id}">✕</span></span>`;
-		}).join('');
-	}
-	bindSelectorEvents();
+    const container = $("#model-selector");
+    const summaryEl = $("#selector-summary");
+
+    if (!container)
+        return;
+
+    container.classList.toggle("generating", isGenerating);
+
+    if (selectedModels.length === 0) {
+        summaryEl.innerHTML = "<span class=\"selector empty-hint\">请选择模型</span>";
+    } else {
+        summaryEl.innerHTML = selectedModels.map(id => {
+            const info = findModelById(groups, id);
+
+            if (!info)
+                return "";
+
+            const statusClass = getTagStatusClass(id);
+            const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+            const genState = gens ? gens.get(id) : null;
+            const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : "";
+
+            const classes = [
+                "model",
+                "tag",
+                "selected",
+                statusClass,
+                speedClass ? `speed-${speedClass}` : ""
+            ].filter(Boolean).join(" ");
+
+            const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : "";
+            const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
+            return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${fullPath}</span>${remarkHtml}<span class="tag-remove" data-model="${id}">✕</span></span>`;
+        }).join("");
+    }
+
+    bindSelectorEvents();
 }
 
 

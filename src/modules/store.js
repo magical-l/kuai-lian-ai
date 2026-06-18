@@ -39,18 +39,41 @@ function resolveNodeConfig(nodeId) {
 	return config;
 }
 
-// 递归查找模型引用 "nodeId:modelId"
 function findModelById(nodes, referenceId) {
-	const [nodeId, modelId] = referenceId.split(':');
-	const result = findNodeWithAncestors(nodes, nodeId);
-	if (!result) return null;
-	const { node } = result;
-	if (modelId === '__node__') {
-		return { node, model: { id: '__node__', name: node.modelId || '', remark: '', type: 'chat' } };
-	}
-	const model = node.models?.find(m => m.id === modelId);
-	if (model) return { node, model };
-	return null;
+    const [nodeId, modelId] = referenceId.split(":");
+    const result = findNodeWithAncestors(nodes, nodeId);
+
+    if (!result)
+        return null;
+
+    const {
+        node,
+        ancestors
+    } = result;
+
+    if (modelId === "__node__") {
+        return {
+            node,
+            ancestors,
+
+            model: {
+                id: "__node__",
+                name: node.modelId || "",
+                remark: "",
+                type: "chat"
+            }
+        };
+    }
+
+    const model = node.models?.find(m => m.id === modelId);
+
+    if (model) return {
+        node,
+        ancestors,
+        model
+    };
+
+    return null;
 }
 
 // 从模型名自动推断类型

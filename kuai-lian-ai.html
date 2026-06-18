@@ -41,7 +41,7 @@
 					<div class="logo layout-x-queue">
 						<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 					</div>
-					<span class="brand">快连AI</span><span class="version">v4.5.2</span>
+					<span class="brand">快连AI</span><span class="version">v4.5.3</span>
 				</div>
 				<div class="center layout-x-queue">
 					<span class="directory-label">当前存储目录：</span>
@@ -1348,26 +1348,35 @@ function toggleThinking(headerEl) {
 }
 // ========== Model Selector Functions ==========
 function renderModelSelector(groups, selectedModels, isGenerating) {
-	const container = $('#model-selector');
-	const summaryEl = $('#selector-summary');
-	if (!container) return;
-	container.classList.toggle('generating', isGenerating);
-	if (selectedModels.length === 0) {
-		summaryEl.innerHTML = '<span class="selector empty-hint">请选择模型</span>';
-	} else {
-		summaryEl.innerHTML = selectedModels.map(id => {
-			const info = findModelById(groups, id);
-			if (!info) return '';
-			const statusClass = getTagStatusClass(id);
-			const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-			const genState = gens ? gens.get(id) : null;
-			const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : '';
-			const classes = ['model', 'tag', 'selected', statusClass, speedClass ? `speed-${speedClass}` : ''].filter(Boolean).join(' ');
-			const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : '';
-			return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${info.node.name}</span> ${info.model.name}${remarkHtml}<span class="tag-remove" data-model="${id}">✕</span></span>`;
-		}).join('');
-	}
-	bindSelectorEvents();
+    const container = $("#model-selector");
+    const summaryEl = $("#selector-summary");
+    if (!container)
+        return;
+    container.classList.toggle("generating", isGenerating);
+    if (selectedModels.length === 0) {
+        summaryEl.innerHTML = "<span class=\"selector empty-hint\">请选择模型</span>";
+    } else {
+        summaryEl.innerHTML = selectedModels.map(id => {
+            const info = findModelById(groups, id);
+            if (!info)
+                return "";
+            const statusClass = getTagStatusClass(id);
+            const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+            const genState = gens ? gens.get(id) : null;
+            const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : "";
+            const classes = [
+                "model",
+                "tag",
+                "selected",
+                statusClass,
+                speedClass ? `speed-${speedClass}` : ""
+            ].filter(Boolean).join(" ");
+            const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : "";
+            const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
+            return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${fullPath}</span>${remarkHtml}<span class="tag-remove" data-model="${id}">✕</span></span>`;
+        }).join("");
+    }
+    bindSelectorEvents();
 }
 // findModelById is defined in store.js (recursive tree version)
 function getTagStatusClass(modelId) {
@@ -2984,18 +2993,34 @@ function resolveNodeConfig(nodeId) {
 	}
 	return config;
 }
-// 递归查找模型引用 "nodeId:modelId"
 function findModelById(nodes, referenceId) {
-	const [nodeId, modelId] = referenceId.split(':');
-	const result = findNodeWithAncestors(nodes, nodeId);
-	if (!result) return null;
-	const { node } = result;
-	if (modelId === '__node__') {
-		return { node, model: { id: '__node__', name: node.modelId || '', remark: '', type: 'chat' } };
-	}
-	const model = node.models?.find(m => m.id === modelId);
-	if (model) return { node, model };
-	return null;
+    const [nodeId, modelId] = referenceId.split(":");
+    const result = findNodeWithAncestors(nodes, nodeId);
+    if (!result)
+        return null;
+    const {
+        node,
+        ancestors
+    } = result;
+    if (modelId === "__node__") {
+        return {
+            node,
+            ancestors,
+            model: {
+                id: "__node__",
+                name: node.modelId || "",
+                remark: "",
+                type: "chat"
+            }
+        };
+    }
+    const model = node.models?.find(m => m.id === modelId);
+    if (model) return {
+        node,
+        ancestors,
+        model
+    };
+    return null;
 }
 // 从模型名自动推断类型
 function detectModelType(name) {
