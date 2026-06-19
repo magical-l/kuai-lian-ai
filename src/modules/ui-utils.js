@@ -101,11 +101,11 @@ function initDividers() {
 	const sidebarRight = $('aside.right:not(.divider)');
 	const dividerRight = $('.divider.column.control.sidebar.right');
 	const btnToggleSidebar = $('.toggle-sidebar');
-	const toggleIconRightPanel = $('.sidebar-toggle-right-panel');
 
 	function updateSidebarToggleIcon(isHidden) {
-		if (toggleIconRightPanel) {
-			toggleIconRightPanel.setAttribute('fill', isHidden ? 'none' : 'currentColor');
+		const useEl = document.querySelector('.toggle-sidebar use');
+		if (useEl) {
+			useEl.setAttribute('href', isHidden ? '#icon-sidebar-closed' : '#icon-sidebar-open');
 		}
 	}
 	if (btnToggleSidebar && sidebarRight && dividerRight) {
