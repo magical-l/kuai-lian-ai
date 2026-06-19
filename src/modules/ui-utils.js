@@ -100,8 +100,8 @@ function initDividers() {
 	}
 	const sidebarRight = $('aside.right:not(.divider)');
 	const dividerRight = $('.divider.column.control.sidebar.right');
-	const btnToggleSidebar = $('#btn-toggle-sidebar');
-	const toggleIconRightPanel = $('#sidebar-toggle-right-panel');
+	const btnToggleSidebar = $('.toggle-sidebar');
+	const toggleIconRightPanel = $('.sidebar-toggle-right-panel');
 
 	function updateSidebarToggleIcon(isHidden) {
 		if (toggleIconRightPanel) {
@@ -151,9 +151,9 @@ function scrollToBottom() {
 }
 
 function initScrollNav() {
-	const btnScrollTop = $('#btn-scroll-top');
-	const btnScrollBottom = $('#btn-scroll-bottom');
-	const navButtons = $('#scroll-nav-buttons');
+	const btnScrollTop = $('.scroll-top');
+	const btnScrollBottom = $('.scroll-bottom');
+	const navButtons = $('.scroll-nav');
 	const scrollContainer = $('#chat-messages');
 	if (!btnScrollTop || !btnScrollBottom || !navButtons || !scrollContainer) return;
 

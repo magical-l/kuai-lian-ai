@@ -103,7 +103,7 @@ main {
 }
 
 /* ========== App Header ========== */
-.app-header {
+main > header {
 	align-items: center;
 	justify-content: space-between;
 	padding: var(--space-2) var(--space-4);
@@ -112,38 +112,38 @@ main {
 	height: 36px;
 }
 
-.app-header .left {
+main > header .left {
 	align-items: center;
 	gap: var(--space-3);
 }
 
-.app-header .logo {
+main > header .logo {
 	width: 24px;
 	height: 24px;
 	align-items: center;
 	justify-content: center;
 }
 
-.app-header .brand {
+main > header .brand {
 	font-weight: 600;
 	font-size: 14px;
 	color: var(--text-primary);
 }
 
-.app-header .version {
+main > header .version {
 	font-size: 12px;
 	color: var(--text-muted);
 	margin-left: var(--space-1);
 }
 
-.app-header .center {
+main > header .center {
 	align-items: center;
 	gap: var(--space-2);
 	flex: 1;
 	justify-content: center;
 }
 
-.app-header .right {
+main > header .right {
 	align-items: center;
 	gap: var(--space-2);
 }
@@ -517,26 +517,15 @@ button.outline:hover:not(:disabled) {
 	border-color: var(--border-strong);
 }
 
-/* 停止按钮 */
-#btn-stop {
-	background: var(--danger-light);
-	color: var(--danger);
-}
-
-#btn-stop:hover:not(:disabled) {
-	background: var(--danger);
-	color: white;
-}
-
 /* ========== Scroll Navigation Buttons ========== */
-#scroll-nav-buttons {
+.scroll-nav {
 	gap: var(--space-1);
 	opacity: 0;
 	transition: opacity var(--transition-normal);
 	margin-left: auto;
 }
 
-#scroll-nav-buttons.visible {
+.scroll-nav.visible {
 	opacity: 1;
 }
 
@@ -1473,11 +1462,11 @@ button.toggle-key:hover:not(:disabled) {
 	flex-wrap: wrap;
 }
 
-#help-dialog .directory-buttons {
+.directory-buttons {
 	gap: var(--space-2);
 }
 
-#btn-restore-dir {
+button.restore-dir {
 	background: var(--success);
 	color: white;
 	border: none;
@@ -1489,11 +1478,11 @@ button.toggle-key:hover:not(:disabled) {
 	border-radius: var(--radius-sm);
 }
 
-#btn-restore-dir:hover {
+button.restore-dir:hover {
 	background: #047857;
 }
 
-#btn-change-dir-help {
+button.change-dir-help {
 	background: var(--accent-primary);
 	color: white;
 	border: none;
@@ -1505,11 +1494,11 @@ button.toggle-key:hover:not(:disabled) {
 	border-radius: var(--radius-sm);
 }
 
-#btn-change-dir-help:hover {
+button.change-dir-help:hover {
 	background: var(--accent-primary-hover);
 }
 
-#btn-use-browser-storage {
+button.use-browser-storage {
 	background: #2563EB;
 	color: #fff;
 	border: none;
@@ -1521,7 +1510,7 @@ button.toggle-key:hover:not(:disabled) {
 	transition: background var(--transition-fast);
 }
 
-#btn-use-browser-storage:hover {
+button.use-browser-storage:hover {
 	background: #1D4ED8;
 }
 
@@ -1531,7 +1520,7 @@ button.toggle-key:hover:not(:disabled) {
 	margin-top: 6px;
 }
 
-#help-dialog .directory-warning {
+.directory-warning {
 	color: var(--warning);
 	font-size: 13px;
 	margin-top: var(--space-2);
@@ -1550,10 +1539,6 @@ button.toggle-key:hover:not(:disabled) {
 
 #help-dialog .help-section li {
 	margin-bottom: var(--space-3);
-}
-
-#help-dialog .dialog-buttons {
-	margin-top: var(--space-5);
 }
 
 /* ========== Streaming Animation ========== */

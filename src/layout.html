@@ -21,7 +21,7 @@
 </head>
 <body>{BOOT}
 <main class="layout-y-queue">
-	<header class="layout-x-queue app-header">
+	<header class="layout-x-queue">
 		<div class="left layout-x-queue">
 			<div class="logo layout-x-queue">
 				<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
@@ -30,16 +30,16 @@
 		</div>
 		<div class="center layout-x-queue">
 			<span class="directory-label">当前存储目录：</span>
-			<span id="directory-path" class="directory-path">未选择目录</span>
-			<button id="btn-change-dir" class="navbar" title="更换目录">
+			<span class="directory-path">未选择目录</span>
+			<button class="navbar change-dir" title="更换目录">
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
 				</svg>
 			</button>
-			<button id="btn-delete-dir" class="navbar danger" title="弃用目录">
+			<button class="navbar danger delete-dir" title="弃用目录">
 				<span style="font-size:16px;font-weight:700">×</span>
 			</button>
-			<button id="btn-wipe-dir" class="navbar danger" title="清空数据">
+			<button class="navbar danger wipe-dir" title="清空数据">
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M3 6h18"></path>
 					<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -49,14 +49,14 @@
 			</button>
 		</div>
 		<div class="right layout-x-queue">
-			<button id="btn-toggle-sidebar" class="navbar" title="显示/隐藏右侧栏">
+			<button class="navbar toggle-sidebar" title="显示/隐藏右侧栏">
 				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1">
 					<rect x="1" y="1" width="12" height="12" rx="1"></rect>
 					<line x1="8" y1="1" x2="8" y2="13"></line>
-					<rect id="sidebar-toggle-right-panel" x="8" y="1" width="5" height="12" fill="currentColor" stroke="none"></rect>
+					<rect class="sidebar-toggle-right-panel" x="8" y="1" width="5" height="12" fill="currentColor" stroke="none"></rect>
 				</svg>
 			</button>
-			<button id="btn-help" class="navbar help" title="帮助">?</button>
+			<button class="navbar help" title="帮助">?</button>
 			<a class="btn navbar" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
 				<img alt="GitHub" src="
 https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
@@ -71,9 +71,9 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
 			<header class="layout-x-queue">
 				<span>AI服务端点</span>
 				<span class="layout-x-queue" style="gap:4px">
-					<button id="btn-test-all" class="btn-icon" title="测试全部连接"></button>
-					<button id="btn-collapse-all" class="btn-icon" title="收起全部"></button>
-					<button id="btn-add-group" title="新增端点">
+					<button class="btn-icon test-all" title="测试全部连接"></button>
+					<button class="btn-icon collapse-all" title="收起全部"></button>
+					<button class="add-group" title="新增端点">
 					<span style="font-size:16px;font-weight:700">+</span>
 				</button>
 				</span>
@@ -84,28 +84,28 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
 		<div id="main-content" class="layout-y-queue">
 			<div id="chat-header" class="layout-x-queue">
 				<span class="prefix">会话：</span>
-				<span id="chat-title">新会话</span>
-				<div id="scroll-nav-buttons" class="layout-x-queue">
-					<button id="btn-scroll-top" class="scroll-btn" title="到顶部">↑</button>
-					<button id="btn-scroll-bottom" class="scroll-btn" title="到底部">↓</button>
+				<span class="chat-title">新会话</span>
+				<div class="scroll-nav layout-x-queue">
+					<button class="scroll-btn scroll-top" title="到顶部">↑</button>
+					<button class="scroll-btn scroll-bottom" title="到底部">↓</button>
 				</div>
-				<button id="btn-new-session-header" class="outline" title="新建会话">新建会话</button>
+				<button class="outline new-session" title="新建会话">新建会话</button>
 			</div>
 			<div id="chat-messages" class="layout-y-queue"></div>
 			<div class="sticky-bottom">
 				<div class="divider row"></div>
 				<div class="chat-input-area layout-y-queue">
 					<div id="model-selector" class="model selector">
-						<div class="selector summary layout-x-queue" id="selector-summary">
+						<div class="selector-summary layout-x-queue">
 							<!-- 已选模型标签 -->
 						</div>
 					</div>
 					<div class="input-wrapper layout-y-queue">
 						<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
-						<div id="action-bar" style="display:flex;align-items:center;gap:8px;padding:8px;min-height:40px;">
-							<div id="attachments-row" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></div>
+						<div class="action-bar" style="display:flex;align-items:center;gap:8px;padding:8px;min-height:40px;">
+							<div class="attachments-row" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></div>
 							<input type="file" id="file-input" multiple accept="*/*">
-							<button id="btn-attach" class="action-btn layout-x-queue" title="添加附件">
+							<button class="action-btn layout-x-queue attach" title="添加附件">
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
 								</svg>
@@ -115,24 +115,24 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
 								<span class="mode-option" data-mode="embedding">🔢 嵌入</span>
 							</div>
 							<div id="send-btn-group" class="split-btn" title="发送">
-								<button id="btn-send" class="split-btn-main primary layout-x-queue">
+								<button class="send split-btn-main primary layout-x-queue">
 									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 										<path d="M12 19V5M5 12l7-7 7 7"></path>
 									</svg>
 								</button>
-								<button id="send-mode-toggle" class="split-btn-drop layout-x-queue">
+								<button class="send-mode-toggle split-btn-drop layout-x-queue">
 									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 										<path d="M6 9l6 6 6-6"></path>
 									</svg>
 								</button>
-								<div id="send-mode-menu" class="split-btn-menu">
+								<div class="send-mode-menu split-btn-menu">
 									<div class="split-btn-option selected" data-value="enter">Enter 发送</div>
 									<div class="split-btn-option" data-value="ctrl-enter">Ctrl+Enter 发送</div>
 								</div>
 							</div>
 						</div>
 					</div>
-					<button id="btn-stop" style="display:none;" disabled>停止</button>
+					<button class="stop btn-stop" style="display:none;" disabled>停止</button>
 				</div>
 			</div>
 		</div>
@@ -254,7 +254,7 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
 <template id="tpl-multi-response-hint">
 	<div class="cards hint">
 		<span class="hint-text"></span>
-		<button class="stop" id="btn-stop-inline">全部停止</button>
+		<button class="stop btn-stop-inline">全部停止</button>
 	</div>
 </template>
 <template id="tpl-help-dialog">
@@ -272,14 +272,14 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
 			<div class="help-section help-section-directory">
 				<h4>存储目录</h4>
 				<div class="directory-info layout-x-queue">
-					<span id="help-dir-name"></span>
-					<div class="directory-buttons layout-x-queue" id="help-directory-buttons">
-						<button id="btn-restore-dir" class="btn-restore">恢复目录</button>
-						<button id="btn-change-dir-help"></button>
-						<button id="btn-use-browser-storage" class="btn-browser-storage">使用浏览器存储</button>
+					<span class="help-dir-name"></span>
+					<div class="directory-buttons layout-x-queue">
+						<button class="btn-restore restore-dir">恢复目录</button>
+						<button class="change-dir-help"></button>
+						<button class="btn-browser-storage use-browser-storage">使用浏览器存储</button>
 					</div>
 				</div>
-				<p class="directory-warning" id="help-directory-warning">请选择存储模式：选择本地目录，或使用浏览器内置存储（无需选目录）</p>
+				<p class="directory-warning">请选择存储模式：选择本地目录，或使用浏览器内置存储（无需选目录）</p>
 				<p class="browser-storage-hint">浏览器存储：数据保存在浏览器内部（chrome.storage/IndexedDB），无需选择文件夹，随浏览器自动持久化。</p>
 			</div>
 			<div class="help-section">
@@ -301,8 +301,8 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
 				<p>可收起，眼不见为净。点击旧会话可再续前缘。</p>
 			</div>
 		</div>
-		<footer class="dialog-buttons" id="help-dialog-buttons">
-			<button id="help-close" class="primary">✓</button>
+		<footer class="dialog-buttons">
+			<button class="help-close primary">✓</button>
 		</footer>
 	</div>
 </template>

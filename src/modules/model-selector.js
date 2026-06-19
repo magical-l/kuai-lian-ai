@@ -1,7 +1,7 @@
 // ========== Model Selector Functions ==========
 function renderModelSelector(groups, selectedModels, isGenerating) {
     const container = $("#model-selector");
-    const summaryEl = $("#selector-summary");
+    const summaryEl = $(".selector-summary");
 
     if (!container)
         return;
@@ -148,7 +148,7 @@ function hideAttachmentTooltip() {
 }
 
 function renderPendingAttachments() {
-	const row = $('#attachments-row');
+	const row = $('.attachments-row');
 	if (!row) return;
 	row.innerHTML = '';
 	pendingAttachments.forEach(att => {
@@ -832,7 +832,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
     }
 
     renderTreeNode(nodes, container, 0);
-    var testAllBtn = $("#btn-test-all");
+    var testAllBtn = $(".test-all");
 
     if (testAllBtn && typeof getGroups === "function") {
         var testableIds = [];
@@ -865,7 +865,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
             }
         });
 
-        testAllBtn.className = "action batch-test btn-icon";
+        testAllBtn.classList.add("action", "batch-test");
         var spanEl = $("span", testAllBtn);
 
         if (hasTesting) {
@@ -1216,7 +1216,7 @@ function formatDateTime(timestamp) {
 }
 
 function updateChatTitle(title) {
-	const el = $('#chat-title');
+	const el = $('.chat-title');
 	el.textContent = title || '新会话';
 }
 

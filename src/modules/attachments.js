@@ -107,8 +107,8 @@ function clearInput() {
 }
 
 function setButtonState(sendDisabled, stopEnabled) {
-	$('#btn-send').disabled = sendDisabled;
-	const stopBtn = $('#btn-stop');
+	$('.send').disabled = sendDisabled;
+	const stopBtn = $('.btn-stop');
 	stopBtn.disabled = !stopEnabled;
 	stopBtn.textContent = stopEnabled ? '全部停止' : '停止';
 }
@@ -309,11 +309,11 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 	const dirName = storage.getDirectoryName();
 	const displayInfo = storage.getDisplayInfo();
 	const hasDir = storage.mode === 'directory';
-	$('#help-dir-name', dialog).textContent = '当前存储：' + displayInfo.text + (hasDir ? '' : '（浏览器存储）');
-	$('#help-dir-name', dialog).title = displayInfo.title;
-	const changeDirBtn = $('#btn-change-dir-help', dialog);
+	$('.help-dir-name', dialog).textContent = '当前存储：' + displayInfo.text + (hasDir ? '' : '（浏览器存储）');
+	$('.help-dir-name', dialog).title = displayInfo.title;
+	const changeDirBtn = $('.change-dir-help', dialog);
 	changeDirBtn.textContent = hasDir ? '更换目录' : '选择目录存储';
-	const restoreBtn = $('#btn-restore-dir', dialog);
+	const restoreBtn = $('.restore-dir', dialog);
 	if (restoreBtn) {
 		restoreBtn.onclick = async () => {
 	const ok = await storage.restoreDirectory();
@@ -323,8 +323,8 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 				await loadEndpoints();
 				await loadSessionsIndex();
 				const dispInfo = storage.getDisplayInfo();
-				$('#help-dir-name', dialog).textContent = '当前存储：' + dispInfo.text;
-				$('#help-dir-name', dialog).title = dispInfo.title;
+				$('.help-dir-name', dialog).textContent = '当前存储：' + dispInfo.text;
+				$('.help-dir-name', dialog).title = dispInfo.title;
 				updateDirectoryDisplay();
 				await refreshUI();
 				closeHelpDialog(dialog, overlay, true);
@@ -334,9 +334,9 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 		};
 		if (!hasPendingHandle) restoreBtn.remove();
 	}
-	const warningEl = $('#help-directory-warning', dialog);
+	const warningEl = $('.directory-warning', dialog);
 	if (!forceSelectDirectory) warningEl.remove();
-	const closeBtn = $('#help-close', dialog);
+	const closeBtn = $('.help-close', dialog);
 	if (closeBtn) {
 		closeBtn.onclick = () => closeHelpDialog(dialog, overlay, false);
 		overlay.onclick = () => closeHelpDialog(dialog, overlay, false);
@@ -348,8 +348,8 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 		const success = await selectDirectory();
 		if (success) {
 			const dispInfo2 = storage.getDisplayInfo();
-			$('#help-dir-name', dialog).textContent = '当前存储：' + dispInfo2.text;
-			$('#help-dir-name', dialog).title = dispInfo2.title;
+			$('.help-dir-name', dialog).textContent = '当前存储：' + dispInfo2.text;
+			$('.help-dir-name', dialog).title = dispInfo2.title;
 			updateDirectoryDisplay();
 			await refreshUI();
 			if (forceSelectDirectory) {
@@ -358,7 +358,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 		}
 	};
 	// 使用浏览器存储按钮
-	const browserBtn = $("#btn-use-browser-storage", dialog);
+	const browserBtn = $(".use-browser-storage", dialog);
 	if (browserBtn) {
 		browserBtn.onclick = async () => {
 			await storage.selectMode("browser");
@@ -372,7 +372,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 }
 
 function closeHelpDialog(dialog, overlay, immediate = false) {
-	const helpBtn = $('#btn-help');
+	const helpBtn = $('.help');
 	if (!helpBtn) {
 		dialog.remove();
 		overlay.remove();

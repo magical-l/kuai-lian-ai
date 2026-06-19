@@ -39,7 +39,7 @@ async function init() {
 	});
 	// 分裂式按钮：发送模式切换
 	const btnGroup = $('#send-btn-group');
-	const toggle = $('#send-mode-toggle');
+	const toggle = $('.send-mode-toggle');
 	const options = $$('.split-btn-option', btnGroup);
 	// 初始化选中状态
 	if (!sendOnEnter) {
@@ -93,10 +93,10 @@ async function init() {
 		updateDirectoryDisplay();
 		await refreshUI();
 	}
-	$('#btn-add-group').onclick = handleAddGroup;
-	$('#btn-collapse-all').onclick = collapseAllEndpointNodes;
-	$('#btn-collapse-all').innerHTML = SVG.collapseAll;
-	$('#btn-test-all').onclick = function() {
+	$('.add-group').onclick = handleAddGroup;
+	$('.collapse-all').onclick = collapseAllEndpointNodes;
+	$('.collapse-all').innerHTML = SVG.collapseAll;
+	$('.test-all').onclick = function() {
 		var allIds = [];
 		function collectIds(nodes) {
 			nodes.forEach(function(n) {
@@ -108,8 +108,8 @@ async function init() {
 		collectIds(getGroups());
 		allIds.forEach(function(id) { testConnection(id, '__node__'); });
 	};
-	$('#btn-test-all').innerHTML = SVG.testAll;
-	$('#btn-send').onclick = () => {
+	$('.test-all').innerHTML = SVG.testAll;
+	$('.send').onclick = () => {
 		if (inputMode === 'embedding') {
 			handleEmbeddingSend();
 		} else {
@@ -124,24 +124,24 @@ async function init() {
 			console.log("Mode:", inputMode);
 			const input = $('#chat-input');
 			input.placeholder = inputMode === 'chat' ? '输入消息...' : '输入要嵌入的文本...';
-			$('#btn-attach').style.display = inputMode === 'chat' ? '' : 'none';
+			$('.attach').style.display = inputMode === 'chat' ? '' : 'none';
 			$('#file-input').style.display = inputMode === 'chat' ? '' : 'none';
 		};
 	});
-	$('#btn-stop').onclick = () => {
+	$('.stop:first-of-type').onclick = () => {
 		stopAllGenerations();
 		setButtonState(false, false);
 		renderModelSelector(getGroups(), selectedModels, false);
 	};
-	$('#btn-help').onclick = async () => {
+	$('.help').onclick = async () => {
 		const saved = await storage.hasSavedHandle();
 		showHelpDialog(false, !!saved);
 	};
-	$('#btn-new-session-header').onclick = handleNewSession;
-	$('#btn-delete-dir').onclick = handleDeleteDirectory;
-	$('#btn-wipe-dir').onclick = handleWipeDirectory;
+	$('.new-session').onclick = handleNewSession;
+	$('.delete-dir').onclick = handleDeleteDirectory;
+	$('.wipe-dir').onclick = handleWipeDirectory;
 	// 附件按钮
-	$('#btn-attach').onclick = () => {
+	$('.attach').onclick = () => {
 		$('#file-input').click();
 	};
 	$('#file-input').onchange = async (e) => {
@@ -155,7 +155,7 @@ async function init() {
 		renderPendingAttachments();
 	};
 	// 更换目录按钮
-	$('#btn-change-dir').onclick = async () => {
+	$('.change-dir').onclick = async () => {
 		const success = await selectDirectory();
 		if (success) {
 			updateDirectoryDisplay();
@@ -204,7 +204,7 @@ async function handleWipeDirectory() {
 }
 async function updateDirectoryDisplay() {
 	const info = storage.getDisplayInfo();
-	const dirPath = $('#directory-path');
+	const dirPath = $('.directory-path');
 	dirPath.textContent = info.text;
 	dirPath.title = info.title;
 }
@@ -547,7 +547,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 	const hint = fromTemplate('tpl-multi-response-hint', '.cards.hint');
 	$('.hint-text', hint).textContent = `${modelIds.length}个模型正在思考...`;
 	msgEl.addChild(hint);
-	const stopBtn = $('#btn-stop-inline', hint);
+	const stopBtn = $('.btn-stop-inline', hint);
 	if (stopBtn) {
 		stopBtn.onclick = () => {
 			stopAllGenerations();
@@ -694,7 +694,7 @@ function reorderCardsBySpeed() {
 }
 
 function reorderSelectorTagsBySpeed() {
-	const summaryEl = $('#selector-summary');
+	const summaryEl = $('.selector-summary');
 	if (!summaryEl) return;
 	const tags = Array.from(summaryEl.querySelectorAll('.model.tag.selected'));
 	if (tags.length === 0) return;
