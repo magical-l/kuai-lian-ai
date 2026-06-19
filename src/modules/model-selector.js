@@ -32,7 +32,7 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 
             const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : "";
             const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
-            return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${fullPath}</span>${remarkHtml}<span class="btn tag-remove" data-model="${id}">✕</span></span>`;
+            return `<span class="${classes}" data-model="${id}"><span class="path">${fullPath}</span>${remarkHtml}<span class="btn remove" data-model="${id}">✕</span></span>`;
         }).join("");
     }
 
@@ -77,7 +77,7 @@ function bindSelectorEvents() {
         };
     });
     // 标签上的小叉：移除该模型
-    $$('.tag-remove').forEach(function(btn) {
+    $$('.model.tag .remove').forEach(function(btn) {
         btn.onclick = function(e) {
             e.stopPropagation();
             toggleModelSelection(btn.dataset.model, true);
@@ -86,7 +86,7 @@ function bindSelectorEvents() {
 }
 function syncJoinBtnState(nid) {
 	if (!nid) return;
-	var eg = document.querySelector('.endpoint-group[data-node-id="' + nid + '"]');
+	var eg = document.querySelector('.endpoint[data-node-id="' + nid + '"]');
 	if (!eg) return;
 	var jb = eg.querySelector('.join-session');
 	if (!jb) return;
@@ -117,9 +117,9 @@ function collapseAllEndpointNodes() {
 	collectIds(getGroups());
 	ids.forEach(function(id) { collapsedEndpoints.add(id); });
 	// 直接操作DOM收起
-	$$('.endpoint-group').forEach(function(el) {
-		var toggle = $('.group-toggle', el);
-		var content = $('.node-content', el);
+	$$('.endpoint').forEach(function(el) {
+		var toggle = $('.toggle', el);
+		var content = $('.body', el);
 		if (content) content.style.display = 'none';
 		if (toggle) toggle.textContent = '▶';
 	});
@@ -152,7 +152,7 @@ function renderPendingAttachments() {
 	if (!row) return;
 	row.innerHTML = '';
 	pendingAttachments.forEach(att => {
-		const thumb = mk('div', `attachment-thumb layout-x-queue ${att.type === 'image' ? 'image' : 'file'}`);
+		const thumb = mk('div', `thumb layout-x-queue ${att.type === 'image' ? 'image' : 'file'}`);
 		thumb.dataset.id = att.id;
 		if (att.type === 'image' && att.previewUrl) {
 			thumb.style.backgroundImage = `url(${att.previewUrl})`;
@@ -162,7 +162,7 @@ function renderPendingAttachments() {
 		// hover显示名字
 		thumb.onmouseenter = () => showAttachmentTooltip(att.name, thumb);
 		thumb.onmouseleave = () => hideAttachmentTooltip();
-		const remove = mk('span', 'btn attachment-remove');
+		const remove = mk('span', 'btn remove');
 		remove.textContent = '×';
 		remove.onclick = (e) => {
 			e.stopPropagation();
@@ -208,12 +208,12 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
             var hasModels = node.models && node.models.length > 0;
             var isCollapsed = collapsedEndpoints.has(node.id);
             var hasContent = hasChildren || hasModels;
-            var nodeEl = mk("section", "endpoint-group");
+            var nodeEl = mk("section", "endpoint");
             nodeEl.dataset.nodeId = node.id;
             nodeEl.dataset.nodeIndex = index;
-            var headerEl = mk("div", "group-header layout-x-queue");
+            var headerEl = mk("header", "layout-x-queue");
             headerEl.style.paddingLeft = (depth * 12 + 4) + "px";
-            var dragHandle = mk("span", "btn drag-handle layout-x-queue");
+            var dragHandle = mk("span", "btn handle layout-x-queue");
             dragHandle.innerHTML = SVG.drag(14);
             dragHandle.title = "拖动排序";
             dragHandle.draggable = true;
@@ -227,12 +227,12 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
             dragHandle.on("dragend", function() {
                 nodeEl.classList.remove("dragging");
 
-                $$(".endpoint-group", container).forEach(function(el) {
+                $$(".endpoint", container).forEach(function(el) {
                     el.classList.remove("drag-over", "drag-over-child", "drag-over-before", "drag-over-after");
                 });
             });
 
-            var toggleSpan = mk("span", "btn group-toggle");
+            var toggleSpan = mk("span", "btn toggle");
             toggleSpan.textContent = isCollapsed || !hasContent ? "▶" : "▼";
 
             if (!hasContent)
@@ -240,7 +240,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 
             toggleSpan.on("click", function(e) {
                 e.stopPropagation();
-                var ct = $(".node-content", nodeEl);
+                var ct = $(".body", nodeEl);
 
                 if (!ct)
                     return;
@@ -256,7 +256,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 }
             });
 
-            var nameSpan = mk("span", "group-name");
+            var nameSpan = mk("span", "name");
             var rcfg = resolveNodeConfig(node.id);
             nameSpan.textContent = node.name;
 
@@ -284,7 +284,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
             var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? "(已设置)" : "");
             var tipStyle = inherited(rcfg.style, node.style) ? "↑ " + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || "");
             var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || "");
-            var tooltipHTML = "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">名称：</span>" + "<span class=\"tooltip-value\">" + tipName + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + tipName + "\" title=\"复制\">⧉</button></div>" + "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">地址：</span>" + "<span class=\"tooltip-value\">" + tipBaseUrl + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\">⧉</button></div>" + "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">格式：</span>" + "<span class=\"tooltip-value\">" + tipStyle + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\">⧉</button></div>" + (rcfg.key ? "<div class=\"tooltip-row layout-x-queue\"><span class=\"tooltip-label\">Key：</span><span class=\"tooltip-value\">" + tipKey + "</span><button class=\"tooltip-copy\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\">⧉</button></div>" : "") + "<div class=\"tooltip-row layout-x-queue\"><span class=\"tooltip-label\">模型：</span><span class=\"tooltip-value\">" + (tipModel || "-") + "</span><button class=\"tooltip-copy\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\">⧉</button></div>";
+            var tooltipHTML = "<div class=\"row layout-x-queue\">" + "<span class=\"label\">名称：</span>" + "<span class=\"value\">" + tipName + "</span>" + "<button class=\"copy\" data-copy=\"" + tipName + "\" title=\"复制\">⧉</button></div>" + "<div class=\"row layout-x-queue\">" + "<span class=\"label\">地址：</span>" + "<span class=\"value\">" + tipBaseUrl + "</span>" + "<button class=\"copy\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\">⧉</button></div>" + "<div class=\"row layout-x-queue\">" + "<span class=\"label\">格式：</span>" + "<span class=\"value\">" + tipStyle + "</span>" + "<button class=\"copy\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\">⧉</button></div>" + (rcfg.key ? "<div class=\"row layout-x-queue\"><span class=\"label\">Key：</span><span class=\"value\">" + tipKey + "</span><button class=\"copy\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\">⧉</button></div>" : "") + "<div class=\"row layout-x-queue\"><span class=\"label\">模型：</span><span class=\"value\">" + (tipModel || "-") + "</span><button class=\"copy\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\">⧉</button></div>";
             var tooltip = createTooltip(tooltipId, tooltipHTML);
 
             nameSpan.on("mouseenter", function() {
@@ -297,7 +297,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 
             nameSpan.on("click", function() {
                 tooltip.hide();
-                var ct = $(".node-content", nodeEl);
+                var ct = $(".body", nodeEl);
 
                 if (ct) {
                     if (ct.style.display === "none") {
@@ -310,7 +310,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 }
             });
 
-            var actionsEl = mk("div", "group-actions layout-x-queue");
+            var actionsEl = mk("div", "actions layout-x-queue");
             var addChildBtn = mk("button", "action");
             addChildBtn.textContent = "+";
             addChildBtn.title = "添加子节点";
@@ -514,7 +514,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 if (!draggingEl || draggingEl === nodeEl || draggingEl.dataset.modelId)
                     return;
 
-                var header = $(".group-header", nodeEl);
+                var header = $("header", nodeEl);
                 var headerRect = header.getBoundingClientRect();
                 nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
 
@@ -552,13 +552,13 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 }
             });
 
-            var contentEl = mk("div", "node-content layout-y-queue");
+            var contentEl = mk("div", "body layout-y-queue");
 
             if (isCollapsed) {
                 contentEl.style.display = "none";
             }
 
-            var models = mk("div", "group-models layout-y-queue");
+            var models = mk("div", "models layout-y-queue");
             models.style.paddingLeft = (depth * 12 + 8) + "px";
 
             node.models.forEach(function(model) {
@@ -570,7 +570,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                     modelEl.classList.add("selected");
                 }
 
-                var modelDragHandle = mk("span", "btn drag-handle");
+                var modelDragHandle = mk("span", "btn handle");
                 modelDragHandle.innerHTML = SVG.drag(14);
                 modelDragHandle.title = "拖动排序";
                 modelDragHandle.draggable = true;
@@ -592,7 +592,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 var modelName = mk("span", "model name");
                 modelName.innerHTML = model.remark ? model.name + "<span class=\"model-remark\"> " + model.remark + "</span>" : model.name;
                 var modelTooltipId = "tooltip-model-" + node.id + "-" + model.id;
-                var tooltipRows = "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">模型：</span>" + "<span class=\"tooltip-value\">" + model.name + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + model.name + "\" title=\"复制\">⧉</button></div>" + (model.remark ? "<div class=\"tooltip-row layout-x-queue\">" + "<span class=\"tooltip-label\">备注：</span>" + "<span class=\"tooltip-value\">" + model.remark + "</span>" + "<button class=\"tooltip-copy\" data-copy=\"" + model.remark + "\" title=\"复制\">⧉</button></div>" : "");
+                var tooltipRows = "<div class=\"row layout-x-queue\">" + "<span class=\"label\">模型：</span>" + "<span class=\"value\">" + model.name + "</span>" + "<button class=\"copy\" data-copy=\"" + model.name + "\" title=\"复制\">⧉</button></div>" + (model.remark ? "<div class=\"row layout-x-queue\">" + "<span class=\"label\">备注：</span>" + "<span class=\"value\">" + model.remark + "</span>" + "<button class=\"copy\" data-copy=\"" + model.remark + "\" title=\"复制\">⧉</button></div>" : "");
                 var modelTooltip = createTooltip(modelTooltipId, tooltipRows);
 
                 modelName.on("mouseenter", function() {
@@ -764,7 +764,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 models.addChild(modelEl);
             });
 
-            var addModelBtn = mk("div", "btn add-model-link");
+            var addModelBtn = mk("div", "btn add");
             addModelBtn.textContent = "+ 添加模型";
 
             addModelBtn.on("click", function(e) {
@@ -821,7 +821,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 contentEl.addChild(models);
 
             if (hasChildren) {
-                var childrenWrapper = mk("div", "node-children");
+                var childrenWrapper = mk("div", "children");
                 renderTreeNode(node.children, childrenWrapper, depth + 1);
                 contentEl.addChild(childrenWrapper);
             }
@@ -987,12 +987,12 @@ function renderMessages(messages, groups, onCopy) {
 	container.innerHTML = '';
 	messages.forEach((msg, index) => {
 		const roleClass = msg.role === 'user' ? 'req' : 'res';
-		const msgEl = mk('article', `message layout-y-queue ${roleClass} msg`);
+		const msgEl = mk('article', `msg layout-y-queue ${roleClass}`);
 		if (msg.role === 'user') {
 			// 使用模板创建meta，包含复制按钮
-			const meta = fromTemplate('tpl-user-meta', '.request.meta');
+			const meta = fromTemplate('tpl-user-meta', '.req.meta');
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
-			$('.request.time', meta).textContent = timeStr;
+			$('.req .time', meta).textContent = timeStr;
 			msgEl.addChild(meta);
 			const normalized = normalizeMessageContent(msg);
 			const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
@@ -1006,15 +1006,15 @@ function renderMessages(messages, groups, onCopy) {
 				});
 			};
 			if (textContent) {
-				const userEl = mk('div', 'message-user');
+				const userEl = mk('div', 'msg user');
 				userEl.textContent = textContent;
 				msgEl.addChild(userEl);
 			}
 			const attachmentItems = normalized.filter(c => c.type === 'image' || c.type === 'file');
 			if (attachmentItems.length > 0) {
-				const attContainer = mk('div', 'message-attachments layout-x-queue');
+				const attContainer = mk('div', 'attachments layout-x-queue');
 				attachmentItems.forEach(att => {
-					const attEl = mk('div', `message-attachment layout-x-queue ${att.type}`);
+					const attEl = mk('div', `attach layout-x-queue ${att.type}`);
 					if (att.type === 'image' && att.source) {
 						let imgSrc;
 						if (att.source.type === 'url') {
@@ -1022,7 +1022,7 @@ function renderMessages(messages, groups, onCopy) {
 						} else {
 							imgSrc = `data:${att.source.media_type};base64,${att.source.data}`;
 						}
-						const thumb = mk('img', 'message-attachment-thumb');
+						const thumb = mk('img', 'thumb');
 						thumb.src = imgSrc;
 						thumb.onclick = () => {
 							const overlay = mk('div', 'image-preview-overlay layout-x-queue');
@@ -1033,14 +1033,14 @@ function renderMessages(messages, groups, onCopy) {
 							doc.body.addChild(overlay);
 						};
 						attEl.addChild(thumb);
-						const nameEl = mk('span', 'message-attachment-name');
+						const nameEl = mk('span', 'name');
 						nameEl.textContent = att.name || '图片';
 						attEl.addChild(nameEl);
 					} else if (att.type === 'file' && att.source) {
 						const fileIcon = mk('span');
 						fileIcon.textContent = '📄';
 						attEl.addChild(fileIcon);
-						const nameEl = mk('span', 'message-attachment-name');
+						const nameEl = mk('span', 'name');
 						nameEl.textContent = att.name || '文件';
 						attEl.addChild(nameEl);
 						attEl.onclick = () => {
@@ -1077,9 +1077,9 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
 	const modelName = info ? `${info.node.name} / ${info.model.name}` : '未知模型';
 	const modelRemark = info?.model?.remark || '';
-	const meta = fromTemplate('tpl-response-meta', '.response.meta');
-	$('.response.model-name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
-	$('.response.time', meta).textContent = timeStr;
+	const meta = fromTemplate('tpl-response-meta', '.res.meta');
+	$('.res .name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
+	$('.res .time', meta).textContent = timeStr;
 	const copyBtn = $('.copy-btn', meta);
 	copyBtn.onclick = () => {
 		navigator.clipboard.writeText(msg.content || "").then(() => {
@@ -1089,13 +1089,13 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 		});
 	};
 	msgEl.addChild(meta);
-	const assistantEl = mk('div', 'message-assistant');
+	const assistantEl = mk('div', 'msg assistant');
 	assistantEl.innerHTML = renderMarkdown(msg.content || '');
 	msgEl.addChild(assistantEl);
 	addCodeCopyButtons(assistantEl);
 	if (msg.usage) {
-		const statusBar = mk('div', 'message-status-bar layout-x-queue');
-		const usageEl = mk('span', 'message-usage');
+		const statusBar = mk('div', 'status bar layout-x-queue');
+		const usageEl = mk('span', 'usage');
 		usageEl.textContent = `${msg.usage.input || 0} → ${msg.usage.output || 0} tokens`;
 		statusBar.addChild(usageEl);
 		msgEl.addChild(statusBar);
@@ -1104,33 +1104,33 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 
 function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 	const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
-	const hint = mk('div', 'multi-response-hint');
+	const hint = mk('div', 'cards hint');
 	hint.textContent = `${sorted.length}个模型回复`;
 	msgEl.addChild(hint);
-	const cards = mk('div', 'multi-response-cards layout-y-queue');
+	const cards = mk('div', 'cards layout-y-queue');
 	sorted.forEach(r => {
-		const card = mk('div', 'response card');
+		const card = mk('div', 'res card');
 		const info = findModelById(groups, r.modelId);
 		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
 		const remark = info?.model?.remark || '';
-		const meta = fromTemplate('tpl-multi-response-meta', '.response.meta');
+		const meta = fromTemplate('tpl-multi-response-meta', '.res.meta');
 		const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
 		const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
 		const statusText = getStatusText(r.status);
 		const responseTimeStr = r.timestamp ? formatDateTime(r.timestamp) : '';
 		const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
 		const speedClass = getSpeedClass(r.firstTokenTime);
-		$('.response.model-name', meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
-		$('.response.time', meta).textContent = responseTimeStr;
-		const durationEl = $('.response.duration', meta);
+		$('.res .name', meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
+		$('.res .time', meta).textContent = responseTimeStr;
+		const durationEl = $('.res .dur', meta);
 		durationEl.textContent = durationStr;
 		if (speedClass) durationEl.classList.add(speedClass);
-		$('.response.total', meta).textContent = totalStr;
-		const statusEl = $('.response.status', meta);
+		$('.res .total', meta).textContent = totalStr;
+		const statusEl = $('.res .status', meta);
 		statusEl.textContent = statusText;
 		statusEl.classList.add('status');
 		statusEl.classList.add(r.status);
-		const errorEl = $('.response.error', meta);
+		const errorEl = $('.res .error', meta);
 		if (errorText) {
 			errorEl.textContent = errorText;
 		} else {
@@ -1163,20 +1163,20 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 			return;
 		}
 		if (r.thinking && r.thinking.trim()) {
-			const thinkingBlock = mk('div', 'thinking-block collapsed');
-			const thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
+			const thinkingBlock = mk('div', 'think collapsed');
+			const thinkingHeader = fromTemplate('tpl-thinking-header', 'header');
 			thinkingHeader.onclick = function() {
 				toggleThinking(this);
 			};
 			const thinkingDurationStr = r.thinkingDuration ? `耗时 ${(r.thinkingDuration/1000).toFixed(1)}s` : '';
-			$('.thinking-duration', thinkingHeader).textContent = thinkingDurationStr;
-			const thinkingContent = mk('div', 'thinking-content');
+			$('.duration', thinkingHeader).textContent = thinkingDurationStr;
+			const thinkingContent = mk('div', 'content');
 			thinkingContent.textContent = r.thinking;
 			thinkingBlock.addChild(thinkingHeader);
 			thinkingBlock.addChild(thinkingContent);
 			card.addChild(thinkingBlock);
 		}
-		const content = mk('div', 'response card-content');
+		const content = mk('div', 'content');
 		if (r.status === 'failed') {
 			content.innerHTML = ''; // Error shown in meta row, content area empty
 		} else {

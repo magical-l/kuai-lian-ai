@@ -544,7 +544,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 	const msgEl = mk('article', 'message layout-y-queue res msg');
 	msgEl.id = 'streaming-multi-response';
 	msgEl.dataset.sessionId = sessionId;
-	const hint = fromTemplate('tpl-multi-response-hint', '.multi-response-hint');
+	const hint = fromTemplate('tpl-multi-response-hint', '.cards.hint');
 	$('.hint-text', hint).textContent = `${modelIds.length}个模型正在思考...`;
 	msgEl.addChild(hint);
 	const stopBtn = $('#btn-stop-inline', hint);
@@ -556,14 +556,14 @@ function showThinkingCards(modelIds, groups, sessionId) {
 			$('.hint-text', hint).textContent = `${modelIds.length}个模型（部分已停止）`;
 		};
 	}
-	const cards = mk('div', 'multi-response-cards layout-y-queue');
+	const cards = mk('div', 'cards layout-y-queue');
 	modelIds.forEach(id => {
-		const card = fromTemplate('tpl-response-card-streaming', '.response.card');
+		const card = fromTemplate('tpl-response-card-streaming', '.res.card');
 		card.dataset.sessionId = sessionId;
 		card.dataset.modelId = id;
 		const info = findModelById(groups, id);
 		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
-		$('.response.model-name', card).textContent = name;
+		$('.res .name', card).textContent = name;
 		cards.addChild(card);
 	});
 	msgEl.addChild(cards);
@@ -572,9 +572,9 @@ function showThinkingCards(modelIds, groups, sessionId) {
 }
 
 function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) {
-	const card = $(`.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
+	const card = $(`.res.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
 	if (!card) return;
-	const thinkingBlock = $('.thinking-block', card);
+	const thinkingBlock = $('.thinking', card);
 	if (thinkingBlock) {
 		if (state.thinking && state.thinking.trim()) {
 			thinkingBlock.style.display = 'block';
@@ -603,17 +603,17 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 			thinkingBlock.style.display = 'none';
 		}
 	}
-	const contentEl = $('.response.card-content', card);
+	const contentEl = $('.res .content', card);
 	if (contentEl) {
 		contentEl.textContent = state.content || '';
 	}
 	if (firstTokenTime !== null) {
-		const meta = $('.response.meta', card);
+		const meta = $('.res.meta', card);
 		if (meta) {
-			if (!$('.response.duration', meta)) {
+			if (!$('.res .dur', meta)) {
 				const durationEl = mk('span', `response duration ${getSpeedClass(firstTokenTime)}`);
 				durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
-				const modelNameEl = $('.response.model-name', meta);
+				const modelNameEl = $('.res .name', meta);
 				if (modelNameEl) {
 					modelNameEl.insertAdjacentElement('afterend', durationEl);
 				}
@@ -624,12 +624,12 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 
 function updateCardStatus(modelId, status, error, state = null, sessionId = null) {
 	requestAnimationFrame(() => {
-		const selector = sessionId ? `.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.response.card[data-model-id="${modelId}"]`;
+		const selector = sessionId ? `.res.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.res.card[data-model-id="${modelId}"]`;
 		const card = $(selector);
 		if (!card) return;
 		card.classList.remove('thinking');
-		const contentEl = $('.response.card-content', card);
-		const meta = $('.response.meta', card);
+		const contentEl = $('.res .content', card);
+		const meta = $('.res.meta', card);
 		const icon = meta ? $('.model.status-icon', meta) : null;
 		if (icon) {
 			icon.classList.remove('spinning');
@@ -641,17 +641,17 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 			if (contentEl) {
 				contentEl.textContent = ''; // Empty content for failed
 			}
-			if (meta && error && !$('.response.error', meta)) {
+			if (meta && error && !$('.res .error', meta)) {
 				const errorEl = mk('span', 'response error');
 				errorEl.textContent = error;
-				const statusEl = $('.response.status', meta) || icon;
+				const statusEl = $('.res .status', meta) || icon;
 				if (statusEl) {
 					statusEl.insertAdjacentElement('afterend', errorEl);
 				}
 			}
 		} else if (status === 'stopped') {} else if (status === 'completed') {
 			if (state && state.thinkingDuration) {
-				const thinkingBlock = $('.thinking-block', card);
+				const thinkingBlock = $('.thinking', card);
 				if (thinkingBlock) {
 					thinkingBlock.classList.remove('streaming');
 					thinkingBlock.classList.add('collapsed');
@@ -662,10 +662,10 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 				}
 			}
 			if (state && state.totalDuration) {
-				let totalEl = $('.response.total', meta);
+				let totalEl = $('.res .total', meta);
 				if (!totalEl) {
 					totalEl = mk('span', 'response total');
-					const insertAfter = $('.response.status', meta) || $('.model.status-icon', meta);
+					const insertAfter = $('.res .status', meta) || $('.model.status-icon', meta);
 					if (insertAfter) {
 						insertAfter.insertAdjacentElement('afterend', totalEl);
 					} else {
@@ -680,10 +680,10 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 
 function reorderCardsBySpeed() {
 	requestAnimationFrame(() => {
-		const container = $('#streaming-multi-response .multi-response-cards');
+		const container = $('#streaming-multi-response .cards');
 		if (!container) return;
 		const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-		const cards = Array.from($$('.response.card', container));
+		const cards = Array.from($$('.res.card', container));
 		cards.sort((a, b) => {
 			const stateA = gens ? gens.get(a.dataset.modelId) : null;
 			const stateB = gens ? gens.get(b.dataset.modelId) : null;

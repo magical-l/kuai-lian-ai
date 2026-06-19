@@ -312,10 +312,10 @@ function createTooltip(id, html) {
 		if (!el) {
 			el = doc.createElement('div');
 			el.id = id;
-			el.className = 'group-tooltip';
+			el.className = 'tip';
 			el.innerHTML = html;
 			doc.body.appendChild(el);
-			$$('button.tooltip-copy', el).forEach(btn => {
+			$$('button.copy', el).forEach(btn => {
 				btn.onclick = e => {
 					e.stopPropagation();
 					navigator.clipboard.writeText(btn.dataset.copy);

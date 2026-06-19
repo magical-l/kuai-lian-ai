@@ -26,7 +26,7 @@
 			<div class="logo layout-x-queue">
 				<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 			</div>
-			<span class="brand">快连AI</span><span class="version">v4.5.5</span>
+			<span class="brand">快连AI</span><span class="version">v5.0.0</span>
 		</div>
 		<div class="center layout-x-queue">
 			<span class="directory-label">当前存储目录：</span>
@@ -202,57 +202,57 @@ https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
 	</div>
 </template>
 <template id="tpl-user-meta">
-	<div class="request meta layout-x-queue">
-		<span class="request name">我</span>
-		<span class="request time"></span>
+	<div class="req meta layout-x-queue">
+		<span class="name">我</span>
+		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
 			<span class="copy-icon">⧉</span><span class="copy-check">✓</span>
 		</button>
 	</div>
 </template>
 <template id="tpl-response-meta">
-	<div class="response meta layout-x-queue">
-		<span class="response model-name"></span>
-		<span class="response time"></span>
+	<div class="res meta layout-x-queue">
+		<span class="name"></span>
+		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
 			<span class="copy-icon">⧉</span><span class="copy-check">✓</span>
 		</button>
 	</div>
 </template>
 <template id="tpl-multi-response-meta">
-	<div class="response meta layout-x-queue">
-		<span class="response model-name"></span>
-		<span class="response time"></span>
-		<span class="response duration"></span>
-		<span class="response total"></span>
-		<span class="response status"></span>
-		<span class="response error"></span>
+	<div class="res meta layout-x-queue">
+		<span class="name"></span>
+		<span class="time"></span>
+		<span class="dur"></span>
+		<span class="total"></span>
+		<span class="status"></span>
+		<span class="error"></span>
 		<button class="icon copy-btn" title="复制">
 			<span class="copy-icon">⧉</span><span class="copy-check">✓</span>
 		</button>
 	</div>
 </template>
 <template id="tpl-response-card-streaming">
-	<div class="response card thinking">
-		<div class="response meta layout-x-queue">
-			<span class="response model-name"></span>
+	<div class="res card thinking">
+		<div class="res meta layout-x-queue">
+			<span class="name"></span>
 			<span class="icon model status-icon spinning">◐</span>
 		</div>
-		<div class="thinking-block streaming" style="display:none;">
-			<div class="thinking-content">等待思考...</div>
+		<div class="think stream" style="display:none;">
+			<div class="content">等待思考...</div>
 		</div>
-		<div class="response card-content">等待回复...</div>
+		<div class="content">等待回复...</div>
 	</div>
 </template>
 <template id="tpl-thinking-header">
-	<div class="btn thinking-header layout-x-queue">
-		<span class="thinking-icon"></span>
-		<span class="thinking-label">思考</span>
-		<span class="thinking-duration"></span>
-	</div>
+	<header class="btn layout-x-queue">
+		<span class="icon"></span>
+		<span class="label">思考</span>
+		<span class="duration"></span>
+	</header>
 </template>
 <template id="tpl-multi-response-hint">
-	<div class="multi-response-hint">
+	<div class="cards hint">
 		<span class="hint-text"></span>
 		<button class="stop" id="btn-stop-inline">全部停止</button>
 	</div>
