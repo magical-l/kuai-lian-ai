@@ -1,7 +1,7 @@
 // 从 src/ 构建单页面 HTML 和 Chrome 扩展
 // 用法: node build.js
-// layout.html 包含完整 HTML 结构及 {CSS} {BOOT} {APP} 占位符，
-// build 脚本填入压缩后的内容。
+// layout.html 使用标准 <link href> 和 <script src> 引用源文件，
+// build 脚本扫描这些标签内联或重写引用。
 
 const fs = require('fs');
 const path = require('path');
@@ -46,12 +46,37 @@ function compressJS(js) {
 	return js.split('\n').map(l => l.trimEnd()).filter(l => l !== '').join('\n');
 }
 
-/** 读取模板并替换占位符（用函数做替换值，避免 String.replace 对 $ 的特殊处理） */
-function buildHTML(layout, css, boot, app) {
-	return layout
-		.replace('{CSS}', () => compressCSS(css))
-		.replace('{BOOT}', () => '<script>' + compressJS(boot) + '</script>')
-		.replace('{APP}', () => '<script>' + compressJS(app) + '</script>');
+/** 判断是否为源文件（需要 inline 或处理的） */
+function isSourceAsset(src) {
+	return src === 'style.css' || src.startsWith('modules/');
+}
+
+function buildSinglePage(html) {
+	// 内联 CSS：<link href="style.css"> → <style>inline</style>
+	html = html.replace(/<link\s[^>]*href="style\.css"[^>]*>/g, () => {
+		return '<style>' + compressCSS(read(SRC, 'style.css')) + '</style>';
+	});
+	// 内联 JS：<script src="modules/X.js"> → <script>inline</script>
+	html = html.replace(/<script\s[^>]*src="modules\/([^"]+)"[^>]*><\/script>/g, (m, file) => {
+		return '<script>' + compressJS(read(SRC, 'modules', file)) + '</script>';
+	});
+	return html;
+}
+
+function buildExtension(html) {
+	// 内联 CSS
+	html = html.replace(/<link\s[^>]*href="style\.css"[^>]*>/g, () => {
+		return '<style>' + compressCSS(read(SRC, 'style.css')) + '</style>';
+	});
+	// boot.js: 改为外部引用
+	html = html.replace(/<script\s[^>]*src="modules\/boot\.js"[^>]*><\/script>/g,
+		'<script src="boot.js"></script>');
+	// app-modules 块: 替换为扩展版的 3 个外部引用
+	html = html.replace(/<!-- app-modules -->[\s\S]*?<!-- \/app-modules -->/,
+		'<script src="storage-core.js"></script>\n' +
+		'\t<script src="cors-proxy.js"></script>\n' +
+		'\t<script src="app.js"></script>');
+	return html;
 }
 
 // ====== Clean dist ======
@@ -61,7 +86,7 @@ fs.mkdirSync(DST, { recursive: true });
 const layout = read(SRC, 'layout.html');
 
 // ====== 1. 单页面 HTML ======
-const mainHTML = buildHTML(layout, read(SRC, 'style.css'), read(SRC, 'modules', 'boot.js'), concatModules());
+const mainHTML = buildSinglePage(layout);
 fs.writeFileSync(path.join(DST, 'kuai-lian-ai.html'), mainHTML, 'utf8');
 fs.copyFileSync(path.join(DST, 'kuai-lian-ai.html'), 'kuai-lian-ai.html');
 console.log(`Built ${DST}/kuai-lian-ai.html`);
@@ -84,14 +109,8 @@ for (const name of fs.readdirSync(extSrcDir)) {
 fs.writeFileSync(path.join(extDir, 'boot.js'), compressJS(read(SRC, 'modules', 'boot.js')) + '\n', 'utf8');
 fs.writeFileSync(path.join(extDir, 'app.js'), compressJS(concatModules()) + '\n', 'utf8');
 
-// 2c. 生成扩展版 HTML（占位符替换为 script src）
-const extHTML = layout
-	.replace('{CSS}', () => compressCSS(read(SRC, 'style.css')))
-	.replace('{BOOT}', '<script src="boot.js"></script>')
-	.replace('{APP}',
-		'<script src="storage-core.js"></script>\n' +
-		'\t<script src="cors-proxy.js"></script>\n' +
-		'\t<script src="app.js"></script>');
+// 2c. 生成扩展版 HTML
+const extHTML = buildExtension(layout);
 fs.writeFileSync(path.join(extDir, 'kuai-lian-ai.html'), extHTML, 'utf8');
 
 // 2d. 复制 vendor/
