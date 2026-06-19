@@ -136,25 +136,25 @@ function addInheritIcon(inputEl) {
 }
 
 function showEditGroupDialog(node, parentId, onSave) {
-	var exist = $('#edit-dialog');
+	var exist = $('.edit-dialog');
 	if (exist) exist.remove();
-	var dialog = fromTemplate('tpl-edit-group-dialog', '#edit-dialog');
+	var dialog = fromTemplate('tpl-edit-group-dialog', '.edit-dialog');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
-	var keyInput = $("#dialog-group-key", dialog);
-	var nameInput = $("#dialog-group-name", dialog);
-	var urlInput = $('#dialog-group-url', dialog);
-	var modelidInput = $('#dialog-group-modelid', dialog);
-	var styleSel = $("#dialog-group-style", dialog);
-	var remarkInput = $("#dialog-group-remark", dialog);
+	var keyInput = $(".dialog-group-key", dialog);
+	var nameInput = $(".dialog-group-name", dialog);
+	var urlInput = $('.dialog-group-url', dialog);
+	var modelidInput = $('.dialog-group-modelid', dialog);
+	var styleSel = $(".dialog-group-style", dialog);
+	var remarkInput = $(".dialog-group-remark", dialog);
 
 	setValues(dialog, {
-		'#dialog-group-name': node ? node.name : '',
-		'#dialog-group-modelid': node ? node.modelId || '' : '',
-		'#dialog-group-url': node ? node.baseUrl || '' : '',
-		'#dialog-group-style': node ? node.style || '' : '',
-		'#dialog-group-key': node ? node.key || '' : '',
-		'#dialog-group-remark': node ? node.remark || '' : ''
+		'.dialog-group-name': node ? node.name : '',
+		'.dialog-group-modelid': node ? node.modelId || '' : '',
+		'.dialog-group-url': node ? node.baseUrl || '' : '',
+		'.dialog-group-style': node ? node.style || '' : '',
+		'.dialog-group-key': node ? node.key || '' : '',
+		'.dialog-group-remark': node ? node.remark || '' : ''
 	});
 
 	// 继承值填入
@@ -243,7 +243,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			} else if (idx === formFields.length - 1) {
 				// 最后一个输入框 → 保存
 				e.preventDefault();
-				var saveBtn = $('#dialog-save', dialog);
+				var saveBtn = $('.dialog-save', dialog);
 				if (saveBtn) saveBtn.click();
 			}
 		});
@@ -262,8 +262,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 		origRemove.call(this);
 	};
 	onClick({
-		'#dialog-cancel': function() { dialog.remove(); },
-		'#dialog-save': function() {
+		'.dialog-cancel': function() { dialog.remove(); },
+		'.dialog-save': function() {
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
 			if (!theName && theModelId) {
@@ -293,19 +293,19 @@ function showDirectoryPrompt(hasPendingHandle = false) {
 }
 
 function hideDirectoryPrompt() {
-	const prompt = $('#help-dialog');
+	const prompt = $('.help-dialog');
 	if (prompt) prompt.remove();
 }
 
 function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
-	const exist = $('#help-dialog');
+	const exist = $('.help-dialog');
 	if (exist) exist.remove();
 	const overlay = mk('div', 'dialog-overlay');
 	if (forceSelectDirectory) {
 		overlay.style.background = 'rgba(0, 0, 0, 0.5)';
 	}
 	doc.body.addChild(overlay);
-	const dialog = fromTemplate('tpl-help-dialog', '#help-dialog');
+	const dialog = fromTemplate('tpl-help-dialog', '.help-dialog');
 	const dirName = storage.getDirectoryName();
 	const displayInfo = storage.getDisplayInfo();
 	const hasDir = storage.mode === 'directory';

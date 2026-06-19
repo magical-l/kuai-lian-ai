@@ -38,7 +38,7 @@ async function init() {
 		}
 	});
 	// 分裂式按钮：发送模式切换
-	const btnGroup = $('#send-btn-group');
+	const btnGroup = $('.send-btn-group');
 	const toggle = $('.send-mode-toggle');
 	const options = $$('.split-btn-option', btnGroup);
 	// 初始化选中状态
@@ -116,16 +116,16 @@ async function init() {
 			handleSend();
 		}
 	};
-	document.querySelectorAll('#mode-selector .mode-option').forEach(el => {
+	document.querySelectorAll('.mode-selector .mode-option').forEach(el => {
 		el.onclick = () => {
-			document.querySelector('#mode-selector .selected')?.classList.remove('selected');
+			document.querySelector('.mode-selector .selected')?.classList.remove('selected');
 			el.classList.add('selected');
 			inputMode = el.dataset.mode;
 			console.log("Mode:", inputMode);
 			const input = $('#chat-input');
 			input.placeholder = inputMode === 'chat' ? '输入消息...' : '输入要嵌入的文本...';
 			$('.attach').style.display = inputMode === 'chat' ? '' : 'none';
-			$('#file-input').style.display = inputMode === 'chat' ? '' : 'none';
+			$('.file-input').style.display = inputMode === 'chat' ? '' : 'none';
 		};
 	});
 	$('.stop:first-of-type').onclick = () => {
@@ -142,9 +142,9 @@ async function init() {
 	$('.wipe-dir').onclick = handleWipeDirectory;
 	// 附件按钮
 	$('.attach').onclick = () => {
-		$('#file-input').click();
+		$('.file-input').click();
 	};
-	$('#file-input').onchange = async (e) => {
+	$('.file-input').onchange = async (e) => {
 		const files = e.target.files;
 		if (files && files.length > 0) {
 			for (const file of files) {
@@ -482,7 +482,7 @@ async function handleEmbeddingSend() {
 	renderMessages(currentSession.messages, getGroups(), handleCopy);
 	const container = $('#chat-messages');
 	const msgEl = mk('article', 'message layout-y-queue res msg');
-	msgEl.id = 'streaming-embedding';
+	msgEl.classList.add('streaming-embedding');
 	const hint = mk('div', 'embedding-thinking');
 	hint.textContent = '🔢 计算嵌入向量...';
 	msgEl.addChild(hint);
@@ -491,7 +491,7 @@ async function handleEmbeddingSend() {
 	try {
 		const cfg = resolveNodeConfig(info.node.id);
 		const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, info.model.name, text);
-		const card = $('#streaming-embedding');
+		const card = $('.streaming-embedding');
 		if (card) card.remove();
 		const emb = result.embedding;
 		const dim = emb.length;
@@ -516,7 +516,7 @@ async function handleEmbeddingSend() {
 			await refreshUI();
 		}
 	} catch (err) {
-		const card = $('#streaming-embedding');
+		const card = $('.streaming-embedding');
 		if (card) card.remove();
 		console.error('嵌入失败:', err);
 		await addMessage(currentSession.id, 'assistant', null, {
@@ -537,12 +537,12 @@ async function handleEmbeddingSend() {
 
 function showThinkingCards(modelIds, groups, sessionId) {
 	const container = $('#chat-messages');
-	const existingCards = $(`#streaming-multi-response[data-session-id="${sessionId}"]`);
+	const existingCards = $(`.streaming-multi-response[data-session-id="${sessionId}"]`);
 	if (existingCards) {
 		existingCards.remove();
 	}
 	const msgEl = mk('article', 'message layout-y-queue res msg');
-	msgEl.id = 'streaming-multi-response';
+	msgEl.classList.add('streaming-multi-response');
 	msgEl.dataset.sessionId = sessionId;
 	const hint = fromTemplate('tpl-multi-response-hint', '.cards.hint');
 	$('.hint-text', hint).textContent = `${modelIds.length}个模型正在思考...`;
@@ -680,7 +680,7 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 
 function reorderCardsBySpeed() {
 	requestAnimationFrame(() => {
-		const container = $('#streaming-multi-response .cards');
+		const container = $('.streaming-multi-response .cards');
 		if (!container) return;
 		const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
 		const cards = Array.from($$('.res.card', container));

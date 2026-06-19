@@ -10,8 +10,8 @@ function initDividers() {
 	// 水平分隔线
 	const dividerHorizontal = $('.divider.row');
 	const chatMsg = $('#chat-messages');
-	const mainContent = $('#main-content');
-	const chatHeader = $('#chat-header');
+	const mainContent = $('.main-content');
+	const chatHeader = $('.chat-header');
 	const savedLeftWidth = localStorage.getItem('sidebar-left-width');
 	const savedRightWidth = localStorage.getItem('sidebar-right-width');
 	if (savedLeftWidth) $('aside.left:not(.divider)').style.width = savedLeftWidth;
@@ -75,7 +75,7 @@ function initDividers() {
 		} else {
 			const dx = e.clientX - startX;
 			const newWidth = curDiv.isLeft ? startWidth + dx : startWidth - dx;
-			const mainRow = $('#main-row');
+			const mainRow = $('.main-row');
 			if (!mainRow) return;
 			const containerWidth = mainRow.offsetWidth;
 			const minWidth = 180;
@@ -136,8 +136,8 @@ function clampSavedHeight() {
 	const savedH = localStorage.getItem('chat-messages-height');
 	if (!savedH) return;
 	const cm = $('#chat-messages');
-	const mc = $('#main-content');
-	const ch = $('#chat-header');
+	const mc = $('.main-content');
+	const ch = $('.chat-header');
 	if (!cm || !mc || !ch) return;
 	const maxH = mc.offsetHeight - ch.offsetHeight - stickyMinHeight();
 	cm.style.height = Math.max(100, Math.min(parseInt(savedH), maxH)) + 'px';

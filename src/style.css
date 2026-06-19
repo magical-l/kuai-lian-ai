@@ -285,7 +285,7 @@ button.help {
 	font-size: 12px;
 }
 
-#main-row {
+.main-row {
 	flex: 1;
 	min-height: 0;
 }
@@ -356,13 +356,14 @@ aside .content {
 }
 
 /* ========== Main Content ========== */
-#main-content {
+.main-content {
 	flex: 1;
+	min-height: 0;
 	min-width: 400px;
 	background: var(--bg-base);
 }
 
-#chat-header {
+.chat-header {
 	padding: var(--space-4) var(--space-6);
 	background: var(--bg-base);
 	border-bottom: 1px solid var(--border-subtle);
@@ -371,7 +372,7 @@ aside .content {
 	height: 56px;
 }
 
-#chat-header .prefix {
+.chat-header .prefix {
 	color: var(--text-muted);
 	font-size: 13px;
 }
@@ -1315,7 +1316,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
 }
 
 /* ========== Dialogs ========== */
-#edit-dialog {
+.edit-dialog {
 	position: fixed;
 	top: 50%;
 	left: 50%;
@@ -1337,7 +1338,7 @@ aside .content::-webkit-scrollbar-thumb:hover,
 	}
 }
 
-#edit-dialog h3 {
+.edit-dialog h3 {
 	margin-bottom: var(--space-5);
 	font-weight: 600;
 	font-size: 16px;
@@ -1348,15 +1349,15 @@ aside .content::-webkit-scrollbar-thumb:hover,
 	gap: var(--space-4);
 }
 
-#edit-dialog label {
+.edit-dialog label {
 	gap: var(--space-2);
 	font-size: 13px;
 	font-weight: 500;
 	color: var(--text-secondary);
 }
 
-#edit-dialog input,
-#edit-dialog select {
+.edit-dialog input,
+.edit-dialog select {
 	padding: var(--space-2) var(--space-3);
 	border: 1px solid var(--border-default);
 	border-radius: var(--radius-md);
@@ -1367,8 +1368,8 @@ aside .content::-webkit-scrollbar-thumb:hover,
 	transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-#edit-dialog input:focus,
-#edit-dialog select:focus {
+.edit-dialog input:focus,
+.edit-dialog select:focus {
 	outline: none;
 	border-color: var(--accent-primary);
 	box-shadow: 0 0 0 3px var(--accent-light);
@@ -1402,7 +1403,7 @@ button.toggle-key:hover:not(:disabled) {
 	justify-content: flex-end;
 }
 
-#help-dialog {
+.help-dialog {
 	position: fixed;
 	top: 50%;
 	left: 50%;
@@ -1427,35 +1428,35 @@ button.toggle-key:hover:not(:disabled) {
 	z-index: 1000;
 }
 
-#help-dialog h3 {
+.help-dialog h3 {
 	margin-bottom: var(--space-4);
 	font-weight: 600;
 	font-size: 18px;
 	color: var(--text-primary);
 }
 
-#help-dialog .help-content {
+.help-dialog .help-content {
 	color: var(--text-secondary);
 	font-size: 14px;
 	line-height: 1.6;
 }
 
-#help-dialog .help-section {
+.help-dialog .help-section {
 	margin-bottom: var(--space-4);
 }
 
-#help-dialog .help-section-directory {
+.help-dialog .help-section-directory {
 	background: var(--bg-muted);
 	padding: var(--space-3);
 	border-radius: var(--radius-md);
 	margin-bottom: var(--space-5);
 }
 
-#help-dialog .help-section-directory h4 {
+.help-dialog .help-section-directory h4 {
 	margin-bottom: var(--space-2);
 }
 
-#help-dialog .directory-info {
+.help-dialog .directory-info {
 	align-items: center;
 	gap: var(--space-3);
 	justify-content: space-between;
@@ -1526,30 +1527,22 @@ button.use-browser-storage:hover {
 	margin-top: var(--space-2);
 }
 
-#help-dialog .help-section h4 {
+.help-dialog .help-section h4 {
 	font-weight: 600;
 	font-size: 14px;
 	color: var(--text-primary);
 	margin-bottom: var(--space-2);
 }
 
-#help-dialog .help-section ul {
+.help-dialog .help-section ul {
 	margin-left: var(--space-4);
 }
 
-#help-dialog .help-section li {
+.help-dialog .help-section li {
 	margin-bottom: var(--space-3);
 }
 
 /* ========== Streaming Animation ========== */
-#streaming-message::after {
-	content: '●';
-	color: var(--accent-primary);
-	margin-left: var(--space-1);
-	animation: blink 1s ease-in-out infinite;
-	font-size: 10px;
-}
-
 @keyframes blink {
 	0%, 100% {
 		opacity: 1;
@@ -1606,33 +1599,29 @@ button.use-browser-storage:hover {
 }
 
 /* ========== Model Selector ========== */
-.model.selector {
-	position: relative;
-	width: 100%;
-	background: var(--bg-muted);
-	border-radius: var(--radius-md) var(--radius-md) 0 0;
-	padding: var(--space-1) var(--space-2);
-	border: 1px solid var(--border-subtle);
-	border-bottom: none;
-}
 
 .path {
 	color: var(--text-secondary);
 	font-weight: 500;
 }
 
-.model.selector.generating .model.tag {
-	cursor: not-allowed;
-	opacity: 0.6;
-}
-
-.selector.summary {
+.selector-summary {
+	background: var(--bg-muted);
+	border-radius: var(--radius-md) var(--radius-md) 0 0;
+	padding: var(--space-1) var(--space-2);
+	border: 1px solid var(--border-subtle);
+	border-bottom: none;
+	width: 100%;
 	align-items: center;
 	gap: var(--space-1);
 	flex-wrap: wrap;
-	flex: 1;
 	min-width: 0;
 	overflow: hidden;
+}
+
+.selector-summary.generating .model.tag {
+	cursor: not-allowed;
+	opacity: 0.6;
 }
 
 /* 模型标签样式 */
@@ -2139,7 +2128,7 @@ button.use-browser-storage:hover {
 }
 
 /* 隐藏的文件输入 */
-#file-input {
+.file-input {
 	display: none;
 }
 
