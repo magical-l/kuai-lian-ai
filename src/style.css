@@ -156,10 +156,15 @@ button {
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
+	user-select: none;
+	-webkit-user-select: none;
 	border-radius: var(--radius-sm);
 	transition: all var(--transition-fast);
 	color: var(--text-muted);
 }
+
+/* 按钮类 & 图标类 → 不可选中 */
+button, .btn, .icon { user-select: none; -webkit-user-select: none; }
 
 button:hover:not(:disabled):not(.danger) {
 	background: var(--bg-muted);

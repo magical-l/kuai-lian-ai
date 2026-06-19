@@ -32,7 +32,7 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 
             const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : "";
             const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
-            return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${fullPath}</span>${remarkHtml}<span class="tag-remove" data-model="${id}">✕</span></span>`;
+            return `<span class="${classes}" data-model="${id}"><span class="endpoint name-color">${fullPath}</span>${remarkHtml}<span class="btn tag-remove" data-model="${id}">✕</span></span>`;
         }).join("");
     }
 
@@ -162,7 +162,7 @@ function renderPendingAttachments() {
 		// hover显示名字
 		thumb.onmouseenter = () => showAttachmentTooltip(att.name, thumb);
 		thumb.onmouseleave = () => hideAttachmentTooltip();
-		const remove = mk('span', 'attachment-remove');
+		const remove = mk('span', 'btn attachment-remove');
 		remove.textContent = '×';
 		remove.onclick = (e) => {
 			e.stopPropagation();
@@ -213,7 +213,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("div", "group-header layout-x-queue");
             headerEl.style.paddingLeft = (depth * 12 + 4) + "px";
-            var dragHandle = mk("span", "drag-handle layout-x-queue");
+            var dragHandle = mk("span", "btn drag-handle layout-x-queue");
             dragHandle.innerHTML = SVG.drag(14);
             dragHandle.title = "拖动排序";
             dragHandle.draggable = true;
@@ -232,7 +232,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 });
             });
 
-            var toggleSpan = mk("span", "group-toggle");
+            var toggleSpan = mk("span", "btn group-toggle");
             toggleSpan.textContent = isCollapsed || !hasContent ? "▶" : "▼";
 
             if (!hasContent)
@@ -570,7 +570,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                     modelEl.classList.add("selected");
                 }
 
-                var modelDragHandle = mk("span", "drag-handle");
+                var modelDragHandle = mk("span", "btn drag-handle");
                 modelDragHandle.innerHTML = SVG.drag(14);
                 modelDragHandle.title = "拖动排序";
                 modelDragHandle.draggable = true;
@@ -764,7 +764,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 models.addChild(modelEl);
             });
 
-            var addModelBtn = mk("div", "add-model-link");
+            var addModelBtn = mk("div", "btn add-model-link");
             addModelBtn.textContent = "+ 添加模型";
 
             addModelBtn.on("click", function(e) {

@@ -118,7 +118,7 @@ function addInheritIcon(inputEl) {
 	inputEl._inheritIconAdded = true;
 	inputEl.style.flex = '1';
 	var icon = document.createElement('span');
-	icon.className = 'inherit-icon';
+	icon.className = 'icon inherit-icon';
 	icon.textContent = '↑';
 	icon.title = '继承自父级';
 	icon.style.cssText = 'cursor:help;font-size:12px;color:var(--text-muted);flex-shrink:0;margin-right:3px;';
