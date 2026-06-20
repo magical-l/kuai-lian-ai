@@ -612,7 +612,7 @@ button.outline:hover:not(:disabled) {
 	overflow-wrap: break-word;
 }
 
-.msg.assistant {
+.msg.response {
 	background: var(--bg-base);
 	padding: var(--space-3) var(--space-4);
 	border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
@@ -1116,9 +1116,6 @@ button.action.join-session.joined:hover:not(:disabled) {
 	box-shadow: 0 0 0 2px var(--accent-light);
 	color: var(--text-primary);
 }
-	margin-bottom: var(--space-3);
-	flex-grow: 1;
-}
 
 button.add-model-confirm.action-sm {
 	background: var(--success-light);
@@ -1126,7 +1123,7 @@ button.add-model-confirm.action-sm {
 	border: 1px solid transparent;
 }
 
-.add-model-confirmbutton.action-sm:hover:not(:disabled) {
+.add-model-confirm-button.action-sm:hover:not(:disabled) {
 	background: var(--success);
 	color: white;
 }
@@ -1137,7 +1134,7 @@ button.add-model-cancel.action-sm {
 	border: 1px solid var(--border-subtle);
 }
 
-.add-model-cancelbutton.action-sm:hover:not(:disabled) {
+.add-model-cancel-button.action-sm:hover:not(:disabled) {
 	background: var(--bg-active);
 	color: var(--text-secondary);
 }
@@ -1900,7 +1897,7 @@ button.use-browser-storage:hover {
 	}
 
 	/* 流式思考状态 - 实时显示时不折叠 */
-	&.stream {
+	&.streaming {
 		background: var(--bg-subtle);
 		border: 1px solid var(--border-default);
 

@@ -632,7 +632,6 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 		const selector = sessionId ? `.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.response.card[data-model-id="${modelId}"]`;
 		const card = $(selector);
 		if (!card) return;
-		card.classList.remove('thinking');
 		const contentEl = $('.response .content', card);
 		const meta = $('.response.info', card);
 		const icon = meta ? $('.model.status-icon', meta) : null;
