@@ -309,11 +309,27 @@ aside > header {
 	align-items: center;
 }
 
-.sidebar-body {
+/* ========== List (scrollable sidebar content) ========== */
+.list {
 	flex: 1;
 	overflow-y: auto;
-	padding: var(--space-1);
-	scrollbar-gutter: stable;
+}
+
+.list::-webkit-scrollbar {
+	width: 5px;
+}
+
+.list::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.list::-webkit-scrollbar-thumb {
+	background: var(--border-default);
+	border-radius: 3px;
+}
+
+.list::-webkit-scrollbar-thumb:hover {
+	background: var(--border-strong);
 }
 
 /* ========== Divider ========== */
@@ -1279,23 +1295,19 @@ button.connection.cors_blocked {
 }
 
 /* ========== Scrollbar ========== */
-.sidebar-body::-webkit-scrollbar,
 #chat-messages::-webkit-scrollbar {
 	width: 5px;
 }
 
-.sidebar-body::-webkit-scrollbar-track,
 #chat-messages::-webkit-scrollbar-track {
 	background: transparent;
 }
 
-.sidebar-body::-webkit-scrollbar-thumb,
 #chat-messages::-webkit-scrollbar-thumb {
 	background: var(--border-default);
 	border-radius: 3px;
 }
 
-.sidebar-body::-webkit-scrollbar-thumb:hover,
 #chat-messages::-webkit-scrollbar-thumb:hover {
 	background: var(--border-strong);
 }
@@ -1787,7 +1799,7 @@ button.use-browser-storage:hover {
 	margin-left: 4px;
 }
 
-.response .body {
+.response .text {
 	font-size: 13px;
 	line-height: 1.5;
 

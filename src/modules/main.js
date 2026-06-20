@@ -603,7 +603,7 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 			thinkingBlock.style.display = 'none';
 		}
 	}
-	const contentEl = $('.response .body', card);
+	const contentEl = $('.response .text', card);
 	if (contentEl) {
 		contentEl.textContent = state.content || '';
 	}
@@ -628,7 +628,7 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 		const card = $(selector);
 		if (!card) return;
 		card.classList.remove('thinking');
-		const contentEl = $('.response .body', card);
+		const contentEl = $('.response .text', card);
 		const meta = $('.response.info', card);
 		const icon = meta ? $('.model.status-icon', meta) : null;
 		if (icon) {

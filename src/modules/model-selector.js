@@ -198,7 +198,7 @@ function showAttachmentPreview(att) {
 }
 
 function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, onNodeEdit, onNodeDelete, onAddModel, onModelDelete, onReorderNodes, onReorderModels, onTestConnection, onMoveNode) {
-    var container = $(".endpoint-list");
+    var container = $(".endpoint.list");
 
     container.innerHTML = "";
 
@@ -887,7 +887,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
 
 
 function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessionEdit, onSessionDelete) {
-	const container = $('.session-list');
+	const container = $('.session.list');
 	container.innerHTML = '';
 	sessions.sort((a, b) => b.createdAt - a.createdAt);
 	sessions.forEach(session => {
