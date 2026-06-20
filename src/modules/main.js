@@ -481,7 +481,7 @@ async function handleEmbeddingSend() {
 	});
 	renderMessages(currentSession.messages, getGroups(), handleCopy);
 	const container = $('#chat-messages');
-	const msgEl = mk('article', 'message layout-y-queue res msg');
+	const msgEl = mk('article', 'message flex items-go-y res msg');
 	msgEl.classList.add('streaming-embedding');
 	const hint = mk('div', 'embedding-thinking');
 	hint.textContent = '🔢 计算嵌入向量...';
@@ -541,7 +541,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 	if (existingCards) {
 		existingCards.remove();
 	}
-	const msgEl = mk('article', 'message layout-y-queue res msg');
+	const msgEl = mk('article', 'message flex items-go-y res msg');
 	msgEl.classList.add('streaming-multi-response');
 	msgEl.dataset.sessionId = sessionId;
 	const hint = fromTemplate('tpl-multi-response-hint', '.cards.hint');
@@ -556,7 +556,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 			$('.hint-text', hint).textContent = `${modelIds.length}个模型（部分已停止）`;
 		};
 	}
-	const cards = mk('div', 'cards layout-y-queue');
+	const cards = mk('div', 'cards flex items-go-y');
 	modelIds.forEach(id => {
 		const card = fromTemplate('tpl-response-card-streaming', '.res.card');
 		card.dataset.sessionId = sessionId;

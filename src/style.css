@@ -52,25 +52,10 @@
 	--space-8: 32px;
 }
 
-/* ========== Layout Utilities ========== */
-.layout-y-queue {
-	display: flex;
-	flex-direction: column;
-}
-
-.layout-y-stack {
-	display: flex;
-	flex-direction: column-reverse;
-}
-
-.layout-x-queue {
-	display: flex;
-	flex-direction: row;
-}
-
-.layout-x-stack {
-	display: flex;
-	flex-direction: row-reverse;
+/* Override CDN .flex defaults: restore standard flexbox behavior */
+.flex:not(.inline) {
+	align-items: stretch;
+	flex-wrap: nowrap;
 }
 
 /* ========== Base ========== */
