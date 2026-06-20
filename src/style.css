@@ -1783,7 +1783,7 @@ button.use-browser-storage:hover {
 	margin-left: 4px;
 }
 
-.response .text {
+.response .content {
 	font-size: 13px;
 	line-height: 1.5;
 
@@ -1895,7 +1895,7 @@ button.use-browser-storage:hover {
 		border-top: 1px solid var(--border-subtle);
 	}
 
-	&.collapsed .body {
+	&.collapsed .content {
 		display: none;
 	}
 

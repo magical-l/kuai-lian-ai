@@ -481,7 +481,7 @@ async function handleEmbeddingSend() {
 	});
 	renderMessages(currentSession.messages, getGroups(), handleCopy);
 	const container = $('#chat-messages');
-	const msgEl = mk('article', 'message flex items-go-y res msg');
+	const msgEl = mk('article', 'message res msg , flex items-go-y');
 	msgEl.classList.add('streaming-embedding');
 	const hint = mk('div', 'embedding-thinking');
 	hint.textContent = '🔢 计算嵌入向量...';
@@ -541,7 +541,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 	if (existingCards) {
 		existingCards.remove();
 	}
-	const msgEl = mk('article', 'message flex items-go-y res msg');
+	const msgEl = mk('article', 'message res msg , flex items-go-y');
 	msgEl.classList.add('streaming-multi-response');
 	msgEl.dataset.sessionId = sessionId;
 	const hint = fromTemplate('tpl-multi-response-hint', '.response.list.hint');
@@ -556,7 +556,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 			$('.hint-text', hint).textContent = `${modelIds.length}个模型（部分已停止）`;
 		};
 	}
-	const cards = mk('div', 'cards flex items-go-y');
+	const cards = mk('div', 'response.list , flex items-go-y');
 	modelIds.forEach(id => {
 		const card = fromTemplate('tpl-response-card-streaming', '.response.card');
 		card.dataset.sessionId = sessionId;
@@ -574,7 +574,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) {
 	const card = $(`.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
 	if (!card) return;
-	const thinkingBlock = $('.thinking', card);
+	const thinkingBlock = $('.think', card);
 	if (thinkingBlock) {
 		if (state.thinking && state.thinking.trim()) {
 			thinkingBlock.style.display = 'block';
@@ -603,7 +603,7 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 			thinkingBlock.style.display = 'none';
 		}
 	}
-	const contentEl = $('.response .text', card);
+	const contentEl = $('.response .content', card);
 	if (contentEl) {
 		contentEl.textContent = state.content || '';
 	}
@@ -628,7 +628,7 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 		const card = $(selector);
 		if (!card) return;
 		card.classList.remove('thinking');
-		const contentEl = $('.response .text', card);
+		const contentEl = $('.response .content', card);
 		const meta = $('.response.info', card);
 		const icon = meta ? $('.model.status-icon', meta) : null;
 		if (icon) {
@@ -651,7 +651,7 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 			}
 		} else if (status === 'stopped') {} else if (status === 'completed') {
 			if (state && state.thinkingDuration) {
-				const thinkingBlock = $('.thinking', card);
+				const thinkingBlock = $('.think', card);
 				if (thinkingBlock) {
 					thinkingBlock.classList.remove('streaming');
 					thinkingBlock.classList.add('collapsed');

@@ -152,7 +152,7 @@ function renderPendingAttachments() {
 	if (!row) return;
 	row.innerHTML = '';
 	pendingAttachments.forEach(att => {
-		const thumb = mk('div', `thumb flex items-go-x ${att.type === 'image' ? 'image' : 'file'}`);
+		const thumb = mk('div', `thumb , flex items-go-x ${att.type === 'image' ? 'image' : 'file'}`);
 		thumb.dataset.id = att.id;
 		if (att.type === 'image' && att.previewUrl) {
 			thumb.style.backgroundImage = `url(${att.previewUrl})`;
@@ -179,7 +179,7 @@ function renderPendingAttachments() {
 function showAttachmentPreview(att) {
 	if (att.type === 'image' && att.previewUrl) {
 		// 图片预览弹窗
-		const overlay = mk('div', 'image-preview-overlay flex items-go-x');
+		const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
 		overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
 		const img = mk('img');
 		img.src = att.previewUrl;
@@ -213,7 +213,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x");
             headerEl.style.paddingLeft = (depth * 12 + 4) + "px";
-            var dragHandle = mk("span", "btn handle drag flex items-go-x");
+            var dragHandle = mk("span", "btn handle drag , flex items-go-x");
             dragHandle.innerHTML = SVG.drag(14);
             dragHandle.title = "拖动排序";
             dragHandle.draggable = true;
@@ -310,7 +310,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 }
             });
 
-            var actionsEl = mk("div", "actions flex items-go-x");
+            var actionsEl = mk("div", "actions , flex items-go-x");
             var addChildBtn = mk("button", "action");
             addChildBtn.textContent = "+";
             addChildBtn.title = "添加子节点";
@@ -552,17 +552,17 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 }
             });
 
-            var contentEl = mk("div", "body flex items-go-y");
+            var contentEl = mk("div", "body , flex items-go-y");
 
             if (isCollapsed) {
                 contentEl.style.display = "none";
             }
 
-            var models = mk("div", "models flex items-go-y");
+            var models = mk("div", "models , flex items-go-y");
             models.style.paddingLeft = (depth * 12 + 8) + "px";
 
             node.models.forEach(function(model) {
-                var modelEl = mk("div", "model item flex items-go-x");
+                var modelEl = mk("div", "model item , flex items-go-x");
                 modelEl.dataset.modelId = model.id;
                 modelEl.dataset.nodeId = node.id;
 
@@ -610,7 +610,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                         onModelSelect(node.id, model.id);
                 });
 
-                var modelActions = mk("div", "model actions flex items-go-x");
+                var modelActions = mk("div", "model actions , flex items-go-x");
                 var statusKey = node.id + ":" + model.id;
 
                 var statusData = connectionStatus.get(statusKey) || {
@@ -897,13 +897,13 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 		}
 		const titleEl = mk('div', 'session title');
 		titleEl.textContent = session.title || '新会话';
-		const meta = mk('div', 'session meta flex items-go-x');
+		const meta = mk('div', 'session meta , flex items-go-x');
 		const timeEl = mk('span', 'session time');
 		timeEl.textContent = new Date(session.createdAt).toLocaleDateString('zh-CN', {
 			month: 'short',
 			day: 'numeric'
 		});
-		const actionsEl = mk('div', 'session actions flex items-go-x');
+		const actionsEl = mk('div', 'session actions , flex items-go-x');
 		const editBtn = mk('button', 'action-sm');
 		editBtn.innerHTML = SVG.edit(10);
 		editBtn.title = '编辑标题';
@@ -987,7 +987,7 @@ function renderMessages(messages, groups, onCopy) {
 	container.innerHTML = '';
 	messages.forEach((msg, index) => {
 		const roleClass = msg.role === 'user' ? 'request' : 'response';
-		const msgEl = mk('article', `msg flex items-go-y ${roleClass}`);
+		const msgEl = mk('article', `msg , flex items-go-y ${roleClass}`);
 		if (msg.role === 'user') {
 			// 使用模板创建meta，包含复制按钮
 			const meta = fromTemplate('tpl-user-meta', '.request.info');
@@ -1012,9 +1012,9 @@ function renderMessages(messages, groups, onCopy) {
 			}
 			const attachmentItems = normalized.filter(c => c.type === 'image' || c.type === 'file');
 			if (attachmentItems.length > 0) {
-				const attContainer = mk('div', 'attachments flex items-go-x');
+				const attContainer = mk('div', 'attachments , flex items-go-x');
 				attachmentItems.forEach(att => {
-					const attEl = mk('div', `attach flex items-go-x ${att.type}`);
+					const attEl = mk('div', `attach , flex items-go-x ${att.type}`);
 					if (att.type === 'image' && att.source) {
 						let imgSrc;
 						if (att.source.type === 'url') {
@@ -1025,7 +1025,7 @@ function renderMessages(messages, groups, onCopy) {
 						const thumb = mk('img', 'thumb');
 						thumb.src = imgSrc;
 						thumb.onclick = () => {
-							const overlay = mk('div', 'image-preview-overlay flex items-go-x');
+							const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
 							const fullImg = mk('img');
 							fullImg.src = imgSrc;
 							overlay.onclick = () => overlay.remove();
@@ -1094,7 +1094,7 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	msgEl.addChild(assistantEl);
 	addCodeCopyButtons(assistantEl);
 	if (msg.usage) {
-		const statusBar = mk('div', 'status bar flex items-go-x');
+		const statusBar = mk('div', 'status bar , flex items-go-x');
 		const usageEl = mk('span', 'usage');
 		usageEl.textContent = `${msg.usage.input || 0} → ${msg.usage.output || 0} tokens`;
 		statusBar.addChild(usageEl);
@@ -1107,7 +1107,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 	const hint = mk('div', 'cards hint');
 	hint.textContent = `${sorted.length}个模型回复`;
 	msgEl.addChild(hint);
-	const cards = mk('div', 'cards flex items-go-y');
+	const cards = mk('div', 'response.list , flex items-go-y');
 	sorted.forEach(r => {
 		const card = mk('div', 'ai card');
 		const info = findModelById(groups, r.modelId);
