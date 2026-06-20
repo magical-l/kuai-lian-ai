@@ -389,22 +389,14 @@ aside > header {
 	min-height: 100px;
 }
 
-.sticky-bottom {
+.chat-input-area {
 	position: sticky;
 	bottom: 0;
 	z-index: 5;
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 auto;
-	min-height: 145px;
-}
-
-.chat-input-area {
-	padding: 4px 8px;
 	border-top: 1px solid var(--border-subtle);
 	background: var(--bg-base);
 	flex: 1 1 auto;
-	min-height: 120px;
+	min-height: 145px;
 }
 
 /* 输入框容器（包含textarea和发送按钮） */

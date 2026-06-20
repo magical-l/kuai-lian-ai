@@ -61,7 +61,7 @@
 			<div class="logo flex items-go-x">
 				<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 			</div>
-			<span class="brand">快连AI</span><span class="version">v5.2.3</span>
+			<span class="brand">快连AI</span><span class="version">v5.2.4</span>
 		</div>
 		<div class="center flex items-go-x">
 			<span class="directory-label">当前存储目录：</span>
@@ -116,40 +116,39 @@
 				<button class="outline new-session" title="新建会话">新建会话</button>
 			</div>
 			<div id="chat-messages" class="flex items-go-y"></div>
-			<footer class="sticky-bottom">
+			
+			<footer class="chat-input-area flex items-go-y">
 				<div class="divider row"></div>
-				<div class="chat-input-area flex items-go-y">
-					<div class="selector-summary flex items-go-x">
-						<!-- 已选模型标签 -->
-					</div>
-					<div class="input-wrapper flex items-go-y">
-						<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
-						<nav class="action-bar flex items-go-x items-near-center" style="padding:8px;min-height:40px">
-							<div class="attachments-row flex items-go-x flexible scrollable" style="gap:4px"></div>
-							<input type="file" class="file-input" multiple accept="*/*">
-							<button class="action-btn flex items-go-x attachment" title="添加附件">
-									<svg width="16" height="16"><use href="#icon-attach"></use></svg>
-								</button>
-							<div class="mode-selector flex items-go-x" role="radiogroup">
-								<span class="mode-option selected" data-mode="chat">💬 聊天</span>
-								<span class="mode-option" data-mode="embedding">🔢 嵌入</span>
-							</div>
-							<div class="send-btn-group split-btn" title="发送">
-								<button class="send split-btn-main primary flex items-go-x">
-									<svg width="16" height="16"><use href="#icon-send"></use></svg>
-								</button>
-								<button class="send-mode-toggle split-btn-drop flex items-go-x">
-									<svg width="12" height="12"><use href="#icon-chevron-down"></use></svg>
-								</button>
-								<div class="send-mode-menu split-btn-menu">
-									<div class="split-btn-option selected" data-value="enter">Enter 发送</div>
-									<div class="split-btn-option" data-value="ctrl-enter">Ctrl+Enter 发送</div>
-								</div>
-							</div>
-						</nav>
-					</div>
-					<button class="stop btn-stop hidden" disabled>停止</button>
+				<div class="selector-summary flex items-go-x">
+					<!-- 已选模型标签 -->
 				</div>
+				<div class="input-wrapper flex items-go-y">
+					<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
+					<nav class="action-bar flex items-go-x items-near-center" style="padding:8px;min-height:40px">
+						<div class="attachments-row flex items-go-x flexible scrollable" style="gap:4px"></div>
+						<input type="file" class="file-input" multiple accept="*/*">
+						<button class="action-btn flex items-go-x attachment" title="添加附件">
+								<svg width="16" height="16"><use href="#icon-attach"></use></svg>
+							</button>
+						<div class="mode-selector flex items-go-x" role="radiogroup">
+							<span class="mode-option selected" data-mode="chat">💬 聊天</span>
+							<span class="mode-option" data-mode="embedding">🔢 嵌入</span>
+						</div>
+						<div class="send-btn-group split-btn" title="发送">
+							<button class="send split-btn-main primary flex items-go-x">
+								<svg width="16" height="16"><use href="#icon-send"></use></svg>
+							</button>
+							<button class="send-mode-toggle split-btn-drop flex items-go-x">
+								<svg width="12" height="12"><use href="#icon-chevron-down"></use></svg>
+							</button>
+							<div class="send-mode-menu split-btn-menu">
+								<div class="split-btn-option selected" data-value="enter">Enter 发送</div>
+								<div class="split-btn-option" data-value="ctrl-enter">Ctrl+Enter 发送</div>
+							</div>
+						</div>
+					</nav>
+				</div>
+				<button class="stop btn-stop hidden" disabled>停止</button>
 			</footer>
 		</div>
 		<div class="divider column control sidebar right"></div>

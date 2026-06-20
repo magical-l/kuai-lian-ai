@@ -1,8 +1,8 @@
 // ========== UI Functions ==========
-// .sticky-bottom 的最小高度，作为布局约束的单一数据源
+// .chat-input-area 的最小高度，作为布局约束的单一数据源
 // 用 CSS minHeight，scrollHeight 在 flex:1 子元素被撑满时不正确
 function stickyMinHeight() {
-	const sb = $('.sticky-bottom');
+	const sb = $('.chat-input-area');
 	return sb ? parseInt(getComputedStyle(sb).minHeight) || 126 : 126;
 }
 
@@ -183,14 +183,14 @@ function initScrollNav() {
 }
 // sticky 区高度变化时，同步更新消息区 scroll-padding-bottom，防止最后一条消息被遮挡
 function syncScrollPadding() {
-	const sticky = $('.sticky-bottom');
+	const sticky = $('.chat-input-area');
 	const msg = $('#chat-messages');
 	if (sticky && msg) msg.style.scrollPaddingBottom = sticky.offsetHeight + 'px';
 }
 window.addEventListener('resize', syncScrollPadding);
 // 在 init 中初始化 Observer（DOM ready 后）
 function initScrollPaddingObserver() {
-	const sticky = $('.sticky-bottom');
+	const sticky = $('.chat-input-area');
 	if (!sticky) return;
 	syncScrollPadding();
 	new ResizeObserver(syncScrollPadding).observe(sticky);
