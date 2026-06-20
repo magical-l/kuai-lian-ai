@@ -481,7 +481,7 @@ async function handleEmbeddingSend() {
 	});
 	renderMessages(currentSession.messages, getGroups(), handleCopy);
 	const container = $('#chat-messages');
-	const msgEl = mk('article', 'message res msg , flex items-go-y');
+	const msgEl = mk('article', 'msg response , flex items-go-y');
 	msgEl.classList.add('streaming-embedding');
 	const hint = mk('div', 'embedding-thinking');
 	hint.textContent = '🔢 计算嵌入向量...';
@@ -536,39 +536,44 @@ async function handleEmbeddingSend() {
 
 
 function showThinkingCards(modelIds, groups, sessionId) {
-	const container = $('#chat-messages');
-	const existingCards = $(`.streaming-multi-response[data-session-id="${sessionId}"]`);
-	if (existingCards) {
-		existingCards.remove();
-	}
-	const msgEl = mk('article', 'message res msg , flex items-go-y');
-	msgEl.classList.add('streaming-multi-response');
-	msgEl.dataset.sessionId = sessionId;
-	const hint = fromTemplate('tpl-multi-response-hint', '.response.list.hint');
-	$('.hint-text', hint).textContent = `${modelIds.length}个模型正在思考...`;
-	msgEl.addChild(hint);
-	const stopBtn = $('.btn-stop-inline', hint);
-	if (stopBtn) {
-		stopBtn.onclick = () => {
-			stopAllGenerations();
-			stopBtn.disabled = true;
-			stopBtn.textContent = '已停止';
-			$('.hint-text', hint).textContent = `${modelIds.length}个模型（部分已停止）`;
-		};
-	}
-	const cards = mk('div', 'response.list , flex items-go-y');
-	modelIds.forEach(id => {
-		const card = fromTemplate('tpl-response-card-streaming', '.response.card');
-		card.dataset.sessionId = sessionId;
-		card.dataset.modelId = id;
-		const info = findModelById(groups, id);
-		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
-		$('.response .name', card).textContent = name;
-		cards.addChild(card);
-	});
-	msgEl.addChild(cards);
-	container.addChild(msgEl);
-	scrollToBottom();
+    const container = $("#chat-messages");
+    const existingCards = $(`.streaming-multi-response[data-session-id="${sessionId}"]`);
+
+    if (existingCards) {
+        existingCards.remove();
+    }
+
+    const msgEl = mk("article", "msg response , flex items-go-y");
+    msgEl.classList.add("streaming-multi-response");
+    msgEl.dataset.sessionId = sessionId;
+    const cards = mk("div", "response list , flex items-go-y");
+    const hint = fromTemplate("tpl-multi-response-hint", ".hint");
+    $(".hint-text", hint).textContent = `${modelIds.length}个模型正在思考...`;
+    cards.addChild(hint);
+    const stopBtn = $(".btn-stop-inline", hint);
+
+    if (stopBtn) {
+        stopBtn.onclick = () => {
+            stopAllGenerations();
+            stopBtn.disabled = true;
+            stopBtn.textContent = "已停止";
+            $(".hint-text", hint).textContent = `${modelIds.length}个模型（部分已停止）`;
+        };
+    }
+
+    modelIds.forEach(id => {
+        const card = fromTemplate("tpl-response-card-streaming", ".response.card");
+        card.dataset.sessionId = sessionId;
+        card.dataset.modelId = id;
+        const info = findModelById(groups, id);
+        const name = info ? `${info.node.name} / ${info.model.name}` : "未知";
+        $(".response .name", card).textContent = name;
+        cards.addChild(card);
+    });
+
+    msgEl.addChild(cards);
+    container.addChild(msgEl);
+    scrollToBottom();
 }
 
 function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) {

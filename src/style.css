@@ -1684,7 +1684,7 @@ button.use-browser-storage:hover {
 }
 
 /* ========== Multi-Model Response Cards ========== */
-.response.list.hint {
+.response.list .hint {
 	font-size: 11px;
 	color: var(--text-muted);
 	margin-bottom: var(--space-2);

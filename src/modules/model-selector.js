@@ -152,7 +152,7 @@ function renderPendingAttachments() {
 	if (!row) return;
 	row.innerHTML = '';
 	pendingAttachments.forEach(att => {
-		const thumb = mk('div', `thumb , flex items-go-x ${att.type === 'image' ? 'image' : 'file'}`);
+		const thumb = mk('div', `thumb ${att.type === 'image' ? 'image' : 'file'} , flex items-go-x`);
 		thumb.dataset.id = att.id;
 		if (att.type === 'image' && att.previewUrl) {
 			thumb.style.backgroundImage = `url(${att.previewUrl})`;
@@ -987,7 +987,7 @@ function renderMessages(messages, groups, onCopy) {
 	container.innerHTML = '';
 	messages.forEach((msg, index) => {
 		const roleClass = msg.role === 'user' ? 'request' : 'response';
-		const msgEl = mk('article', `msg , flex items-go-y ${roleClass}`);
+		const msgEl = mk('article', `msg ${roleClass} , flex items-go-y`);
 		if (msg.role === 'user') {
 			// 使用模板创建meta，包含复制按钮
 			const meta = fromTemplate('tpl-user-meta', '.request.info');
@@ -1014,7 +1014,7 @@ function renderMessages(messages, groups, onCopy) {
 			if (attachmentItems.length > 0) {
 				const attContainer = mk('div', 'attachments , flex items-go-x');
 				attachmentItems.forEach(att => {
-					const attEl = mk('div', `attach , flex items-go-x ${att.type}`);
+					const attEl = mk('div', `attach ${att.type} , flex items-go-x`);
 					if (att.type === 'image' && att.source) {
 						let imgSrc;
 						if (att.source.type === 'url') {
@@ -1103,90 +1103,84 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 }
 
 function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
-	const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
-	const hint = mk('div', 'cards hint');
-	hint.textContent = `${sorted.length}个模型回复`;
-	msgEl.addChild(hint);
-	const cards = mk('div', 'response.list , flex items-go-y');
-	sorted.forEach(r => {
-		const card = mk('div', 'ai card');
-		const info = findModelById(groups, r.modelId);
-		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
-		const remark = info?.model?.remark || '';
-		const meta = fromTemplate('tpl-multi-response-meta', '.response.info');
-		const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
-		const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
-		const statusText = getStatusText(r.status);
-		const responseTimeStr = r.timestamp ? formatDateTime(r.timestamp) : '';
-		const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
-		const speedClass = getSpeedClass(r.firstTokenTime);
-		$('.response .name', meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
-		$('.response .time', meta).textContent = responseTimeStr;
-		const durationEl = $('.response .wait', meta);
-		durationEl.textContent = durationStr;
-		if (speedClass) durationEl.classList.add(speedClass);
-		$('.response .total', meta).textContent = totalStr;
-		const statusEl = $('.response .status', meta);
-		statusEl.textContent = statusText;
-		statusEl.classList.add('status');
-		statusEl.classList.add(r.status);
-		const errorEl = $('.response .error', meta);
-		if (errorText) {
-			errorEl.textContent = errorText;
-		} else {
-			errorEl.remove();
-		}
-		const copyBtn = $('.copy-btn', meta);
-		if (r.status === 'completed' && r.content) {
-			copyBtn.onclick = () => {
-				navigator.clipboard.writeText(r.content || "").then(() => {
-					copyBtn.classList.add("copied");
-					clearTimeout(copyBtn._copiedTimer);
-					copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
-				});
-			};
-		} else {
-			copyBtn.remove();
-		}
-		card.addChild(meta);
-		if (r.embeddingResult) {
-			const embedDiv = mk('div', 'embedding-result');
-			embedDiv.innerHTML = '<div class="embedding-header">🔢 嵌入向量</div><div class="embedding-meta"><span>模型: ' + r.embeddingResult.model + '</span><span>维度: ' + r.embeddingResult.dim + '</span>' + (r.embeddingResult.usage ? '<span>Token: ' + r.embeddingResult.usage.total_tokens + '</span>' : '') + '</div><div class="embedding-preview">' + r.embeddingResult.preview + '</div><button class="embedding-copy-btn" data-full="' + r.embeddingResult.fullJson.replace(/'/g, '\\\'') + '">📋 复制完整向量</button>';
-			const copyBtn = embedDiv.querySelector('.embedding-copy-btn');
-			copyBtn.onclick = () => {
-				navigator.clipboard.writeText(copyBtn.dataset.full);
-				copyBtn.textContent = '✓ 已复制';
-				setTimeout(() => { copyBtn.textContent = '📋 复制完整向量'; }, 2000);
-			};
-			card.addChild(embedDiv);
-			cards.addChild(card);
-			return;
-		}
-		if (r.thinking && r.thinking.trim()) {
-			const thinkingBlock = mk('div', 'think collapsed');
-			const thinkingHeader = fromTemplate('tpl-thinking-header', 'header');
-			thinkingHeader.onclick = function() {
-				toggleThinking(this);
-			};
-			const thinkingDurationStr = r.thinkingDuration ? `耗时 ${(r.thinkingDuration/1000).toFixed(1)}s` : '';
-			$('.duration', thinkingHeader).textContent = thinkingDurationStr;
-			const thinkingContent = mk('div', 'content');
-			thinkingContent.textContent = r.thinking;
-			thinkingBlock.addChild(thinkingHeader);
-			thinkingBlock.addChild(thinkingContent);
-			card.addChild(thinkingBlock);
-		}
-		const content = mk('div', 'content');
-		if (r.status === 'failed') {
-			content.innerHTML = ''; // Error shown in meta row, content area empty
-		} else {
-			content.innerHTML = renderMarkdown(r.content || '');
-			addCodeCopyButtons(content);
-		}
-		card.addChild(content);
-		cards.addChild(card);
-	});
-	msgEl.addChild(cards);
+    const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
+    const hint = mk("div", "hint");
+    hint.textContent = `${sorted.length}个模型回复`;
+    const cards = mk("div", "response list , flex items-go-y");
+    cards.addChild(hint);
+
+    sorted.forEach(r => {
+        const card = mk("div", "response card");
+        const info = findModelById(groups, r.modelId);
+        const name = info ? `${info.node.name} / ${info.model.name}` : "未知";
+        const remark = info?.model?.remark || "";
+        const meta = fromTemplate("tpl-multi-response-meta", ".response.info");
+        const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
+        const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime / 1000).toFixed(1)}s` : "";
+        const speedClass = getSpeedClass(r.firstTokenTime);
+        const totalStr = r.totalDuration ? `耗时${(r.totalDuration / 1000).toFixed(1)}s` : "";
+        const statusText = getStatusText(r.status);
+        $(".response .name", meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
+        $(".response .time", meta).textContent = timeStr;
+
+        if (durationStr) {
+            const durationEl = $(".response .wait", meta);
+            durationEl.textContent = durationStr;
+
+            if (speedClass)
+                durationEl.classList.add(speedClass);
+        }
+
+        $(".response .total", meta).textContent = totalStr;
+        const statusEl = $(".response .status", meta);
+        statusEl.textContent = statusText;
+        statusEl.classList.add("status");
+
+        if (r.status === "completed")
+            statusEl.classList.add("completed");
+        else if (r.status === "failed")
+            statusEl.classList.add("failed");
+        else if (r.status === "stopped")
+            statusEl.classList.add("stopped");
+
+        const errorEl = $(".response .error", meta);
+
+        if (r.error && errorEl) {
+            errorEl.textContent = r.error;
+            errorEl.style.display = "";
+        }
+
+        card.addChild(meta);
+
+        if (r.content) {
+            const contentEl = mk("div", "response content");
+            contentEl.innerHTML = renderMarkdown(r.content);
+            card.addChild(contentEl);
+        }
+
+        if (r.embeddingResult) {
+            const emb = r.embeddingResult;
+            const embMeta = mk("div", "response content embedding-result");
+            embMeta.innerHTML = `<div class="mb-1"><strong>嵌入维度:</strong> ${emb.dim}</div><div class="mb-1"><strong>预览:</strong> <code>${emb.preview}</code></div>`;
+            const copyBtn = mk("button", "icon code-copy-btn");
+            copyBtn.innerHTML = "<span class=\"copy-icon\">⧉</span><span class=\"copy-check\">✓</span>";
+            copyBtn.title = "复制完整向量";
+
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(emb.fullJson).then(() => {
+                    copyBtn.classList.add("copied");
+                    setTimeout(() => copyBtn.classList.remove("copied"), 1500);
+                });
+            };
+
+            embMeta.addChild(copyBtn);
+            card.addChild(embMeta);
+        }
+
+        cards.addChild(card);
+    });
+
+    msgEl.addChild(cards);
 }
 
 function getStatusText(status) {
