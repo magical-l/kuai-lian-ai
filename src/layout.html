@@ -18,7 +18,7 @@
 <link href="https://css.lwj621.workers.dev/css/common.css" rel="stylesheet">
 <link href="https://css.lwj621.workers.dev/css/layout.css" rel="stylesheet">
 <link href="style.css" rel="stylesheet">
-</head><body><svg xmlns="http://www.w3.org/2000/svg" class="hidden">
+<svg xmlns="http://www.w3.org/2000/svg" class="hidden">
 	<symbol id="icon-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 		<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
 	</symbol>
@@ -53,92 +53,92 @@
 	</symbol>
 </svg>
 <script src="modules/boot.js"></script>
-
-
+</head>
+<body>
 <main class="flex items-go-y">
 	<header class="flex items-go-x">
-		<div class="left flex items-go-x">
-			<div class="logo flex items-go-x">
-				<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
+		<div class="left , flex items-go-x">
+			<div class="logo , items-near-center">
+				<img alt="快连AI Logo" src="恋-人脸、ai.svg" width="24" height="28">
 			</div>
-			<span class="brand">快连AI</span><span class="version">v5.2.4</span>
+			<span class="brand">快连AI</span>
+			<span class="version">v5.2.5</span>
 		</div>
-		<div class="center flex items-go-x">
+		<div class="center , flex items-go-x">
 			<span class="directory-label">当前存储目录：</span>
 			<span class="directory-path">未选择目录</span>
 			<button class="navbar change-dir" title="更换目录">
-					<svg width="14" height="14"><use href="#icon-folder"></use></svg>
-				</button>
+				<svg width="14" height="14"><use href="#icon-folder"></use></svg>
+			</button>
 			<button class="navbar danger delete-dir" title="弃用目录">
 				<span style="font-size:16px;font-weight:700">×</span>
 			</button>
 			<button class="navbar danger wipe-dir" title="清空数据">
-					<svg width="14" height="14"><use href="#icon-trash"></use></svg>
-				</button>
+				<svg width="14" height="14"><use href="#icon-trash"></use></svg>
+			</button>
 		</div>
-		<div class="right flex items-go-x">
+		<div class="right , flex items-go-x">
 			<button class="navbar toggle-sidebar" title="显示/隐藏右侧栏">
 					<svg width="14" height="14"><use href="#icon-sidebar-open"></use></svg>
 				</button>
 			<button class="navbar help" title="帮助">?</button>
 			<a class="btn navbar" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
-				<img alt="GitHub" src="
-	https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
+				<img alt="GitHub" src="https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
 			</a>
 			<a class="btn navbar" href="https://gitee.com/magicall/kuai-lian-ai" target="_blank" title="@Gitee">
 				<img alt="Gitee" src="https://gitee.com/favicon.ico" width="14" height="14">
 			</a>
 		</div>
 	</header>
-	<div class="main-row flex items-go-x">
-		<aside class="left flex items-go-y">
+	<div class="main-row , flex items-go-x">
+		<aside class="left , flex items-go-y">
 			<header class="flex items-go-x">
 				<span>AI服务端点</span>
 				<span class="flex items-go-x" style="gap:4px">
 					<button class="btn-icon test-all" title="测试全部连接"></button>
 					<button class="btn-icon collapse-all" title="收起全部"></button>
 					<button class="add-group" title="新增端点">
-					<span style="font-size:16px;font-weight:700">+</span>
-				</button>
+						<span style="font-size:16px;font-weight:700">+</span>
+					</button>
 				</span>
 			</header>
 			<div class="endpoint list"></div>
 		</aside>
 		<div class="divider column control sidebar left"></div>
-		<div class="main-content flex items-go-y">
-			<div class="chat-header flex items-go-x">
+		<div class="main-content , flex items-go-y">
+			<div class="chat-header , flex items-go-x">
 				<span class="prefix">会话：</span>
 				<span class="chat-title">新会话</span>
-				<div class="scroll-nav flex items-go-x">
+				<div class="scroll-nav , flex items-go-x">
 					<button class="scroll-btn scroll-top" title="到顶部">↑</button>
 					<button class="scroll-btn scroll-bottom" title="到底部">↓</button>
 				</div>
 				<button class="outline new-session" title="新建会话">新建会话</button>
 			</div>
 			<div id="chat-messages" class="flex items-go-y"></div>
-			
-			<footer class="chat-input-area flex items-go-y">
+
+			<footer class="chat-input-area , flex items-go-y">
 				<div class="divider row"></div>
-				<div class="selector-summary flex items-go-x">
+				<div class="selector-summary , flex items-go-x">
 					<!-- 已选模型标签 -->
 				</div>
-				<div class="input-wrapper flex items-go-y">
+				<div class="input-wrapper , flex items-go-y">
 					<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
-					<nav class="action-bar flex items-go-x items-near-center" style="padding:8px;min-height:40px">
-						<div class="attachments-row flex items-go-x flexible scrollable" style="gap:4px"></div>
+					<nav class="action-bar , flex items-go-x items-near-center" style="padding:8px;min-height:40px">
+						<div class="attachments-row , flex items-go-x flexible scrollable" style="gap:4px"></div>
 						<input type="file" class="file-input" multiple accept="*/*">
-						<button class="action-btn flex items-go-x attachment" title="添加附件">
+						<button class="attachment action-btn , flex items-go-x" title="添加附件">
 								<svg width="16" height="16"><use href="#icon-attach"></use></svg>
 							</button>
-						<div class="mode-selector flex items-go-x" role="radiogroup">
+						<div class="mode-selector , flex items-go-x" role="radiogroup">
 							<span class="mode-option selected" data-mode="chat">💬 聊天</span>
 							<span class="mode-option" data-mode="embedding">🔢 嵌入</span>
 						</div>
 						<div class="send-btn-group split-btn" title="发送">
-							<button class="send split-btn-main primary flex items-go-x">
+							<button class="send split-btn-main primary , flex items-go-x">
 								<svg width="16" height="16"><use href="#icon-send"></use></svg>
 							</button>
-							<button class="send-mode-toggle split-btn-drop flex items-go-x">
+							<button class="send-mode-toggle split-btn-drop , flex items-go-x">
 								<svg width="12" height="12"><use href="#icon-chevron-down"></use></svg>
 							</button>
 							<div class="send-mode-menu split-btn-menu">
@@ -152,7 +152,7 @@
 			</footer>
 		</div>
 		<div class="divider column control sidebar right"></div>
-		<aside class="right flex items-go-y">
+		<aside class="right , flex items-go-y">
 			<header class="flex items-go-x">
 				<span>会话记录</span>
 			</header>
@@ -164,7 +164,7 @@
 <template id="tpl-edit-group-dialog">
 	<div class="edit-dialog">
 		<h3></h3>
-		<form class="dialog-form flex items-go-y">
+		<form class="dialog-form , flex items-go-y">
 			<label class="flex items-go-y">名称: <input class="dialog-group-name"></label>
 			<label class="flex items-go-y">Base URL（选填）:
 				<input class="dialog-group-url" placeholder="https://api.example.com">
@@ -180,7 +180,7 @@
 				</select>
 			</label>
 			<label class="flex items-go-y">API Key（选填）:
-				<div class="key-input-wrapper flex items-go-x">
+				<div class="key-input-wrapper , flex items-go-x">
 					<input class="dialog-group-key" type="password" placeholder="">
 					<button type="button" class="toggle-key" title="显示/隐藏">
 						<svg width="14" height="14"><use href="#icon-eye"></use></svg>
@@ -197,16 +197,16 @@
 			</label>
 		</form>
 		<div class="dialog-footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
-		<footer class="dialog-buttons flex items-go-x">
+		<footer class="dialog-buttons , flex items-go-x">
 			<button class="dialog-cancel">✗</button>
 			<button class="dialog-save primary">✓</button>
 		</footer>
 	</div>
 </template>
 <template id="tpl-add-model-inline">
-	<div class="add-model-inline flex items-go-y">
+	<div class="add-model-inline , flex items-go-y">
 		<input type="text" placeholder="模型名" class="add-model-input">
-		<div class="add-model-row flex items-go-x">
+		<div class="add-model-row , flex items-go-x">
 			<input type="text" placeholder="备注（选填）" class="add-model-remark-input">
 			<button class="add-model-confirm action-sm">✓</button>
 			<button class="add-model-cancel action-sm">✗</button>
@@ -214,7 +214,7 @@
 	</div>
 </template>
 <template id="tpl-user-meta">
-	<div class="info flex items-go-x request">
+	<div class="request info , flex items-go-x">
 		<span class="name">我</span>
 		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
@@ -223,7 +223,7 @@
 	</div>
 </template>
 <template id="tpl-response-meta">
-	<div class="info flex items-go-x response">
+	<div class="response info , flex items-go-x">
 		<span class="name"></span>
 		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
@@ -232,32 +232,33 @@
 	</div>
 </template>
 <template id="tpl-multi-response-meta">
-	<div class="info flex items-go-x response">
+	<div class="response info , flex items-go-x">
 		<span class="name"></span>
 		<span class="time"></span>
 		<span class="wait time"></span>
-		<span class="total"></span>
+		<span class="total time"></span>
 		<span class="status"></span>
 		<span class="error"></span>
 		<button class="icon copy-btn" title="复制">
-			<span class="copy-icon">⧉</span><span class="copy-check">✓</span>
+			<span class="copy-icon">⧉</span>
+			<span class="copy-check">✓</span>
 		</button>
 	</div>
 </template>
 <template id="tpl-response-card-streaming">
 	<div class="card thinking response">
-		<div class="info flex items-go-x response">
+		<div class="response info , flex items-go-x">
 			<span class="name"></span>
 			<span class="icon model status-icon spinning">◐</span>
 		</div>
-		<div class="think stream hidden">
+		<div class="think stream , hidden">
 			<div class="body">等待思考...</div>
 		</div>
 		<div class="body">等待回复...</div>
 	</div>
 </template>
 <template id="tpl-thinking-header">
-	<header class="btn flex items-go-x">
+	<header class="btn , flex items-go-x">
 		<span class="icon"></span>
 		<span class="label">思考</span>
 		<span class="duration"></span>
@@ -283,9 +284,9 @@
 			</div>
 			<div class="help-section help-section-directory">
 				<h4>存储目录</h4>
-				<div class="directory-info flex items-go-x">
+				<div class="directory-info , flex items-go-x">
 					<span class="help-dir-name"></span>
-					<div class="directory-buttons flex items-go-x">
+					<div class="directory-buttons , flex items-go-x">
 						<button class="btn-restore restore-dir">恢复目录</button>
 						<button class="change-dir-help"></button>
 						<button class="btn-browser-storage use-browser-storage">使用浏览器存储</button>
@@ -333,6 +334,5 @@
 	<script src="modules/main.js"></script>
 	<!-- /app-modules -->
 </div>
-
-
-</body></html>
+</body>
+</html>

@@ -289,14 +289,6 @@ aside.right {
 	border-left: 1px solid var(--border-subtle);
 }
 
-aside.right.hidden {
-	display: none;
-}
-
-.divider.column.control.sidebar.right.hidden {
-	display: none;
-}
-
 aside > header {
 	padding: var(--space-2) var(--space-3);
 	font-weight: 600;
