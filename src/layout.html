@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
+<!DOCTYPE html><html lang="zh-CN"><head>
 <!--
 	Copyright (c) 2026 magicall
 	快连AI (Kuai Lian AI) is licensed under Mulan PSL v2.
@@ -20,67 +18,67 @@
 <link href="https://css.lwj621.workers.dev/css/common.css" rel="stylesheet">
 <link href="https://css.lwj621.workers.dev/css/layout.css" rel="stylesheet">
 <link href="style.css" rel="stylesheet">
-<svg xmlns="http://www.w3.org/2000/svg" class="hidden">
+</head><body><svg xmlns="http://www.w3.org/2000/svg" class="hidden">
 	<symbol id="icon-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+		<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
 	</symbol>
 	<symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M3 6h18"/>
-		<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-		<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-		<path d="M12 6v16"/>
+		<path d="M3 6h18"></path>
+		<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+		<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+		<path d="M12 6v16"></path>
 	</symbol>
 	<symbol id="icon-sidebar-open" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1">
-		<rect x="1" y="1" width="12" height="12" rx="1"/>
-		<line x1="8" y1="1" x2="8" y2="13"/>
-		<rect x="8" y="1" width="5" height="12" fill="currentColor" stroke="none"/>
+		<rect x="1" y="1" width="12" height="12" rx="1"></rect>
+		<line x1="8" y1="1" x2="8" y2="13"></line>
+		<rect x="8" y="1" width="5" height="12" fill="currentColor" stroke="none"></rect>
 	</symbol>
 	<symbol id="icon-sidebar-closed" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1">
-		<rect x="1" y="1" width="12" height="12" rx="1"/>
-		<line x1="8" y1="1" x2="8" y2="13"/>
-		<rect x="8" y="1" width="5" height="12" fill="none" stroke="none"/>
+		<rect x="1" y="1" width="12" height="12" rx="1"></rect>
+		<line x1="8" y1="1" x2="8" y2="13"></line>
+		<rect x="8" y="1" width="5" height="12" fill="none" stroke="none"></rect>
 	</symbol>
 	<symbol id="icon-attach" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+		<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
 	</symbol>
 	<symbol id="icon-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M12 19V5M5 12l7-7 7 7"/>
+		<path d="M12 19V5M5 12l7-7 7 7"></path>
 	</symbol>
 	<symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M6 9l6 6 6-6"/>
+		<path d="M6 9l6 6 6-6"></path>
 	</symbol>
 	<symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-		<circle cx="12" cy="12" r="3"/>
+		<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+		<circle cx="12" cy="12" r="3"></circle>
 	</symbol>
 </svg>
 <script src="modules/boot.js"></script>
-</head>
-<body>
+
+
 <main class="flex items-go-y">
 	<header class="flex items-go-x">
 		<div class="left flex items-go-x">
 			<div class="logo flex items-go-x">
 				<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 			</div>
-			<span class="brand">快连AI</span><span class="version">v5.2.0</span>
+			<span class="brand">快连AI</span><span class="version">v5.2.1</span>
 		</div>
 		<div class="center flex items-go-x">
 			<span class="directory-label">当前存储目录：</span>
 			<span class="directory-path">未选择目录</span>
 			<button class="navbar change-dir" title="更换目录">
-					<svg width="14" height="14"><use href="#icon-folder"/></svg>
+					<svg width="14" height="14"><use href="#icon-folder"></use></svg>
 				</button>
 			<button class="navbar danger delete-dir" title="弃用目录">
 				<span style="font-size:16px;font-weight:700">×</span>
 			</button>
 			<button class="navbar danger wipe-dir" title="清空数据">
-					<svg width="14" height="14"><use href="#icon-trash"/></svg>
+					<svg width="14" height="14"><use href="#icon-trash"></use></svg>
 				</button>
 		</div>
 		<div class="right flex items-go-x">
 			<button class="navbar toggle-sidebar" title="显示/隐藏右侧栏">
-					<svg width="14" height="14"><use href="#icon-sidebar-open"/></svg>
+					<svg width="14" height="14"><use href="#icon-sidebar-open"></use></svg>
 				</button>
 			<button class="navbar help" title="帮助">?</button>
 			<a class="btn navbar" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
@@ -129,8 +127,8 @@
 						<nav class="action-bar flex items-go-x items-near-center" style="padding:8px;min-height:40px">
 							<div class="attachments-row flex items-go-x flexible scrollable" style="gap:4px"></div>
 							<input type="file" class="file-input" multiple accept="*/*">
-							<button class="action-btn flex items-go-x attach" title="添加附件">
-									<svg width="16" height="16"><use href="#icon-attach"/></svg>
+							<button class="action-btn flex items-go-x attachment" title="添加附件">
+									<svg width="16" height="16"><use href="#icon-attach"></use></svg>
 								</button>
 							<div class="mode-selector flex items-go-x" role="radiogroup">
 								<span class="mode-option selected" data-mode="chat">💬 聊天</span>
@@ -138,10 +136,10 @@
 							</div>
 							<div class="send-btn-group split-btn" title="发送">
 								<button class="send split-btn-main primary flex items-go-x">
-									<svg width="16" height="16"><use href="#icon-send"/></svg>
+									<svg width="16" height="16"><use href="#icon-send"></use></svg>
 								</button>
 								<button class="send-mode-toggle split-btn-drop flex items-go-x">
-									<svg width="12" height="12"><use href="#icon-chevron-down"/></svg>
+									<svg width="12" height="12"><use href="#icon-chevron-down"></use></svg>
 								</button>
 								<div class="send-mode-menu split-btn-menu">
 									<div class="split-btn-option selected" data-value="enter">Enter 发送</div>
@@ -186,7 +184,7 @@
 				<div class="key-input-wrapper flex items-go-x">
 					<input class="dialog-group-key" type="password" placeholder="">
 					<button type="button" class="toggle-key" title="显示/隐藏">
-						<svg width="14" height="14"><use href="#icon-eye"/></svg>
+						<svg width="14" height="14"><use href="#icon-eye"></use></svg>
 					</button>
 				</div>
 				<span class="dialog-inherited-key inherit-hint"></span>
@@ -217,7 +215,7 @@
 	</div>
 </template>
 <template id="tpl-user-meta">
-	<div class="req meta flex items-go-x">
+	<div class="meta flex items-go-x request">
 		<span class="name">我</span>
 		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
@@ -226,7 +224,7 @@
 	</div>
 </template>
 <template id="tpl-response-meta">
-	<div class="res meta flex items-go-x">
+	<div class="meta flex items-go-x response">
 		<span class="name"></span>
 		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
@@ -235,10 +233,10 @@
 	</div>
 </template>
 <template id="tpl-multi-response-meta">
-	<div class="res meta flex items-go-x">
+	<div class="meta flex items-go-x response">
 		<span class="name"></span>
 		<span class="time"></span>
-		<span class="dur"></span>
+		<span class="duration"></span>
 		<span class="total"></span>
 		<span class="status"></span>
 		<span class="error"></span>
@@ -248,8 +246,8 @@
 	</div>
 </template>
 <template id="tpl-response-card-streaming">
-	<div class="res card thinking">
-		<div class="res meta flex items-go-x">
+	<div class="card thinking response">
+		<div class="meta flex items-go-x response">
 			<span class="name"></span>
 			<span class="icon model status-icon spinning">◐</span>
 		</div>
@@ -274,7 +272,7 @@
 </template>
 <template id="tpl-help-dialog">
 	<div class="help-dialog">
-		<h3>快<span class="shhhh">恋爱</span>连AI 使用帮助</h3>
+		<h3>快<span class="strike">恋爱</span>连AI 使用帮助</h3>
 		<div class="help-content">
 			<div class="help-section">
 				快连AI是一款极致小巧的小工具，主要用于快速添加和管理大模型服务端点、快速测试连接、简单对话。端点信息、会话记录完全存于你电脑本地，不会翻本地文件（由浏览器严格把关），也不会联网泄漏。
@@ -336,5 +334,6 @@
 	<script src="modules/main.js"></script>
 	<!-- /app-modules -->
 </div>
-</body>
-</html>
+
+
+</body></html>

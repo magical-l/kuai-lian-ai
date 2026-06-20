@@ -986,13 +986,13 @@ function renderMessages(messages, groups, onCopy) {
 	const container = $('#chat-messages');
 	container.innerHTML = '';
 	messages.forEach((msg, index) => {
-		const roleClass = msg.role === 'user' ? 'req' : 'res';
+		const roleClass = msg.role === 'user' ? 'request' : 'response';
 		const msgEl = mk('article', `msg flex items-go-y ${roleClass}`);
 		if (msg.role === 'user') {
 			// 使用模板创建meta，包含复制按钮
-			const meta = fromTemplate('tpl-user-meta', '.req.meta');
+			const meta = fromTemplate('tpl-user-meta', '.request.meta');
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
-			$('.req .time', meta).textContent = timeStr;
+			$('.request .time', meta).textContent = timeStr;
 			msgEl.addChild(meta);
 			const normalized = normalizeMessageContent(msg);
 			const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
@@ -1077,9 +1077,9 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
 	const modelName = info ? `${info.node.name} / ${info.model.name}` : '未知模型';
 	const modelRemark = info?.model?.remark || '';
-	const meta = fromTemplate('tpl-response-meta', '.res.meta');
-	$('.res .name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
-	$('.res .time', meta).textContent = timeStr;
+	const meta = fromTemplate('tpl-response-meta', '.response.meta');
+	$('.response .name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
+	$('.response .time', meta).textContent = timeStr;
 	const copyBtn = $('.copy-btn', meta);
 	copyBtn.onclick = () => {
 		navigator.clipboard.writeText(msg.content || "").then(() => {
@@ -1109,28 +1109,28 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 	msgEl.addChild(hint);
 	const cards = mk('div', 'cards flex items-go-y');
 	sorted.forEach(r => {
-		const card = mk('div', 'res card');
+		const card = mk('div', 'ai card');
 		const info = findModelById(groups, r.modelId);
 		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
 		const remark = info?.model?.remark || '';
-		const meta = fromTemplate('tpl-multi-response-meta', '.res.meta');
+		const meta = fromTemplate('tpl-multi-response-meta', '.response.meta');
 		const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
 		const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
 		const statusText = getStatusText(r.status);
 		const responseTimeStr = r.timestamp ? formatDateTime(r.timestamp) : '';
 		const errorText = r.status === 'failed' ? (r.error || '未知错误') : '';
 		const speedClass = getSpeedClass(r.firstTokenTime);
-		$('.res .name', meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
-		$('.res .time', meta).textContent = responseTimeStr;
-		const durationEl = $('.res .dur', meta);
+		$('.response .name', meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
+		$('.response .time', meta).textContent = responseTimeStr;
+		const durationEl = $('.response .duration', meta);
 		durationEl.textContent = durationStr;
 		if (speedClass) durationEl.classList.add(speedClass);
-		$('.res .total', meta).textContent = totalStr;
-		const statusEl = $('.res .status', meta);
+		$('.response .total', meta).textContent = totalStr;
+		const statusEl = $('.response .status', meta);
 		statusEl.textContent = statusText;
 		statusEl.classList.add('status');
 		statusEl.classList.add(r.status);
-		const errorEl = $('.res .error', meta);
+		const errorEl = $('.response .error', meta);
 		if (errorText) {
 			errorEl.textContent = errorText;
 		} else {

@@ -124,7 +124,7 @@ async function init() {
 			console.log("Mode:", inputMode);
 			const input = $('#chat-input');
 			input.placeholder = inputMode === 'chat' ? '输入消息...' : '输入要嵌入的文本...';
-			$('.attach').style.display = inputMode === 'chat' ? '' : 'none';
+			$('.attachment').style.display = inputMode === 'chat' ? '' : 'none';
 			$('.file-input').style.display = inputMode === 'chat' ? '' : 'none';
 		};
 	});
@@ -141,7 +141,7 @@ async function init() {
 	$('.delete-dir').onclick = handleDeleteDirectory;
 	$('.wipe-dir').onclick = handleWipeDirectory;
 	// 附件按钮
-	$('.attach').onclick = () => {
+	$('.attachment').onclick = () => {
 		$('.file-input').click();
 	};
 	$('.file-input').onchange = async (e) => {
@@ -558,12 +558,12 @@ function showThinkingCards(modelIds, groups, sessionId) {
 	}
 	const cards = mk('div', 'cards flex items-go-y');
 	modelIds.forEach(id => {
-		const card = fromTemplate('tpl-response-card-streaming', '.res.card');
+		const card = fromTemplate('tpl-response-card-streaming', '.response.card');
 		card.dataset.sessionId = sessionId;
 		card.dataset.modelId = id;
 		const info = findModelById(groups, id);
 		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
-		$('.res .name', card).textContent = name;
+		$('.response .name', card).textContent = name;
 		cards.addChild(card);
 	});
 	msgEl.addChild(cards);
@@ -572,7 +572,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 }
 
 function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) {
-	const card = $(`.res.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
+	const card = $(`.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
 	if (!card) return;
 	const thinkingBlock = $('.thinking', card);
 	if (thinkingBlock) {
@@ -603,17 +603,17 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 			thinkingBlock.style.display = 'none';
 		}
 	}
-	const contentEl = $('.res .content', card);
+	const contentEl = $('.response .content', card);
 	if (contentEl) {
 		contentEl.textContent = state.content || '';
 	}
 	if (firstTokenTime !== null) {
-		const meta = $('.res.meta', card);
+		const meta = $('.response.meta', card);
 		if (meta) {
-			if (!$('.res .dur', meta)) {
+			if (!$('.response .duration', meta)) {
 				const durationEl = mk('span', `response duration ${getSpeedClass(firstTokenTime)}`);
 				durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
-				const modelNameEl = $('.res .name', meta);
+				const modelNameEl = $('.response .name', meta);
 				if (modelNameEl) {
 					modelNameEl.insertAdjacentElement('afterend', durationEl);
 				}
@@ -624,12 +624,12 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 
 function updateCardStatus(modelId, status, error, state = null, sessionId = null) {
 	requestAnimationFrame(() => {
-		const selector = sessionId ? `.res.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.res.card[data-model-id="${modelId}"]`;
+		const selector = sessionId ? `.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.response.card[data-model-id="${modelId}"]`;
 		const card = $(selector);
 		if (!card) return;
 		card.classList.remove('thinking');
-		const contentEl = $('.res .content', card);
-		const meta = $('.res.meta', card);
+		const contentEl = $('.response .content', card);
+		const meta = $('.response.meta', card);
 		const icon = meta ? $('.model.status-icon', meta) : null;
 		if (icon) {
 			icon.classList.remove('spinning');
@@ -641,10 +641,10 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 			if (contentEl) {
 				contentEl.textContent = ''; // Empty content for failed
 			}
-			if (meta && error && !$('.res .error', meta)) {
+			if (meta && error && !$('.response .error', meta)) {
 				const errorEl = mk('span', 'response error');
 				errorEl.textContent = error;
-				const statusEl = $('.res .status', meta) || icon;
+				const statusEl = $('.response .status', meta) || icon;
 				if (statusEl) {
 					statusEl.insertAdjacentElement('afterend', errorEl);
 				}
@@ -662,10 +662,10 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 				}
 			}
 			if (state && state.totalDuration) {
-				let totalEl = $('.res .total', meta);
+				let totalEl = $('.response .total', meta);
 				if (!totalEl) {
 					totalEl = mk('span', 'response total');
-					const insertAfter = $('.res .status', meta) || $('.model.status-icon', meta);
+					const insertAfter = $('.response .status', meta) || $('.model.status-icon', meta);
 					if (insertAfter) {
 						insertAfter.insertAdjacentElement('afterend', totalEl);
 					} else {
@@ -683,7 +683,7 @@ function reorderCardsBySpeed() {
 		const container = $('.streaming-multi-response .cards');
 		if (!container) return;
 		const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-		const cards = Array.from($$('.res.card', container));
+		const cards = Array.from($$('.response.card', container));
 		cards.sort((a, b) => {
 			const stateA = gens ? gens.get(a.dataset.modelId) : null;
 			const stateB = gens ? gens.get(b.dataset.modelId) : null;

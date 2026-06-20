@@ -53,7 +53,7 @@
 }
 
 /* Override CDN .flex defaults: restore standard flexbox behavior */
-.flex:not(.inline) {
+.flex {
 	align-items: stretch;
 	flex-wrap: nowrap;
 }
@@ -555,13 +555,13 @@ button.outline:hover:not(:disabled) {
 	gap: var(--space-1);
 
 	/* 用户消息：靠右，左侧空隙 */
-	&.req {
+	&.request {
 		align-self: flex-end;
 		max-width: 90%;
 	}
 
 	/* 助手消息：靠左，右侧空隙 */
-	&.res {
+	&.response {
 		align-self: flex-start;
 		max-width: 90%;
 	}
@@ -576,7 +576,7 @@ button.outline:hover:not(:disabled) {
 	}
 
 	/* 用户消息中的附件靠右对齐 */
-	&.req .attachments {
+	&.request .attachments {
 		justify-content: flex-end;
 	}
 
@@ -757,7 +757,7 @@ button.outline:hover:not(:disabled) {
 }
 
 /* ========== Attachments (within messages) ========== */
-.attach {
+.attachment {
 	align-items: center;
 	gap: var(--space-1);
 	padding: var(--space-1) var(--space-2);
@@ -1577,8 +1577,8 @@ button.use-browser-storage:hover {
 		padding: 8px;
 	}
 
-	.msg.req,
-	.msg.res {
+	.msg.request,
+	.msg.response {
 		max-width: 95%;
 	}
 }
@@ -1703,14 +1703,14 @@ button.use-browser-storage:hover {
 	gap: var(--space-3);
 }
 
-.res.card {
+.response.card {
 	background: var(--bg-base);
 	border: 1px solid var(--border-subtle);
 	border-radius: var(--radius-md);
 	padding: var(--space-3);
 }
 
-.res.meta {
+.response.meta {
 	align-items: center;
 	gap: var(--space-2);
 	font-size: 11px;
@@ -1723,7 +1723,7 @@ button.use-browser-storage:hover {
 }
 
 /* 用户消息 meta 行 */
-.req.meta {
+.request.meta {
 	align-items: center;
 	gap: var(--space-2);
 	font-size: 11px;
@@ -1736,40 +1736,40 @@ button.use-browser-storage:hover {
 	}
 }
 
-.req .time {
+.request .time {
 	color: var(--text-muted);
 }
 
-.res .time {
+.response .time {
 	color: var(--text-muted);
 }
 
-.res .dur {
+.response .duration {
 	color: var(--text-secondary);
 }
 
 /* Response speed colors */
-.res .dur.fast {
+.response .duration.fast {
 	color: var(--success);
 }
 
-.res .dur.medium {
+.response .duration.medium {
 	color: var(--warning);
 }
 
-.res .dur.slow {
+.response .duration.slow {
 	color: #ea580c;
 }
 
-.res .total {
+.response .total {
 	color: var(--text-secondary);
 }
 
-.res .name {
+.response .name {
 	font-weight: 500;
 }
 
-.res .status {
+.response .status {
 	font-size: 10px;
 }
 
@@ -1786,13 +1786,13 @@ button.use-browser-storage:hover {
 	color: var(--text-muted);
 }
 
-.res .error {
+.response .error {
 	color: var(--danger);
 	font-size: 12px;
 	margin-left: 4px;
 }
 
-.res .content {
+.response .content {
 	font-size: 13px;
 	line-height: 1.5;
 
@@ -2117,7 +2117,7 @@ button.use-browser-storage:hover {
 	display: none;
 }
 
-.shhhh {
+.strike {
 	color: gray;
 	text-decoration: line-through;
 	text-decoration-style: double;
