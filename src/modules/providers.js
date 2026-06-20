@@ -312,7 +312,7 @@ function createTooltip(id, html) {
 		if (!el) {
 			el = doc.createElement('div');
 			el.id = id;
-			el.className = 'tip';
+			el.className = 'tooltip';
 			el.innerHTML = html;
 			doc.body.appendChild(el);
 			$$('button.copy', el).forEach(btn => {

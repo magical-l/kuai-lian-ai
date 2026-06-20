@@ -544,7 +544,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
 	const msgEl = mk('article', 'message flex items-go-y res msg');
 	msgEl.classList.add('streaming-multi-response');
 	msgEl.dataset.sessionId = sessionId;
-	const hint = fromTemplate('tpl-multi-response-hint', '.cards.hint');
+	const hint = fromTemplate('tpl-multi-response-hint', '.response.list.hint');
 	$('.hint-text', hint).textContent = `${modelIds.length}个模型正在思考...`;
 	msgEl.addChild(hint);
 	const stopBtn = $('.btn-stop-inline', hint);
@@ -603,15 +603,15 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 			thinkingBlock.style.display = 'none';
 		}
 	}
-	const contentEl = $('.response .content', card);
+	const contentEl = $('.response .body', card);
 	if (contentEl) {
 		contentEl.textContent = state.content || '';
 	}
 	if (firstTokenTime !== null) {
-		const meta = $('.response.meta', card);
+		const meta = $('.response.info', card);
 		if (meta) {
-			if (!$('.response .duration', meta)) {
-				const durationEl = mk('span', `response duration ${getSpeedClass(firstTokenTime)}`);
+			if (!$('.response .wait', meta)) {
+				const durationEl = mk('span', `response wait ${getSpeedClass(firstTokenTime)}`);
 				durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
 				const modelNameEl = $('.response .name', meta);
 				if (modelNameEl) {
@@ -628,8 +628,8 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 		const card = $(selector);
 		if (!card) return;
 		card.classList.remove('thinking');
-		const contentEl = $('.response .content', card);
-		const meta = $('.response.meta', card);
+		const contentEl = $('.response .body', card);
+		const meta = $('.response.info', card);
 		const icon = meta ? $('.model.status-icon', meta) : null;
 		if (icon) {
 			icon.classList.remove('spinning');
@@ -680,7 +680,7 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 
 function reorderCardsBySpeed() {
 	requestAnimationFrame(() => {
-		const container = $('.streaming-multi-response .cards');
+		const container = $('.streaming-multi-response .response.list');
 		if (!container) return;
 		const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
 		const cards = Array.from($$('.response.card', container));

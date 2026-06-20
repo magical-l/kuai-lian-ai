@@ -309,7 +309,7 @@ aside > header {
 	align-items: center;
 }
 
-aside .content {
+.sidebar-body {
 	flex: 1;
 	overflow-y: auto;
 	padding: var(--space-1);
@@ -580,7 +580,7 @@ button.outline:hover:not(:disabled) {
 		justify-content: flex-end;
 	}
 
-	.meta {
+	.info {
 		font-size: 11px;
 		color: var(--text-muted);
 		padding-left: 0;
@@ -931,7 +931,7 @@ button.outline:hover:not(:disabled) {
 }
 
 /* tooltip弹层（使用fixed定位，脱离sidebar的overflow） */
-.tip {
+.tooltip {
 	position: fixed;
 	z-index: 1000;
 	background: var(--bg-base);
@@ -958,7 +958,7 @@ button.outline:hover:not(:disabled) {
 }
 
 /* 复制按钮 */
-.tip button.copy {
+.tooltip button.copy {
 	font-size: 12px;
 	padding: 0;
 	width: 18px;
@@ -1263,7 +1263,7 @@ button.connection.cors_blocked {
 	box-shadow: 0 0 0 2px var(--accent-light);
 }
 
-.session.meta {
+.session.info {
 	align-items: center;
 	justify-content: space-between;
 	margin-top: var(--space-1);
@@ -1279,23 +1279,23 @@ button.connection.cors_blocked {
 }
 
 /* ========== Scrollbar ========== */
-aside .content::-webkit-scrollbar,
+.sidebar-body::-webkit-scrollbar,
 #chat-messages::-webkit-scrollbar {
 	width: 5px;
 }
 
-aside .content::-webkit-scrollbar-track,
+.sidebar-body::-webkit-scrollbar-track,
 #chat-messages::-webkit-scrollbar-track {
 	background: transparent;
 }
 
-aside .content::-webkit-scrollbar-thumb,
+.sidebar-body::-webkit-scrollbar-thumb,
 #chat-messages::-webkit-scrollbar-thumb {
 	background: var(--border-default);
 	border-radius: 3px;
 }
 
-aside .content::-webkit-scrollbar-thumb:hover,
+.sidebar-body::-webkit-scrollbar-thumb:hover,
 #chat-messages::-webkit-scrollbar-thumb:hover {
 	background: var(--border-strong);
 }
@@ -1585,11 +1585,6 @@ button.use-browser-storage:hover {
 
 /* ========== Model Selector ========== */
 
-.path {
-	color: var(--text-secondary);
-	font-weight: 500;
-}
-
 .selector-summary {
 	background: var(--bg-muted);
 	border-radius: var(--radius-md) var(--radius-md) 0 0;
@@ -1693,13 +1688,13 @@ button.use-browser-storage:hover {
 }
 
 /* ========== Multi-Model Response Cards ========== */
-.cards.hint {
+.response.list.hint {
 	font-size: 11px;
 	color: var(--text-muted);
 	margin-bottom: var(--space-2);
 }
 
-.cards {
+.response.list {
 	gap: var(--space-3);
 }
 
@@ -1710,7 +1705,7 @@ button.use-browser-storage:hover {
 	padding: var(--space-3);
 }
 
-.response.meta {
+.response.info {
 	align-items: center;
 	gap: var(--space-2);
 	font-size: 11px;
@@ -1723,7 +1718,7 @@ button.use-browser-storage:hover {
 }
 
 /* 用户消息 meta 行 */
-.request.meta {
+.request.info {
 	align-items: center;
 	gap: var(--space-2);
 	font-size: 11px;
@@ -1744,20 +1739,20 @@ button.use-browser-storage:hover {
 	color: var(--text-muted);
 }
 
-.response .duration {
+.response .wait {
 	color: var(--text-secondary);
 }
 
 /* Response speed colors */
-.response .duration.fast {
+.response .wait.fast {
 	color: var(--success);
 }
 
-.response .duration.medium {
+.response .wait.medium {
 	color: var(--warning);
 }
 
-.response .duration.slow {
+.response .wait.slow {
 	color: #ea580c;
 }
 
@@ -1792,7 +1787,7 @@ button.use-browser-storage:hover {
 	margin-left: 4px;
 }
 
-.response .content {
+.response .body {
 	font-size: 13px;
 	line-height: 1.5;
 
@@ -1904,7 +1899,7 @@ button.use-browser-storage:hover {
 		border-top: 1px solid var(--border-subtle);
 	}
 
-	&.collapsed .content {
+	&.collapsed .body {
 		display: none;
 	}
 

@@ -61,7 +61,7 @@
 			<div class="logo flex items-go-x">
 				<img src="恋-人脸、ai.svg" width="24" height="28" alt="快连AI Logo">
 			</div>
-			<span class="brand">快连AI</span><span class="version">v5.2.1</span>
+			<span class="brand">快连AI</span><span class="version">v5.2.2</span>
 		</div>
 		<div class="center flex items-go-x">
 			<span class="directory-label">当前存储目录：</span>
@@ -157,7 +157,7 @@
 			<header class="flex items-go-x">
 				<span>会话记录</span>
 			</header>
-			<div class="session-list content"></div>
+			<div class="session-list sidebar-body"></div>
 		</aside>
 	</div>
 </main>
@@ -215,7 +215,7 @@
 	</div>
 </template>
 <template id="tpl-user-meta">
-	<div class="meta flex items-go-x request">
+	<div class="info flex items-go-x request">
 		<span class="name">我</span>
 		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
@@ -224,7 +224,7 @@
 	</div>
 </template>
 <template id="tpl-response-meta">
-	<div class="meta flex items-go-x response">
+	<div class="info flex items-go-x response">
 		<span class="name"></span>
 		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
@@ -233,10 +233,10 @@
 	</div>
 </template>
 <template id="tpl-multi-response-meta">
-	<div class="meta flex items-go-x response">
+	<div class="info flex items-go-x response">
 		<span class="name"></span>
 		<span class="time"></span>
-		<span class="duration"></span>
+		<span class="wait time"></span>
 		<span class="total"></span>
 		<span class="status"></span>
 		<span class="error"></span>
@@ -247,14 +247,14 @@
 </template>
 <template id="tpl-response-card-streaming">
 	<div class="card thinking response">
-		<div class="meta flex items-go-x response">
+		<div class="info flex items-go-x response">
 			<span class="name"></span>
 			<span class="icon model status-icon spinning">◐</span>
 		</div>
 		<div class="think stream hidden">
-			<div class="content">等待思考...</div>
+			<div class="body">等待思考...</div>
 		</div>
-		<div class="content">等待回复...</div>
+		<div class="body">等待回复...</div>
 	</div>
 </template>
 <template id="tpl-thinking-header">
@@ -265,7 +265,7 @@
 	</header>
 </template>
 <template id="tpl-multi-response-hint">
-	<div class="cards hint">
+	<div class="response.list hint">
 		<span class="hint-text"></span>
 		<button class="stop btn-stop-inline">全部停止</button>
 	</div>

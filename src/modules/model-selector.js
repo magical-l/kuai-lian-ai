@@ -32,7 +32,7 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 
             const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : "";
             const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
-            return `<span class="${classes}" data-model="${id}"><span class="path">${fullPath}</span>${remarkHtml}<span class="btn remove" data-model="${id}">✕</span></span>`;
+            return `<span class="${classes}" data-model="${id}"><span class="full name">${fullPath}</span>${remarkHtml}<span class="btn remove" data-model="${id}">✕</span></span>`;
         }).join("");
     }
 
@@ -213,7 +213,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x");
             headerEl.style.paddingLeft = (depth * 12 + 4) + "px";
-            var dragHandle = mk("span", "btn handle flex items-go-x");
+            var dragHandle = mk("span", "btn handle drag flex items-go-x");
             dragHandle.innerHTML = SVG.drag(14);
             dragHandle.title = "拖动排序";
             dragHandle.draggable = true;
@@ -570,7 +570,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                     modelEl.classList.add("selected");
                 }
 
-                var modelDragHandle = mk("span", "btn handle");
+                var modelDragHandle = mk("span", "btn handle drag");
                 modelDragHandle.innerHTML = SVG.drag(14);
                 modelDragHandle.title = "拖动排序";
                 modelDragHandle.draggable = true;
@@ -990,7 +990,7 @@ function renderMessages(messages, groups, onCopy) {
 		const msgEl = mk('article', `msg flex items-go-y ${roleClass}`);
 		if (msg.role === 'user') {
 			// 使用模板创建meta，包含复制按钮
-			const meta = fromTemplate('tpl-user-meta', '.request.meta');
+			const meta = fromTemplate('tpl-user-meta', '.request.info');
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 			$('.request .time', meta).textContent = timeStr;
 			msgEl.addChild(meta);
@@ -1077,7 +1077,7 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
 	const modelName = info ? `${info.node.name} / ${info.model.name}` : '未知模型';
 	const modelRemark = info?.model?.remark || '';
-	const meta = fromTemplate('tpl-response-meta', '.response.meta');
+	const meta = fromTemplate('tpl-response-meta', '.response.info');
 	$('.response .name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
 	$('.response .time', meta).textContent = timeStr;
 	const copyBtn = $('.copy-btn', meta);
@@ -1113,7 +1113,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 		const info = findModelById(groups, r.modelId);
 		const name = info ? `${info.node.name} / ${info.model.name}` : '未知';
 		const remark = info?.model?.remark || '';
-		const meta = fromTemplate('tpl-multi-response-meta', '.response.meta');
+		const meta = fromTemplate('tpl-multi-response-meta', '.response.info');
 		const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime/1000).toFixed(1)}s` : '';
 		const totalStr = r.totalDuration ? `耗时${(r.totalDuration/1000).toFixed(1)}s` : '';
 		const statusText = getStatusText(r.status);
@@ -1122,7 +1122,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
 		const speedClass = getSpeedClass(r.firstTokenTime);
 		$('.response .name', meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
 		$('.response .time', meta).textContent = responseTimeStr;
-		const durationEl = $('.response .duration', meta);
+		const durationEl = $('.response .wait', meta);
 		durationEl.textContent = durationStr;
 		if (speedClass) durationEl.classList.add(speedClass);
 		$('.response .total', meta).textContent = totalStr;
