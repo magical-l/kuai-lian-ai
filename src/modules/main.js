@@ -204,7 +204,7 @@ async function handleWipeDirectory() {
 }
 async function updateDirectoryDisplay() {
 	const info = storage.getDisplayInfo();
-	const dirPath = $('.dir-name');
+	const dirPath = $('.tip');
 	dirPath.textContent = info.text;
 	dirPath.title = info.title;
 }

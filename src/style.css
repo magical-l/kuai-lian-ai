@@ -101,7 +101,7 @@ main > header {
 	height: 36px;
 }
 
-main > header .left {
+main > header .branding {
 	align-items: center;
 	gap: var(--space-3);
 }
@@ -125,16 +125,21 @@ main > header .version {
 	margin-left: var(--space-1);
 }
 
-main > header .center {
+main > header .workspace {
 	align-items: center;
 	gap: var(--space-2);
 	flex: 1;
 	justify-content: center;
 }
 
-main > header .right {
+main > header nav {
 	align-items: center;
 	gap: var(--space-2);
+}
+
+.btn .icon {
+	width: 14px;
+	height: 14px;
 }
 
 /* ========== Buttons ========== */
@@ -161,48 +166,25 @@ button:hover:not(:disabled):not(.danger) {
 }
 
 /* 尺寸修饰类 */
-button.navbar, a.navbar {
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	border: 1px solid var(--border-subtle);
 	padding: var(--space-1);
 	height: 24px;
 	min-width: 24px;
-}
-
-button.navbar:hover:not(:disabled):not(.danger), a.navbar:hover {
-	background: var(--accent-light);
-	border-color: var(--accent-primary);
-	color: var(--accent-primary);
-}
-
-a.navbar {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
 	box-sizing: border-box;
 	border-radius: var(--radius-sm);
 	text-decoration: none;
 	transition: all var(--transition-fast);
 	color: var(--text-muted);
 	cursor: pointer;
-}
-
-a.navbar:hover {
-	color: var(--accent-primary);
-}
-
-a.navbar img {
-	display: block;
-}
-
-header button, header > button {
-	border: 1px solid var(--border-subtle);
-	padding: 0;
-	height: 24px;
-	min-width: 24px;
 	user-select: none;
+	background: transparent;
 }
 
-header button:hover:not(:disabled), header > button:hover:not(:disabled) {
+.btn:hover:not(:disabled):not(.danger) {
 	background: var(--accent-light);
 	border-color: var(--accent-primary);
 	color: var(--accent-primary);
@@ -256,7 +238,7 @@ button.danger:hover:not(:disabled) {
 	color: var(--danger);
 }
 
-button.navbar.danger:hover:not(:disabled) {
+.btn.danger:hover:not(:disabled) {
 	border-color: var(--danger);
 }
 
@@ -266,7 +248,7 @@ button.help {
 	font-weight: 600;
 }
 
-.dir-name,
+.workspace .tip,
 .workspace.directory .name {
 	color: var(--text-muted);
 	overflow: hidden;
@@ -289,7 +271,7 @@ aside {
 	width: 260px;
 }
 
-aside.right {
+aside.sessions {
 	border-right: none;
 	border-left: 1px solid var(--border-subtle);
 }
@@ -1300,7 +1282,7 @@ button.toggle-key:hover:not(:disabled) {
 	justify-content: flex-end;
 }
 
-.help {
+dialog.help {
 	background: var(--bg-base);
 	padding: var(--space-6);
 	border-radius: var(--radius-lg);
@@ -1466,7 +1448,7 @@ button.use-browser-storage:hover {
 }
 
 @media (max-width: 768px) {
-	aside.right {
+	aside.sessions {
 		display: none;
 	}
 

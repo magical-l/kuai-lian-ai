@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
+<!DOCTYPE html><html lang="zh-CN"><head>
 <!--
 	Copyright (c) 2026 magicall
 	快连AI (Kuai Lian AI) is licensed under Mulan PSL v2.
@@ -60,41 +58,41 @@
 
 <main class="flex items-go-y">
 	<header class="flex items-go-x">
-		<div class="left , flex items-go-x">
+		<div class="branding , flex items-go-x">
 			<div class="logo , items-near-center">
 				<img alt="快连AI Logo" src="恋-人脸、ai.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.2.15</span>
+			<span class="version">v5.2.16</span>
 		</div>
-		<div class="center , flex items-go-x">
-			<span class="dir-label">当前存储目录：</span>
-			<span class="dir-name">未选择目录</span>
-			<button class="navbar change-dir" title="更换目录">
-				<svg width="14" height="14"><use href="#icon-folder"></use></svg>
+		<div class="workspace , flex items-go-x">
+			<span>当前存储目录：</span>
+			<span class="tip">未选择目录</span>
+			<button class="change-dir btn" title="更换目录">
+				<svg class="icon"><use href="#icon-folder"></use></svg>
 			</button>
-			<button class="navbar danger delete-dir" title="弃用目录">
+			<button class="delete-dir btn , danger" title="弃用目录">
 				<span style="font-size:16px;font-weight:700">×</span>
 			</button>
-			<button class="navbar danger wipe-dir" title="清空数据">
-				<svg width="14" height="14"><use href="#icon-trash"></use></svg>
+			<button class="wipe-dir btn , danger" title="清空数据">
+				<svg class="icon"><use href="#icon-trash"></use></svg>
 			</button>
 		</div>
-		<nav class="right , flex items-go-x">
-			<button class="navbar toggle-sidebar" title="显示/隐藏右侧栏">
-					<svg width="14" height="14"><use href="#icon-sidebar-open"></use></svg>
-				</button>
-			<button class="navbar help" title="帮助">?</button>
-			<a class="btn navbar" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
-				<img alt="GitHub" src="https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
+		<nav class="flex items-go-x">
+			<button class="toggle-sidebar , btn" title="显示/隐藏右侧栏">
+				<svg class="icon"><use href="#icon-sidebar-open"></use></svg>
+			</button>
+			<button class="help btn" title="帮助">?</button>
+			<a class="github btn" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
+				<img alt="GitHub" class="icon" src="https://github.githubassets.com/favicons/favicon.svg">
 			</a>
-			<a class="btn navbar" href="https://gitee.com/magicall/kuai-lian-ai" target="_blank" title="@Gitee">
-				<img alt="Gitee" src="https://gitee.com/favicon.ico" width="14" height="14">
+			<a class="gitee btn" href="https://gitee.com/magicall/kuai-lian-ai" target="_blank" title="@Gitee">
+				<img alt="Gitee" class="icon" src="https://gitee.com/favicon.ico">
 			</a>
 		</nav>
 	</header>
 	<div class="main-row , flex items-go-x">
-		<aside class="left , flex items-go-y">
+		<aside class="endpoints , flex items-go-y">
 			<header class="flex items-go-x">
 				<span>AI服务端点</span>
 				<span class="flex items-go-x" style="gap:4px">
@@ -129,7 +127,7 @@
 					<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
 					<nav class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
 						<div class="attachments-row , flex items-go-x flexible scrollable" style="gap:4px"></div>
-						<input type="file" class="file-input" multiple="" accept="*/*">
+						<input type="file" class="file-input" multiple accept="*/*">
 						<button class="attachment action-btn , flex items-go-x" title="添加附件">
 								<svg width="16" height="16"><use href="#icon-attach"></use></svg>
 							</button>
@@ -155,7 +153,7 @@
 			</footer>
 		</section>
 		<div class="divider column control sidebar right"></div>
-		<aside class="right , flex items-go-y">
+		<aside class="sessions , flex items-go-y">
 			<header class="flex items-go-x">
 				<span>会话记录</span>
 			</header>
@@ -319,5 +317,5 @@
 	<script src="modules/main.js"></script>
 	<!-- /app-modules -->
 </div>
-</body>
-</html>
+
+</body></html>

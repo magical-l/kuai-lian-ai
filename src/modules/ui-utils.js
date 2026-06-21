@@ -14,8 +14,8 @@ function initDividers() {
 	const chatHeader = $('.chat-header');
 	const savedLeftWidth = localStorage.getItem('sidebar-left-width');
 	const savedRightWidth = localStorage.getItem('sidebar-right-width');
-	if (savedLeftWidth) $('aside.left:not(.divider)').style.width = savedLeftWidth;
-	if (savedRightWidth) $('aside.right:not(.divider)').style.width = savedRightWidth;
+	if (savedLeftWidth) $('aside.endpoints:not(.divider)').style.width = savedLeftWidth;
+	if (savedRightWidth) $('aside.sessions:not(.divider)').style.width = savedRightWidth;
 	localStorage.removeItem('chat-messages-flex');
 	const savedMessagesHeight = localStorage.getItem('chat-messages-height');
 	if (savedMessagesHeight) {
@@ -35,7 +35,7 @@ function initDividers() {
 	function startDragHorizontal(e) {
 		const divider = e.target;
 		const isLeft = divider.classList.contains('left');
-		const sidebar = isLeft ? $('aside.left:not(.divider)') : $('aside.right:not(.divider)');
+		const sidebar = isLeft ? $('aside.endpoints:not(.divider)') : $('aside.sessions:not(.divider)');
 		isDragging = true;
 		curDiv = {
 			sidebar,
@@ -98,7 +98,7 @@ function initDividers() {
 			doc.body.style.userSelect = '';
 		}
 	}
-	const sidebarRight = $('aside.right:not(.divider)');
+	const sidebarRight = $('aside.sessions:not(.divider)');
 	const dividerRight = $('.divider.column.control.sidebar.right');
 	const btnToggleSidebar = $('.toggle-sidebar');
 
