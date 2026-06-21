@@ -266,7 +266,8 @@ button.help {
 	font-weight: 600;
 }
 
-.directory-path {
+.dir-name,
+.workspace.directory .name {
 	color: var(--text-muted);
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -899,14 +900,6 @@ button.outline:hover:not(:disabled) {
 	display: block;
 }
 
-.field-hint {
-	font-size: 12px;
-	color: var(--text-secondary);
-	margin-top: 2px;
-	display: block;
-	line-height: 1.4;
-}
-
 
 .handle {
 	cursor: grab;
@@ -1328,39 +1321,39 @@ dialog::backdrop {
 	color: var(--text-primary);
 }
 
-.help .help-content {
+.help article {
 	color: var(--text-secondary);
 	font-size: 14px;
 	line-height: 1.6;
 }
 
-.help .help-section {
+.help section {
 	margin-bottom: var(--space-4);
 }
 
-.help .help-section-directory {
+.help .workspace.directory {
 	background: var(--bg-muted);
 	padding: var(--space-3);
 	border-radius: var(--radius-md);
 	margin-bottom: var(--space-5);
 }
 
-.help .help-section-directory h4 {
+.help .workspace.directory h4 {
 	margin-bottom: var(--space-2);
 }
 
-.help .directory-info {
+.help .workspace.directory .info {
 	align-items: center;
 	gap: var(--space-3);
 	justify-content: space-between;
 	flex-wrap: wrap;
 }
 
-.directory-buttons {
+.workspace.directory .actions {
 	gap: var(--space-2);
 }
 
-button.restore-dir {
+button.recover {
 	background: var(--success);
 	color: white;
 	border: none;
@@ -1372,11 +1365,11 @@ button.restore-dir {
 	border-radius: var(--radius-sm);
 }
 
-button.restore-dir:hover {
+button.recover:hover {
 	background: #047857;
 }
 
-button.change-dir-help {
+button.select-dir {
 	background: var(--accent-primary);
 	color: white;
 	border: none;
@@ -1388,7 +1381,7 @@ button.change-dir-help {
 	border-radius: var(--radius-sm);
 }
 
-button.change-dir-help:hover {
+button.select-dir:hover {
 	background: var(--accent-primary-hover);
 }
 
@@ -1408,30 +1401,30 @@ button.use-browser-storage:hover {
 	background: #1D4ED8;
 }
 
-.browser-storage-hint {
+.workspace.directory .storage-hint {
 	font-size: 12px;
 	color: var(--text-muted);
 	margin-top: 6px;
 }
 
-.directory-warning {
+.workspace.directory .warning {
 	color: var(--warning);
 	font-size: 13px;
 	margin-top: var(--space-2);
 }
 
-.help .help-section h4 {
+.help section h4 {
 	font-weight: 600;
 	font-size: 14px;
 	color: var(--text-primary);
 	margin-bottom: var(--space-2);
 }
 
-.help .help-section ul {
+.help section ul {
 	margin-left: var(--space-4);
 }
 
-.help .help-section li {
+.help section li {
 	margin-bottom: var(--space-3);
 }
 

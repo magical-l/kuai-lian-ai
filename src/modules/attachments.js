@@ -136,25 +136,25 @@ function addInheritIcon(inputEl) {
 }
 
 function showEditGroupDialog(node, parentId, onSave) {
-	var exist = $('.edit-dialog');
+	var exist = $('dialog.editing');
 	if (exist) exist.remove();
-	var dialog = fromTemplate('edit-group-dialog', '.edit-dialog');
+	var dialog = fromTemplate('edit-group-dialog', '.editing');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
-	var keyInput = $(".dialog-group-key", dialog);
-	var nameInput = $(".dialog-group-name", dialog);
-	var urlInput = $('.dialog-group-url', dialog);
-	var modelidInput = $('.dialog-group-modelid', dialog);
-	var styleSel = $(".dialog-group-style", dialog);
-	var remarkInput = $(".dialog-group-remark", dialog);
+	var keyInput = $(".group-key", dialog);
+	var nameInput = $(".group-name", dialog);
+	var urlInput = $('.group-url', dialog);
+	var modelidInput = $('.group-modelid', dialog);
+	var styleSel = $(".group-style", dialog);
+	var remarkInput = $(".group-remark", dialog);
 
 	setValues(dialog, {
-		'.dialog-group-name': node ? node.name : '',
-		'.dialog-group-modelid': node ? node.modelId || '' : '',
-		'.dialog-group-url': node ? node.baseUrl || '' : '',
-		'.dialog-group-style': node ? node.style || '' : '',
-		'.dialog-group-key': node ? node.key || '' : '',
-		'.dialog-group-remark': node ? node.remark || '' : ''
+		'.group-name': node ? node.name : '',
+		'.group-modelid': node ? node.modelId || '' : '',
+		'.group-url': node ? node.baseUrl || '' : '',
+		'.group-style': node ? node.style || '' : '',
+		'.group-key': node ? node.key || '' : '',
+		'.group-remark': node ? node.remark || '' : ''
 	});
 
 	// 继承值填入
@@ -244,14 +244,14 @@ function showEditGroupDialog(node, parentId, onSave) {
 			} else if (idx === formFields.length - 1) {
 				// 最后一个输入框 → 保存
 				e.preventDefault();
-				var saveBtn = $('.dialog-save', dialog);
+				var saveBtn = $('.save', dialog);
 				if (saveBtn) saveBtn.click();
 			}
 		});
 	}
 	onClick({
-		'.dialog-cancel': function() { dialog.remove(); },
-		'.dialog-save': function() {
+		'.cancel': function() { dialog.remove(); },
+		'.save': function() {
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
 			if (!theName && theModelId) {
@@ -281,22 +281,22 @@ function showDirectoryPrompt(hasPendingHandle = false) {
 }
 
 function hideDirectoryPrompt() {
-	const prompt = $('.help-dialog');
+	const prompt = $('dialog.help');
 	if (prompt) prompt.remove();
 }
 
 function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
-	const exist = $('.help-dialog');
+	const exist = $('dialog.help');
 	if (exist) exist.remove();
-	const dialog = fromTemplate('help-dialog', '.help-dialog');
+	const dialog = fromTemplate('help-dialog', '.help');
 	const dirName = storage.getDirectoryName();
 	const displayInfo = storage.getDisplayInfo();
 	const hasDir = storage.mode === 'directory';
-	$('.help-dir-name', dialog).textContent = '当前存储：' + displayInfo.text + (hasDir ? '' : '（浏览器存储）');
-	$('.help-dir-name', dialog).title = displayInfo.title;
-	const changeDirBtn = $('.change-dir-help', dialog);
+	$('.name', dialog).textContent = '当前存储：' + displayInfo.text + (hasDir ? '' : '（浏览器存储）');
+	$('.name', dialog).title = displayInfo.title;
+	const changeDirBtn = $('.select-dir', dialog);
 	changeDirBtn.textContent = hasDir ? '更换目录' : '选择目录存储';
-	const restoreBtn = $('.restore-dir', dialog);
+	const restoreBtn = $('.recover', dialog);
 	if (restoreBtn) {
 		restoreBtn.onclick = async () => {
 	const ok = await storage.restoreDirectory();
@@ -306,8 +306,8 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 				await loadEndpoints();
 				await loadSessionsIndex();
 				const dispInfo = storage.getDisplayInfo();
-				$('.help-dir-name', dialog).textContent = '当前存储：' + dispInfo.text;
-				$('.help-dir-name', dialog).title = dispInfo.title;
+				$('.name', dialog).textContent = '当前存储：' + dispInfo.text;
+				$('.name', dialog).title = dispInfo.title;
 				updateDirectoryDisplay();
 				await refreshUI();
 				closeHelpDialog(dialog, true);
@@ -317,9 +317,9 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 		};
 		if (!hasPendingHandle) restoreBtn.remove();
 	}
-	const warningEl = $('.directory-warning', dialog);
+	const warningEl = $('.workspace.directory .warning', dialog);
 	if (!forceSelectDirectory) warningEl.remove();
-	const closeBtn = $('.help-close', dialog);
+	const closeBtn = $('.close', dialog);
 	if (closeBtn) {
 		closeBtn.onclick = () => closeHelpDialog(dialog, false);
 		dialog.addEventListener('click', function(e) {
@@ -334,8 +334,8 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 		const success = await selectDirectory();
 		if (success) {
 			const dispInfo2 = storage.getDisplayInfo();
-			$('.help-dir-name', dialog).textContent = '当前存储：' + dispInfo2.text;
-			$('.help-dir-name', dialog).title = dispInfo2.title;
+			$('.name', dialog).textContent = '当前存储：' + dispInfo2.text;
+			$('.name', dialog).title = dispInfo2.title;
 			updateDirectoryDisplay();
 			await refreshUI();
 			if (forceSelectDirectory) {
