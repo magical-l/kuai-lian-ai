@@ -128,7 +128,7 @@ async function init() {
 			$('.file-input').style.display = inputMode === 'chat' ? '' : 'none';
 		};
 	});
-	$('.stop:first-of-type').onclick = () => {
+	$('.btn-stop').onclick = () => {
 		stopAllGenerations();
 		setButtonState(false, false);
 		renderModelSelector(getGroups(), selectedModels, false);
@@ -685,7 +685,7 @@ function reorderCardsBySpeed() {
 }
 
 function reorderSelectorTagsBySpeed() {
-	const summaryEl = $('.selector-summary');
+	const summaryEl = $('.selected.endpoint.list');
 	if (!summaryEl) return;
 	const tags = Array.from(summaryEl.querySelectorAll('.model.tag.selected'));
 	if (tags.length === 0) return;

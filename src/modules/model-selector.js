@@ -1,7 +1,7 @@
 // ========== Model Selector Functions ==========
 function renderModelSelector(groups, selectedModels, isGenerating) {
-    const container = $(".selector-summary");
-    const summaryEl = $(".selector-summary");
+    const container = $(".selected.endpoint.list");
+    const summaryEl = $(".selected.endpoint.list");
 
     if (!container)
         return;
