@@ -79,31 +79,31 @@
 				<img alt="快连AI Logo" src="恋-人脸、ai.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.2.16</span>
+			<span class="version">v5.2.17</span>
 		</div>
 		<div class="workspace , flex items-go-x">
 			<span>当前存储目录：</span>
 			<span class="tip">未选择目录</span>
-			<button class="btn change-dir" title="更换目录">
+			<button class="change-dir btn" title="更换目录">
 				<svg class="icon"><use href="#icon-folder"></use></svg>
 			</button>
-			<button class="btn danger delete-dir" title="弃用目录">
+			<button class="delete-dir btn , danger" title="弃用目录">
 				<span style="font-size:16px;font-weight:700">×</span>
 			</button>
-			<button class="btn danger wipe-dir" title="清空数据">
+			<button class="wipe-dir btn , danger" title="清空数据">
 				<svg class="icon"><use href="#icon-trash"></use></svg>
 			</button>
 		</div>
 		<nav class="flex items-go-x">
-			<button class="btn toggle-sidebar" title="显示/隐藏右侧栏">
-					<svg class="icon"><use href="#icon-sidebar-open"></use></svg>
-				</button>
-			<button class="btn help" title="帮助">?</button>
-			<a class="btn" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
-				<img alt="GitHub" src="https://github.githubassets.com/favicons/favicon.svg" width="14" height="14">
+			<button class="toggle-sidebar , btn" title="显示/隐藏右侧栏">
+				<svg class="icon"><use href="#icon-sidebar-open"></use></svg>
+			</button>
+			<button class="help btn" title="帮助">?</button>
+			<a class="github btn" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
+				<img alt="GitHub" class="icon" src="https://github.githubassets.com/favicons/favicon.svg">
 			</a>
-			<a class="btn" href="https://gitee.com/magicall/kuai-lian-ai" target="_blank" title="@Gitee">
-				<img alt="Gitee" src="https://gitee.com/favicon.ico" width="14" height="14">
+			<a class="gitee btn" href="https://gitee.com/magicall/kuai-lian-ai" target="_blank" title="@Gitee">
+				<img alt="Gitee" class="icon" src="https://gitee.com/favicon.ico">
 			</a>
 		</nav>
 	</header>
@@ -119,7 +119,7 @@
 					</button>
 				</span>
 			</header>
-			<div class="endpoint list"></div>
+			<ul class="endpoint list"></ul>
 		</aside>
 		<div class="divider column control sidebar left"></div>
 		<section class="main-content , flex items-go-y">
@@ -173,7 +173,7 @@
 			<header class="flex items-go-x">
 				<span>会话记录</span>
 			</header>
-			<nav class="session list"></nav>
+			<ol class="session list"></ol>
 		</aside>
 	</div>
 </main>
@@ -2757,7 +2757,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
             var hasModels = node.models && node.models.length > 0;
             var isCollapsed = collapsedEndpoints.has(node.id);
             var hasContent = hasChildren || hasModels;
-            var nodeEl = mk("section", "endpoint");
+            var nodeEl = mk("li", "endpoint");
             nodeEl.dataset.nodeId = node.id;
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x");
@@ -3200,7 +3200,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 	container.innerHTML = '';
 	sessions.sort((a, b) => b.createdAt - a.createdAt);
 	sessions.forEach(session => {
-		const sessionEl = mk('article', 'session item');
+		const sessionEl = mk('li', 'session item');
 		if (session.id === selectedSessionId) {
 			sessionEl.classList.add('selected');
 		}

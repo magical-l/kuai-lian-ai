@@ -208,7 +208,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
             var hasModels = node.models && node.models.length > 0;
             var isCollapsed = collapsedEndpoints.has(node.id);
             var hasContent = hasChildren || hasModels;
-            var nodeEl = mk("section", "endpoint");
+            var nodeEl = mk("li", "endpoint");
             nodeEl.dataset.nodeId = node.id;
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x");
@@ -769,7 +769,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 	container.innerHTML = '';
 	sessions.sort((a, b) => b.createdAt - a.createdAt);
 	sessions.forEach(session => {
-		const sessionEl = mk('article', 'session item');
+		const sessionEl = mk('li', 'session item');
 		if (session.id === selectedSessionId) {
 			sessionEl.classList.add('selected');
 		}
