@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="zh-CN"><head>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
 <!--
 	Copyright (c) 2026 magicall
 	快连AI (Kuai Lian AI) is licensed under Mulan PSL v2.
@@ -18,6 +20,8 @@
 <link href="https://css.lwj621.workers.dev/css/common.css" rel="stylesheet">
 <link href="https://css.lwj621.workers.dev/css/layout.css" rel="stylesheet">
 <link href="style.css" rel="stylesheet">
+</head>
+<body>
 <svg xmlns="http://www.w3.org/2000/svg" class="hidden">
 	<symbol id="icon-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 		<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
@@ -53,8 +57,7 @@
 	</symbol>
 </svg>
 <script src="modules/boot.js"></script>
-</head>
-<body>
+
 <main class="flex items-go-y">
 	<header class="flex items-go-x">
 		<div class="left , flex items-go-x">
@@ -62,7 +65,7 @@
 				<img alt="快连AI Logo" src="恋-人脸、ai.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.2.10</span>
+			<span class="version">v5.2.11</span>
 		</div>
 		<div class="center , flex items-go-x">
 			<span class="directory-label">当前存储目录：</span>
@@ -77,7 +80,7 @@
 				<svg width="14" height="14"><use href="#icon-trash"></use></svg>
 			</button>
 		</div>
-		<div class="right , flex items-go-x">
+		<nav class="right , flex items-go-x">
 			<button class="navbar toggle-sidebar" title="显示/隐藏右侧栏">
 					<svg width="14" height="14"><use href="#icon-sidebar-open"></use></svg>
 				</button>
@@ -88,7 +91,7 @@
 			<a class="btn navbar" href="https://gitee.com/magicall/kuai-lian-ai" target="_blank" title="@Gitee">
 				<img alt="Gitee" src="https://gitee.com/favicon.ico" width="14" height="14">
 			</a>
-		</div>
+		</nav>
 	</header>
 	<div class="main-row , flex items-go-x">
 		<aside class="left , flex items-go-y">
@@ -105,8 +108,8 @@
 			<div class="endpoint list"></div>
 		</aside>
 		<div class="divider column control sidebar left"></div>
-		<div class="main-content , flex items-go-y">
-			<div class="chat-header , flex items-go-x">
+		<section class="main-content , flex items-go-y">
+			<header class="chat-header , flex items-go-x">
 				<span class="prefix">会话：</span>
 				<span class="chat-title">新会话</span>
 				<div class="scroll-nav , flex items-go-x">
@@ -114,8 +117,8 @@
 					<button class="scroll-btn scroll-bottom" title="到底部">↓</button>
 				</div>
 				<button class="outline new-session" title="新建会话">新建会话</button>
-			</div>
-			<div id="chat-messages" class="flex items-go-y"></div>
+			</header>
+			<section id="chat-messages" class="flex items-go-y"></section>
 
 			<footer class="chat-input-area , flex items-go-y">
 				<div class="divider row"></div>
@@ -150,13 +153,13 @@
 				</div>
 				<button class="stop btn-stop hidden" disabled>停止</button>
 			</footer>
-		</div>
+		</section>
 		<div class="divider column control sidebar right"></div>
 		<aside class="right , flex items-go-y">
 			<header class="flex items-go-x">
 				<span>会话记录</span>
 			</header>
-			<div class="session list"></div>
+			<nav class="session list"></nav>
 		</aside>
 	</div>
 </main>
@@ -272,17 +275,17 @@
 </template>
 <template id="tpl-help-dialog">
 	<div class="help-dialog">
-		<h3>快<span class="strike">恋爱</span>连AI 使用帮助</h3>
-		<div class="help-content">
-			<div class="help-section">
+		<h3>快<del class="strike">恋爱</del>连AI 使用帮助</h3>
+		<article class="help-content">
+			<section class="help-section">
 				快连AI是一款极致小巧的小工具，主要用于快速添加和管理大模型服务端点、快速测试连接、简单对话。端点信息、会话记录完全存于你电脑本地，不会翻本地文件（由浏览器严格把关），也不会联网泄漏。
-			</div>
-			<div class="help-section">
+			</section>
+			<section class="help-section">
 				<h4>选目录</h4>
 				<p>首次打开页面需选择一个本地文件夹做工作目录，端点信息、会话记录将保存于该目录，随时可换，可自己在操作系统里查看、备份。</p>
 				<p>后续重新打开页面可能会需要重新确认一下该目录（浏览器干的）。</p>
-			</div>
-			<div class="help-section help-section-directory">
+			</section>
+			<section class="help-section help-section-directory">
 				<h4>存储目录</h4>
 				<div class="directory-info , flex items-go-x">
 					<span class="help-dir-name"></span>
@@ -294,26 +297,26 @@
 				</div>
 				<p class="directory-warning">请选择存储模式：选择本地目录，或使用浏览器内置存储（无需选目录）</p>
 				<p class="browser-storage-hint">浏览器存储：数据保存在浏览器内部（chrome.storage/IndexedDB），无需选择文件夹，随浏览器自动持久化。</p>
-			</div>
-			<div class="help-section">
+			</section>
+			<section class="help-section">
 				<h4>左侧栏：管理端点</h4>
 				<p>端点是线上部署的大模型服务。不同端点有不同地址，同一模型可部署在多个地址，成为不同端点。一个端点可以提供多个模型。</p>
 				<p>* 目前支持OpenAI、Claude、Gemini三种接口格式。国产大模型基本都是OpenAI格式。</p>
 				<p>* 不支持的格式快来贡献代码呀！</p>
 				<p>可以测试连接模型，也可以测试一个端点下添加的所有模型。</p>
 				<p>* 有些服务端点没开CORS，浏览器访问会被拒。我们区分了这种情况，免得以为是服务挂了。</p>
-			</div>
-			<div class="help-section">
+			</section>
+			<section class="help-section">
 				<h4>中间：聊天</h4>
 				<p>可以选择一个或多个模型舌战群儒。</p>
 				<p>交谈中可以随时加入未选模型，或移除已选模型（踢出群！）。</p>
 				<p>* 目前多轮对话只会把你的话和该模型之前的回复作为上下文，不搭理其他模型。</p>
-			</div>
-			<div class="help-section">
+			</section>
+			<section class="help-section">
 				<h4>右侧栏：会话记录</h4>
 				<p>可收起，眼不见为净。点击旧会话可再续前缘。</p>
-			</div>
-		</div>
+			</section>
+		</article>
 		<footer class="dialog-buttons">
 			<button class="help-close primary">✓</button>
 		</footer>

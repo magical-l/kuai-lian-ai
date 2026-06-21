@@ -2105,7 +2105,7 @@ button.use-browser-storage:hover {
 	display: none;
 }
 
-.strike {
+del {
 	color: gray;
 	text-decoration: line-through;
 	text-decoration-style: double;
