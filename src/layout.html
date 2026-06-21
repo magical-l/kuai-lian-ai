@@ -65,7 +65,7 @@
 				<img alt="快连AI Logo" src="恋-人脸、ai.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.2.12</span>
+			<span class="version">v5.2.13</span>
 		</div>
 		<div class="center , flex items-go-x">
 			<span class="directory-label">当前存储目录：</span>
@@ -165,17 +165,17 @@
 </main>
 <!-- ========== Templates ========== -->
 <template id="tpl-edit-group-dialog">
-	<dialog class="edit-dialog">
+	<dialog class="editing">
 		<h3></h3>
-		<form class="dialog-form , flex items-go-y">
-			<label class="flex items-go-y">名称: <input class="dialog-group-name"></label>
+		<form class="flex items-go-y">
+			<label class="flex items-go-y">名称: <input class="group-name"></label>
 			<label class="flex items-go-y">Base URL（选填）:
-				<input class="dialog-group-url" placeholder="https://api.example.com">
-				<span class="dialog-inherited-url inherit-hint"></span>
-				<div class="dialog-field-hint">若路径以 # 结尾，则直接使用该路径</div>
+				<input class="group-url" placeholder="https://api.example.com">
+				<span class="inherit-url inherit-hint"></span>
+				<div class="hint-text">若路径以 # 结尾，则直接使用该路径</div>
 			</label>
 			<label class="flex items-go-y">接口风格:
-				<select class="dialog-group-style">
+				<select class="group-style">
 					<option value="">（继承）</option>
 					<option value="openai">OpenAI</option>
 					<option value="claude">Claude</option>
@@ -184,25 +184,25 @@
 			</label>
 			<label class="flex items-go-y">API Key（选填）:
 				<div class="key-input-wrapper , flex items-go-x">
-					<input class="dialog-group-key" type="password" placeholder="">
+					<input class="group-key" type="password" placeholder="">
 					<button type="button" class="toggle-key" title="显示/隐藏">
 						<svg width="14" height="14"><use href="#icon-eye"></use></svg>
 					</button>
 				</div>
-				<span class="dialog-inherited-key inherit-hint"></span>
+				<span class="inherit-key inherit-hint"></span>
 			</label>
 			<label class="flex items-go-y">模型名（选填）:
-				<input class="dialog-group-modelid" placeholder="如 gpt-4o">
-				<span class="dialog-inherited-modelid inherit-hint"></span>
+				<input class="group-modelid" placeholder="如 gpt-4o">
+				<span class="inherit-modelid inherit-hint"></span>
 			</label>
 			<label class="flex items-go-y">备注（选填）:
-				<input class="dialog-group-remark" placeholder="仅用于显示">
+				<input class="group-remark" placeholder="仅用于显示">
 			</label>
 		</form>
-		<div class="dialog-footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
-		<footer class="dialog-buttons , flex items-go-x">
-			<button class="dialog-cancel">✗</button>
-			<button class="dialog-save primary">✓</button>
+		<div class="footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
+		<footer class="action-buttons , flex items-go-x">
+			<button class="cancel">✗</button>
+			<button class="save primary">✓</button>
 		</footer>
 	</dialog>
 </template>
@@ -274,7 +274,7 @@
 	</div>
 </template>
 <template id="tpl-help-dialog">
-	<dialog class="help-dialog">
+	<dialog class="help">
 		<h3>快<del class="strike">恋爱</del>连AI 使用帮助</h3>
 		<article class="help-content">
 			<section class="help-section">
@@ -317,7 +317,7 @@
 				<p>可收起，眼不见为净。点击旧会话可再续前缘。</p>
 			</section>
 		</article>
-		<footer class="dialog-buttons">
+		<footer class="action-buttons">
 			<button class="help-close primary">✓</button>
 		</footer>
 	</div>

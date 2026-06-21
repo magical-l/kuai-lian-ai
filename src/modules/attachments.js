@@ -137,7 +137,7 @@ function addInheritIcon(inputEl) {
 
 function showEditGroupDialog(node, parentId, onSave) {
 	var exist = $('.edit-dialog');
-	if (exist) exist.close();
+	if (exist) exist.remove();
 	var dialog = fromTemplate('tpl-edit-group-dialog', '.edit-dialog');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
@@ -250,7 +250,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 		});
 	}
 	onClick({
-		'.dialog-cancel': function() { dialog.close(); },
+		'.dialog-cancel': function() { dialog.remove(); },
 		'.dialog-save': function() {
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
@@ -272,7 +272,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			if (theRemark) saveData.remark = theRemark;
 			else saveData.remark = '';
 			onSave(saveData);
-			dialog.close();
+			dialog.remove();
 		}
 	}, dialog);
 }
@@ -282,12 +282,12 @@ function showDirectoryPrompt(hasPendingHandle = false) {
 
 function hideDirectoryPrompt() {
 	const prompt = $('.help-dialog');
-	if (prompt) prompt.close();
+	if (prompt) prompt.remove();
 }
 
 function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
 	const exist = $('.help-dialog');
-	if (exist) exist.close();
+	if (exist) exist.remove();
 	const dialog = fromTemplate('tpl-help-dialog', '.help-dialog');
 	const dirName = storage.getDirectoryName();
 	const displayInfo = storage.getDisplayInfo();
@@ -360,7 +360,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 function closeHelpDialog(dialog, immediate = false) {
 	const helpBtn = $('.help');
 	if (!helpBtn) {
-		dialog.close();
+		dialog.remove();
 		return;
 	}
 	const btnRect = helpBtn.getBoundingClientRect();
@@ -377,10 +377,10 @@ function closeHelpDialog(dialog, immediate = false) {
 		dialog.offsetHeight;
 		dialog.style.setProperty('transform', `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px)) scale(0.05)`, 'important');
 		setTimeout(() => {
-			dialog.close();
+			dialog.remove();
 		}, 400);
 	} else {
-		dialog.close();
+		dialog.remove();
 	}
 }
 const connectionStatus = new Map(); // groupId:modelId -> { status, timestamp }
