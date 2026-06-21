@@ -69,6 +69,11 @@ function buildSinglePage(html) {
 	html = html.replace(/<script\s[^>]*src="[^"]*vendor\/highlight\.min\.js"[^>]*><\/script>/g, () => {
 		return '<script>' + read('vendor', 'highlight.min.js') + '</script>';
 	});
+	// 内联 SVG 图标（转为 base64 data URI，单页文件可独立分发）
+	const svgBase64 = fs.readFileSync('logo.svg', 'base64');
+	const svgDataUri = 'data:image/svg+xml;base64,' + svgBase64;
+	html = html.replace(/src="[^"]*logo\.svg"/g, 'src="' + svgDataUri + '"');
+	html = html.replace(/href="[^"]*logo\.svg"/g, 'href="' + svgDataUri + '"');
 	return html;
 }
 
@@ -139,7 +144,7 @@ for (const f of fs.readdirSync('vendor')) {
 }
 
 // 2e. 复制 SVG 图标
-copy('恋-人脸、ai.svg', path.join(extDir, '恋-人脸、ai.svg'));
+copy('logo.svg', path.join(extDir, 'logo.svg'));
 
 console.log(`Built ${extDir}/`);
 
