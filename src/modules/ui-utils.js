@@ -153,14 +153,9 @@ function scrollToBottom() {
 function initScrollNav() {
 	const btnScrollTop = $('.go-top.btn');
 	const btnScrollBottom = $('.go-bottom.btn');
-	const navButtons = $('.btn-group');
 	const scrollContainer = $('#chat-messages');
-	if (!btnScrollTop || !btnScrollBottom || !navButtons || !scrollContainer) return;
+	if (!btnScrollTop || !btnScrollBottom || !scrollContainer) return;
 
-	function checkScrollable() {
-		const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight + 20;
-		navButtons.classList.toggle('visible', hasScroll);
-	}
 	btnScrollTop.onclick = () => {
 		scrollContainer.scrollTo({
 			top: 0,
@@ -173,13 +168,6 @@ function initScrollNav() {
 			behavior: 'smooth'
 		});
 	};
-	scrollContainer.on('scroll', checkScrollable);
-	const observer = new MutationObserver(checkScrollable);
-	observer.observe(scrollContainer, {
-		childList: true,
-		subtree: true
-	});
-	checkScrollable();
 }
 // sticky 区高度变化时，同步更新消息区 scroll-padding-bottom，防止最后一条消息被遮挡
 function syncScrollPadding() {
