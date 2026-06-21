@@ -124,11 +124,11 @@ async function init() {
 			console.log("Mode:", inputMode);
 			const input = $('#chat-input');
 			input.placeholder = inputMode === 'chat' ? '输入消息...' : '输入要嵌入的文本...';
-			$('.attachment').style.display = inputMode === 'chat' ? '' : 'none';
+			$('.add.attachment.btn').style.display = inputMode === 'chat' ? '' : 'none';
 			$('.file-input').style.display = inputMode === 'chat' ? '' : 'none';
 		};
 	});
-	$('.btn-stop').onclick = () => {
+	$('.stop.btn').onclick = () => {
 		stopAllGenerations();
 		setButtonState(false, false);
 		renderModelSelector(getGroups(), selectedModels, false);
@@ -141,7 +141,7 @@ async function init() {
 	$('.delete-dir').onclick = handleDeleteDirectory;
 	$('.wipe-dir').onclick = handleWipeDirectory;
 	// 附件按钮
-	$('.attachment').onclick = () => {
+	$('.add.attachment.btn').onclick = () => {
 		$('.file-input').click();
 	};
 	$('.file-input').onchange = async (e) => {

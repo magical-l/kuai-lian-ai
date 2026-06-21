@@ -108,9 +108,9 @@ function clearInput() {
 
 function setButtonState(sendDisabled, stopEnabled) {
 	$('.send').disabled = sendDisabled;
-	const stopBtn = $('.btn-stop');
-	stopBtn.disabled = !stopEnabled;
-	stopBtn.textContent = stopEnabled ? '全部停止' : '停止';
+	$('.send-btn-group').style.display = stopEnabled ? 'none' : '';
+	$('.stop.btn').disabled = !stopEnabled;
+	$('.stop.btn').classList.toggle('hidden', !stopEnabled);
 }
 
 function addInheritIcon(inputEl) {

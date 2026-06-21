@@ -63,7 +63,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.2.24</span>
+			<span class="version">v5.2.25</span>
 		</div>
 		<div class="workspace , flex items-go-x">
 			<span>当前存储目录：</span>
@@ -122,13 +122,13 @@
 				<div class="selected endpoint list , flex items-go-x">
 					<!-- 已选模型标签 -->
 				</div>
-				<textarea id="chat-input" placeholder="输入消息..." rows="3" style="flex:1"></textarea>
-				<nav class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
-					<div class="attachments-row , flex items-go-x flexible scrollable" style="gap:4px"></div>
+				<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
+				<menu class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
+					<div class="attachment list , flex items-go-x flexible scrollable" style="gap:4px"></div>
 					<input type="file" class="file-input" multiple accept="*/*">
-					<button class="attachment action-btn , flex items-go-x" title="添加附件">
-							<svg width="16" height="16"><use href="#icon-attach"></use></svg>
-						</button>
+					<button class="add attachment btn , flex items-go-x" title="添加附件">
+						<svg width="16" height="16"><use href="#icon-attach"></use></svg>
+					</button>
 					<div class="mode-selector , flex items-go-x" role="radiogroup">
 						<span class="mode-option selected" data-mode="chat">💬 聊天</span>
 						<span class="mode-option" data-mode="embedding">🔢 嵌入</span>
@@ -145,8 +145,8 @@
 							<div class="split-btn-option" data-value="ctrl-enter">Ctrl+Enter 发送</div>
 						</div>
 					</div>
-					<button class="stop btn-stop hidden" disabled>停止</button>
-				</nav>
+					<button class="stop btn hidden" disabled>停止</button>
+				</menu>
 			</footer>
 		</section>
 		<div class="divider col right"></div>

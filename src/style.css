@@ -378,6 +378,10 @@ aside > header {
 	min-height: 145px;
 }
 
+textarea {
+	flex: 1;
+}
+
 #chat-input {
 	width: 100%;
 	height: 100%;
@@ -410,10 +414,14 @@ button.stop {
 	background: var(--danger-light);
 	color: var(--danger);
 	border: 1px solid var(--danger);
-	padding: 2px 8px;
-	height: 20px;
-	font-size: 11px;
-	margin-left: var(--space-2);
+	border-radius: 6px;
+	padding: 0 12px;
+	height: 40px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
 }
 
 button.stop:hover:not(:disabled) {
@@ -719,8 +727,8 @@ button:disabled {
 	display: inline;
 }
 
-/* ========== Attachments (within messages) ========== */
-.attachment {
+/* ========== 附件项（消息内 + 待发送区） ========== */
+.one.attachment {
 	align-items: center;
 	gap: var(--space-1);
 	padding: var(--space-1) var(--space-2);
@@ -1024,21 +1032,6 @@ button.action.join-session.joined:hover:not(:disabled) {
 .model.item.drag-over {
 	border-top: 2px solid var(--accent-primary);
 }
-
-.add {
-	padding: var(--space-1) var(--space-2);
-	color: var(--text-muted);
-	font-size: 12px;
-	cursor: pointer;
-	border-radius: 0;
-	transition: all var(--transition-fast);
-}
-
-.add:hover {
-	background: var(--bg-muted);
-	color: var(--accent-primary);
-}
-
 
 .model.name {
 	flex: 1;
@@ -1849,6 +1842,12 @@ button.use-browser-storage:hover {
 .action-btn.primary:hover:not(:disabled) {
 	background: var(--accent-primary-hover);
 	color: white;
+}
+
+.add.attachment.btn {
+	height: 40px;
+	min-width: 40px;
+	background: var(--bg-muted);
 }
 
 

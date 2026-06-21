@@ -148,7 +148,7 @@ function hideAttachmentTooltip() {
 }
 
 function renderPendingAttachments() {
-	const row = $('.attachments-row');
+	const row = $('.attachment.list');
 	if (!row) return;
 	row.innerHTML = '';
 	pendingAttachments.forEach(att => {
@@ -892,7 +892,7 @@ function renderMessages(messages, groups, onCopy) {
 			if (attachmentItems.length > 0) {
 				const attContainer = mk('div', 'attachments , flex items-go-x');
 				attachmentItems.forEach(att => {
-					const attEl = mk('div', `attach ${att.type} , flex items-go-x`);
+					const attEl = mk('div', `one attachment ${att.type} , flex items-go-x`);
 					if (att.type === 'image' && att.source) {
 						let imgSrc;
 						if (att.source.type === 'url') {
