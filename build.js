@@ -60,11 +60,13 @@ function buildSinglePage(html) {
 	html = html.replace(/<script\s[^>]*src="modules\/([^"]+)"[^>]*><\/script>/g, (m, file) => {
 		return '<script>' + compressJS(read(SRC, 'modules', file)) + '</script>';
 	});
+	// 修正 vendor CSS 路径（源码版用 ../vendor/，构建版统一用 vendor/）
+	html = html.replace(/href="\.\.\/vendor\//g, 'href="vendor/');
 	// 内联 vendor JS
-	html = html.replace(/<script\s[^>]*src="vendor\/marked\.min\.js"[^>]*><\/script>/g, () => {
+	html = html.replace(/<script\s[^>]*src="[^"]*vendor\/marked\.min\.js"[^>]*><\/script>/g, () => {
 		return '<script>' + read('vendor', 'marked.min.js') + '</script>';
 	});
-	html = html.replace(/<script\s[^>]*src="vendor\/highlight\.min\.js"[^>]*><\/script>/g, () => {
+	html = html.replace(/<script\s[^>]*src="[^"]*vendor\/highlight\.min\.js"[^>]*><\/script>/g, () => {
 		return '<script>' + read('vendor', 'highlight.min.js') + '</script>';
 	});
 	return html;
@@ -75,11 +77,13 @@ function buildExtension(html) {
 	html = html.replace(/<link\s[^>]*href="style\.css"[^>]*>/g, () => {
 		return '<style>' + compressCSS(read(SRC, 'style.css')) + '</style>';
 	});
+	// 修正 vendor CSS 路径（源码版用 ../vendor/，构建版统一用 vendor/）
+	html = html.replace(/href="\.\.\/vendor\//g, 'href="vendor/');
 	// 内联 vendor JS
-	html = html.replace(/<script\s[^>]*src="vendor\/marked\.min\.js"[^>]*><\/script>/g, () => {
+	html = html.replace(/<script\s[^>]*src="[^"]*vendor\/marked\.min\.js"[^>]*><\/script>/g, () => {
 		return '<script>' + read('vendor', 'marked.min.js') + '</script>';
 	});
-	html = html.replace(/<script\s[^>]*src="vendor\/highlight\.min\.js"[^>]*><\/script>/g, () => {
+	html = html.replace(/<script\s[^>]*src="[^"]*vendor\/highlight\.min\.js"[^>]*><\/script>/g, () => {
 		return '<script>' + read('vendor', 'highlight.min.js') + '</script>';
 	});
 	// boot.js: 改为外部引用
