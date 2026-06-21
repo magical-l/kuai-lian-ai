@@ -14,8 +14,8 @@ function initDividers() {
 	const chatHeader = $('.toolbar');
 	const savedLeftWidth = localStorage.getItem('sidebar-left-width');
 	const savedRightWidth = localStorage.getItem('sidebar-right-width');
-	if (savedLeftWidth) $('aside.endpoints:not(.divider)').style.width = savedLeftWidth;
-	if (savedRightWidth) $('aside.sessions:not(.divider)').style.width = savedRightWidth;
+	if (savedLeftWidth) { const el = $("aside.endpoint.list:not(.divider)"); el.style.width = savedLeftWidth; el.style.flex = "none"; }
+	if (savedRightWidth) { const el = $("aside.session.list:not(.divider)"); el.style.width = savedRightWidth; el.style.flex = "none"; }
 	localStorage.removeItem('chat-messages-flex');
 	const savedMessagesHeight = localStorage.getItem('chat-messages-height');
 	if (savedMessagesHeight) {
@@ -35,7 +35,7 @@ function initDividers() {
 	function startDragHorizontal(e) {
 		const divider = e.target;
 		const isLeft = divider.classList.contains('left');
-		const sidebar = isLeft ? $('aside.endpoints:not(.divider)') : $('aside.sessions:not(.divider)');
+		const sidebar = isLeft ? $('aside.endpoint.list:not(.divider)') : $('aside.session.list:not(.divider)');
 		isDragging = true;
 		curDiv = {
 			sidebar,
@@ -82,6 +82,7 @@ function initDividers() {
 			const maxWidth = containerWidth * 0.45;
 			const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 			curDiv.sidebar.style.width = clampedWidth + 'px';
+				curDiv.sidebar.style.flex = 'none';
 		}
 	}
 
@@ -98,7 +99,7 @@ function initDividers() {
 			doc.body.style.userSelect = '';
 		}
 	}
-	const sidebarRight = $('aside.sessions:not(.divider)');
+	const sidebarRight = $('aside.session.list:not(.divider)');
 	const dividerRight = $('.divider.col.right');
 	const btnToggleSidebar = $('.toggle-sidebar');
 

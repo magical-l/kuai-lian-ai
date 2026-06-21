@@ -200,7 +200,7 @@ function showAttachmentPreview(att) {
 function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, onNodeDelete, onModelDelete, onReorderNodes, onReorderModels, onTestConnection, onMoveNode) {
     var container = $(".endpoint.list");
 
-    container.innerHTML = "";
+    container.querySelectorAll('li').forEach(el => el.remove());
 
     function renderTreeNode(nodes, parentEl, depth) {
         nodes.forEach(function(node, index) {
@@ -766,7 +766,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
 
 function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessionEdit, onSessionDelete) {
 	const container = $('.session.list');
-	container.innerHTML = '';
+	container.querySelectorAll('li').forEach(el => el.remove());
 	sessions.sort((a, b) => b.createdAt - a.createdAt);
 	sessions.forEach(session => {
 		const sessionEl = mk('li', 'session item');
