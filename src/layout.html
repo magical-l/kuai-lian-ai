@@ -65,7 +65,7 @@
 				<img alt="快连AI Logo" src="恋-人脸、ai.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.2.13</span>
+			<span class="version">v5.2.14</span>
 		</div>
 		<div class="center , flex items-go-x">
 			<span class="directory-label">当前存储目录：</span>
@@ -129,7 +129,7 @@
 					<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
 					<nav class="action-bar , flex items-go-x items-near-center" style="padding:8px;min-height:40px">
 						<div class="attachments-row , flex items-go-x flexible scrollable" style="gap:4px"></div>
-						<input type="file" class="file-input" multiple accept="*/*">
+						<input type="file" class="file-input" multiple="" accept="*/*">
 						<button class="attachment action-btn , flex items-go-x" title="添加附件">
 								<svg width="16" height="16"><use href="#icon-attach"></use></svg>
 							</button>
@@ -164,7 +164,7 @@
 	</div>
 </main>
 <!-- ========== Templates ========== -->
-<template id="tpl-edit-group-dialog">
+<template id="edit-group-dialog">
 	<dialog class="editing">
 		<h3></h3>
 		<form class="flex items-go-y">
@@ -206,17 +206,7 @@
 		</footer>
 	</dialog>
 </template>
-<template id="tpl-add-model-inline">
-	<div class="add-model-inline , flex items-go-y">
-		<input type="text" placeholder="模型名" class="add-model-input">
-		<div class="add-model-row , flex items-go-x">
-			<input type="text" placeholder="备注（选填）" class="add-model-remark-input">
-			<button class="add-model-confirm action-sm">✓</button>
-			<button class="add-model-cancel action-sm">✗</button>
-		</div>
-	</div>
-</template>
-<template id="tpl-user-meta">
+<template id="user-header">
 	<header class="request info , flex items-go-x">
 		<span class="name">我</span>
 		<span class="time"></span>
@@ -225,7 +215,7 @@
 		</button>
 	</header>
 </template>
-<template id="tpl-response-meta">
+<template id="response-header">
 	<header class="response info , flex items-go-x">
 		<span class="name"></span>
 		<span class="time"></span>
@@ -234,7 +224,7 @@
 		</button>
 	</header>
 </template>
-<template id="tpl-multi-response-meta">
+<template id="multi-response-header">
 	<header class="response info , flex items-go-x">
 		<span class="name"></span>
 		<span class="time"></span>
@@ -248,32 +238,24 @@
 		</button>
 	</header>
 </template>
-<template id="tpl-response-card-streaming">
+<template id="response-card-streaming">
 	<article class="card thinking response">
 		<header class="response info , flex items-go-x">
 			<span class="name"></span>
 			<span class="icon model status-icon spinning">◐</span>
 		</header>
 		<div class="think stream , hidden">
+			<header class="btn , flex items-go-x">
+				<span class="icon"></span>
+				<span class="label">思考</span>
+				<span class="duration"></span>
+			</header>
 			<div class="content">等待思考...</div>
 		</div>
 		<div class="content">等待回复...</div>
 	</article>
 </template>
-<template id="tpl-thinking-header">
-	<header class="btn , flex items-go-x">
-		<span class="icon"></span>
-		<span class="label">思考</span>
-		<span class="duration"></span>
-	</header>
-</template>
-<template id="tpl-multi-response-hint">
-	<div class="hint">
-		<span class="hint-text"></span>
-		<button class="stop btn-stop-inline">全部停止</button>
-	</div>
-</template>
-<template id="tpl-help-dialog">
+<template id="help-dialog">
 	<dialog class="help">
 		<h3>快<del class="strike">恋爱</del>连AI 使用帮助</h3>
 		<article class="help-content">
@@ -320,7 +302,7 @@
 		<footer class="action-buttons">
 			<button class="help-close primary">✓</button>
 		</footer>
-	</div>
+	</dialog>
 </template>
 <div class="js container">
 	<script src="vendor/marked.min.js"></script>

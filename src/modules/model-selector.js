@@ -197,7 +197,7 @@ function showAttachmentPreview(att) {
 	}
 }
 
-function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, onNodeEdit, onNodeDelete, onAddModel, onModelDelete, onReorderNodes, onReorderModels, onTestConnection, onMoveNode) {
+function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, onNodeDelete, onModelDelete, onReorderNodes, onReorderModels, onTestConnection, onMoveNode) {
     var container = $(".endpoint.list");
 
     container.innerHTML = "";
@@ -638,76 +638,6 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                     });
                 }
 
-                var modelEditBtn = mk("button", "action-sm");
-                modelEditBtn.innerHTML = SVG.edit(10);
-                modelEditBtn.title = "编辑模型";
-
-                modelEditBtn.on("click", function(e) {
-                    e.stopPropagation();
-                    modelTooltip.hide();
-                    var existEdit = $(".add-model-inline", modelEl);
-
-                    if (existEdit)
-                        existEdit.remove();
-
-                    var inlineEdit = fromTemplate("tpl-add-model-inline", ".add-model-inline");
-                    var inputEl = $(".add-model-input", inlineEdit);
-                    inputEl.value = model.name;
-                    inputEl.placeholder = "模型名";
-                    var remarkEl = $(".add-model-remark-input", inlineEdit);
-
-                    if (remarkEl) {
-                        remarkEl.value = model.remark || "";
-                        remarkEl.placeholder = "备注（仅用于显示）";
-                    }
-
-                    modelDragHandle.style.display = "none";
-                    modelName.style.display = "none";
-                    modelActions.style.display = "none";
-                    modelEl.insertBefore(inlineEdit, modelActions);
-                    inputEl.focus();
-                    inputEl.select();
-
-                    $(".add-model-confirm", inlineEdit).on("click", function(e2) {
-                        e2.stopPropagation();
-                        var newName = inputEl.value.trim();
-                        var newRemark = remarkEl ? remarkEl.value.trim() : "";
-
-                        if (newName) {
-                            inlineEdit.remove();
-                            modelDragHandle.style.display = "";
-                            modelName.style.display = "";
-                            modelActions.style.display = "";
-                            onModelEdit(node.id, model.id, newName, newRemark);
-                        }
-                    });
-
-                    $(".add-model-cancel", inlineEdit).on("click", function(e2) {
-                        e2.stopPropagation();
-                        inlineEdit.remove();
-                        modelDragHandle.style.display = "";
-                        modelName.style.display = "";
-                        modelActions.style.display = "";
-                    });
-
-                    var onInlineKeydown = function(e2) {
-                        if (e2.key === "Enter") {
-                            e2.preventDefault();
-                            $(".add-model-confirm", inlineEdit).click();
-                        } else if (e2.key === "Escape") {
-                            inlineEdit.remove();
-                            modelDragHandle.style.display = "";
-                            modelName.style.display = "";
-                            modelActions.style.display = "";
-                        }
-                    };
-
-                    inputEl.on("keydown", onInlineKeydown);
-
-                    if (remarkEl)
-                        remarkEl.on("keydown", onInlineKeydown);
-                });
-
                 var modelDeleteBtn = mk("button", "action-sm danger");
                 modelDeleteBtn.innerHTML = SVG.del(10);
                 modelDeleteBtn.title = "删除模型";
@@ -721,7 +651,6 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 });
 
                 if (testBtn) modelActions.addChild(testBtn);
-                modelActions.addChild(modelEditBtn);
                 modelActions.addChild(modelDeleteBtn);
                 modelEl.addChild(modelDragHandle);
                 modelEl.addChild(modelName);
@@ -764,58 +693,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onModelEdit, 
                 models.addChild(modelEl);
             });
 
-            var addModelBtn = mk("div", "btn add");
-            addModelBtn.textContent = "+ 添加模型";
-
-            addModelBtn.on("click", function(e) {
-                e.stopPropagation();
-                var existInput = $(".add-model-inline", models);
-
-                if (existInput)
-                    existInput.remove();
-
-                var inlineInput = fromTemplate("tpl-add-model-inline", ".add-model-inline");
-                models.insertBefore(inlineInput, addModelBtn);
-                var inputEl = $(".add-model-input", inlineInput);
-                var remarkEl = $(".add-model-remark-input", inlineInput);
-                inputEl.focus();
-
-                $(".add-model-confirm", inlineInput).on("click", function(e2) {
-                    e2.stopPropagation();
-                    var name = inputEl.value.trim();
-                    var remark = remarkEl ? remarkEl.value.trim() : "";
-
-                    if (name) {
-                        inlineInput.remove();
-                        onAddModel(node.id, name, remark);
-                    }
-                });
-
-                $(".add-model-cancel", inlineInput).on("click", function(e2) {
-                    e2.stopPropagation();
-                    inlineInput.remove();
-                });
-
-                inputEl.on("keydown", function(e2) {
-                    if (e2.key === "Enter") {
-                        e2.preventDefault();
-                        $(".add-model-confirm", inlineInput).click();
-                    } else if (e2.key === "Escape") {
-                        inlineInput.remove();
-                    }
-                });
-
-                if (remarkEl) remarkEl.on("keydown", function(e2) {
-                    if (e2.key === "Enter") {
-                        e2.preventDefault();
-                        $(".add-model-confirm", inlineInput).click();
-                    } else if (e2.key === "Escape") {
-                        inlineInput.remove();
-                    }
-                });
-            });
-
-            models.addChild(addModelBtn);
+            
 
             if (hasModels)
                 contentEl.addChild(models);
@@ -990,7 +868,7 @@ function renderMessages(messages, groups, onCopy) {
 		const msgEl = mk('article', `msg ${roleClass} , flex items-go-y`);
 		if (msg.role === 'user') {
 			// 使用模板创建meta，包含复制按钮
-			const meta = fromTemplate('tpl-user-meta', '.request.info');
+			const meta = fromTemplate('user-header', '.request.info');
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 			$('.request .time', meta).textContent = timeStr;
 			msgEl.addChild(meta);
@@ -1077,7 +955,7 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
 	const modelName = info ? `${info.node.name} / ${info.model.name}` : '未知模型';
 	const modelRemark = info?.model?.remark || '';
-	const meta = fromTemplate('tpl-response-meta', '.response.info');
+	const meta = fromTemplate('response-header', '.response.info');
 	$('.response .name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
 	$('.response .time', meta).textContent = timeStr;
 	const copyBtn = $('.copy-btn', meta);
@@ -1114,7 +992,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
         const info = findModelById(groups, r.modelId);
         const name = info ? `${info.node.name} / ${info.model.name}` : "未知";
         const remark = info?.model?.remark || "";
-        const meta = fromTemplate("tpl-multi-response-meta", ".response.info");
+        const meta = fromTemplate("multi-response-header", ".response.info");
         const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
         const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime / 1000).toFixed(1)}s` : "";
         const speedClass = getSpeedClass(r.firstTokenTime);

@@ -138,7 +138,7 @@ function addInheritIcon(inputEl) {
 function showEditGroupDialog(node, parentId, onSave) {
 	var exist = $('.edit-dialog');
 	if (exist) exist.remove();
-	var dialog = fromTemplate('tpl-edit-group-dialog', '.edit-dialog');
+	var dialog = fromTemplate('edit-group-dialog', '.edit-dialog');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
 	var keyInput = $(".dialog-group-key", dialog);
@@ -288,7 +288,7 @@ function hideDirectoryPrompt() {
 function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
 	const exist = $('.help-dialog');
 	if (exist) exist.remove();
-	const dialog = fromTemplate('tpl-help-dialog', '.help-dialog');
+	const dialog = fromTemplate('help-dialog', '.help-dialog');
 	const dirName = storage.getDirectoryName();
 	const displayInfo = storage.getDisplayInfo();
 	const hasDir = storage.mode === 'directory';
@@ -417,7 +417,7 @@ async function testConnection(nodeId, modelId) {
 	if (!provider) return;
 	var key = nodeId + ':' + modelId;
 	connectionStatus.set(key, { status: 'testing', timestamp: null });
-	renderEndpointList(getGroups(), null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
+	renderEndpointList(getGroups(), null, null, handleNodeEdit, handleNodeDelete, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 	try {
 		var modelType = model ? (model.type || detectModelType(modelName)) : detectModelType(modelName);
 		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig : provider.testConfig;
@@ -474,7 +474,7 @@ async function testConnection(nodeId, modelId) {
 			error: isCorsError ? null : err.message
 		});
 	}
-	renderEndpointList(getGroups(), null, null, handleModelEdit, handleNodeEdit, handleNodeDelete, handleAddModelForGroup, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
+	renderEndpointList(getGroups(), null, null, handleNodeEdit, handleNodeDelete, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
 }
 
 // 递归收集所有子节点 ID

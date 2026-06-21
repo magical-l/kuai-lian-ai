@@ -229,10 +229,8 @@ async function refreshUI() {
         groups,
         null,
         null,
-        handleModelEdit,
         handleNodeEdit,
         handleNodeDelete,
-        handleAddModelForGroup,
         handleModelDelete,
         handleReorderNode,
         handleReorderModels,
@@ -347,12 +345,6 @@ async function handleNodeDelete(nodeId) {
 	await deleteNode(nodeId);
 	await refreshUI();
 }
-async function handleAddModelForGroup(nodeId, modelName, remark) {
-	if (modelName) {
-		await addModel(nodeId, modelName, remark);
-		await refreshUI();
-	}
-}
 
 function handleCopy(content) {
 	navigator.clipboard.writeText(content).then(() => {
@@ -360,10 +352,6 @@ function handleCopy(content) {
 	});
 }
 
-function handleModelEdit(nodeId, modelId, newName, newRemark) {
-	clearTestResults(nodeId);
-	updateModel(nodeId, modelId, { name: newName, remark: newRemark }).then(() => refreshUI());
-}
 async function handleModelDelete(nodeId, modelId) {
 	selectedModels = selectedModels.filter(id => id !== `${nodeId}:${modelId}`);
 	saveDefaultSelectedModels(selectedModels);
@@ -547,10 +535,13 @@ function showThinkingCards(modelIds, groups, sessionId) {
     msgEl.classList.add("streaming-multi-response");
     msgEl.dataset.sessionId = sessionId;
     const cards = mk("div", "response list , flex items-go-y");
-    const hint = fromTemplate("tpl-multi-response-hint", ".hint");
+    const hint = mk('div', 'hint');
+    hint.appendChild(mk('span', 'hint-text'));
+    const stopBtn = mk('button', 'stop btn-stop-inline');
+    stopBtn.textContent = '全部停止';
+    hint.appendChild(stopBtn);
     $(".hint-text", hint).textContent = `${modelIds.length}个模型正在思考...`;
     cards.addChild(hint);
-    const stopBtn = $(".btn-stop-inline", hint);
 
     if (stopBtn) {
         stopBtn.onclick = () => {
@@ -562,7 +553,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
     }
 
     modelIds.forEach(id => {
-        const card = fromTemplate("tpl-response-card-streaming", ".response.card");
+        const card = fromTemplate("response-card-streaming", ".response.card");
         card.dataset.sessionId = sessionId;
         card.dataset.modelId = id;
         const info = findModelById(groups, id);
@@ -584,24 +575,20 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 		if (state.thinking && state.thinking.trim()) {
 			thinkingBlock.style.display = 'block';
 			thinkingBlock.classList.add('streaming');
-			const thinkingContent = $('.thinking-content', thinkingBlock);
+			const thinkingContent = $('.content', thinkingBlock);
 			if (thinkingContent) {
 				thinkingContent.textContent = state.thinking;
 			}
-			let thinkingHeader = $('.thinking-header', thinkingBlock);
-			if (!thinkingHeader) {
-				thinkingHeader = fromTemplate('tpl-thinking-header', '.thinking-header');
+			let thinkingHeader = $('.btn', thinkingBlock);
+			if (thinkingHeader) {
 				thinkingHeader.onclick = function() {
 					toggleThinking(this);
 				};
-				const durationText = state.thinkingDuration ? `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s` : '';
-				$('.thinking-duration', thinkingHeader).textContent = durationText;
-				thinkingBlock.insertBefore(thinkingHeader, thinkingBlock.firstChild);
-			}
-			if (state.thinkingDuration) {
-				const thinkingDurationEl = $('.thinking-duration', thinkingHeader);
-				if (thinkingDurationEl) {
-					thinkingDurationEl.textContent = `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s`;
+				if (state.thinkingDuration) {
+					const durationEl = $('.duration', thinkingHeader);
+					if (durationEl) {
+						durationEl.textContent = `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s`;
+					}
 				}
 			}
 		} else {
@@ -659,7 +646,7 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 				if (thinkingBlock) {
 					thinkingBlock.classList.remove('streaming');
 					thinkingBlock.classList.add('collapsed');
-					const durationEl = $('.thinking-duration', thinkingBlock);
+					const durationEl = $('.duration', thinkingBlock);
 					if (durationEl) {
 						durationEl.textContent = `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s`;
 					}
