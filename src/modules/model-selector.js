@@ -1088,7 +1088,7 @@ function formatDateTime(timestamp) {
 }
 
 function updateChatTitle(title) {
-	const el = $('.chat-title');
+	const el = $('.title');
 	el.textContent = title || '新会话';
 }
 

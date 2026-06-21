@@ -11,7 +11,7 @@ function initDividers() {
 	const dividerHorizontal = $('.divider.row');
 	const chatMsg = $('#chat-messages');
 	const mainContent = $('.main-content');
-	const chatHeader = $('.chat-header');
+	const chatHeader = $('.toolbar');
 	const savedLeftWidth = localStorage.getItem('sidebar-left-width');
 	const savedRightWidth = localStorage.getItem('sidebar-right-width');
 	if (savedLeftWidth) $('aside.endpoints:not(.divider)').style.width = savedLeftWidth;
@@ -137,7 +137,7 @@ function clampSavedHeight() {
 	if (!savedH) return;
 	const cm = $('#chat-messages');
 	const mc = $('.main-content');
-	const ch = $('.chat-header');
+	const ch = $('.toolbar');
 	if (!cm || !mc || !ch) return;
 	const maxH = mc.offsetHeight - ch.offsetHeight - stickyMinHeight();
 	cm.style.height = Math.max(100, Math.min(parseInt(savedH), maxH)) + 'px';
@@ -151,9 +151,9 @@ function scrollToBottom() {
 }
 
 function initScrollNav() {
-	const btnScrollTop = $('.scroll-top');
-	const btnScrollBottom = $('.scroll-bottom');
-	const navButtons = $('.scroll-nav');
+	const btnScrollTop = $('.go-top.btn');
+	const btnScrollBottom = $('.go-bottom.btn');
+	const navButtons = $('.btn-group');
 	const scrollContainer = $('#chat-messages');
 	if (!btnScrollTop || !btnScrollBottom || !navButtons || !scrollContainer) return;
 
