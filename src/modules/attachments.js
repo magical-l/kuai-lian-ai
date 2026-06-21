@@ -137,7 +137,7 @@ function addInheritIcon(inputEl) {
 
 function showEditGroupDialog(node, parentId, onSave) {
 	var exist = $('.edit-dialog');
-	if (exist) exist.remove();
+	if (exist) exist.close();
 	var dialog = fromTemplate('tpl-edit-group-dialog', '.edit-dialog');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
@@ -220,6 +220,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 	keyInput.oninput = function() { removeIcon(this); };
 
 	doc.body.addChild(dialog);
+	dialog.showModal();
 	var toggleBtn = $('button.toggle-key', dialog);
 	if (toggleBtn) {
 		toggleBtn.onclick = function(e) {
@@ -248,21 +249,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 			}
 		});
 	}
-	// Esc → 关闭弹窗（监听 document，不管焦点在哪都生效）
-	var escHandler = function(e) {
-		if (e.key === 'Escape' && document.body.contains(dialog)) {
-			dialog.remove();
-		}
-	};
-	doc.addEventListener('keydown', escHandler);
-	// 弹窗销毁时清理监听器
-	var origRemove = dialog.remove;
-	dialog.remove = function() {
-		doc.removeEventListener('keydown', escHandler);
-		origRemove.call(this);
-	};
 	onClick({
-		'.dialog-cancel': function() { dialog.remove(); },
+		'.dialog-cancel': function() { dialog.close(); },
 		'.dialog-save': function() {
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
@@ -284,7 +272,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			if (theRemark) saveData.remark = theRemark;
 			else saveData.remark = '';
 			onSave(saveData);
-			dialog.remove();
+			dialog.close();
 		}
 	}, dialog);
 }
@@ -294,17 +282,12 @@ function showDirectoryPrompt(hasPendingHandle = false) {
 
 function hideDirectoryPrompt() {
 	const prompt = $('.help-dialog');
-	if (prompt) prompt.remove();
+	if (prompt) prompt.close();
 }
 
 function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
 	const exist = $('.help-dialog');
-	if (exist) exist.remove();
-	const overlay = mk('div', 'dialog-overlay');
-	if (forceSelectDirectory) {
-		overlay.style.background = 'rgba(0, 0, 0, 0.5)';
-	}
-	doc.body.addChild(overlay);
+	if (exist) exist.close();
 	const dialog = fromTemplate('tpl-help-dialog', '.help-dialog');
 	const dirName = storage.getDirectoryName();
 	const displayInfo = storage.getDisplayInfo();
@@ -327,7 +310,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 				$('.help-dir-name', dialog).title = dispInfo.title;
 				updateDirectoryDisplay();
 				await refreshUI();
-				closeHelpDialog(dialog, overlay, true);
+				closeHelpDialog(dialog, true);
 			} else {
 				alert('权限请求失败，请选择新目录');
 			}
@@ -338,11 +321,14 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 	if (!forceSelectDirectory) warningEl.remove();
 	const closeBtn = $('.help-close', dialog);
 	if (closeBtn) {
-		closeBtn.onclick = () => closeHelpDialog(dialog, overlay, false);
-		overlay.onclick = () => closeHelpDialog(dialog, overlay, false);
+		closeBtn.onclick = () => closeHelpDialog(dialog, false);
+		dialog.addEventListener('click', function(e) {
+			if (e.target === dialog) closeHelpDialog(dialog, false);
+		});
 		if (forceSelectDirectory) closeBtn.remove();
 	}
 	doc.body.addChild(dialog);
+	dialog.showModal();
 	// 选择/更换目录按钮
 	changeDirBtn.onclick = async () => {
 		const success = await selectDirectory();
@@ -353,7 +339,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 			updateDirectoryDisplay();
 			await refreshUI();
 			if (forceSelectDirectory) {
-				closeHelpDialog(dialog, overlay, true);
+				closeHelpDialog(dialog, true);
 			}
 		}
 	};
@@ -366,16 +352,15 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 			await loadSessionsIndex();
 			updateDirectoryDisplay();
 			await refreshUI();
-			closeHelpDialog(dialog, overlay, true);
+			closeHelpDialog(dialog, true);
 		};
 	}
 }
 
-function closeHelpDialog(dialog, overlay, immediate = false) {
+function closeHelpDialog(dialog, immediate = false) {
 	const helpBtn = $('.help');
 	if (!helpBtn) {
-		dialog.remove();
-		overlay.remove();
+		dialog.close();
 		return;
 	}
 	const btnRect = helpBtn.getBoundingClientRect();
@@ -392,12 +377,10 @@ function closeHelpDialog(dialog, overlay, immediate = false) {
 		dialog.offsetHeight;
 		dialog.style.setProperty('transform', `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px)) scale(0.05)`, 'important');
 		setTimeout(() => {
-			dialog.remove();
-			overlay.remove();
+			dialog.close();
 		}, 400);
 	} else {
-		dialog.remove();
-		overlay.remove();
+		dialog.close();
 	}
 }
 const connectionStatus = new Map(); // groupId:modelId -> { status, timestamp }

@@ -65,7 +65,7 @@
 				<img alt="快连AI Logo" src="恋-人脸、ai.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.2.11</span>
+			<span class="version">v5.2.12</span>
 		</div>
 		<div class="center , flex items-go-x">
 			<span class="directory-label">当前存储目录：</span>
@@ -165,7 +165,7 @@
 </main>
 <!-- ========== Templates ========== -->
 <template id="tpl-edit-group-dialog">
-	<div class="edit-dialog">
+	<dialog class="edit-dialog">
 		<h3></h3>
 		<form class="dialog-form , flex items-go-y">
 			<label class="flex items-go-y">名称: <input class="dialog-group-name"></label>
@@ -204,7 +204,7 @@
 			<button class="dialog-cancel">✗</button>
 			<button class="dialog-save primary">✓</button>
 		</footer>
-	</div>
+	</dialog>
 </template>
 <template id="tpl-add-model-inline">
 	<div class="add-model-inline , flex items-go-y">
@@ -217,25 +217,25 @@
 	</div>
 </template>
 <template id="tpl-user-meta">
-	<div class="request info , flex items-go-x">
+	<header class="request info , flex items-go-x">
 		<span class="name">我</span>
 		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
 			<span class="copy-icon">⧉</span><span class="copy-check">✓</span>
 		</button>
-	</div>
+	</header>
 </template>
 <template id="tpl-response-meta">
-	<div class="response info , flex items-go-x">
+	<header class="response info , flex items-go-x">
 		<span class="name"></span>
 		<span class="time"></span>
 		<button class="icon copy-btn" title="复制">
 			<span class="copy-icon">⧉</span><span class="copy-check">✓</span>
 		</button>
-	</div>
+	</header>
 </template>
 <template id="tpl-multi-response-meta">
-	<div class="response info , flex items-go-x">
+	<header class="response info , flex items-go-x">
 		<span class="name"></span>
 		<span class="time"></span>
 		<span class="wait time"></span>
@@ -246,19 +246,19 @@
 			<span class="copy-icon">⧉</span>
 			<span class="copy-check">✓</span>
 		</button>
-	</div>
+	</header>
 </template>
 <template id="tpl-response-card-streaming">
-	<div class="card thinking response">
-		<div class="response info , flex items-go-x">
+	<article class="card thinking response">
+		<header class="response info , flex items-go-x">
 			<span class="name"></span>
 			<span class="icon model status-icon spinning">◐</span>
-		</div>
+		</header>
 		<div class="think stream , hidden">
 			<div class="content">等待思考...</div>
 		</div>
 		<div class="content">等待回复...</div>
-	</div>
+	</article>
 </template>
 <template id="tpl-thinking-header">
 	<header class="btn , flex items-go-x">
@@ -274,7 +274,7 @@
 	</div>
 </template>
 <template id="tpl-help-dialog">
-	<div class="help-dialog">
+	<dialog class="help-dialog">
 		<h3>快<del class="strike">恋爱</del>连AI 使用帮助</h3>
 		<article class="help-content">
 			<section class="help-section">

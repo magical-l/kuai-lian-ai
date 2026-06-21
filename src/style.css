@@ -65,6 +65,10 @@
 	padding: 0;
 }
 
+dialog[open] {
+	margin: auto;
+}
+
 html {
 	height: 100%;
 }
@@ -1295,25 +1299,18 @@ button.connection.cors_blocked {
 
 /* ========== Dialogs ========== */
 .edit-dialog {
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%) scale(0.95);
 	background: var(--bg-base);
 	padding: var(--space-6);
 	border-radius: var(--radius-xl);
 	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 	border: 1px solid var(--border-subtle);
-	z-index: 1000;
 	min-width: 360px;
 	animation: dialog-in var(--transition-normal) ease forwards;
 }
 
 @keyframes dialog-in {
-	to {
-		transform: translate(-50%, -50%) scale(1);
-		opacity: 1;
-	}
+	from { transform: scale(0.95); opacity: 0.5; }
+	to { transform: scale(1); opacity: 1; }
 }
 
 .edit-dialog h3 {
@@ -1382,28 +1379,17 @@ button.toggle-key:hover:not(:disabled) {
 }
 
 .help-dialog {
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
 	background: var(--bg-base);
 	padding: var(--space-6);
 	border-radius: var(--radius-lg);
 	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 	border: 1px solid var(--border-subtle);
-	z-index: 1001;
 	max-width: 800px;
 	width: 90%;
 }
 
-.dialog-overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
+dialog::backdrop {
 	background: rgba(0, 0, 0, 0.3);
-	z-index: 1000;
 }
 
 .help-dialog h3 {
