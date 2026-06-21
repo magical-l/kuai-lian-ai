@@ -99,7 +99,7 @@ function initDividers() {
 		}
 	}
 	const sidebarRight = $('aside.sessions:not(.divider)');
-	const dividerRight = $('.divider.column.control.sidebar.right');
+	const dividerRight = $('.divider.col.right');
 	const btnToggleSidebar = $('.toggle-sidebar');
 
 	function updateSidebarToggleIcon(isHidden) {
@@ -122,7 +122,7 @@ function initDividers() {
 			updateSidebarToggleIcon(isHidden);
 		});
 	}
-	$$('.divider.column.control').forEach(div => {
+	$$('.divider.col').forEach(div => {
 		div.on('mousedown', startDragHorizontal);
 	});
 	if (dividerHorizontal) {

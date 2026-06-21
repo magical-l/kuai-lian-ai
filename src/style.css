@@ -323,7 +323,7 @@ aside > header {
 	background: var(--accent-primary);
 }
 
-.divider.column {
+.divider.col {
 	width: 6px;
 	cursor: col-resize;
 	z-index: 10;
