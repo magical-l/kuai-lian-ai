@@ -1252,6 +1252,10 @@ aside .one.endpoint {
 }
 dialog.help {
 	position: relative;
+	display: flex;
+	flex-direction: column;
+	max-height: 80vh;
+	overflow: hidden;
 	background: var(--bg-base);
 	padding: var(--space-7) var(--space-6) var(--space-6);
 	border-radius: var(--radius-lg);
@@ -1325,7 +1329,10 @@ dialog.help {
 			margin-bottom: var(--space-3);
 		}
 	}
-	article {
+	> article {
+		overflow-y: auto;
+		flex: 1;
+		min-height: 0;
 		color: var(--text-secondary);
 		font-size: 14px;
 		line-height: 1.6;
