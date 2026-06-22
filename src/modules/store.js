@@ -223,32 +223,38 @@ async function deleteNode(nodeId) {
 	return ok;
 }
 
-// 重新排序：将节点插入到同级目标位置
+// 重新排序：将节点插入到目标位置（同级或跨级均可）
 async function reorderNode(draggedId, targetId, insertBefore = true) {
 	if (!endpointsData) endpointsData = { nodes: [] };
-	const moveInSiblings = (siblings) => {
-		const draggedIndex = siblings.findIndex(n => n.id === draggedId);
-		const targetIndex = siblings.findIndex(n => n.id === targetId);
-		if (draggedIndex < 0 || targetIndex < 0) return false;
-		const [dragged] = siblings.splice(draggedIndex, 1);
-		let insertIndex = targetIndex;
-		if (draggedIndex < targetIndex) {
-			insertIndex = insertBefore ? targetIndex - 1 : targetIndex;
-		} else if (draggedIndex > targetIndex) {
-			insertIndex = insertBefore ? targetIndex : targetIndex + 1;
-		}
-		siblings.splice(insertIndex, 0, dragged);
-		return true;
-	};
-	// 尝试在每一层兄弟中查找
-	const searchSiblings = (siblings) => {
-		if (moveInSiblings(siblings)) return true;
+
+	// 从当前位置移除 dragged 节点
+	let dragged = null;
+	const removeNode = (siblings) => {
+		const idx = siblings.findIndex(n => n.id === draggedId);
+		if (idx >= 0) { dragged = siblings.splice(idx, 1)[0]; return true; }
 		for (const n of siblings) {
-			if (n.children && searchSiblings(n.children)) return true;
+			if (n.children && removeNode(n.children)) return true;
 		}
 		return false;
 	};
-	const ok = searchSiblings(endpointsData.nodes);
+
+	// 在 target 所在层级插入
+	let ok = false;
+	const insertAtTarget = (siblings) => {
+		const idx = siblings.findIndex(n => n.id === targetId);
+		if (idx >= 0) {
+			siblings.splice(insertBefore ? idx : idx + 1, 0, dragged);
+			ok = true;
+			return true;
+		}
+		for (const n of siblings) {
+			if (n.children && insertAtTarget(n.children)) return true;
+		}
+		return false;
+	};
+
+	if (!removeNode(endpointsData.nodes)) return false;
+	insertAtTarget(endpointsData.nodes);
 	if (ok) await saveEndpoints();
 	return ok;
 }
