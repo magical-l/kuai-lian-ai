@@ -17,7 +17,8 @@ body {
 	color: var(--text-primary);
 	background: var(--bg-base);
 	height: 100dvh;
-	overflow: hidden;
+		overflow: hidden;
+		margin-inline: 4px;
 	-webkit-font-smoothing: antialiased;
 }
 textarea {
@@ -95,7 +96,8 @@ del {
 }
 main {
 	height: 100%;
-	overflow: hidden;
+		overflow: hidden;
+		margin-inline: 4px;
 	background: var(--bg-subtle);
 }
 main > header {
@@ -390,7 +392,8 @@ button, .btn {
 .workspace .tip,
 .workspace.directory .name {
 	color: var(--text-muted);
-	overflow: hidden;
+		overflow: hidden;
+		margin-inline: 4px;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	font-size: 12px;
@@ -784,6 +787,7 @@ aside {
 		color: var(--text-secondary);
 		max-width: 100px;
 		overflow: hidden;
+		margin-inline: 4px;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
@@ -1362,7 +1366,8 @@ dialog::backdrop {
 	gap: var(--space-1);
 	flex-wrap: wrap;
 	min-width: 0;
-	overflow: hidden;
+		overflow: hidden;
+		margin-inline: 4px;
 }
 
 
@@ -1609,8 +1614,12 @@ dialog::backdrop {
 	border: 1px solid var(--border-default);
 	border-radius: 6px;
 	overflow: hidden;
+	margin-inline: 4px;
 	& .mode-option {
-		padding: 4px 10px;
+		display: flex;
+		align-items: center;
+		height: 40px;
+		padding: 0 12px;
 		cursor: pointer;
 		font-size: 13px;
 		color: var(--text-muted);
