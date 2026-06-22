@@ -387,18 +387,6 @@ button, .btn {
 		color: var(--accent-primary);
 	}
 }
-/* 端点树 header 操作按钮尺寸：22px */
-aside .one.endpoint > header {
-	& button, & .btn {
-		border: 1px solid transparent;
-		padding: var(--space-1);
-		height: 22px;
-		min-width: 22px;
-		&:hover:not(:disabled) {
-			border-color: var(--border-subtle);
-		}
-	}
-}
 .workspace .tip,
 .workspace.directory .name {
 	color: var(--text-muted);
@@ -870,6 +858,20 @@ aside .one.endpoint {
 		&:hover {
 			background: var(--bg-muted);
 		}
+		/* header 内的操作按钮 */
+		& button, & .btn {
+			border: 1px solid transparent;
+			padding: var(--space-1);
+			height: 22px;
+			min-width: 22px;
+			&:hover:not(:disabled) {
+				border-color: var(--border-subtle);
+			}
+		}
+		.actions {
+			gap: 2px;
+			flex-shrink: 0;
+		}
 	}
 	.name {
 		flex: 1;
@@ -881,16 +883,16 @@ aside .one.endpoint {
 		word-break: break-all;
 		cursor: pointer;
 	}
-	.actions {
-		gap: 2px;
-		flex-shrink: 0;
-	}
-	.models {
-		padding-left: var(--space-3);
-		margin-top: var(--space-1);
-		gap: 0;
+	.model.actions {
+		& button, & .btn {
+			border: none;
+			padding: 2px;
+			height: 18px;
+			min-width: 18px;
+		}
 	}
 }
+
 .inherit-hint {
 	font-size: 11px;
 	color: var(--text-muted);
@@ -989,12 +991,6 @@ aside .one.endpoint {
 	}
 	&.actions {
 		gap: var(--space-1);
-		& button, & .btn {
-			border: none;
-			padding: 2px;
-			height: 18px;
-			min-width: 18px;
-		}
 	}
 	/* 模型标签样式 */
 	&.tag {
