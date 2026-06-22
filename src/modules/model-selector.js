@@ -716,9 +716,9 @@ function renderMessages(messages, groups, onCopy) {
 		if (msg.role === 'user') {
 			const msgEl = mk('article', 'msg request one , flex items-go-y');
 			// 使用模板创建meta，包含复制按钮
-			const meta = fromTemplate('user-header', '.request.info');
+			const meta = fromTemplate('user-header', 'header');
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
-			$('.request .time', meta).textContent = timeStr;
+			$('.time', meta).textContent = timeStr;
 			msgEl.addChild(meta);
 			const normalized = normalizeMessageContent(msg);
 			const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
@@ -805,9 +805,9 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
 	const modelName = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : '未知模型';
 	const modelRemark = info?.node?.remark || '';
-	const meta = fromTemplate('response-header', '.response.info');
-	$('.response .name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
-	$('.response .time', meta).textContent = timeStr;
+	const meta = fromTemplate('response-header', 'header');
+	$('.name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
+	$('.time', meta).textContent = timeStr;
 	const copyBtn = $('.copy-btn', meta);
 	copyBtn.onclick = () => {
 		navigator.clipboard.writeText(msg.content || "").then(() => {
@@ -833,29 +833,29 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 function renderMultiModelResponse(container, msg, groups, onCopy) {
     const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
     sorted.forEach(r => {
-        const card = mk("div", "one response msg");
+        const card = mk("article", "one response msg");
         const info = findModelById(groups, r.modelId);
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         const remark = info?.node?.remark || "";
-        const meta = fromTemplate("multi-response-header", ".response.info");
+        const meta = fromTemplate("multi-response-header", "header");
         const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
         const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime / 1000).toFixed(1)}s` : "";
         const speedClass = getSpeedClass(r.firstTokenTime);
         const totalStr = r.totalDuration ? `耗时${(r.totalDuration / 1000).toFixed(1)}s` : "";
         const statusText = getStatusText(r.status);
-        $(".response .name", meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
-        $(".response .time", meta).textContent = timeStr;
+        $(".name", meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
+        $(".time", meta).textContent = timeStr;
 
         if (durationStr) {
-            const durationEl = $(".response .wait", meta);
+            const durationEl = $(".wait", meta);
             durationEl.textContent = durationStr;
 
             if (speedClass)
                 durationEl.classList.add(speedClass);
         }
 
-        $(".response .total", meta).textContent = totalStr;
-        const statusEl = $(".response .status", meta);
+        $(".total", meta).textContent = totalStr;
+        const statusEl = $(".status", meta);
         statusEl.textContent = statusText;
         statusEl.classList.add("status");
 
@@ -866,7 +866,7 @@ function renderMultiModelResponse(container, msg, groups, onCopy) {
         else if (r.status === "stopped")
             statusEl.classList.add("stopped");
 
-        const errorEl = $(".response .error", meta);
+        const errorEl = $(".error", meta);
 
         if (r.error && errorEl) {
             errorEl.textContent = r.error;

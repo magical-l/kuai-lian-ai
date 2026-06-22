@@ -686,13 +686,6 @@ aside {
 	&.request .attachments {
 		justify-content: flex-end;
 	}
-	.info {
-		font-size: 11px;
-		color: var(--text-muted);
-		padding-left: 0;
-		align-items: center;
-		gap: var(--space-2);
-	}
 	.status {
 		align-items: center;
 		gap: var(--space-1);
@@ -715,6 +708,28 @@ aside {
 		color: var(--text-muted);
 		margin-left: auto;
 	}
+}
+
+/* 所有消息 header 共享样式 */
+.one.request.msg > header,
+.one.response.msg > header {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-size: 11px;
+	color: var(--text-muted);
+	padding-bottom: var(--space-2);
+}
+/* request header：靠右对齐 */
+.one.request.msg > header {
+	justify-content: flex-end;
+}
+.one.request.msg > header .copy-btn {
+	margin-left: var(--space-2);
+}
+/* response header：copy 按钮贴右侧 */
+.one.response.msg > header .copy-btn {
+	margin-left: auto;
 }
 
 /* 代码块复制按钮 */
@@ -1416,10 +1431,6 @@ dialog::backdrop {
 /* ========== Multi-Model Response Cards ========== */
 .response {
 	&.one {
-		background: var(--bg-base);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-md);
-		padding: var(--space-3);
 		.error {
 			color: var(--danger);
 			font-size: 12px;
@@ -1451,16 +1462,6 @@ dialog::backdrop {
 		}
 		& + & {
 			margin-top: var(--space-3);
-		}
-	}
-	.info {
-		align-items: center;
-		gap: var(--space-2);
-		font-size: 11px;
-		color: var(--text-muted);
-		padding-bottom: var(--space-2);
-		.copy-btn {
-			margin-left: auto;
 		}
 	}
 	.content {
@@ -1504,23 +1505,6 @@ dialog::backdrop {
 			margin: 8px 0;
 			padding-left: 12px;
 			color: var(--text-secondary);
-		}
-	}
-}
-/* 用户消息 meta 行 */
-.request {
-	.info {
-		align-items: center;
-		gap: var(--space-2);
-		font-size: 11px;
-		color: var(--text-muted);
-		padding-bottom: var(--space-2);
-		justify-content: flex-end;
-		.copy-btn {
-			margin-left: var(--space-2);
-		}
-		.time {
-			color: var(--text-muted);
 		}
 	}
 }

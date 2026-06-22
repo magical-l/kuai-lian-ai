@@ -583,12 +583,12 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 		contentEl.textContent = state.content || '';
 	}
 	if (firstTokenTime !== null) {
-		const meta = $('.response.info', card);
+		const meta = $('header', card);
 		if (meta) {
-			if (!$('.response .wait', meta)) {
+			if (!$('.wait', meta)) {
 				const durationEl = mk('span', `response wait ${getSpeedClass(firstTokenTime)}`);
 				durationEl.textContent = `反应${(firstTokenTime/1000).toFixed(1)}s`;
-				const modelNameEl = $('.response .name', meta);
+				const modelNameEl = $('.name', meta);
 				if (modelNameEl) {
 					modelNameEl.insertAdjacentElement('afterend', durationEl);
 				}
@@ -603,7 +603,7 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 		const card = $(selector);
 		if (!card) return;
 		const contentEl = $('.response .content', card);
-		const meta = $('.response.info', card);
+		const meta = $('header', card);
 		const icon = meta ? $('.model.status-icon', meta) : null;
 		if (icon) {
 			icon.classList.remove('spinning');
@@ -615,10 +615,10 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 			if (contentEl) {
 				contentEl.textContent = ''; // Empty content for failed
 			}
-			if (meta && error && !$('.response .error', meta)) {
+			if (meta && error && !$('.error', meta)) {
 				const errorEl = mk('span', 'response error');
 				errorEl.textContent = error;
-				const statusEl = $('.response .status', meta) || icon;
+				const statusEl = $('.status', meta) || icon;
 				if (statusEl) {
 					statusEl.insertAdjacentElement('afterend', errorEl);
 				}
@@ -636,10 +636,10 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 				}
 			}
 			if (state && state.totalDuration) {
-				let totalEl = $('.response .total', meta);
+				let totalEl = $('.total', meta);
 				if (!totalEl) {
 					totalEl = mk('span', 'response total');
-					const insertAfter = $('.response .status', meta) || $('.model.status-icon', meta);
+					const insertAfter = $('.status', meta) || $('.model.status-icon', meta);
 					if (insertAfter) {
 						insertAfter.insertAdjacentElement('afterend', totalEl);
 					} else {
