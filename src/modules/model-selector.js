@@ -86,7 +86,7 @@ function bindSelectorEvents() {
 }
 function syncJoinBtnState(nid) {
 	if (!nid) return;
-	var eg = document.querySelector('.endpoint[data-node-id="' + nid + '"]');
+	var eg = document.querySelector('.one.endpoint[data-node-id="' + nid + '"]');
 	if (!eg) return;
 	var jb = eg.querySelector('.join-session');
 	if (!jb) return;
@@ -117,7 +117,7 @@ function collapseAllEndpointNodes() {
 	collectIds(getGroups());
 	ids.forEach(function(id) { collapsedEndpoints.add(id); });
 	// 直接操作DOM收起
-	$$('.endpoint').forEach(function(el) {
+	$('.one.endpoint').forEach(function(el) {
 		var toggle = $('.toggle', el);
 		var content = $('.body', el);
 		if (content) content.style.display = 'none';
@@ -208,7 +208,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
             var hasModels = node.models && node.models.length > 0;
             var isCollapsed = collapsedEndpoints.has(node.id);
             var hasContent = hasChildren || hasModels;
-            var nodeEl = mk("li", "endpoint");
+            var nodeEl = mk("li", "one endpoint");
             nodeEl.dataset.nodeId = node.id;
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x");
@@ -227,7 +227,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
             dragHandle.on("dragend", function() {
                 nodeEl.classList.remove("dragging");
 
-                $$(".endpoint", container).forEach(function(el) {
+                $(".one.endpoint", container).forEach(function(el) {
                     el.classList.remove("drag-over", "drag-over-child", "drag-over-before", "drag-over-after");
                 });
             });

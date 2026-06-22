@@ -138,7 +138,11 @@ main > header {
 	}
 }
 /* ========== Buttons ========== */
-.btn .icon {
+.icon {
+	user-select: none;
+	-webkit-user-select: none;
+}
+main > header .btn .icon {
 	width: 14px;
 	height: 14px;
 }
@@ -153,16 +157,12 @@ button, .btn {
 	transition: all var(--transition-fast);
 	color: var(--text-muted);
 	background: transparent;
-}
-.icon {
-	user-select: none;
-	-webkit-user-select: none;
-}
-button {
-	border: 1px solid transparent;
-	&.use-browser-storage:hover {
-		background: #1D4ED8;
-	}
+	border: 1px solid var(--border-subtle);
+	padding: var(--space-1);
+	height: 24px;
+	min-width: 24px;
+	text-decoration: none;
+	box-sizing: border-box;
 
 	&.use-browser-storage {
 		background: #2563EB;
@@ -174,10 +174,10 @@ button {
 		font-size: 13px;
 		font-weight: 500;
 		transition: background var(--transition-fast);
-	}
 
-	&.select-dir:hover {
-		background: var(--accent-primary-hover);
+		&:hover {
+			background: #1D4ED8;
+		}
 	}
 
 	&.select-dir {
@@ -190,10 +190,10 @@ button {
 		height: 28px;
 		cursor: pointer;
 		border-radius: var(--radius-sm);
-	}
 
-	&.recover:hover {
-		background: #047857;
+		&:hover {
+			background: var(--accent-primary-hover);
+		}
 	}
 
 	&.recover {
@@ -206,12 +206,10 @@ button {
 		height: 28px;
 		cursor: pointer;
 		border-radius: var(--radius-sm);
-	}
 
-	&.toggle-key:hover:not(:disabled) {
-		background: var(--bg-muted);
-		color: var(--text-secondary);
-		border-color: var(--border-subtle);
+		&:hover {
+			background: #047857;
+		}
 	}
 
 	&.toggle-key {
@@ -219,88 +217,94 @@ button {
 		border: 1px solid var(--border-default);
 		border-radius: var(--radius-md);
 		padding: 6px 8px;
-	}
 
-	&.connection.cors_blocked {
-		background: rgba(217, 119, 6, 0.15);
-		color: var(--warning);
-	}
-
-	&.connection.failed {
-		background: var(--danger-light);
-		color: var(--danger);
-	}
-
-	&.connection.connected {
-		background: var(--success-light);
-		color: var(--success);
-	}
-
-	&.connection.testing .spin {
-		animation: spin 2s linear infinite !important;
-		display: inline-block;
-	}
-
-	&.connection.testing {
-		background: var(--accent-light);
-		color: var(--accent-primary);
-	}
-
-	&.connection:hover {
-		transform: none;
+		&:hover:not(:disabled) {
+			background: var(--bg-muted);
+			color: var(--text-secondary);
+			border-color: var(--border-subtle);
+		}
 	}
 
 	&.connection {
 		background: transparent;
 		color: var(--text-muted);
-	}
 
-	&.action.join-session.joined:hover:not(:disabled) {
-		background: var(--success-light);
-		color: var(--success);
-	}
+		&:hover {
+			transform: none;
+		}
 
-	&.action.join-session.joined {
-		background: var(--success-light);
-		color: var(--success);
-	}
+		&.testing {
+			background: var(--accent-light);
+			color: var(--accent-primary);
 
-	&.action.join-session:hover:not(:disabled) {
-		background: var(--accent-light);
+			& .spin {
+				animation: spin 2s linear infinite !important;
+				display: inline-block;
+			}
+		}
+
+		&.connected {
+			background: var(--success-light);
+			color: var(--success);
+		}
+
+		&.cors_blocked {
+			background: rgba(217, 119, 6, 0.15);
+			color: var(--warning);
+		}
+
+		&.failed {
+			background: var(--danger-light);
+			color: var(--danger);
+		}
 	}
 
 	&.action.join-session {
 		color: var(--accent-primary);
 		font-weight: 600;
-	}
 
-	&.action.batch-test.failed {
-		color: var(--danger) !important;
-		background: var(--danger-light) !important;
-	}
+		&:hover:not(:disabled) {
+			background: var(--accent-light);
+		}
 
-	&.action.batch-test.connected {
-		color: var(--success) !important;
-		background: var(--success-light) !important;
-	}
+		&.joined {
+			background: var(--success-light);
+			color: var(--success);
 
-	&.batch-test.testing .spin {
-		animation: spin 0.5s linear infinite !important;
-		display: inline-block;
-	}
-
-	&.batch-test.testing {
-		background: var(--accent-light);
-		color: var(--accent-primary);
-	}
-
-	&.batch-test:hover:not(:disabled) {
-		background: var(--accent-light);
-		color: var(--accent-primary);
+			&:hover:not(:disabled) {
+				background: var(--success-light);
+				color: var(--success);
+			}
+		}
 	}
 
 	&.batch-test {
 		color: var(--text-muted);
+
+		&:hover:not(:disabled) {
+			background: var(--accent-light);
+			color: var(--accent-primary);
+		}
+
+		&.testing {
+			background: var(--accent-light);
+			color: var(--accent-primary);
+
+			& .spin {
+				animation: spin 0.5s linear infinite !important;
+				display: inline-block;
+			}
+		}
+
+		&.connected {
+			color: var(--success) !important;
+			background: var(--success-light) !important;
+		}
+
+		&.failed {
+			color: var(--danger) !important;
+			background: var(--danger-light) !important;
+		}
 	}
 
 	&:disabled {
@@ -318,16 +322,6 @@ button {
 		transform: scale(0.97);
 	}
 
-	&.stop:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	&.stop:hover:not(:disabled) {
-		background: var(--danger);
-		color: white;
-	}
-
 	&.stop {
 		background: var(--danger-light);
 		color: var(--danger);
@@ -340,6 +334,16 @@ button {
 		cursor: pointer;
 		display: inline-flex;
 		align-items: center;
+
+		&:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+
+		&:hover:not(:disabled) {
+			background: var(--danger);
+			color: white;
+		}
 	}
 
 	&.help {
@@ -347,13 +351,14 @@ button {
 		font-weight: 600;
 	}
 
-	&.danger:hover:not(:disabled) {
-		background: var(--danger-light);
-		color: var(--danger);
-	}
-
 	&.danger {
 		color: var(--danger);
+		
+		&:hover:not(:disabled) {
+			background: var(--danger-light);
+			color: var(--danger);
+			border-color: var(--danger);
+		}
 	}
 
 	&.icon.copied {
@@ -376,48 +381,24 @@ button {
 		min-width: 24px;
 	}
 
-	&.action-sm {
-		border: none;
-		padding: 2px;
-		height: 18px;
-		min-width: 18px;
-	}
-
-	&.action:hover:not(:disabled) {
-		border-color: var(--border-subtle);
-	}
-
-	&.action {
-		border: 1px solid transparent;
-		padding: var(--space-1);
-		height: 22px;
-		min-width: 22px;
-	}
-
-	&:hover:not(:disabled):not(.danger) {
-		background: var(--bg-muted);
-		color: var(--text-secondary);
-	}
-}
-/* 按钮类 & 图标类 → 不可选中 */
-/* 尺寸修饰类 */
-.btn {
-	border: 1px solid var(--border-subtle);
-	padding: var(--space-1);
-	height: 24px;
-	min-width: 24px;
-	text-decoration: none;
-	box-sizing: border-box;
 	&:hover:not(:disabled):not(.danger) {
 		background: var(--accent-light);
 		border-color: var(--accent-primary);
 		color: var(--accent-primary);
 	}
-	&.danger:hover:not(:disabled) {
-		border-color: var(--danger);
+}
+/* 端点树 header 操作按钮尺寸：22px */
+aside .one.endpoint > header {
+	& button, & .btn {
+		border: 1px solid transparent;
+		padding: var(--space-1);
+		height: 22px;
+		min-width: 22px;
+		&:hover:not(:disabled) {
+			border-color: var(--border-subtle);
+		}
 	}
 }
-/* 功能修饰类 */
 .workspace .tip,
 .workspace.directory .name {
 	color: var(--text-muted);
@@ -837,7 +818,7 @@ aside {
 	}
 }
 /* ========== Endpoint Groups ========== */
-aside.endpoint.list .endpoint {
+aside .one.endpoint {
 	background: var(--bg-elevated);
 	border-radius: 0;
 	margin-bottom: var(--space-3);
@@ -1008,9 +989,94 @@ aside.endpoint.list .endpoint {
 	}
 	&.actions {
 		gap: var(--space-1);
+		& button, & .btn {
+			border: none;
+			padding: 2px;
+			height: 18px;
+			min-width: 18px;
+		}
+	}
+	/* 模型标签样式 */
+	&.tag {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		padding: var(--space-1) var(--space-2);
+		border-radius: var(--radius-sm);
+		font-size: 12px;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		border: 1px solid transparent;
+		&.selected.speed-slow {
+			background: #fed7aa;
+			border-color: #ea580c;
+		}
+
+		&.selected.speed-medium {
+			background: var(--warning-light);
+			border-color: var(--warning);
+		}
+
+		&.selected.speed-fast {
+			background: var(--success-light);
+			border-color: var(--success);
+		}
+
+		&.selected.stopped {
+			background: var(--bg-muted);
+			color: var(--text-muted);
+			border-color: var(--border-subtle);
+		}
+
+		&.selected.failed {
+			background: var(--danger-light);
+			color: var(--danger);
+			border-color: var(--danger);
+		}
+
+		&.selected:hover {
+			background: var(--accent-muted);
+		}
+
+		&.selected {
+			background: var(--accent-light);
+			color: var(--accent-primary);
+			border: 1px solid var(--accent-primary);
+			padding: var(--space-1) var(--space-3);
+			box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
+		}
+		.remove {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			margin-left: 4px;
+			width: 14px;
+			height: 14px;
+			border-radius: 50%;
+			font-size: 10px;
+			cursor: pointer;
+			color: var(--text-muted);
+			transition: all var(--transition-fast);
+			flex-shrink: 0;
+
+			&:hover {
+			background: var(--danger-light);
+			color: var(--danger);
+			}
+		}
+	}
+	/* 失败/停止的模型在标签中用颜色标记以提醒用户 */
+	/* 速度样式 - 与消息框反应时间颜色统一 */
+	/* 状态图标 */
+	&.status-icon {
+		font-size: 10px;
+		&.spinning {
+			animation: spin 1s linear infinite !important;
+			display: inline-block;
+			will-change: transform;
+		}
 	}
 }
-/* 连接状态按钮样式 */
 /* 通用的.spin类 */
 .spin {
 	animation: spin 1s linear infinite !important;
@@ -1058,6 +1124,14 @@ aside.endpoint.list .endpoint {
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+		}
+	}
+	&.actions {
+		& button, & .btn {
+			border: none;
+			padding: 2px;
+			height: 18px;
+			min-width: 18px;
 		}
 	}
 	&.title-edit {
@@ -1283,88 +1357,6 @@ dialog::backdrop {
 	min-width: 0;
 	overflow: hidden;
 }
-.model {
-	/* 模型标签样式 */
-	&.tag {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
-		font-size: 12px;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		border: 1px solid transparent;
-		&.selected.speed-slow {
-			background: #fed7aa;
-			border-color: #ea580c;
-		}
-
-		&.selected.speed-medium {
-			background: var(--warning-light);
-			border-color: var(--warning);
-		}
-
-		&.selected.speed-fast {
-			background: var(--success-light);
-			border-color: var(--success);
-		}
-
-		&.selected.stopped {
-			background: var(--bg-muted);
-			color: var(--text-muted);
-			border-color: var(--border-subtle);
-		}
-
-		&.selected.failed {
-			background: var(--danger-light);
-			color: var(--danger);
-			border-color: var(--danger);
-		}
-
-		&.selected:hover {
-			background: var(--accent-muted);
-		}
-
-		&.selected {
-			background: var(--accent-light);
-			color: var(--accent-primary);
-			border: 1px solid var(--accent-primary);
-			padding: var(--space-1) var(--space-3);
-			box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
-		}
-		.remove {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			margin-left: 4px;
-			width: 14px;
-			height: 14px;
-			border-radius: 50%;
-			font-size: 10px;
-			cursor: pointer;
-			color: var(--text-muted);
-			transition: all var(--transition-fast);
-			flex-shrink: 0;
-
-			&:hover {
-			background: var(--danger-light);
-			color: var(--danger);
-			}
-		}
-	}
-	&.status-icon {
-		font-size: 10px;
-		&.spinning {
-			animation: spin 1s linear infinite !important;
-			display: inline-block;
-			will-change: transform;
-		}
-	}
-}
-/* 失败/停止的模型在标签中用颜色标记以提醒用户 */
-/* 速度样式 - 与消息框反应时间颜色统一 */
-/* 状态图标 */
 
 
 /* 选择器空状态提示 */
@@ -1489,7 +1481,6 @@ dialog::backdrop {
 		}
 	}
 }
-/* 响应速度颜色标记 */
 /* ========== Thinking Block ========== */
 .think {
 	background: var(--bg-muted);
@@ -1706,7 +1697,6 @@ dialog::backdrop {
 	}
 }
 /* 隐藏的文件输入 */
-.split-btn.open .split-btn-main,
 .file-input {
 	display: none;
 }
