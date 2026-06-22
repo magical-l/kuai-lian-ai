@@ -43,7 +43,7 @@ function findModelById(nodes, nodeId) {
 	const result = findNodeWithAncestors(nodes, nodeId);
 	if (!result) return null;
 	const { node, ancestors } = result;
-	return { node, ancestors, model: { id: node.id, name: node.modelId || node.name, remark: node.remark || "", type: detectModelType(node.modelId || "") } };
+	return { node, ancestors };
 }
 
 // 从模型名自动推断类型

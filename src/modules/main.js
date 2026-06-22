@@ -471,7 +471,7 @@ async function handleEmbeddingSend() {
 	container.scrollTop = container.scrollHeight;
 	try {
 		const cfg = resolveNodeConfig(info.node.id);
-		const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, info.model.name, text);
+		const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), text);
 		const card = $('.streaming-embedding');
 		if (card) card.remove();
 		const emb = result.embedding;
@@ -487,7 +487,7 @@ async function handleEmbeddingSend() {
 					dim,
 					preview,
 					fullJson,
-					model: result.model || info.model.name,
+					model: result.model || (info.node.modelId || info.node.name),
 					usage: result.usage
 				}
 			}]

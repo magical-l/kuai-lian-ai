@@ -30,7 +30,7 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
                 speedClass ? `speed-${speedClass}` : ""
             ].filter(Boolean).join(" ");
 
-            const remarkHtml = info.model.remark ? `<span class="model-remark"> ${info.model.remark}</span>` : "";
+            const remarkHtml = (info.node.remark) ? `<span class="model-remark"> ${info.node.remark}</span>` : "";
             const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
             return `<span class="${classes}" data-model="${id}"><span class="full name">${fullPath}</span>${remarkHtml}<span class="btn remove" data-model="${id}">✕</span></span>`;
         }).join("");
@@ -803,7 +803,7 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
 	const modelName = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : '未知模型';
-	const modelRemark = info?.model?.remark || '';
+	const modelRemark = info?.node?.remark || '';
 	const meta = fromTemplate('response-header', '.response.info');
 	$('.response .name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
 	$('.response .time', meta).textContent = timeStr;
@@ -840,7 +840,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
         const card = mk("div", "response card");
         const info = findModelById(groups, r.modelId);
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
-        const remark = info?.model?.remark || "";
+        const remark = info?.node?.remark || "";
         const meta = fromTemplate("multi-response-header", ".response.info");
         const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
         const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime / 1000).toFixed(1)}s` : "";

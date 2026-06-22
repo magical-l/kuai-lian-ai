@@ -271,7 +271,7 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 		}
 		try {
 			const config = resolveNodeConfig(info.node.id);
-			const resultState = await callAPI(config.style || 'openai', config.baseUrl, config.key, info.model.name, messages, chunkState => {
+			const resultState = await callAPI(config.style || 'openai', config.baseUrl, config.key, (info.node.modelId || info.node.name), messages, chunkState => {
 				const genState = gens.get(id);
 				if (genState) {
 					genState.content = chunkState.content;
