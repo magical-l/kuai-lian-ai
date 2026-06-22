@@ -550,7 +550,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
         card.dataset.sessionId = sessionId;
         card.dataset.modelId = id;
         const info = findModelById(groups, id);
-        const name = info ? `${info.node.name} / ${info.model.name}` : "未知";
+        const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         $(".response .name", card).textContent = name;
         cards.addChild(card);
     });

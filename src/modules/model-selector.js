@@ -802,7 +802,7 @@ function renderMessages(messages, groups, onCopy) {
 function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
-	const modelName = info ? `${info.node.name} / ${info.model.name}` : '未知模型';
+	const modelName = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : '未知模型';
 	const modelRemark = info?.model?.remark || '';
 	const meta = fromTemplate('response-header', '.response.info');
 	$('.response .name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
@@ -839,7 +839,7 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
     sorted.forEach(r => {
         const card = mk("div", "response card");
         const info = findModelById(groups, r.modelId);
-        const name = info ? `${info.node.name} / ${info.model.name}` : "未知";
+        const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         const remark = info?.model?.remark || "";
         const meta = fromTemplate("multi-response-header", ".response.info");
         const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
