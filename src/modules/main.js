@@ -2,7 +2,8 @@
 function loadDefaultSelectedModels() {
 	try {
 		const saved = localStorage.getItem('defaultSelectedModels');
-		return saved ? JSON.parse(saved) : [];
+		const refs = saved ? JSON.parse(saved) : [];
+		return refs.map(function(r) { return r.includes(':') ? r.split(':')[0] : r; });
 	} catch {
 		return [];
 	}
@@ -90,6 +91,9 @@ async function init() {
 		if (defaultSelectedModels.length > 0) {
 			selectedModels = [...defaultSelectedModels];
 		}
+		// 迁移旧格式引用
+		selectedModels = selectedModels.map(function(r) { return r.includes(':') ? r.split(':')[0] : r; });
+		saveDefaultSelectedModels(selectedModels);
 		updateDirectoryDisplay();
 		await refreshUI();
 	}
@@ -106,7 +110,7 @@ async function init() {
 			});
 		}
 		collectIds(getGroups());
-		allIds.forEach(function(id) { testConnection(id, '__node__'); });
+		allIds.forEach(function(id) { testConnection(id); });
 	};
 	$('.test-all').innerHTML = SVG.testAll;
 	$('.send').onclick = () => {
@@ -228,12 +232,9 @@ async function refreshUI() {
     renderEndpointList(
         groups,
         null,
-        null,
         handleNodeEdit,
         handleNodeDelete,
-        handleModelDelete,
         handleReorderNode,
-        handleReorderModels,
         testConnection,
         handleMoveNodeAsChild
     );
@@ -271,6 +272,9 @@ async function handleSessionSelect(sessionId) {
 	} else {
 		selectedModels = [...defaultSelectedModels];
 	}
+	// 迁移旧格式引用
+	selectedModels = selectedModels.map(function(r) { return r.includes(':') ? r.split(':')[0] : r; });
+	saveDefaultSelectedModels(selectedModels);
 	lastUserMessage = lastUserMsg?.content || null;
 	// 获取当前会话的生成状态
 	const gens = sessionGenerations.get(sessionId);
@@ -352,16 +356,6 @@ function handleCopy(content) {
 	});
 }
 
-async function handleModelDelete(nodeId, modelId) {
-	// 模型现为子节点，格式 childId:__node__
-	var ref = modelId === '__node__' ? nodeId + ':' + '__node__' : nodeId + ':' + modelId;
-	selectedModels = selectedModels.filter(id => id !== ref);
-	saveDefaultSelectedModels(selectedModels);
-	connectionStatus.delete(ref);
-	// 删除子节点自身
-	await deleteNode(nodeId);
-	await refreshUI();
-}
 async function handleReorderNode(draggedId, targetId, insertBefore) {
 	clearTestResults(draggedId);
 	await reorderNode(draggedId, targetId, insertBefore);
@@ -370,10 +364,6 @@ async function handleReorderNode(draggedId, targetId, insertBefore) {
 async function handleMoveNodeAsChild(draggedId, targetParentId) {
 	clearTestResults(draggedId);
 	await moveNodeAsChild(draggedId, targetParentId);
-	await refreshUI();
-}
-async function handleReorderModels(nodeId, draggedModelId, targetModelId, insertBefore) {
-	await reorderModels(nodeId, draggedModelId, targetModelId, insertBefore);
 	await refreshUI();
 }
 async function handleSend() {

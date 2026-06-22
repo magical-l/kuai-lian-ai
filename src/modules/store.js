@@ -39,41 +39,11 @@ function resolveNodeConfig(nodeId) {
 	return config;
 }
 
-function findModelById(nodes, referenceId) {
-	const [nodeId, modelId] = referenceId.split(":");
+function findModelById(nodes, nodeId) {
 	const result = findNodeWithAncestors(nodes, nodeId);
-
-	if (!result)
-		return null;
-
-	const {
-		node,
-		ancestors
-	} = result;
-
-	if (modelId === "__node__") {
-		return {
-			node,
-			ancestors,
-
-			model: {
-				id: "__node__",
-				name: node.modelId || "",
-				remark: "",
-				type: "chat"
-			}
-		};
-	}
-
-	const model = node.children?.find(c => c.id === modelId);
-
-	if (model) return {
-		node,
-		ancestors,
-		model
-	};
-
-	return null;
+	if (!result) return null;
+	const { node, ancestors } = result;
+	return { node, ancestors, model: { id: node.id, name: node.modelId || node.name, remark: node.remark || "", type: detectModelType(node.modelId || "") } };
 }
 
 // 从模型名自动推断类型
@@ -83,16 +53,6 @@ function detectModelType(name) {
 	if (lower.indexOf('embedding') >= 0 || lower.indexOf('text-embedding') >= 0) return 'embedding';
 	if (lower.indexOf('rerank') >= 0 || lower.indexOf('re-rank') >= 0) return 'rerank';
 	return 'chat';
-}
-
-// 递归展平所有模型引用（用于清理已删除的引用）
-function collectAllModelRefs(nodes) {
-	const refs = [];
-	for (const n of nodes) {
-		if (n.modelId) refs.push(`${n.id}:__node__`);
-		if (n.children) refs.push(...collectAllModelRefs(n.children));
-	}
-	return refs;
 }
 
 // ========== 旧数据迁移 ==========
@@ -243,11 +203,7 @@ async function deleteNode(nodeId) {
 			// 收集要删除的所有模型引用 key
 			const keysToRemove = new Set();
 			const collectKeys = (node) => {
-				node.children?.forEach(m => {
-					keysToRemove.add(`${node.id}:${m.id}`);   // 旧格式 parentId:childId
-					if (m.modelId) keysToRemove.add(`${m.id}:__node__`); // 新格式 childId:__node__
-				});
-				if (node.modelId) keysToRemove.add(`${node.id}:__node__`);
+				if (node.modelId) keysToRemove.add(node.id);
 				node.children?.forEach(collectKeys);
 			};
 			collectKeys(nodes[index]);
@@ -324,52 +280,11 @@ async function moveNodeAsChild(draggedId, targetParentId) {
 	return true;
 }
 
-// ========== 模型 CRUD（基于节点树） ==========
+// ========== 节点查询 ==========
 
 function getNode(nodeId) {
 	if (!endpointsData) endpointsData = { nodes: [] };
 	return findNodeInTree(endpointsData.nodes, nodeId);
-}
-
-async function deleteModel(nodeId, modelId) {
-	if (!endpointsData) endpointsData = { nodes: [] };
-	const node = findNodeInTree(endpointsData.nodes, nodeId);
-	if (node) {
-		const index = node.children?.findIndex(c => c.id === modelId) ?? -1;
-		if (index >= 0) {
-			node.children.splice(index, 1);
-			await saveEndpoints();
-			return true;
-		}
-	}
-	return false;
-}
-
-async function reorderModels(nodeId, draggedModelId, targetModelId, insertBefore) {
-	if (!endpointsData) endpointsData = { nodes: [] };
-	const node = findNodeInTree(endpointsData.nodes, nodeId);
-	if (!node || !node.children) return false;
-	const draggedIndex = node.children.findIndex(c => c.id === draggedModelId);
-	const targetIndex = node.children.findIndex(c => c.id === targetModelId);
-	if (draggedIndex >= 0 && targetIndex >= 0) {
-		const [draggedModel] = node.children.splice(draggedIndex, 1);
-		let insertIndex = targetIndex;
-		if (draggedIndex < targetIndex) {
-			insertIndex = insertBefore ? targetIndex - 1 : targetIndex;
-		} else if (draggedIndex > targetIndex) {
-			insertIndex = insertBefore ? targetIndex : targetIndex + 1;
-		}
-		node.children.splice(insertIndex, 0, draggedModel);
-		await saveEndpoints();
-		return true;
-	}
-	return false;
-}
-
-function getModel(nodeId, modelId) {
-	if (!endpointsData) endpointsData = { nodes: [] };
-	const node = findNodeInTree(endpointsData.nodes, nodeId);
-	return node?.children?.find(c => c.id === modelId);
 }
 
 // ========== 会话管理（不变） ==========

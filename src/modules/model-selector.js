@@ -94,7 +94,7 @@ function syncJoinBtnState(nid) {
 }
 function applyJoinBtnUI(btn, nid) {
 	if (!btn || !nid) return;
-	var mid = nid + ':' + '__node__';
+	var mid = nid;
 	if (selectedModels.indexOf(mid) >= 0) {
 		btn.title = '已加入当前会话';
 		btn.className = 'action join-session joined';
@@ -197,7 +197,7 @@ function showAttachmentPreview(att) {
 	}
 }
 
-function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, onNodeDelete, onModelDelete, onReorderNodes, onReorderModels, onTestConnection, onMoveNode) {
+function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, onReorderNodes, onTestConnection, onMoveNode) {
     var container = $(".endpoint.list");
 
     container.querySelectorAll('li').forEach(el => el.remove());
@@ -337,7 +337,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
             var hasTesting = false, allOk = true, anyFailed = false;
 
             testableIds.forEach(function(id) {
-                var sd = connectionStatus.get(id + ":" + "__node__");
+                var sd = connectionStatus.get(id);
 
                 if (sd) {
                     if (sd.status === "testing")
@@ -360,7 +360,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
 
             if (testableIds.length > 0) {
                 var allTested = testableIds.every(function(id) {
-                    var sd = connectionStatus.get(id + ":" + "__node__");
+                    var sd = connectionStatus.get(id);
                     return sd && sd.status !== "disconnected" && sd.status !== undefined;
                 });
 
@@ -386,7 +386,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
                     var successCount = 0, failCount = 0, firstError = null;
 
                     testableIds.forEach(function(id) {
-                        var sd = connectionStatus.get(id + ":__node__");
+                        var sd = connectionStatus.get(id);
 
                         if (sd) {
                             if (sd.status === "connected")
@@ -414,7 +414,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
                     if (childTestable > 0) {
                         batchTestBtn.title = "测试连接（含" + (testableIds.length) + "个端点）" + (testSummary ? " — " + testSummary : "");
                     } else {
-                        batchTestBtn.title = getConnectionStatusText(node.id + ":__node__");
+                        batchTestBtn.title = getConnectionStatusText(node.id);
                     }
                 } else {
                     batchTestBtn.title = "测试中...";
@@ -425,7 +425,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
 
                     if (onTestConnection) {
                         testableIds.forEach(function(id) {
-                            onTestConnection(id, "__node__");
+                            onTestConnection(id);
                         });
                     }
                 });
@@ -440,7 +440,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
 
                 joinBtn.on("click", function(e) {
                     e.stopPropagation();
-                    var mid = node.id + ":__node__";
+                    var mid = node.id;
 
                     if (selectedModels.includes(mid)) {
                         selectedModels = selectedModels.filter(function(x) {
@@ -527,7 +527,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
                 var willMoveAsChild = nodeEl.classList.contains("drag-over-child");
                 nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
                 var rawData = e.dataTransfer.getData("text/plain");
-                var draggedId = rawData.split(":")[0]; // 兼容 "uuid" 和 "uuid:__node__" 两种格式
+                var draggedId = rawData;
 
                 if (!draggedId || draggedId === node.id)
                     return;
@@ -580,7 +580,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
         var hasTesting = false, hasFail = false, hasSuccess = false;
 
         testableIds.forEach(function(id) {
-            var sd = connectionStatus.get(id + ":__node__");
+            var sd = connectionStatus.get(id);
 
             if (sd) {
                 if (sd.status === "testing")

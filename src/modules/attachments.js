@@ -383,7 +383,7 @@ function closeHelpDialog(dialog, immediate = false) {
 		dialog.remove();
 	}
 }
-const connectionStatus = new Map(); // groupId:modelId -> { status, timestamp }
+const connectionStatus = new Map(); // nodeId -> { status, timestamp }
 function getConnectionStatusText(key) {
 	const data = connectionStatus.get(key);
 	if (!data) return '测试连接：未测试';
@@ -398,28 +398,20 @@ function getConnectionStatusText(key) {
 	const errorInfo = data.error ? ` (${data.error})` : '';
 	return data.status === 'testing' ? '测试连接：测试中...' : `测试连接：${text}${errorInfo}（${timeStr}）`;
 }
-async function testConnection(nodeId, modelId) {
+async function testConnection(nodeId) {
 	var node = getNode(nodeId);
 	if (!node) return;
-	var modelName;
-	if (modelId === '__node__') {
-		var rcfg = resolveNodeConfig(nodeId);
-		if (!rcfg || !rcfg.modelId) return;
-		modelName = rcfg.modelId;
-	} else {
-		var model = getModel(nodeId, modelId);
-		if (!model) return;
-		modelName = model.name;
-	}
 	var rcfg = resolveNodeConfig(nodeId);
+	if (!rcfg || !rcfg.modelId) return;
+	var modelName = rcfg.modelId;
 	if (!rcfg || !rcfg.baseUrl || (rcfg.key === undefined || rcfg.key === null)) return;
 	var provider = providers[rcfg.style || 'openai'];
 	if (!provider) return;
-	var key = nodeId + ':' + modelId;
+	var key = nodeId;
 	connectionStatus.set(key, { status: 'testing', timestamp: null });
-	renderEndpointList(getGroups(), null, null, handleNodeEdit, handleNodeDelete, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
+	renderEndpointList(getGroups(), null, handleNodeEdit, handleNodeDelete, handleReorderNode, testConnection, handleMoveNodeAsChild);
 	try {
-		var modelType = model ? (model.type || detectModelType(modelName)) : detectModelType(modelName);
+		var modelType = detectModelType(modelName);
 		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig : provider.testConfig;
 		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
 		var res = await fetchWithTimeout(tcfg.url, {
@@ -474,7 +466,7 @@ async function testConnection(nodeId, modelId) {
 			error: isCorsError ? null : err.message
 		});
 	}
-	renderEndpointList(getGroups(), null, null, handleNodeEdit, handleNodeDelete, handleModelDelete, handleReorderNode, handleReorderModels, testConnection, handleMoveNodeAsChild);
+	renderEndpointList(getGroups(), null, handleNodeEdit, handleNodeDelete, handleReorderNode, testConnection, handleMoveNodeAsChild);
 }
 
 // 递归收集所有子节点 ID
@@ -492,11 +484,10 @@ function collectDescendantIds(nodeId) {
 // 清空指定节点及其所有子节点的测试连接结果
 function clearTestResults(nodeId) {
 	var ids = collectDescendantIds(nodeId);
-	var prefixSet = {};
-	ids.forEach(function(id) { prefixSet[id + ':'] = true; });
+	var idSet = {};
+	ids.forEach(function(id) { idSet[id] = true; });
 	for (var key of connectionStatus.keys()) {
-		var colonIdx = key.indexOf(':');
-		if (colonIdx > 0 && prefixSet[key.substring(0, colonIdx + 1)]) {
+		if (idSet[key]) {
 			connectionStatus.delete(key);
 		}
 	}
