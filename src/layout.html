@@ -63,7 +63,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.4.4</span>
+			<span class="version">v5.4.5</span>
 		</div>
 		<div class="workspace , flex items-go-x">
 			<span>当前存储目录：</span>
@@ -251,7 +251,10 @@
 </template>
 <template id="help-dialog">
 	<dialog class="help">
-		<h3>快<del>恋爱</del>连AI 使用帮助</h3>
+		<header>
+			<h3>快<del>恋爱</del>连AI 使用帮助</h3>
+			<button class="close">✗</button>
+		</header>
 		<article>
 			<section>
 				快连AI是一款极致小巧的小工具，主要用于快速添加和管理大模型服务端点、快速测试连接、简单对话。端点信息、会话记录完全存于你电脑本地，不会翻本地文件（由浏览器严格把关），也不会联网泄漏。
@@ -293,9 +296,6 @@
 				<p>可收起，眼不见为净。点击旧会话可再续前缘。</p>
 			</section>
 		</article>
-		<footer class="action-buttons">
-			<button class="close primary">✓</button>
-		</footer>
 	</dialog>
 </template>
 <div class="js container">
