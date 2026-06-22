@@ -817,6 +817,17 @@ aside .one.endpoint {
 		margin-bottom: 0;
 	}
 
+	&.compact {
+		margin-bottom: 0;
+		border-bottom: none;
+		> header {
+			padding: 2px var(--space-2);
+		}
+		.toggle {
+			visibility: hidden;
+		}
+	}
+
 	&.dragging {
 		opacity: 0.5;
 	}

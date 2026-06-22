@@ -117,7 +117,7 @@ function collapseAllEndpointNodes() {
 	collectIds(getGroups());
 	ids.forEach(function(id) { collapsedEndpoints.add(id); });
 	// 直接操作DOM收起
-	$('.one.endpoint').forEach(function(el) {
+	$$('.one.endpoint').forEach(function(el) {
 		var toggle = $('.toggle', el);
 		var content = $('.body', el);
 		if (content) content.style.display = 'none';
@@ -205,10 +205,9 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
     function renderTreeNode(nodes, parentEl, depth) {
         nodes.forEach(function(node, index) {
             var hasChildren = node.children && node.children.length > 0;
-            var hasModels = node.models && node.models.length > 0;
             var isCollapsed = collapsedEndpoints.has(node.id);
-            var hasContent = hasChildren || hasModels;
-            var nodeEl = mk("li", "one endpoint");
+            var hasContent = hasChildren;
+            var nodeEl = mk("li", "one endpoint" + (hasChildren ? "" : " compact"));
             nodeEl.dataset.nodeId = node.id;
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x");
@@ -227,7 +226,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
             dragHandle.on("dragend", function() {
                 nodeEl.classList.remove("dragging");
 
-                $(".one.endpoint", container).forEach(function(el) {
+                $$(".one.endpoint", container).forEach(function(el) {
                     el.classList.remove("drag-over", "drag-over-child", "drag-over-before", "drag-over-after");
                 });
             });
@@ -297,17 +296,6 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
 
             nameSpan.on("click", function() {
                 tooltip.hide();
-                var ct = $(".body", nodeEl);
-
-                if (ct) {
-                    if (ct.style.display === "none") {
-                        ct.style.display = "";
-                        toggleSpan.textContent = "▼";
-                    } else {
-                        ct.style.display = "none";
-                        toggleSpan.textContent = "▶";
-                    }
-                }
             });
 
             var actionsEl = mk("div", "actions , flex items-go-x");
@@ -511,7 +499,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
                 e.dataTransfer.dropEffect = "move";
                 var draggingEl = $(".dragging", container);
 
-                if (!draggingEl || draggingEl === nodeEl || draggingEl.dataset.modelId)
+                if (!draggingEl || draggingEl === nodeEl)
                     return;
 
                 var header = $("header", nodeEl);
@@ -538,7 +526,8 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
                 e.stopPropagation();
                 var willMoveAsChild = nodeEl.classList.contains("drag-over-child");
                 nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
-                var draggedId = e.dataTransfer.getData("text/plain");
+                var rawData = e.dataTransfer.getData("text/plain");
+                var draggedId = rawData.split(":")[0]; // 兼容 "uuid" 和 "uuid:__node__" 两种格式
 
                 if (!draggedId || draggedId === node.id)
                     return;
@@ -558,147 +547,7 @@ function renderEndpointList(nodes, selectedModelId, onModelSelect, onNodeEdit, o
                 contentEl.style.display = "none";
             }
 
-            var models = mk("div", "models , flex items-go-y");
-            models.style.paddingLeft = (depth * 12 + 8) + "px";
-
-            node.models.forEach(function(model) {
-                var modelEl = mk("div", "model item , flex items-go-x");
-                modelEl.dataset.modelId = model.id;
-                modelEl.dataset.nodeId = node.id;
-
-                if (model.id === selectedModelId) {
-                    modelEl.classList.add("selected");
-                }
-
-                var modelDragHandle = mk("span", "btn handle drag");
-                modelDragHandle.innerHTML = SVG.drag(14);
-                modelDragHandle.title = "拖动排序";
-                modelDragHandle.draggable = true;
-
-                modelDragHandle.on("dragstart", function(e) {
-                    e.dataTransfer.setData("text/plain", node.id + ":" + model.id);
-                    e.dataTransfer.effectAllowed = "move";
-                    modelEl.classList.add("dragging");
-                });
-
-                modelDragHandle.on("dragend", function() {
-                    modelEl.classList.remove("dragging");
-
-                    $$(".model.item", models).forEach(function(el) {
-                        el.classList.remove("drag-over");
-                    });
-                });
-
-                var modelName = mk("span", "model name");
-                modelName.innerHTML = model.remark ? model.name + "<span class=\"model-remark\"> " + model.remark + "</span>" : model.name;
-                var modelTooltipId = "tooltip-model-" + node.id + "-" + model.id;
-                var tooltipRows = "<div class=\"row flex items-go-x\">" + "<span class=\"label\">模型：</span>" + "<span class=\"value\">" + model.name + "</span>" + "<button class=\"copy\" data-copy=\"" + model.name + "\" title=\"复制\">⧉</button></div>" + (model.remark ? "<div class=\"row flex items-go-x\">" + "<span class=\"label\">备注：</span>" + "<span class=\"value\">" + model.remark + "</span>" + "<button class=\"copy\" data-copy=\"" + model.remark + "\" title=\"复制\">⧉</button></div>" : "");
-                var modelTooltip = createTooltip(modelTooltipId, tooltipRows);
-
-                modelName.on("mouseenter", function() {
-                    modelTooltip.show(modelName);
-                });
-
-                modelName.on("mouseleave", function() {
-                    modelTooltip.hide();
-                });
-
-                modelName.on("click", function() {
-                    modelTooltip.hide();
-
-                    if (onModelSelect)
-                        onModelSelect(node.id, model.id);
-                });
-
-                var modelActions = mk("div", "model actions , flex items-go-x");
-                var statusKey = node.id + ":" + model.id;
-
-                var statusData = connectionStatus.get(statusKey) || {
-                    status: "disconnected"
-                };
-
-                var modelType = model.type || "chat";
-                var testBtn = null;
-
-                if (modelType === "chat" || modelType === "embedding") {
-                    testBtn = mk("button");
-                    testBtn.className = "action-sm connection " + statusData.status;
-                    testBtn.title = getConnectionStatusText(statusKey);
-                    testBtn.innerHTML = "<span>🔗</span>";
-
-                    if (statusData.status === "testing") {
-                        $("span", testBtn).classList.add("spin");
-                    }
-
-                    testBtn.on("click", function(e) {
-                        e.stopPropagation();
-
-                        if (onTestConnection)
-                            onTestConnection(node.id, model.id);
-                    });
-                }
-
-                var modelDeleteBtn = mk("button", "action-sm danger");
-                modelDeleteBtn.innerHTML = SVG.del(10);
-                modelDeleteBtn.title = "删除模型";
-
-                modelDeleteBtn.on("click", function(e) {
-                    e.stopPropagation();
-
-                    confirmAction("确定删除该模型？", function() {
-                        onModelDelete(node.id, model.id);
-                    });
-                });
-
-                if (testBtn) modelActions.addChild(testBtn);
-                modelActions.addChild(modelDeleteBtn);
-                modelEl.addChild(modelDragHandle);
-                modelEl.addChild(modelName);
-                modelEl.addChild(modelActions);
-
-                modelEl.on("dragover", function(e) {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    var draggingEl = $(".dragging", models);
-
-                    if (draggingEl && draggingEl !== modelEl) {
-                        modelEl.classList.add("drag-over");
-                    }
-                });
-
-                modelEl.on("dragleave", function() {
-                    modelEl.classList.remove("drag-over");
-                });
-
-                modelEl.on("drop", function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    modelEl.classList.remove("drag-over");
-                    var data = e.dataTransfer.getData("text/plain");
-                    var parts = data.split(":");
-                    var draggedNodeId = parts[0], draggedModelId = parts[1];
-
-                    if (draggedNodeId === node.id && draggedModelId !== model.id && onReorderModels) {
-                        var rect = modelEl.getBoundingClientRect();
-
-                        onReorderModels(
-                            node.id,
-                            draggedModelId,
-                            model.id,
-                            e.clientY < (rect.top + rect.height / 2)
-                        );
-                    }
-                });
-
-                models.addChild(modelEl);
-            });
-
-            
-
-            if (hasModels)
-                contentEl.addChild(models);
-
-            if (hasChildren) {
+            if (hasContent) {
                 var childrenWrapper = mk("div", "children");
                 renderTreeNode(node.children, childrenWrapper, depth + 1);
                 contentEl.addChild(childrenWrapper);

@@ -353,10 +353,13 @@ function handleCopy(content) {
 }
 
 async function handleModelDelete(nodeId, modelId) {
-	selectedModels = selectedModels.filter(id => id !== `${nodeId}:${modelId}`);
+	// 模型现为子节点，格式 childId:__node__
+	var ref = modelId === '__node__' ? nodeId + ':' + '__node__' : nodeId + ':' + modelId;
+	selectedModels = selectedModels.filter(id => id !== ref);
 	saveDefaultSelectedModels(selectedModels);
-	connectionStatus.delete(nodeId + ':' + modelId);
-	await deleteModel(nodeId, modelId);
+	connectionStatus.delete(ref);
+	// 删除子节点自身
+	await deleteNode(nodeId);
 	await refreshUI();
 }
 async function handleReorderNode(draggedId, targetId, insertBefore) {

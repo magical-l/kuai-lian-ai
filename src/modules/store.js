@@ -40,40 +40,40 @@ function resolveNodeConfig(nodeId) {
 }
 
 function findModelById(nodes, referenceId) {
-    const [nodeId, modelId] = referenceId.split(":");
-    const result = findNodeWithAncestors(nodes, nodeId);
+	const [nodeId, modelId] = referenceId.split(":");
+	const result = findNodeWithAncestors(nodes, nodeId);
 
-    if (!result)
-        return null;
+	if (!result)
+		return null;
 
-    const {
-        node,
-        ancestors
-    } = result;
+	const {
+		node,
+		ancestors
+	} = result;
 
-    if (modelId === "__node__") {
-        return {
-            node,
-            ancestors,
+	if (modelId === "__node__") {
+		return {
+			node,
+			ancestors,
 
-            model: {
-                id: "__node__",
-                name: node.modelId || "",
-                remark: "",
-                type: "chat"
-            }
-        };
-    }
+			model: {
+				id: "__node__",
+				name: node.modelId || "",
+				remark: "",
+				type: "chat"
+			}
+		};
+	}
 
-    const model = node.models?.find(m => m.id === modelId);
+	const model = node.children?.find(c => c.id === modelId);
 
-    if (model) return {
-        node,
-        ancestors,
-        model
-    };
+	if (model) return {
+		node,
+		ancestors,
+		model
+	};
 
-    return null;
+	return null;
 }
 
 // 从模型名自动推断类型
@@ -89,7 +89,6 @@ function detectModelType(name) {
 function collectAllModelRefs(nodes) {
 	const refs = [];
 	for (const n of nodes) {
-		if (n.models) n.models.forEach(m => refs.push(`${n.id}:${m.id}`));
 		if (n.modelId) refs.push(`${n.id}:__node__`);
 		if (n.children) refs.push(...collectAllModelRefs(n.children));
 	}
@@ -109,7 +108,6 @@ function migrateEndpoints(data) {
 			key: g.key || '',
 			modelId: '',
 			remark: '',
-			models: [],
 			children: (g.models || []).map(m => ({
 				id: m.id,
 				name: m.name,
@@ -119,13 +117,18 @@ function migrateEndpoints(data) {
 				key: '',
 				modelId: m.name,
 				remark: m.remark || '',
-				models: [],
 				children: []
 			}))
 		}));
 		delete data.groups;
 	}
 	return data;
+}
+
+// 清洗：移除旧的 models 字段
+function stripModels(node) {
+	delete node.models;
+	if (node.children) node.children.forEach(stripModels);
 }
 
 // ========== 数据操作 ==========
@@ -144,6 +147,7 @@ async function tryRestoreDirectory() {
 		return { success: false, needUserAction: true };
 	}
 	endpointsData = migrateEndpoints(await storage.loadEndpoints());
+	stripModels(endpointsData);
 	const sessions = await storage.loadSessions();
 	sessions.forEach(s => sessionsCache.set(s.id, s));
 	updateDirectoryDisplay();
@@ -174,6 +178,7 @@ async function selectDirectory() {
 
 async function loadEndpoints() {
 	endpointsData = migrateEndpoints(await storage.loadEndpoints());
+	stripModels(endpointsData);
 	return endpointsData;
 }
 
@@ -202,7 +207,6 @@ async function addNode(parentId, data) {
 		key: data.key || '',
 		modelId: data.modelId || '',
 		remark: data.remark || '',
-		models: [],
 		children: []
 	};
 	if (parentId) {
@@ -239,7 +243,10 @@ async function deleteNode(nodeId) {
 			// 收集要删除的所有模型引用 key
 			const keysToRemove = new Set();
 			const collectKeys = (node) => {
-				node.models?.forEach(m => keysToRemove.add(`${node.id}:${m.id}`));
+				node.children?.forEach(m => {
+					keysToRemove.add(`${node.id}:${m.id}`);   // 旧格式 parentId:childId
+					if (m.modelId) keysToRemove.add(`${m.id}:__node__`); // 新格式 childId:__node__
+				});
 				if (node.modelId) keysToRemove.add(`${node.id}:__node__`);
 				node.children?.forEach(collectKeys);
 			};
@@ -324,40 +331,13 @@ function getNode(nodeId) {
 	return findNodeInTree(endpointsData.nodes, nodeId);
 }
 
-async function addModel(nodeId, modelName, remark) {
-	if (!endpointsData) endpointsData = { nodes: [] };
-	const node = findNodeInTree(endpointsData.nodes, nodeId);
-	if (node) {
-		const model = { id: generateUUID(), name: modelName };
-		model.type = detectModelType(modelName);
-		if (remark) model.remark = remark;
-		node.models.push(model);
-		await saveEndpoints();
-		return model;
-	}
-	return null;
-}
-
-async function updateModel(nodeId, modelId, data) {
-	if (!endpointsData) endpointsData = { nodes: [] };
-	const node = findNodeInTree(endpointsData.nodes, nodeId);
-	const model = node?.models?.find(m => m.id === modelId);
-	if (model) {
-		if (data.name !== undefined) { model.name = data.name; model.type = detectModelType(data.name); }
-		if (data.remark !== undefined) model.remark = data.remark || '';
-		await saveEndpoints();
-		return model;
-	}
-	return null;
-}
-
 async function deleteModel(nodeId, modelId) {
 	if (!endpointsData) endpointsData = { nodes: [] };
 	const node = findNodeInTree(endpointsData.nodes, nodeId);
 	if (node) {
-		const index = node.models?.findIndex(m => m.id === modelId) ?? -1;
+		const index = node.children?.findIndex(c => c.id === modelId) ?? -1;
 		if (index >= 0) {
-			node.models.splice(index, 1);
+			node.children.splice(index, 1);
 			await saveEndpoints();
 			return true;
 		}
@@ -368,18 +348,18 @@ async function deleteModel(nodeId, modelId) {
 async function reorderModels(nodeId, draggedModelId, targetModelId, insertBefore) {
 	if (!endpointsData) endpointsData = { nodes: [] };
 	const node = findNodeInTree(endpointsData.nodes, nodeId);
-	if (!node || !node.models) return false;
-	const draggedIndex = node.models.findIndex(m => m.id === draggedModelId);
-	const targetIndex = node.models.findIndex(m => m.id === targetModelId);
+	if (!node || !node.children) return false;
+	const draggedIndex = node.children.findIndex(c => c.id === draggedModelId);
+	const targetIndex = node.children.findIndex(c => c.id === targetModelId);
 	if (draggedIndex >= 0 && targetIndex >= 0) {
-		const [draggedModel] = node.models.splice(draggedIndex, 1);
+		const [draggedModel] = node.children.splice(draggedIndex, 1);
 		let insertIndex = targetIndex;
 		if (draggedIndex < targetIndex) {
 			insertIndex = insertBefore ? targetIndex - 1 : targetIndex;
 		} else if (draggedIndex > targetIndex) {
 			insertIndex = insertBefore ? targetIndex : targetIndex + 1;
 		}
-		node.models.splice(insertIndex, 0, draggedModel);
+		node.children.splice(insertIndex, 0, draggedModel);
 		await saveEndpoints();
 		return true;
 	}
@@ -389,7 +369,7 @@ async function reorderModels(nodeId, draggedModelId, targetModelId, insertBefore
 function getModel(nodeId, modelId) {
 	if (!endpointsData) endpointsData = { nodes: [] };
 	const node = findNodeInTree(endpointsData.nodes, nodeId);
-	return node?.models?.find(m => m.id === modelId);
+	return node?.children?.find(c => c.id === modelId);
 }
 
 // ========== 会话管理（不变） ==========
