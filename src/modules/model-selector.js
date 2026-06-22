@@ -833,7 +833,7 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 function renderMultiModelResponse(container, msg, groups, onCopy) {
     const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
     sorted.forEach(r => {
-        const card = mk("article", "one response msg");
+        const card = mk("article", "one response msg , flex items-go-y");
         const info = findModelById(groups, r.modelId);
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         const remark = info?.node?.remark || "";
@@ -876,14 +876,14 @@ function renderMultiModelResponse(container, msg, groups, onCopy) {
         card.addChild(meta);
 
         if (r.content) {
-            const contentEl = mk("div", "response content");
+            const contentEl = mk("div", "content");
             contentEl.innerHTML = renderMarkdown(r.content);
             card.addChild(contentEl);
         }
 
         if (r.embeddingResult) {
             const emb = r.embeddingResult;
-            const embMeta = mk("div", "response content embedding-result");
+            const embMeta = mk("div", "content embedding-result");
             embMeta.innerHTML = `<div class="mb-1"><strong>嵌入维度:</strong> ${emb.dim}</div><div class="mb-1"><strong>预览:</strong> <code>${emb.preview}</code></div>`;
             const copyBtn = mk("button", "icon code-copy-btn");
             copyBtn.innerHTML = "<span class=\"copy-icon\">⧉</span><span class=\"copy-check\">✓</span>";
