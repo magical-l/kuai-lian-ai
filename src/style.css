@@ -582,26 +582,30 @@ aside {
 		max-width: 90%;
 	}
 	/* 助手消息：靠左，右侧空隙 */
-	&.user {
-		background: var(--user-msg-bg);
-		padding: var(--space-3) var(--space-4);
-		border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
-		color: var(--user-msg-text);
-		font-weight: 500;
-		word-wrap: break-word;
-		overflow-wrap: break-word;
-	}
 	&.response {
 		align-self: flex-start;
 		max-width: 90%;
-		background: var(--bg-base);
+	}
+	/* Inner content bubble */
+	.content {
 		padding: var(--space-3) var(--space-4);
-		border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
-		color: var(--text-primary);
-		border: 1px solid var(--border-subtle);
-		box-shadow: var(--shadow-sm);
 		word-wrap: break-word;
 		overflow-wrap: break-word;
+	}
+	/* User bubble */
+	&.request .content {
+		background: var(--user-msg-bg);
+		border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+		color: var(--user-msg-text);
+		font-weight: 500;
+	}
+	/* Assistant bubble */
+	&.response > .content {
+		background: var(--bg-base);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
+		color: var(--text-primary);
+		box-shadow: var(--shadow-sm);
 		pre {
 			background: #f6f8fa;
 			border-radius: 6px;
@@ -919,7 +923,7 @@ aside .one.endpoint {
 	cursor: grab;
 	color: var(--text-muted);
 	padding: 2px;
-	margin-right: 4px;
+	/* margin-right: 4px; */
 	align-items: center;
 	opacity: 0.4;
 	transition: opacity var(--transition-fast);
@@ -1411,15 +1415,7 @@ dialog::backdrop {
 }
 /* ========== Multi-Model Response Cards ========== */
 .response {
-	.list .hint {
-		font-size: 11px;
-		color: var(--text-muted);
-		margin-bottom: var(--space-2);
-	}
-	.list {
-		gap: var(--space-3);
-	}
-	.card {
+	&.one {
 		background: var(--bg-base);
 		border: 1px solid var(--border-subtle);
 		border-radius: var(--radius-md);
@@ -1452,6 +1448,9 @@ dialog::backdrop {
 		}
 		.time {
 			color: var(--text-muted);
+		}
+		& + & {
+			margin-top: var(--space-3);
 		}
 	}
 	.info {
@@ -1592,6 +1591,14 @@ dialog::backdrop {
 			border-top: none;
 		}
 	}
+}
+.streaming-hint {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: var(--space-2) 0;
 }
 /* ========== 附件缩略图 ========== */
 .thumb {

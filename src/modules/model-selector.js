@@ -713,9 +713,8 @@ function renderMessages(messages, groups, onCopy) {
 	const container = $('#chat-messages');
 	container.innerHTML = '';
 	messages.forEach((msg, index) => {
-		const roleClass = msg.role === 'user' ? 'request' : 'response';
-		const msgEl = mk('article', `msg ${roleClass} , flex items-go-y`);
 		if (msg.role === 'user') {
+			const msgEl = mk('article', 'msg request one , flex items-go-y');
 			// 使用模板创建meta，包含复制按钮
 			const meta = fromTemplate('user-header', '.request.info');
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
@@ -733,7 +732,7 @@ function renderMessages(messages, groups, onCopy) {
 				});
 			};
 			if (textContent) {
-				const userEl = mk('div', 'msg user');
+				const userEl = mk('div', 'content');
 				userEl.textContent = textContent;
 				msgEl.addChild(userEl);
 			}
@@ -787,14 +786,16 @@ function renderMessages(messages, groups, onCopy) {
 				});
 				msgEl.addChild(attContainer);
 			}
+			container.addChild(msgEl);
 		} else {
 			if (msg.responses && Array.isArray(msg.responses)) {
-				renderMultiModelResponse(msgEl, msg, groups, onCopy);
+				renderMultiModelResponse(container, msg, groups, onCopy);
 			} else {
+				const msgEl = mk('article', 'msg response , flex items-go-y');
 				renderSingleModelResponse(msgEl, msg, groups, onCopy);
+				container.addChild(msgEl);
 			}
 		}
-		container.addChild(msgEl);
 	});
 	container.scrollTop = container.scrollHeight;
 }
@@ -816,7 +817,7 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 		});
 	};
 	msgEl.addChild(meta);
-	const assistantEl = mk('div', 'msg assistant');
+	const assistantEl = mk('div', 'content');
 	assistantEl.innerHTML = renderMarkdown(msg.content || '');
 	msgEl.addChild(assistantEl);
 	addCodeCopyButtons(assistantEl);
@@ -829,15 +830,10 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	}
 }
 
-function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
+function renderMultiModelResponse(container, msg, groups, onCopy) {
     const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
-    const hint = mk("div", "hint");
-    hint.textContent = `${sorted.length}个模型回复`;
-    const cards = mk("div", "response list , flex items-go-y");
-    cards.addChild(hint);
-
     sorted.forEach(r => {
-        const card = mk("div", "response card");
+        const card = mk("div", "one response msg");
         const info = findModelById(groups, r.modelId);
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         const remark = info?.node?.remark || "";
@@ -904,10 +900,8 @@ function renderMultiModelResponse(msgEl, msg, groups, onCopy) {
             card.addChild(embMeta);
         }
 
-        cards.addChild(card);
+        container.addChild(card);
     });
-
-    msgEl.addChild(cards);
 }
 
 function getStatusText(status) {

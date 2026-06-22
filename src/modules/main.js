@@ -518,50 +518,40 @@ async function handleEmbeddingSend() {
 
 function showThinkingCards(modelIds, groups, sessionId) {
     const container = $("#chat-messages");
-    const existingCards = $(`.streaming-multi-response[data-session-id="${sessionId}"]`);
+    // 移除该 session 已有的 streaming 元素（防重复触发）
+    $$(`[data-session-id="${sessionId}"]`).forEach(el => el.remove());
 
-    if (existingCards) {
-        existingCards.remove();
-    }
-
-    const msgEl = mk("article", "msg response , flex items-go-y");
-    msgEl.classList.add("streaming-multi-response");
-    msgEl.dataset.sessionId = sessionId;
-    const cards = mk("div", "response list , flex items-go-y");
-    const hint = mk('div', 'hint');
-    hint.appendChild(mk('span', 'hint-text'));
+    // 独立的提示栏（"N个模型正在思考..." + 全部停止按钮），不作为包装框
+    const hint = mk('div', 'hint streaming-hint');
+    hint.dataset.sessionId = sessionId;
+    const hintText = mk('span', 'hint-text');
+    hintText.textContent = `${modelIds.length}个模型正在思考...`;
+    hint.appendChild(hintText);
     const stopBtn = mk('button', 'stop btn-stop-inline');
     stopBtn.textContent = '全部停止';
     hint.appendChild(stopBtn);
-    $(".hint-text", hint).textContent = `${modelIds.length}个模型正在思考...`;
-    cards.addChild(hint);
-
-    if (stopBtn) {
-        stopBtn.onclick = () => {
-            stopAllGenerations();
-            stopBtn.disabled = true;
-            stopBtn.textContent = "已停止";
-            $(".hint-text", hint).textContent = `${modelIds.length}个模型（部分已停止）`;
-        };
-    }
+    stopBtn.onclick = () => {
+        stopAllGenerations();
+        stopBtn.disabled = true;
+        stopBtn.textContent = "已停止";
+        hintText.textContent = `${modelIds.length}个模型（部分已停止）`;
+    };
+    container.addChild(hint);
 
     modelIds.forEach(id => {
-        const card = fromTemplate("response-card-streaming", ".response.card");
+        const card = fromTemplate("response-card-streaming", ".one.response.msg");
         card.dataset.sessionId = sessionId;
         card.dataset.modelId = id;
         const info = findModelById(groups, id);
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         $(".response .name", card).textContent = name;
-        cards.addChild(card);
+        container.addChild(card);
     });
-
-    msgEl.addChild(cards);
-    container.addChild(msgEl);
     scrollToBottom();
 }
 
 function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) {
-	const card = $(`.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
+	const card = $(`.one.response.msg[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
 	if (!card) return;
 	const thinkingBlock = $('.think', card);
 	if (thinkingBlock) {
@@ -609,7 +599,7 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 
 function updateCardStatus(modelId, status, error, state = null, sessionId = null) {
 	requestAnimationFrame(() => {
-		const selector = sessionId ? `.response.card[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.response.card[data-model-id="${modelId}"]`;
+		const selector = sessionId ? `.one.response.msg[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.one.response.msg[data-model-id="${modelId}"]`;
 		const card = $(selector);
 		if (!card) return;
 		const contentEl = $('.response .content', card);
@@ -663,18 +653,18 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 }
 
 function reorderCardsBySpeed() {
-	requestAnimationFrame(() => {
-		const container = $('.streaming-multi-response .response.list');
-		if (!container) return;
-		const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-		const cards = Array.from($$('.response.card', container));
-		cards.sort((a, b) => {
-			const stateA = gens ? gens.get(a.dataset.modelId) : null;
-			const stateB = gens ? gens.get(b.dataset.modelId) : null;
-			return (stateA?.firstTokenTime ?? Infinity) - (stateB?.firstTokenTime ?? Infinity);
-		});
-		cards.forEach(c => container.appendChild(c));
-	});
+    requestAnimationFrame(() => {
+        const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+        if (!gens) return;
+        const container = $('#chat-messages');
+        const cards = Array.from($$('.one.response.msg[data-session-id]', container));
+        cards.sort((a, b) => {
+            const stateA = gens.get(a.dataset.modelId);
+            const stateB = gens.get(b.dataset.modelId);
+            return (stateA?.firstTokenTime ?? Infinity) - (stateB?.firstTokenTime ?? Infinity);
+        });
+        cards.forEach(c => container.appendChild(c));
+    });
 }
 
 function reorderSelectorTagsBySpeed() {
