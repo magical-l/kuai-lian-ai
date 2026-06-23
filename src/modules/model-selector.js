@@ -119,7 +119,7 @@ function collapseAllEndpointNodes() {
 	// 直接操作DOM收起
 	$$('.one.endpoint').forEach(function(el) {
 		var toggle = $('.toggle', el);
-		var content = $('.body', el);
+		var content = $('.children', el);
 		if (content) content.style.display = 'none';
 		if (toggle) toggle.textContent = '▶';
 	});
@@ -239,7 +239,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
 
             toggleSpan.on("click", function(e) {
                 e.stopPropagation();
-                var ct = $(".body", nodeEl);
+                var ct = nodeEl.querySelector(".children");
 
                 if (!ct)
                     return;
@@ -541,19 +541,17 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
                 }
             });
 
-            var contentEl = mk("div", "body , flex items-go-y");
-
-            if (isCollapsed) {
-                contentEl.style.display = "none";
-            }
-
             if (hasContent) {
-                var childrenWrapper = mk("div", "children");
-                renderTreeNode(node.children, childrenWrapper, depth + 1);
-                contentEl.addChild(childrenWrapper);
-            }
+                var contentEl = mk("div", "children");
+                contentEl.style.gap = "var(--space-1)";
 
-            nodeEl.addChild(contentEl);
+                if (isCollapsed) {
+                    contentEl.style.display = "none";
+                }
+
+                renderTreeNode(node.children, contentEl, depth + 1);
+                nodeEl.addChild(contentEl);
+            }
             parentEl.addChild(nodeEl);
         });
     }

@@ -821,9 +821,6 @@ aside .one.endpoint {
 		border-radius: var(--radius-sm);
 		box-shadow: inset 3px 0 0 0 var(--accent-primary);
 	}
-	.body {
-		gap: var(--space-1);
-	}
 	.children {
 		gap: var(--space-1);
 		margin-top: var(--space-1);
