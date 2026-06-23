@@ -240,7 +240,6 @@ button, .btn {
 }
 aside {
 	background: var(--bg-base);
-	border-right: 1px solid var(--border-subtle);
 	min-width: 180px;
 	max-width: 45%;
 	width: 260px;
@@ -257,10 +256,6 @@ aside {
 		align-items: center;
 	}
 
-	&.sessions {
-		border-right: none;
-		border-left: 1px solid var(--border-subtle);
-	}
 }
 .list {
 	flex: 1;
@@ -1391,9 +1386,6 @@ dialog::backdrop {
 	}
 }
 @media (max-width: 768px) {
-	aside.sessions {
-		display: none;
-	}
 	#chat-messages {
 		padding: var(--space-4);
 	}
