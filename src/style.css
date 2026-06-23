@@ -961,9 +961,6 @@ dialog.editing.endpoint .hint {
 		font-size: 0.85em;
 		white-space: nowrap;
 	}
-	&.actions {
-		gap: var(--space-1);
-	}
 	/* 模型标签样式 */
 	&.tag {
 		display: inline-flex;
@@ -975,36 +972,6 @@ dialog.editing.endpoint .hint {
 		cursor: pointer;
 		transition: all var(--transition-fast);
 		border: 1px solid transparent;
-		&.selected.speed-slow {
-			background: #fed7aa;
-			border-color: #ea580c;
-		}
-
-		&.selected.speed-medium {
-			background: var(--warning-light);
-			border-color: var(--warning);
-		}
-
-		&.selected.speed-fast {
-			background: var(--success-light);
-			border-color: var(--success);
-		}
-
-		&.selected.stopped {
-			background: var(--bg-muted);
-			color: var(--text-muted);
-			border-color: var(--border-subtle);
-		}
-
-		&.selected.failed {
-			background: var(--danger-light);
-			color: var(--danger);
-			border-color: var(--danger);
-		}
-
-		&.selected:hover {
-			background: var(--accent-muted);
-		}
 
 		&.selected {
 			background: var(--accent-light);
@@ -1012,8 +979,40 @@ dialog.editing.endpoint .hint {
 			border: 1px solid var(--accent-primary);
 			padding: var(--space-1) var(--space-3);
 			box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
+			
+			&:hover {
+				background: var(--accent-muted);
+			}
+
+			&.speed-slow {
+				background: #fed7aa;
+				border-color: #ea580c;
+			}
+
+			&.speed-medium {
+				background: var(--warning-light);
+				border-color: var(--warning);
+			}
+
+			&.speed-fast {
+				background: var(--success-light);
+				border-color: var(--success);
+			}
+
+			&.stopped {
+				background: var(--bg-muted);
+				color: var(--text-muted);
+				border-color: var(--border-subtle);
+			}
+
+			&.failed {
+				background: var(--danger-light);
+				color: var(--danger);
+				border-color: var(--danger);
+			}
 		}
-		.remove {
+
+		.remove.btn {
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
@@ -1028,8 +1027,8 @@ dialog.editing.endpoint .hint {
 			flex-shrink: 0;
 
 			&:hover {
-			background: var(--danger-light);
-			color: var(--danger);
+				background: var(--danger-light);
+				color: var(--danger);
 			}
 		}
 	}
