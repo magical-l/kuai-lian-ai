@@ -374,7 +374,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
 
             if (testableIds.length > 0) {
                 batchTestBtn = mk("button");
-                batchTestBtn.className = "action batch-test square" + (batchStatus ? " " + batchStatus : "");
+                batchTestBtn.className = "action test-connection square" + (batchStatus ? " " + batchStatus : "");
                 batchTestBtn.innerHTML = "<span>🔗</span>";
 
                 if (hasTesting) {
@@ -592,7 +592,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             }
         });
 
-        testAllBtn.classList.add("action", "batch-test");
+        testAllBtn.classList.add("action", "test-connection");
         var spanEl = $("span", testAllBtn);
 
         if (hasTesting) {

@@ -366,7 +366,7 @@ button, .btn {
 		}
 	}
 
-	&.toggle-key {
+	&.toggle-apikey-visibility {
 		background: var(--bg-base);
 		border: 1px solid var(--border-default);
 		border-radius: var(--radius-md);
@@ -376,40 +376,6 @@ button, .btn {
 			background: var(--bg-muted);
 			color: var(--text-secondary);
 			border-color: var(--border-subtle);
-		}
-	}
-
-	&.connection {
-		background: transparent;
-		color: var(--text-muted);
-
-		&:hover {
-			transform: none;
-		}
-
-		&.testing {
-			background: var(--accent-light);
-			color: var(--accent-primary);
-
-			& .spin {
-				animation: spin 2s linear infinite !important;
-				display: inline-block;
-			}
-		}
-
-		&.connected {
-			background: var(--success-light);
-			color: var(--success);
-		}
-
-		&.cors_blocked {
-			background: rgba(217, 119, 6, 0.15);
-			color: var(--warning);
-		}
-
-		&.failed {
-			background: var(--danger-light);
-			color: var(--danger);
 		}
 	}
 
@@ -432,7 +398,7 @@ button, .btn {
 		}
 	}
 
-	&.batch-test {
+	&.test-connection {
 		color: var(--text-muted);
 
 		&:hover:not(:disabled) {

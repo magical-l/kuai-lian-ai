@@ -221,7 +221,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 
 	doc.body.addChild(dialog);
 	dialog.showModal();
-	var toggleBtn = $('button.toggle-key', dialog);
+	var toggleBtn = $('button.toggle-apikey-visibility', dialog);
 	if (toggleBtn) {
 		toggleBtn.onclick = function(e) {
 			e.preventDefault();
