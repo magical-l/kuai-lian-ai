@@ -875,6 +875,15 @@ function renderMultiModelResponse(container, msg, groups, onCopy) {
 
         card.addChild(meta);
 
+        const copyBtn = $('.copy', meta);
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(r.content || "").then(() => {
+                copyBtn.classList.add("copied");
+                clearTimeout(copyBtn._copiedTimer);
+                copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
+            });
+        };
+
         if (r.content) {
             const contentEl = mk("div", "content");
             contentEl.innerHTML = renderMarkdown(r.content);
