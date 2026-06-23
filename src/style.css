@@ -35,6 +35,10 @@ textarea {
 .icon {
 	user-select: none;
 	-webkit-user-select: none;
+
+	&.⧉ {/* 字符偏左上，用translate调整到中间 */
+		transform: translate(0.05em, 0.2em);
+	}
 }
 .square {
 	--side: 24px;
@@ -376,20 +380,20 @@ button, .btn {
 		}
 	}
 
-	&.icon.copied {
+	&.icon-only.copied {
 		color: var(--accent-success);
 		background: transparent;
 	}
 
-	&.icon svg {
+	&.icon-only svg {
 		display: block;
 	}
 
-	&.icon:hover:not(:disabled) {
+	&.icon-only:hover:not(:disabled) {
 		border-color: var(--border-subtle);
 	}
 
-	&.icon {
+	&.icon-only {
 		border: 1px solid transparent;
 		padding: var(--space-1);
 	}
@@ -690,7 +694,7 @@ aside {
 
 		> header {
 			justify-content: flex-end;
-			& .copy-btn {
+			& .copy.btn {
 				margin-left: var(--space-2);
 			}
 		}
@@ -708,7 +712,7 @@ aside {
 		align-self: flex-start;
 
 		> header {
-			& .copy-btn {
+			& .copy.btn {
 				margin-left: auto;
 			}
 			.name {
@@ -794,14 +798,11 @@ aside {
 	.copy-check {
 		display: none;
 	}
-
 	&.copied .copy-icon {
 		display: none;
 	}
 }
-/* 复制按钮反馈 */
-/* .copy-btn icon states (shared with .code-copy-btn) */
-.copy-btn {
+.copy.btn {
 	.copy-check {
 		display: none;
 	}

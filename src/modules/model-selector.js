@@ -283,7 +283,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? "(已设置)" : "");
             var tipStyle = inherited(rcfg.style, node.style) ? "↑ " + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || "");
             var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || "");
-            var tooltipHTML = "<div class=\"row flex items-go-x\">" + "<span class=\"label\">名称：</span>" + "<span class=\"value\">" + tipName + "</span>" + "<button class=\"copy\" data-copy=\"" + tipName + "\" title=\"复制\">⧉</button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">地址：</span>" + "<span class=\"value\">" + tipBaseUrl + "</span>" + "<button class=\"copy\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\">⧉</button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">格式：</span>" + "<span class=\"value\">" + tipStyle + "</span>" + "<button class=\"copy\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\">⧉</button></div>" + (rcfg.key ? "<div class=\"row flex items-go-x\"><span class=\"label\">Key：</span><span class=\"value\">" + tipKey + "</span><button class=\"copy\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\">⧉</button></div>" : "") + "<div class=\"row flex items-go-x\"><span class=\"label\">模型：</span><span class=\"value\">" + (tipModel || "-") + "</span><button class=\"copy\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\">⧉</button></div>";
+            var tooltipHTML = "<div class=\"row flex items-go-x\">" + "<span class=\"label\">名称：</span>" + "<span class=\"value\">" + tipName + "</span>" + "<button class=\"copy\" data-copy=\"" + tipName + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">地址：</span>" + "<span class=\"value\">" + tipBaseUrl + "</span>" + "<button class=\"copy\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">格式：</span>" + "<span class=\"value\">" + tipStyle + "</span>" + "<button class=\"copy\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" + (rcfg.key ? "<div class=\"row flex items-go-x\"><span class=\"label\">Key：</span><span class=\"value\">" + tipKey + "</span><button class=\"copy\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" : "") + "<div class=\"row flex items-go-x\"><span class=\"label\">模型：</span><span class=\"value\">" + (tipModel || "-") + "</span><button class=\"copy\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>";
             var tooltip = createTooltip(tooltipId, tooltipHTML);
 
             nameSpan.on("mouseenter", function() {
@@ -695,7 +695,7 @@ function addCodeCopyButtons(container) {
 		const preEl = codeEl.parentElement;
 		const copyBtn = document.createElement('button');
 		copyBtn.className = 'code-copy-btn';
-		copyBtn.innerHTML = "<span class=\"copy-icon\">⧉</span><span class=\"copy-check\">✓</span>";
+		copyBtn.innerHTML = "<span class=\"icon copy-icon ⧉\">⧉</span><span class=\"copy-check\">✓</span>";
 		copyBtn.title = '复制代码';
 		copyBtn.onclick = () => {
 			navigator.clipboard.writeText(codeEl.textContent).then(() => {
@@ -723,7 +723,7 @@ function renderMessages(messages, groups, onCopy) {
 			const normalized = normalizeMessageContent(msg);
 			const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
 			const textContent = textItems.map(c => c.text || '').join('\n');
-			const copyBtn = $('.copy-btn', meta);
+			const copyBtn = $('.copy.btn', meta);
 			copyBtn.onclick = () => {
 				navigator.clipboard.writeText(textContent).then(() => {
 					copyBtn.classList.add("copied");
@@ -808,7 +808,7 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const meta = fromTemplate('response-header', 'header');
 	$('.name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
 	$('.time', meta).textContent = timeStr;
-	const copyBtn = $('.copy-btn', meta);
+	const copyBtn = $('.copy.btn', meta);
 	copyBtn.onclick = () => {
 		navigator.clipboard.writeText(msg.content || "").then(() => {
 			copyBtn.classList.add("copied");
@@ -885,8 +885,8 @@ function renderMultiModelResponse(container, msg, groups, onCopy) {
             const emb = r.embeddingResult;
             const embMeta = mk("div", "content embedding-result");
             embMeta.innerHTML = `<div class="mb-1"><strong>嵌入维度:</strong> ${emb.dim}</div><div class="mb-1"><strong>预览:</strong> <code>${emb.preview}</code></div>`;
-            const copyBtn = mk("button", "icon code-copy-btn square");
-            copyBtn.innerHTML = "<span class=\"copy-icon\">⧉</span><span class=\"copy-check\">✓</span>";
+            const copyBtn = mk("button", "icon-only code-copy-btn square");
+            copyBtn.innerHTML = "<span class=\"icon copy-icon ⧉\">⧉</span><span class=\"copy-check\">✓</span>";
             copyBtn.title = "复制完整向量";
 
             copyBtn.onclick = () => {
