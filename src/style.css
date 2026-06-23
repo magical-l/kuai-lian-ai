@@ -32,6 +32,10 @@ textarea {
 		border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 	}
 }
+.icon {
+	user-select: none;
+	-webkit-user-select: none;
+}
 /* ========== 选择：没那么理所当然的样式 ========== */
 :root {
 	/* 背景层级 */
@@ -100,55 +104,55 @@ main {
 	overflow: hidden;
 	margin-inline: 4px;
 	background: var(--bg-subtle);
-}
-main > header {
-	align-items: center;
-	justify-content: space-between;
-	padding: var(--space-2) var(--space-4);
-	background: var(--bg-muted);
-	border-bottom: 1px solid var(--border-subtle);
-	height: 36px;
 
-	& nav {
+	> header {
 		align-items: center;
-		gap: var(--space-2);
-	}
-	.workspace {
-		align-items: center;
-		gap: var(--space-2);
-		flex: 1;
-		justify-content: center;
-	}
-	.version {
-		font-size: 12px;
-		color: var(--text-muted);
-		margin-left: var(--space-1);
-	}
-	.brand {
-		font-weight: 600;
-		font-size: 14px;
-		color: var(--text-primary);
-	}
-	.logo {
-		width: 24px;
-		height: 24px;
-		align-items: center;
-		justify-content: center;
-	}
-	.branding {
-		align-items: center;
-		gap: var(--space-3);
+		justify-content: space-between;
+		padding: var(--space-2) var(--space-4);
+		background: var(--bg-muted);
+		border-bottom: 1px solid var(--border-subtle);
+		height: 36px;
+
+		& nav {
+			align-items: center;
+			gap: var(--space-2);
+		}
+		.workspace {
+			align-items: center;
+			gap: var(--space-2);
+			flex: 1;
+			justify-content: center;
+		}
+		.version {
+			font-size: 12px;
+			color: var(--text-muted);
+			margin-left: var(--space-1);
+		}
+		.brand {
+			font-weight: 600;
+			font-size: 14px;
+			color: var(--text-primary);
+		}
+		.logo {
+			width: 24px;
+			height: 24px;
+			align-items: center;
+			justify-content: center;
+		}
+		.branding {
+			align-items: center;
+			gap: var(--space-3);
+		}
+
+		& button, & .btn {
+			& .icon {
+				width: 14px;
+				height: 14px;
+			}
+		}
 	}
 }
 /* ========== Buttons ========== */
-.icon {
-	user-select: none;
-	-webkit-user-select: none;
-}
-main > header .btn .icon {
-	width: 14px;
-	height: 14px;
-}
 button, .btn {
 	display: inline-flex;
 	align-items: center;
@@ -433,13 +437,12 @@ aside {
 	flex: 1;
 	overflow-y: auto;
 
-	&::-webkit-scrollbar-thumb:hover {
-		background: var(--border-strong);
-	}
-
 	&::-webkit-scrollbar-thumb {
 		background: var(--border-default);
 		border-radius: 3px;
+		&:hover {
+			background: var(--border-strong);
+		}
 	}
 
 	&::-webkit-scrollbar-track {
@@ -501,13 +504,12 @@ aside {
 	background: var(--bg-subtle);
 	min-height: 100px;
 
-	&::-webkit-scrollbar-thumb:hover {
-		background: var(--border-strong);
-	}
-
 	&::-webkit-scrollbar-thumb {
 		background: var(--border-default);
 		border-radius: 3px;
+		&:hover {
+			background: var(--border-strong);
+		}
 	}
 
 	&::-webkit-scrollbar-track {
@@ -586,7 +588,6 @@ aside {
 			gap: var(--space-2);
 			font-size: 11px;
 			color: var(--text-muted);
-			padding-bottom: var(--space-2);
 		}
 
 		> .content {
@@ -925,9 +926,8 @@ aside .one.endpoint {
 		/* header 内的操作按钮 */
 		& button, & .btn {
 			border: 1px solid transparent;
-			padding: var(--space-1);
 			height: 22px;
-			min-width: 22px;
+			width: 22px;
 			&:hover:not(:disabled) {
 				border-color: var(--border-subtle);
 			}
