@@ -212,7 +212,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x");
             headerEl.style.paddingLeft = (depth * 12 + 4) + "px";
-            var dragHandle = mk("span", "btn handle drag , flex items-go-x");
+            var dragHandle = mk("span", "btn square handle drag , flex items-go-x");
             dragHandle.innerHTML = SVG.drag(14);
             dragHandle.title = "拖动排序";
             dragHandle.draggable = true;
@@ -299,7 +299,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             });
 
             var actionsEl = mk("div", "actions , flex items-go-x");
-            var addChildBtn = mk("button", "action");
+            var addChildBtn = mk("button", "action square");
             addChildBtn.textContent = "+";
             addChildBtn.title = "添加子节点";
 
@@ -374,7 +374,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
 
             if (testableIds.length > 0) {
                 batchTestBtn = mk("button");
-                batchTestBtn.className = "action batch-test" + (batchStatus ? " " + batchStatus : "");
+                batchTestBtn.className = "action batch-test square" + (batchStatus ? " " + batchStatus : "");
                 batchTestBtn.innerHTML = "<span>🔗</span>";
 
                 if (hasTesting) {
@@ -434,7 +434,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             var joinBtn = null;
 
             if (isSelfTestable) {
-                joinBtn = mk("button", "action join-session");
+                joinBtn = mk("button", "action join-session square");
                 joinBtn.innerHTML = SVG.bubble(12);
                 applyJoinBtnUI(joinBtn, node.id);
 
@@ -456,7 +456,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
                 });
             }
 
-            var editBtn = mk("button", "action");
+            var editBtn = mk("button", "action square");
             editBtn.innerHTML = SVG.edit(12);
             editBtn.title = "编辑节点";
 
@@ -465,7 +465,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
                 onNodeEdit(node.id);
             });
 
-            var deleteBtn = mk("button", "action danger");
+            var deleteBtn = mk("button", "action square danger");
             deleteBtn.innerHTML = SVG.del(12);
             deleteBtn.title = "删除节点及其子节点";
 
@@ -631,7 +631,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 			day: 'numeric'
 		});
 		const actionsEl = mk('div', 'session actions , flex items-go-x');
-		const editBtn = mk('button', 'action-sm');
+		const editBtn = mk('button', 'action-sm square');
 		editBtn.innerHTML = SVG.edit(10);
 		editBtn.title = '编辑标题';
 		editBtn.on('click', e => {
@@ -663,7 +663,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 				}
 			});
 		});
-		const deleteBtn = mk('button', 'action-sm danger');
+		const deleteBtn = mk('button', 'action-sm square danger');
 		deleteBtn.innerHTML = SVG.del(10);
 		deleteBtn.title = '删除会话';
 		deleteBtn.on('click', e => {
@@ -885,7 +885,7 @@ function renderMultiModelResponse(container, msg, groups, onCopy) {
             const emb = r.embeddingResult;
             const embMeta = mk("div", "content embedding-result");
             embMeta.innerHTML = `<div class="mb-1"><strong>嵌入维度:</strong> ${emb.dim}</div><div class="mb-1"><strong>预览:</strong> <code>${emb.preview}</code></div>`;
-            const copyBtn = mk("button", "icon code-copy-btn");
+            const copyBtn = mk("button", "icon code-copy-btn square");
             copyBtn.innerHTML = "<span class=\"copy-icon\">⧉</span><span class=\"copy-check\">✓</span>";
             copyBtn.title = "复制完整向量";
 

@@ -1,4 +1,4 @@
-/* ========== 理所当然 ========== */
+/* ================== 理所当然 ================== */
 * {
 	box-sizing: border-box;
 	margin: 0;
@@ -36,7 +36,14 @@ textarea {
 	user-select: none;
 	-webkit-user-select: none;
 }
-/* ========== 选择：没那么理所当然的样式 ========== */
+.square {
+	--side: 24px;
+	width: var(--side);
+	height: var(--side);
+	aspect-ratio: 1;
+}
+/* ================== 选择：没那么理所当然的样式，只是本项目的选择 ================== */
+/* ============ 基础元素（有些是标签有些是等价于标签的类）默认属性 ============ */
 :root {
 	/* 背景层级 */
 	--bg-base: #FFFFFF;
@@ -152,8 +159,9 @@ main {
 		}
 	}
 }
-/* ========== Buttons ========== */
 button, .btn {
+	--btn-h: 24px;
+	--btn-p: var(--space-1);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -165,11 +173,14 @@ button, .btn {
 	color: var(--text-muted);
 	background: transparent;
 	border: 1px solid var(--border-subtle);
-	padding: var(--space-1);
-	height: 24px;
-	min-width: 24px;
+	padding: var(--btn-p);
+	height: var(--btn-h);
 	text-decoration: none;
 	box-sizing: border-box;
+
+	&.square {
+		--side: var(--btn-h);
+	}
 
 	&.use-browser-storage {
 		background: #2563EB;
@@ -384,8 +395,6 @@ button, .btn {
 	&.icon {
 		border: 1px solid transparent;
 		padding: var(--space-1);
-		height: 24px;
-		min-width: 24px;
 	}
 
 	&:hover:not(:disabled):not(.danger) {
@@ -394,6 +403,7 @@ button, .btn {
 		color: var(--accent-primary);
 	}
 }
+
 .workspace .tip,
 .workspace.directory .name {
 	color: var(--text-muted);
@@ -566,8 +576,6 @@ aside {
 	}
 	.btn {
 		background: var(--bg-elevated);
-		width: 24px;
-		height: 24px;
 		padding: 0;
 		font-size: 12px;
 		font-weight: 600;
@@ -926,8 +934,6 @@ aside .one.endpoint {
 		/* header 内的操作按钮 */
 		& button, & .btn {
 			border: 1px solid transparent;
-			height: 22px;
-			width: 22px;
 			&:hover:not(:disabled) {
 				border-color: var(--border-subtle);
 			}
@@ -935,6 +941,9 @@ aside .one.endpoint {
 		.actions {
 			gap: 2px;
 			flex-shrink: 0;
+		}
+		.square {
+			--side: 22px;
 		}
 	}
 	.name {
@@ -950,9 +959,10 @@ aside .one.endpoint {
 	.model.actions {
 		& button, & .btn {
 			border: none;
-			padding: 2px;
-			height: 18px;
-			min-width: 18px;
+			--btn-p: 2px;
+		}
+		& .square {
+			--side: 18px;
 		}
 	}
 }
@@ -1007,9 +1017,6 @@ aside .one.endpoint {
 	}
 	button.copy {
 		font-size: 12px;
-		padding: 0;
-		width: 18px;
-		height: 18px;
 		opacity: 0.6;
 
 		&:hover {
@@ -1189,10 +1196,11 @@ aside .one.endpoint {
 	&.actions {
 		& button, & .btn {
 			border: none;
-			padding: 2px;
-			height: 18px;
-			min-width: 18px;
+			--btn-p: 2px;
 		}
+	}
+	& .square {
+		--side: 18px;
 	}
 	&.title-edit {
 		font-size: 13px;
@@ -1318,8 +1326,6 @@ dialog.help {
 		margin-bottom: var(--space-5);
 	}
 	> .close {
-		width: 28px;
-		height: 28px;
 		border: none;
 		border-radius: var(--radius-md);
 		background: none;
@@ -1392,6 +1398,10 @@ dialog.help {
 		color: var(--text-primary);
 	}
 }
+.dialog-close.square {
+	--side: 28px;
+}
+
 dialog::backdrop {
 	background: rgba(0, 0, 0, 0.3);
 }
@@ -1576,9 +1586,10 @@ dialog::backdrop {
 	}
 }
 .add.attachment.btn {
-	height: 40px;
-	min-width: 40px;
 	background: var(--bg-muted);
+}
+.add.attachment.square {
+	--side: 40px;
 }
 /* 模式选择器（聊天/嵌入） */
 .mode-selector {
