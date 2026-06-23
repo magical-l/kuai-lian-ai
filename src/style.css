@@ -941,12 +941,12 @@ aside .one.endpoint {
 	min-width: 0;
 	overflow: hidden;
 
-	& .empty-hint {
+	& .empty.hint {
 		color: var(--danger);
 		font-size: 12px;
 		font-weight: 500;
 	}
-	& .selected.model {
+	& .one.endpoint {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-1);

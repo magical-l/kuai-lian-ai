@@ -23,8 +23,8 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
             const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : "";
 
             const classes = [
-                "model",
-                "selected",
+                "one",
+                "endpoint",
                 statusClass,
                 speedClass ? `speed-${speedClass}` : ""
             ].filter(Boolean).join(" ");
@@ -69,14 +69,14 @@ function toggleModelSelection(id, forceRemove) {
 }
 function bindSelectorEvents() {
     // Make entire model tag clickable for toggle selection
-    $$('.model.selected').forEach(tag => {
+    $$('.one.endpoint').forEach(tag => {
         tag.onclick = e => {
             e.stopPropagation();
             toggleModelSelection(tag.dataset.model);
         };
     });
     // 标签上的小叉：移除该模型
-    $$('.model.selected .remove').forEach(function(btn) {
+    $$('.one.endpoint .remove').forEach(function(btn) {
         btn.onclick = function(e) {
             e.stopPropagation();
             toggleModelSelection(btn.dataset.model, true);
