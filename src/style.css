@@ -46,6 +46,12 @@ textarea {
 	height: var(--side);
 	aspect-ratio: 1;
 }
+/* 通用的.spin类 */
+.spin {
+	animation: spin 1s linear infinite !important;
+	display: inline-block;
+	will-change: transform;
+}
 /* ================== 选择：没那么理所当然的样式，只是本项目的选择 ================== */
 /* ============ 基础元素（有些是标签有些是等价于标签的类）默认属性 ============ */
 :root {
@@ -183,6 +189,140 @@ button, .btn {
 		--side: var(--btn-h);
 	}
 
+	&.icon-only {
+		border: 1px solid transparent;
+		padding: var(--space-1);
+	}
+
+	&.danger {
+		color: var(--danger);
+		
+		&:hover:not(:disabled) {
+			background: var(--danger-light);
+			color: var(--danger);
+			border-color: var(--danger);
+		}
+	}
+
+	&:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	&:hover:not(:disabled):not(.danger) {
+		background: var(--accent-light);
+		border-color: var(--accent-primary);
+		color: var(--accent-primary);
+	}
+
+	&:active:not(:disabled) {
+		transform: scale(0.97);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--accent-primary);
+		outline-offset: 2px;
+	}
+}
+
+.workspace .tip,
+.workspace.directory .name {
+	color: var(--text-muted);
+		overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 12px;
+}
+.main-row {
+	flex: 1;
+	min-height: 0;
+}
+aside {
+	background: var(--bg-base);
+	border-right: 1px solid var(--border-subtle);
+	min-width: 180px;
+	max-width: 45%;
+	width: 260px;
+
+	> header {
+		padding: var(--space-2) var(--space-3);
+		font-weight: 600;
+		font-size: 13px;
+		color: var(--text-secondary);
+		background: var(--bg-base);
+		border-bottom: 1px solid var(--border-subtle);
+		letter-spacing: -0.01em;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	&.sessions {
+		border-right: none;
+		border-left: 1px solid var(--border-subtle);
+	}
+}
+.list {
+	flex: 1;
+	overflow-y: auto;
+
+	&::-webkit-scrollbar-thumb {
+		background: var(--border-default);
+		border-radius: 3px;
+		&:hover {
+			background: var(--border-strong);
+		}
+	}
+
+	&::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	&::-webkit-scrollbar {
+		width: 5px;
+	}
+}
+.divider {
+	background: var(--border-subtle);
+	flex-shrink: 0;
+	position: relative;
+	&.row {
+		height: 6px;
+		cursor: row-resize;
+		z-index: 15;
+	}
+
+	&.col {
+		width: 6px;
+		cursor: col-resize;
+		z-index: 10;
+	}
+
+	&:hover {
+		background: var(--accent-primary);
+	}
+}
+.main-content {
+	flex: 1;
+	min-height: 0;
+	min-width: 400px;
+	background: var(--bg-base);
+}
+.toolbar {
+	padding: var(--space-4) var(--space-6);
+	background: var(--bg-base);
+	border-bottom: 1px solid var(--border-subtle);
+	align-items: center;
+	gap: var(--space-2);
+	height: 56px;
+	> span {
+		color: var(--text-muted);
+		font-size: 13px;
+	}
+}
+/* ============ 各种实例 ============ */
+/* ------ 各处按钮 ------ */
+button, .btn {
 	&.use-browser-storage {
 		background: #2563EB;
 		color: #fff;
@@ -278,7 +418,7 @@ button, .btn {
 		}
 	}
 
-	&.action.join-session {
+	&.join-session {
 		color: var(--accent-primary);
 		font-weight: 600;
 
@@ -326,21 +466,6 @@ button, .btn {
 		}
 	}
 
-	&:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
-		transform: none;
-	}
-
-	&:focus-visible {
-		outline: 2px solid var(--accent-primary);
-		outline-offset: 2px;
-	}
-
-	&:active:not(:disabled) {
-		transform: scale(0.97);
-	}
-
 	&.stop {
 		background: var(--danger-light);
 		color: var(--danger);
@@ -370,16 +495,6 @@ button, .btn {
 		font-weight: 600;
 	}
 
-	&.danger {
-		color: var(--danger);
-		
-		&:hover:not(:disabled) {
-			background: var(--danger-light);
-			color: var(--danger);
-			border-color: var(--danger);
-		}
-	}
-
 	&.copy {
 		& .copied.icon { display: none; }
 
@@ -401,117 +516,11 @@ button, .btn {
 		}
 	}
 
-	&.icon-only {
-		border: 1px solid transparent;
-		padding: var(--space-1);
-	}
-
-	&:hover:not(:disabled):not(.danger) {
-		background: var(--accent-light);
-		border-color: var(--accent-primary);
-		color: var(--accent-primary);
+	&.add.attachment {
+		--side: 40px;
+		background: var(--bg-muted);
 	}
 }
-
-.workspace .tip,
-.workspace.directory .name {
-	color: var(--text-muted);
-		overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	font-size: 12px;
-}
-.main-row {
-	flex: 1;
-	min-height: 0;
-}
-/* ========== Sidebar ========== */
-aside {
-	background: var(--bg-base);
-	border-right: 1px solid var(--border-subtle);
-	min-width: 180px;
-	max-width: 45%;
-	width: 260px;
-
-	> header {
-		padding: var(--space-2) var(--space-3);
-		font-weight: 600;
-		font-size: 13px;
-		color: var(--text-secondary);
-		background: var(--bg-base);
-		border-bottom: 1px solid var(--border-subtle);
-		letter-spacing: -0.01em;
-		justify-content: space-between;
-		align-items: center;
-	}
-
-	&.sessions {
-		border-right: none;
-		border-left: 1px solid var(--border-subtle);
-	}
-}
-/* ========== List (scrollable sidebar content) ========== */
-.list {
-	flex: 1;
-	overflow-y: auto;
-
-	&::-webkit-scrollbar-thumb {
-		background: var(--border-default);
-		border-radius: 3px;
-		&:hover {
-			background: var(--border-strong);
-		}
-	}
-
-	&::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	&::-webkit-scrollbar {
-		width: 5px;
-	}
-}
-/* ========== Divider ========== */
-.divider {
-	background: var(--border-subtle);
-	flex-shrink: 0;
-	position: relative;
-	&.row {
-		height: 6px;
-		cursor: row-resize;
-		z-index: 15;
-	}
-
-	&.col {
-		width: 6px;
-		cursor: col-resize;
-		z-index: 10;
-	}
-
-	&:hover {
-		background: var(--accent-primary);
-	}
-}
-/* ========== Main Content ========== */
-.main-content {
-	flex: 1;
-	min-height: 0;
-	min-width: 400px;
-	background: var(--bg-base);
-}
-.toolbar {
-	padding: var(--space-4) var(--space-6);
-	background: var(--bg-base);
-	border-bottom: 1px solid var(--border-subtle);
-	align-items: center;
-	gap: var(--space-2);
-	height: 56px;
-	> span {
-		color: var(--text-muted);
-		font-size: 13px;
-	}
-}
-/* ========== Chat Messages ========== */
 #chat-messages {
 	flex: 1 1 auto;
 	overflow-y: auto;
@@ -550,6 +559,11 @@ aside {
 		gap: 4px;
 		& button, & .btn {
 			--btn-h: 40px;
+		}
+
+		/* 隐藏掉原生的文件输入控件，使用“添加附件按钮” */
+		input[type=file] {
+			display: none;
 		}
 	}
 }
@@ -775,7 +789,6 @@ aside {
 		margin-left: auto;
 	}
 }
-
 
 /* ========== 附件项（消息内 + 待发送区） ========== */
 .one.attachment {
@@ -1099,12 +1112,6 @@ aside .one.endpoint {
 		}
 	}
 }
-/* 通用的.spin类 */
-.spin {
-	animation: spin 1s linear infinite !important;
-	display: inline-block;
-	will-change: transform;
-}
 /* ========== Session List ========== */
 .session {
 	&.item {
@@ -1414,7 +1421,6 @@ dialog::backdrop {
 		overflow: hidden;
 }
 
-
 /* 选择器空状态提示 */
 .selector.empty-hint {
 	color: var(--danger);
@@ -1540,12 +1546,6 @@ dialog::backdrop {
 		display: block;
 	}
 }
-.add.attachment.btn {
-	background: var(--bg-muted);
-}
-.add.attachment.square {
-	--side: 40px;
-}
 /* 模式选择器（聊天/嵌入） */
 .mode-selector {
 	display: inline-flex;
@@ -1648,10 +1648,6 @@ dialog::backdrop {
 		justify-content: center;
 	}
 }
-/* 隐藏的文件输入 */
-.file-input {
-	display: none;
-}
 /* 嵌入结果 */
 .embedding-result {
 	background: var(--bg-subtle);
@@ -1691,4 +1687,3 @@ dialog::backdrop {
 		}
 	}
 }
-
