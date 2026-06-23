@@ -385,6 +385,8 @@ button, .btn {
 
 		&.copied {
 			color: var(--success);
+			pointer-events: none;  /* 禁止再次点击 */
+
 			& .copy.icon { display: none; }
 			& .copied.icon { display: inline; }
 		}
@@ -393,19 +395,9 @@ button, .btn {
 			position: absolute;
 			top: 8px;
 			right: 8px;
-			border: 1px solid var(--border-subtle);
-			border-radius: 4px;
-			padding: 4px 8px;
-			cursor: pointer;
 			opacity: 0.6;
-			&:hover {
-				opacity: 1;
-				background: var(--bg-hover);
-			}
-			&.copied {
-				opacity: 1;
-				border-color: var(--success);
-			}
+			&:hover { opacity: 1; }
+			&.copied { opacity: 1; border-color: var(--success); }
 		}
 	}
 

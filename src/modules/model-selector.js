@@ -283,7 +283,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? "(已设置)" : "");
             var tipStyle = inherited(rcfg.style, node.style) ? "↑ " + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || "");
             var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || "");
-            var tooltipHTML = "<div class=\"row flex items-go-x\">" + "<span class=\"label\">名称：</span>" + "<span class=\"value\">" + tipName + "</span>" + "<button class=\"copy\" data-copy=\"" + tipName + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">地址：</span>" + "<span class=\"value\">" + tipBaseUrl + "</span>" + "<button class=\"copy\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">格式：</span>" + "<span class=\"value\">" + tipStyle + "</span>" + "<button class=\"copy\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" + (rcfg.key ? "<div class=\"row flex items-go-x\"><span class=\"label\">Key：</span><span class=\"value\">" + tipKey + "</span><button class=\"copy\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" : "") + "<div class=\"row flex items-go-x\"><span class=\"label\">模型：</span><span class=\"value\">" + (tipModel || "-") + "</span><button class=\"copy\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>";
+            var tooltipHTML = "<div class=\"row flex items-go-x\">" + "<span class=\"label\">名称：</span>" + "<span class=\"value\">" + tipName + "</span>" + "<button class=\"copy square\" data-copy=\"" + tipName + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">地址：</span>" + "<span class=\"value\">" + tipBaseUrl + "</span>" + "<button class=\"copy square\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">格式：</span>" + "<span class=\"value\">" + tipStyle + "</span>" + "<button class=\"copy square\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" + (rcfg.key ? "<div class=\"row flex items-go-x\"><span class=\"label\">Key：</span><span class=\"value\">" + tipKey + "</span><button class=\"copy square\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>" : "") + "<div class=\"row flex items-go-x\"><span class=\"label\">模型：</span><span class=\"value\">" + (tipModel || "-") + "</span><button class=\"copy square\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span></button></div>";
             var tooltip = createTooltip(tooltipId, tooltipHTML);
 
             nameSpan.on("mouseenter", function() {
@@ -694,7 +694,7 @@ function addCodeCopyButtons(container) {
 	container.querySelectorAll('pre code').forEach(codeEl => {
 		const preEl = codeEl.parentElement;
 		const copyBtn = document.createElement('button');
-		copyBtn.className = 'copy code';
+		copyBtn.className = 'copy code square';
 		copyBtn.innerHTML = "<span class=\"copy icon ⧉\">⧉</span><span class=\"copied icon\">✓</span>";
 		copyBtn.title = '复制代码';
 		copyBtn.onclick = () => {
@@ -855,6 +855,7 @@ function renderResponse(container, msg, groups) {
         if (r.content) {
             const contentEl = mk("div", "content");
             contentEl.innerHTML = renderMarkdown(r.content);
+            addCodeCopyButtons(contentEl);
             card.addChild(contentEl);
         }
 
