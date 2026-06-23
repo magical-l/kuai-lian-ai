@@ -24,7 +24,6 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
 
             const classes = [
                 "model",
-                "tag",
                 "selected",
                 statusClass,
                 speedClass ? `speed-${speedClass}` : ""
@@ -70,14 +69,14 @@ function toggleModelSelection(id, forceRemove) {
 }
 function bindSelectorEvents() {
     // Make entire model tag clickable for toggle selection
-    $$('.model.tag').forEach(tag => {
+    $$('.model.selected').forEach(tag => {
         tag.onclick = e => {
             e.stopPropagation();
             toggleModelSelection(tag.dataset.model);
         };
     });
     // 标签上的小叉：移除该模型
-    $$('.model.tag .remove').forEach(function(btn) {
+    $$('.model.selected .remove').forEach(function(btn) {
         btn.onclick = function(e) {
             e.stopPropagation();
             toggleModelSelection(btn.dataset.model, true);

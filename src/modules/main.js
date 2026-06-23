@@ -670,7 +670,7 @@ function reorderCardsBySpeed() {
 function reorderSelectorTagsBySpeed() {
 	const summaryEl = $('.selected.endpoint.list');
 	if (!summaryEl) return;
-	const tags = Array.from(summaryEl.querySelectorAll('.model.tag.selected'));
+	const tags = Array.from(summaryEl.querySelectorAll('.model.selected'));
 	if (tags.length === 0) return;
 	const originalTags = [...tags];
 	const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;

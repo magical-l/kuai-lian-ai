@@ -962,7 +962,7 @@ dialog.editing.endpoint .hint {
 		white-space: nowrap;
 	}
 	/* 模型标签样式 */
-	&.tag {
+	&.selected {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-1);
@@ -973,46 +973,44 @@ dialog.editing.endpoint .hint {
 		transition: all var(--transition-fast);
 		border: 1px solid transparent;
 
-		&.selected {
-			background: var(--accent-light);
-			color: var(--accent-primary);
-			border: 1px solid var(--accent-primary);
-			padding: var(--space-1) var(--space-3);
-			box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
-			
-			&:hover {
-				background: var(--accent-muted);
-			}
+		background: var(--accent-light);
+		color: var(--accent-primary);
+		border: 1px solid var(--accent-primary);
+		padding: var(--space-1) var(--space-3);
+		box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
 
-			&.speed-slow {
-				background: #fed7aa;
-				border-color: #ea580c;
-			}
-
-			&.speed-medium {
-				background: var(--warning-light);
-				border-color: var(--warning);
-			}
-
-			&.speed-fast {
-				background: var(--success-light);
-				border-color: var(--success);
-			}
-
-			&.stopped {
-				background: var(--bg-muted);
-				color: var(--text-muted);
-				border-color: var(--border-subtle);
-			}
-
-			&.failed {
-				background: var(--danger-light);
-				color: var(--danger);
-				border-color: var(--danger);
-			}
+		&:hover {
+			background: var(--accent-muted);
 		}
 
-		.remove.btn {
+		&.speed-slow {
+			background: #fed7aa;
+			border-color: #ea580c;
+		}
+
+		&.speed-medium {
+			background: var(--warning-light);
+			border-color: var(--warning);
+		}
+
+		&.speed-fast {
+			background: var(--success-light);
+			border-color: var(--success);
+		}
+
+		&.stopped {
+			background: var(--bg-muted);
+			color: var(--text-muted);
+			border-color: var(--border-subtle);
+		}
+
+		&.failed {
+			background: var(--danger-light);
+			color: var(--danger);
+			border-color: var(--danger);
+		}
+
+		& .remove.btn {
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
