@@ -63,23 +63,23 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.5.6</span>
+			<span class="version">v5.5.7</span>
 		</div>
 		<div class="workspace , flex items-go-x">
 			<span>当前存储目录：</span>
 			<span class="tip">未选择目录</span>
-			<button class="change-dir btn square" title="更换目录">
+			<button class="change-dir btn square icon-only" title="更换目录">
 				<svg class="icon"><use href="#icon-folder"></use></svg>
 			</button>
 			<button class="delete-dir btn , danger square" title="弃用目录">
 				<span style="font-size:16px;font-weight:700">×</span>
 			</button>
-			<button class="wipe-dir btn , danger square" title="清空数据">
+			<button class="wipe-dir btn , danger square icon-only" title="清空数据">
 				<svg class="icon"><use href="#icon-trash"></use></svg>
 			</button>
 		</div>
 		<nav class="flex items-go-x">
-			<button class="toggle-sidebar , btn square" title="显示/隐藏右侧栏">
+			<button class="toggle-sidebar , btn square icon-only" title="显示/隐藏右侧栏">
 				<svg class="icon"><use href="#icon-sidebar-open"></use></svg>
 			</button>
 			<button class="help btn square" title="帮助">?</button>
@@ -126,7 +126,7 @@
 				<menu class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
 					<div class="attachment list , flex items-go-x flexible scrollable" style="gap:4px"></div>
 					<input type="file" class="file-input" multiple accept="*/*">
-					<button class="add attachment btn , flex items-go-x square" title="添加附件">
+					<button class="add attachment btn , flex items-go-x square icon-only" title="添加附件">
 						<svg width="16" height="16"><use href="#icon-attach"></use></svg>
 					</button>
 					<div class="mode-selector , flex items-go-x" role="radiogroup">
@@ -134,10 +134,10 @@
 						<span class="mode-option" data-mode="embedding">🔢 嵌入</span>
 					</div>
 					<div class="send-btn-group split-btn" title="发送">
-						<button class="send split-btn-main primary , flex items-go-x">
+						<button class="send split-btn-main primary , flex items-go-x icon-only">
 							<svg width="16" height="16"><use href="#icon-send"></use></svg>
 						</button>
-						<button class="send-mode-toggle split-btn-drop , flex items-go-x">
+						<button class="send-mode-toggle split-btn-drop , flex items-go-x icon-only">
 							<svg width="12" height="12"><use href="#icon-chevron-down"></use></svg>
 						</button>
 						<div class="split-btn-menu">
@@ -179,7 +179,7 @@
 			<label class="flex items-go-y">API Key（选填）:
 				<div class="key-input-wrapper , flex items-go-x">
 					<input class="group-key" type="password" placeholder="">
-					<button type="button" class="toggle-key" title="显示/隐藏">
+					<button type="button" class="toggle-key icon-only" title="显示/隐藏">
 						<svg width="14" height="14"><use href="#icon-eye"></use></svg>
 					</button>
 				</div>
@@ -204,8 +204,8 @@
 	<header class="flex items-go-x">
 		<span class="name">我</span>
 		<span class="time"></span>
-		<button class="icon-only copy btn" title="复制">
-			<span class="icon copy-icon ⧉">⧉</span><span class="copy-check">✓</span>
+		<button class="icon-only copy" title="复制">
+			<span class="copy icon ⧉">⧉</span><span class="copied icon">✓</span>
 		</button>
 	</header>
 </template>
@@ -213,8 +213,8 @@
 	<header class="flex items-go-x">
 		<span class="name"></span>
 		<span class="time"></span>
-		<button class="icon-only copy btn" title="复制">
-			<span class="icon copy-icon ⧉">⧉</span><span class="copy-check">✓</span>
+		<button class="icon-only copy" title="复制">
+			<span class="copy icon ⧉">⧉</span><span class="copied icon">✓</span>
 		</button>
 	</header>
 </template>
@@ -226,9 +226,9 @@
 		<span class="total time"></span>
 		<span class="status"></span>
 		<span class="error"></span>
-		<button class="icon-only copy btn" title="复制">
-			<span class="icon copy-icon ⧉">⧉</span>
-			<span class="copy-check">✓</span>
+		<button class="icon-only copy" title="复制">
+			<span class="copy icon ⧉">⧉</span>
+			<span class="copied icon">✓</span>
 		</button>
 	</header>
 </template>

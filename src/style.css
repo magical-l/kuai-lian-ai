@@ -380,17 +380,33 @@ button, .btn {
 		}
 	}
 
-	&.icon-only.copied {
-		color: var(--accent-success);
-		background: transparent;
-	}
+	&.copy {
+		& .copied.icon { display: none; }
 
-	&.icon-only svg {
-		display: block;
-	}
+		&.copied {
+			color: var(--success);
+			& .copy.icon { display: none; }
+			& .copied.icon { display: inline; }
+		}
 
-	&.icon-only:hover:not(:disabled) {
-		border-color: var(--border-subtle);
+		&.code {
+			position: absolute;
+			top: 8px;
+			right: 8px;
+			border: 1px solid var(--border-subtle);
+			border-radius: 4px;
+			padding: 4px 8px;
+			cursor: pointer;
+			opacity: 0.6;
+			&:hover {
+				opacity: 1;
+				background: var(--bg-hover);
+			}
+			&.copied {
+				opacity: 1;
+				border-color: var(--success);
+			}
+		}
 	}
 
 	&.icon-only {
@@ -694,9 +710,6 @@ aside {
 
 		> header {
 			justify-content: flex-end;
-			& .copy.btn {
-				margin-left: var(--space-2);
-			}
 		}
 		> .content {
 			background: var(--user-msg-bg);
@@ -712,7 +725,7 @@ aside {
 		align-self: flex-start;
 
 		> header {
-			& .copy.btn {
+			& .copy {
 				margin-left: auto;
 			}
 			.name {
@@ -771,50 +784,7 @@ aside {
 	}
 }
 
-/* 代码块复制按钮 */
-.code-copy-btn {
-	position: absolute;
-	top: 8px;
-	right: 8px;
-	background: transparent;
-	border: 1px solid var(--border-subtle);
-	border-radius: 4px;
-	padding: 4px 8px;
-	cursor: pointer;
-	opacity: 0.6;
-	&.copied {
-		opacity: 1;
-		color: var(--success);
-		border-color: var(--success);
-	}
 
-	&:hover {
-		opacity: 1;
-		background: var(--bg-hover);
-	}
-	&.copied .copy-check {
-		display: inline;
-	}
-	.copy-check {
-		display: none;
-	}
-	&.copied .copy-icon {
-		display: none;
-	}
-}
-.copy.btn {
-	.copy-check {
-		display: none;
-	}
-	&.copied {
-		.copy-icon {
-			display: none;
-		}
-		.copy-check {
-			display: inline;
-		}
-	}
-}
 /* ========== 附件项（消息内 + 待发送区） ========== */
 .one.attachment {
 	align-items: center;
@@ -1018,7 +988,7 @@ aside .one.endpoint {
 		}
 
 		&.copied {
-			color: var(--accent-success);
+			color: var(--success);
 			opacity: 1;
 		}
 	}

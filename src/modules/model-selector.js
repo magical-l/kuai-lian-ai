@@ -694,8 +694,8 @@ function addCodeCopyButtons(container) {
 	container.querySelectorAll('pre code').forEach(codeEl => {
 		const preEl = codeEl.parentElement;
 		const copyBtn = document.createElement('button');
-		copyBtn.className = 'code-copy-btn';
-		copyBtn.innerHTML = "<span class=\"icon copy-icon ⧉\">⧉</span><span class=\"copy-check\">✓</span>";
+		copyBtn.className = 'copy code';
+		copyBtn.innerHTML = "<span class=\"copy icon ⧉\">⧉</span><span class=\"copied icon\">✓</span>";
 		copyBtn.title = '复制代码';
 		copyBtn.onclick = () => {
 			navigator.clipboard.writeText(codeEl.textContent).then(() => {
@@ -723,7 +723,7 @@ function renderMessages(messages, groups, onCopy) {
 			const normalized = normalizeMessageContent(msg);
 			const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
 			const textContent = textItems.map(c => c.text || '').join('\n');
-			const copyBtn = $('.copy.btn', meta);
+			const copyBtn = $('.copy', meta);
 			copyBtn.onclick = () => {
 				navigator.clipboard.writeText(textContent).then(() => {
 					copyBtn.classList.add("copied");
@@ -808,7 +808,7 @@ function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
 	const meta = fromTemplate('response-header', 'header');
 	$('.name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
 	$('.time', meta).textContent = timeStr;
-	const copyBtn = $('.copy.btn', meta);
+	const copyBtn = $('.copy', meta);
 	copyBtn.onclick = () => {
 		navigator.clipboard.writeText(msg.content || "").then(() => {
 			copyBtn.classList.add("copied");
@@ -885,8 +885,8 @@ function renderMultiModelResponse(container, msg, groups, onCopy) {
             const emb = r.embeddingResult;
             const embMeta = mk("div", "content embedding-result");
             embMeta.innerHTML = `<div class="mb-1"><strong>嵌入维度:</strong> ${emb.dim}</div><div class="mb-1"><strong>预览:</strong> <code>${emb.preview}</code></div>`;
-            const copyBtn = mk("button", "icon-only code-copy-btn square");
-            copyBtn.innerHTML = "<span class=\"icon copy-icon ⧉\">⧉</span><span class=\"copy-check\">✓</span>";
+            const copyBtn = mk("button", "icon-only copy code square");
+            copyBtn.innerHTML = "<span class=\"copy icon ⧉\">⧉</span><span class=\"copied icon\">✓</span>";
             copyBtn.title = "复制完整向量";
 
             copyBtn.onclick = () => {
