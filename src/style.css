@@ -40,6 +40,8 @@ textarea {
 		transform: translate(0.05em, 0.2em);
 	}
 }
+/* .done.icon：默认隐藏，自带绿色，作为通用的"完成"图标独立使用 */
+.done.icon { display: none; color: var(--success); font-weight: 600; }
 .square {
 	--side: 24px;
 	width: var(--side);
@@ -456,15 +458,12 @@ button, .btn {
 		font-weight: 600;
 	}
 
-	&.copy {
-		& .copied.icon { display: none; }
-
+	&.copy-content {
 		&.copied {
-			color: var(--success);
 			pointer-events: none;  /* 禁止再次点击 */
 
 			& .copy.icon { display: none; }
-			& .copied.icon { display: inline; }
+			& .done.icon { display: inline; }
 		}
 
 		&.code {
@@ -692,7 +691,7 @@ button, .btn {
 		align-self: flex-start;
 
 		> header {
-			& .copy {
+			& .copy-content {
 				margin-left: auto;
 			}
 			.name {
@@ -944,18 +943,13 @@ dialog.editing.endpoint .hint {
 		flex-shrink: 0;
 		width: 40px;
 	}
-	button.copy {
+	button.copy-content {
 		font-size: 12px;
 		opacity: 0.6;
 
 		&:hover {
 			opacity: 1;
 			color: var(--accent-primary);
-		}
-
-		&.copied {
-			color: var(--success);
-			opacity: 1;
 		}
 	}
 }
