@@ -703,24 +703,32 @@ button, .btn {
 			& .copy-content {
 				margin-left: auto;
 			}
-			.name {
+			& .name {
 				font-weight: 500;
 			}
-			.status {
+			& .status {
 				font-size: 10px;
 			}
-			.error {
+			& .error {
 				color: var(--danger);
 				font-size: 12px;
 			}
-			.total {
+			& .total {
 				color: var(--text-secondary);
 			}
-			.wait {
+			& .wait {
 				color: var(--text-secondary);
 				&.slow { color: #ea580c; }
 				&.medium { color: var(--warning); }
 				&.fast { color: var(--success); }
+			}
+			& .status-icon {
+				font-size: 10px;
+				&.spinning {
+					animation: spin 1s linear infinite !important;
+					display: inline-block;
+					will-change: transform;
+				}
 			}
 		}
 		> .content {
@@ -729,7 +737,7 @@ button, .btn {
 		}
 	}
 
-	.status {
+	& .status {
 		align-items: center;
 		gap: var(--space-1);
 		margin-top: var(--space-1);
@@ -738,7 +746,7 @@ button, .btn {
 		&.failed { color: var(--danger); }
 		&.completed { color: var(--success); }
 	}
-	.usage {
+	& .usage {
 		font-size: 11px;
 		color: var(--text-muted);
 		margin-left: auto;
@@ -1019,16 +1027,6 @@ aside .one.endpoint {
 				color: var(--danger);
 			}
 		}
-	}
-}
-
-/* 状态图标 */
-.status-icon {
-	font-size: 10px;
-	&.spinning {
-		animation: spin 1s linear infinite !important;
-		display: inline-block;
-		will-change: transform;
 	}
 }
 
