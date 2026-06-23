@@ -9,6 +9,7 @@ dialog[open] {
 }
 html {
 	height: 100%;
+	scrollbar-gutter: unset;/* 这个页面确定不滚 */
 }
 body {
 	font-family: var(--font-sans);
@@ -18,7 +19,6 @@ body {
 	background: var(--bg-base);
 	height: 100dvh;
 	overflow: hidden;
-	margin-inline: 4px;
 	-webkit-font-smoothing: antialiased;
 }
 textarea {
@@ -109,7 +109,6 @@ del {
 main {
 	height: 100%;
 	overflow: hidden;
-	margin-inline: 4px;
 	background: var(--bg-subtle);
 
 	> header {
@@ -175,7 +174,6 @@ button, .btn {
 	padding: var(--btn-p);
 	height: var(--btn-h);
 	text-decoration: none;
-	box-sizing: border-box;
 
 	&.square {
 		--side: var(--btn-h);
@@ -343,7 +341,7 @@ button, .btn {
 		background: var(--danger-light);
 		color: var(--danger);
 		border: 1px solid var(--danger);
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		padding: 0 12px;
 		height: 40px;
 		font-size: 13px;
@@ -465,7 +463,6 @@ aside {
 .divider {
 	background: var(--border-subtle);
 	flex-shrink: 0;
-	transition: background var(--transition-fast);
 	position: relative;
 	&.row {
 		height: 6px;
@@ -538,6 +535,7 @@ aside {
 	min-height: 145px;
 
 	> menu {
+		gap: 4px;
 		& button, & .btn {
 			--btn-h: 40px;
 		}
@@ -571,9 +569,6 @@ aside {
 /* ========== Jump Buttons ========== */
 .jump {
 	margin-left: auto;
-	.btn:active {
-		transform: scale(0.95);
-	}
 	.btn:hover:not(:disabled) {
 		background: var(--accent-light);
 		color: var(--accent-primary);
@@ -604,7 +599,6 @@ aside {
 
 		> .content {
 			padding: var(--space-3) var(--space-4);
-			word-wrap: break-word;
 			overflow-wrap: break-word;
 			border-radius: var(--radius-lg);
 			border: 1px solid var(--border-subtle);
@@ -618,7 +612,7 @@ aside {
 			}
 			& pre {
 				background: #f6f8fa;
-				border-radius: 6px;
+				border-radius: var(--radius-sm);
 				padding: 12px 16px;
 				margin: 8px 0;
 				overflow-x: auto;
@@ -784,7 +778,6 @@ aside {
 	padding: 4px 8px;
 	cursor: pointer;
 	opacity: 0.6;
-	transition: opacity 0.2s;
 	&.copied {
 		opacity: 1;
 		color: var(--success);
@@ -980,7 +973,6 @@ aside .one.endpoint {
 	/* margin-right: 4px; */
 	align-items: center;
 	opacity: 0.4;
-	transition: opacity var(--transition-fast);
 	flex-shrink: 0;
 
 	&:hover {
@@ -1489,7 +1481,6 @@ dialog::backdrop {
 	/* .thinking-icon → .icon */
 	.icon {
 		font-size: 10px;
-		transition: transform var(--transition-fast);
 		width: 12px;
 		text-align: center;
 	}
@@ -1640,7 +1631,6 @@ dialog::backdrop {
 		cursor: pointer;
 		font-size: 13px;
 		color: var(--text-base);
-		transition: background 0.15s;
 	}
 
 	&.open .split-btn-menu {
@@ -1654,7 +1644,7 @@ dialog::backdrop {
 		min-width: 140px;
 		background: var(--bg-base);
 		border: 1px solid var(--border-subtle);
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 		display: none;
 		z-index: 100;
@@ -1738,3 +1728,4 @@ dialog::backdrop {
 		}
 	}
 }
+

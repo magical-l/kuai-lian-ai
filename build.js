@@ -102,8 +102,7 @@ function buildExtension(html) {
 	return html;
 }
 
-// ====== Clean dist ======
-fs.rmSync(DST, { recursive: true, force: true });
+// ====== Ensure dist directory ======
 fs.mkdirSync(DST, { recursive: true });
 
 const layout = read(SRC, 'layout.html');
