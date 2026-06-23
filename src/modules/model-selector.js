@@ -788,56 +788,22 @@ function renderMessages(messages, groups, onCopy) {
 			}
 			container.addChild(msgEl);
 		} else {
-			if (msg.responses && Array.isArray(msg.responses)) {
-				renderMultiModelResponse(container, msg, groups, onCopy);
-			} else {
-				const msgEl = mk('article', 'msg response , flex items-go-y');
-				renderSingleModelResponse(msgEl, msg, groups, onCopy);
-				container.addChild(msgEl);
-			}
+			renderResponse(container, msg, groups);
 		}
 	});
 	container.scrollTop = container.scrollHeight;
 }
 
-function renderSingleModelResponse(msgEl, msg, groups, onCopy) {
-	const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
-	const info = msg.endpointGroupId && msg.modelId ? findModelById(groups, `${msg.endpointGroupId}:${msg.modelId}`) : null;
-	const modelName = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : '未知模型';
-	const modelRemark = info?.node?.remark || '';
-	const meta = fromTemplate('response-header', 'header');
-	$('.name', meta).innerHTML = modelRemark ? `${modelName}<span class="model-remark"> ${modelRemark}</span>` : modelName;
-	$('.time', meta).textContent = timeStr;
-	const copyBtn = $('.copy', meta);
-	copyBtn.onclick = () => {
-		navigator.clipboard.writeText(msg.content || "").then(() => {
-			copyBtn.classList.add("copied");
-			clearTimeout(copyBtn._copiedTimer);
-			copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
-		});
-	};
-	msgEl.addChild(meta);
-	const assistantEl = mk('div', 'content');
-	assistantEl.innerHTML = renderMarkdown(msg.content || '');
-	msgEl.addChild(assistantEl);
-	addCodeCopyButtons(assistantEl);
-	if (msg.usage) {
-		const statusBar = mk('div', 'status bar , flex items-go-x');
-		const usageEl = mk('span', 'usage');
-		usageEl.textContent = `${msg.usage.input || 0} → ${msg.usage.output || 0} tokens`;
-		statusBar.addChild(usageEl);
-		msgEl.addChild(statusBar);
-	}
-}
-
-function renderMultiModelResponse(container, msg, groups, onCopy) {
+function renderResponse(container, msg, groups) {
     const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
-    sorted.forEach(r => {
+    sorted.forEach((r, i) => {
         const card = mk("article", "one response msg , flex items-go-y");
         const info = findModelById(groups, r.modelId);
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         const remark = info?.node?.remark || "";
-        const meta = fromTemplate("multi-response-header", "header");
+        const isMulti = msg.responses.length > 1;
+        const templateId = isMulti ? 'multi-response-header' : 'response-header';
+        const meta = fromTemplate(templateId, "header");
         const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
         const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime / 1000).toFixed(1)}s` : "";
         const speedClass = getSpeedClass(r.firstTokenTime);
@@ -846,31 +812,33 @@ function renderMultiModelResponse(container, msg, groups, onCopy) {
         $(".name", meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
         $(".time", meta).textContent = timeStr;
 
-        if (durationStr) {
-            const durationEl = $(".wait", meta);
-            durationEl.textContent = durationStr;
+        if (isMulti) {
+            if (durationStr) {
+                const durationEl = $(".wait", meta);
+                durationEl.textContent = durationStr;
 
-            if (speedClass)
-                durationEl.classList.add(speedClass);
-        }
+                if (speedClass)
+                    durationEl.classList.add(speedClass);
+            }
 
-        $(".total", meta).textContent = totalStr;
-        const statusEl = $(".status", meta);
-        statusEl.textContent = statusText;
-        statusEl.classList.add("status");
+            $(".total", meta).textContent = totalStr;
+            const statusEl = $(".status", meta);
+            statusEl.textContent = statusText;
+            statusEl.classList.add("status");
 
-        if (r.status === "completed")
-            statusEl.classList.add("completed");
-        else if (r.status === "failed")
-            statusEl.classList.add("failed");
-        else if (r.status === "stopped")
-            statusEl.classList.add("stopped");
+            if (r.status === "completed")
+                statusEl.classList.add("completed");
+            else if (r.status === "failed")
+                statusEl.classList.add("failed");
+            else if (r.status === "stopped")
+                statusEl.classList.add("stopped");
 
-        const errorEl = $(".error", meta);
+            const errorEl = $(".error", meta);
 
-        if (r.error && errorEl) {
-            errorEl.textContent = r.error;
-            errorEl.style.display = "";
+            if (r.error && errorEl) {
+                errorEl.textContent = r.error;
+                errorEl.style.display = "";
+            }
         }
 
         card.addChild(meta);
