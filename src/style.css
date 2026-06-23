@@ -931,117 +931,91 @@ dialog.editing.endpoint .hint {
 		}
 	}
 }
-.model {
-	&.item {
-		padding: var(--space-1) var(--space-2);
-		cursor: pointer;
-		border-radius: 0;
-		color: var(--text-secondary);
-		font-size: 12px;
-		transition: all var(--transition-fast);
-		align-items: center;
-		justify-content: space-between;
+.selected.model {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	padding: var(--space-1) var(--space-2);
+	border-radius: var(--radius-sm);
+	font-size: 12px;
+	cursor: pointer;
+	transition: all var(--transition-fast);
+	border: 1px solid transparent;
 
-		&:hover {
-			background: var(--bg-muted);
-			color: var(--text-primary);
-		}
+	background: var(--accent-light);
+	color: var(--accent-primary);
+	border: 1px solid var(--accent-primary);
+	padding: var(--space-1) var(--space-3);
+	box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
 
-		&.selected {
-			background: var(--accent-light);
-			color: var(--accent-primary);
-			font-weight: 500;
-		}
+	&:hover {
+		background: var(--accent-muted);
 	}
-	&.name {
-		flex: 1;
+
+	&.speed-slow {
+		background: #fed7aa;
+		border-color: #ea580c;
 	}
-	/* 模型标签样式 */
-	&.selected {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
-		font-size: 12px;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		border: 1px solid transparent;
 
-		background: var(--accent-light);
-		color: var(--accent-primary);
-		border: 1px solid var(--accent-primary);
-		padding: var(--space-1) var(--space-3);
-		box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
-
-		&:hover {
-			background: var(--accent-muted);
-		}
-
-		&.speed-slow {
-			background: #fed7aa;
-			border-color: #ea580c;
-		}
-
-		&.speed-medium {
-			background: var(--warning-light);
-			border-color: var(--warning);
-		}
-
-		&.speed-fast {
-			background: var(--success-light);
-			border-color: var(--success);
-		}
-
-		&.stopped {
-			background: var(--bg-muted);
-			color: var(--text-muted);
-			border-color: var(--border-subtle);
-		}
-
-		&.failed {
-			background: var(--danger-light);
-			color: var(--danger);
-			border-color: var(--danger);
-		}
-
-		& .remove.btn {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			margin-left: 4px;
-			width: 14px;
-			height: 14px;
-			border-radius: 50%;
-			font-size: 10px;
-			cursor: pointer;
-			color: var(--text-muted);
-			transition: all var(--transition-fast);
-			flex-shrink: 0;
-
-			&:hover {
-				background: var(--danger-light);
-				color: var(--danger);
-			}
-		}
+	&.speed-medium {
+		background: var(--warning-light);
+		border-color: var(--warning);
 	}
-	/* 失败/停止的模型在标签中用颜色标记以提醒用户 */
-	/* 速度样式 - 与消息框反应时间颜色统一 */
-	/* 状态图标 */
-	&.status-icon {
-		font-size: 10px;
-		&.spinning {
-			animation: spin 1s linear infinite !important;
-			display: inline-block;
-			will-change: transform;
-		}
+
+	&.speed-fast {
+		background: var(--success-light);
+		border-color: var(--success);
 	}
+
+	&.stopped {
+		background: var(--bg-muted);
+		color: var(--text-muted);
+		border-color: var(--border-subtle);
+	}
+
+	&.failed {
+		background: var(--danger-light);
+		color: var(--danger);
+		border-color: var(--danger);
+	}
+
 	& .remark {
 		color: var(--text-muted);
 		font-size: 0.85em;
 		white-space: nowrap;
 	}
+
+	& .remove.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin-left: 4px;
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		font-size: 10px;
+		cursor: pointer;
+		color: var(--text-muted);
+		transition: all var(--transition-fast);
+		flex-shrink: 0;
+
+		&:hover {
+			background: var(--danger-light);
+			color: var(--danger);
+		}
+	}
 }
+
+/* 状态图标 */
+.status-icon {
+	font-size: 10px;
+	&.spinning {
+		animation: spin 1s linear infinite !important;
+		display: inline-block;
+		will-change: transform;
+	}
+}
+
 /* ========== Session List ========== */
 .session {
 	&.item {

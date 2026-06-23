@@ -604,7 +604,7 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 		if (!card) return;
 		const contentEl = $('.response .content', card);
 		const meta = $('header', card);
-		const icon = meta ? $('.model.status-icon', meta) : null;
+		const icon = meta ? $('.status-icon', meta) : null;
 		if (icon) {
 			icon.classList.remove('spinning');
 			icon.classList.add('status');
@@ -639,7 +639,7 @@ function updateCardStatus(modelId, status, error, state = null, sessionId = null
 				let totalEl = $('.total', meta);
 				if (!totalEl) {
 					totalEl = mk('span', 'response total');
-					const insertAfter = $('.status', meta) || $('.model.status-icon', meta);
+					const insertAfter = $('.status', meta) || $('.status-icon', meta);
 					if (insertAfter) {
 						insertAfter.insertAdjacentElement('afterend', totalEl);
 					} else {
