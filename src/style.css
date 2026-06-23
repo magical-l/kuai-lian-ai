@@ -555,16 +555,16 @@ button, .btn {
 /* ========== Jump Buttons ========== */
 .btn-group.jump {
 	margin-left: auto;
-	.btn:hover:not(:disabled) {
-		background: var(--accent-light);
-		color: var(--accent-primary);
-	}
 	.btn {
 		background: var(--bg-elevated);
 		padding: 0;
 		font-size: 12px;
 		font-weight: 600;
 		border-radius: 0;
+		&:hover:not(:disabled) {
+			background: var(--accent-light);
+			color: var(--accent-primary);
+		}
 	}
 }
 /* ========== Messages ========== */
@@ -707,17 +707,11 @@ button, .btn {
 			.total {
 				color: var(--text-secondary);
 			}
-			.wait.slow {
-				color: #ea580c;
-			}
-			.wait.medium {
-				color: var(--warning);
-			}
-			.wait.fast {
-				color: var(--success);
-			}
 			.wait {
 				color: var(--text-secondary);
+				&.slow { color: #ea580c; }
+				&.medium { color: var(--warning); }
+				&.fast { color: var(--success); }
 			}
 		}
 		> .content {
@@ -731,17 +725,9 @@ button, .btn {
 		gap: var(--space-1);
 		margin-top: var(--space-1);
 		padding-left: 0;
-		&.stopped {
-			color: var(--text-muted);
-		}
-
-		&.failed {
-			color: var(--danger);
-		}
-
-		&.completed {
-			color: var(--success);
-		}
+		&.stopped { color: var(--text-muted); }
+		&.failed { color: var(--danger); }
+		&.completed { color: var(--success); }
 	}
 	.usage {
 		font-size: 11px;
@@ -763,7 +749,7 @@ button, .btn {
 	&.image {
 		padding: 2px;
 	}
-	.thumb {
+	& .thumb {
 		width: 32px;
 		height: 32px;
 		border-radius: var(--radius-sm);
@@ -773,7 +759,7 @@ button, .btn {
 			background: #b91c1c;
 		}
 	}
-	.name {
+	& .name {
 		color: var(--text-secondary);
 		max-width: 100px;
 		overflow: hidden;
@@ -792,7 +778,7 @@ button, .btn {
 	justify-content: center;
 	z-index: 1000;
 	cursor: pointer;
-	img {
+	& img {
 		max-width: 90%;
 		max-height: 90%;
 		border-radius: 8px;
