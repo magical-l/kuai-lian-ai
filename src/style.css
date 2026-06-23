@@ -956,11 +956,6 @@ dialog.editing.endpoint .hint {
 	&.name {
 		flex: 1;
 	}
-	.model-remark {
-		color: var(--text-muted);
-		font-size: 0.85em;
-		white-space: nowrap;
-	}
 	/* 模型标签样式 */
 	&.selected {
 		display: inline-flex;
@@ -1040,6 +1035,11 @@ dialog.editing.endpoint .hint {
 			display: inline-block;
 			will-change: transform;
 		}
+	}
+	& .remark {
+		color: var(--text-muted);
+		font-size: 0.85em;
+		white-space: nowrap;
 	}
 }
 /* ========== Session List ========== */

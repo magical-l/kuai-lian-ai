@@ -29,7 +29,7 @@ function renderModelSelector(groups, selectedModels, isGenerating) {
                 speedClass ? `speed-${speedClass}` : ""
             ].filter(Boolean).join(" ");
 
-            const remarkHtml = (info.node.remark) ? `<span class="model-remark"> ${info.node.remark}</span>` : "";
+            const remarkHtml = (info.node.remark) ? `<span class="remark"> ${info.node.remark}</span>` : "";
             const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
             return `<span class="${classes}" data-model="${id}"><span class="full name">${fullPath}</span>${remarkHtml}<span class="btn remove" data-model="${id}">✕</span></span>`;
         }).join("");
@@ -260,7 +260,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
 
             if (node.remark) {
                 var remSpan = document.createElement("span");
-                remSpan.className = "model-remark";
+                remSpan.className = "remark";
                 remSpan.textContent = " " + node.remark;
                 nameSpan.appendChild(remSpan);
             }
@@ -277,12 +277,12 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
                 return val && val !== own ? "↑ " : "";
             }
 
-            var tipName = node.name + (node.remark ? " " + node.remark : "");
+            var tipName = node.name;
             var tipBaseUrl = inherited(rcfg.baseUrl, node.baseUrl) + (rcfg.baseUrl || "");
             var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? "(已设置)" : "");
             var tipStyle = inherited(rcfg.style, node.style) ? "↑ " + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || "");
             var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || "");
-            var tooltipHTML = "<div class=\"row flex items-go-x\">" + "<span class=\"label\">名称：</span>" + "<span class=\"value\">" + tipName + "</span>" + "<button class=\"copy-content square\" data-copy=\"" + tipName + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">地址：</span>" + "<span class=\"value\">" + tipBaseUrl + "</span>" + "<button class=\"copy-content square\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">格式：</span>" + "<span class=\"value\">" + tipStyle + "</span>" + "<button class=\"copy-content square\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + (rcfg.key ? "<div class=\"row flex items-go-x\"><span class=\"label\">Key：</span><span class=\"value\">" + tipKey + "</span><button class=\"copy-content square\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" : "") + "<div class=\"row flex items-go-x\"><span class=\"label\">模型：</span><span class=\"value\">" + (tipModel || "-") + "</span><button class=\"copy-content square\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>";
+            var tooltipHTML = "<div class=\"row flex items-go-x\">" + "<span class=\"label\">名称：</span>" + "<span class=\"value\">" + tipName + "</span>" + "<button class=\"copy-content square\" data-copy=\"" + tipName + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">地址：</span>" + "<span class=\"value\">" + tipBaseUrl + "</span>" + "<button class=\"copy-content square\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">格式：</span>" + "<span class=\"value\">" + tipStyle + "</span>" + "<button class=\"copy-content square\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + (rcfg.key ? "<div class=\"row flex items-go-x\"><span class=\"label\">Key：</span><span class=\"value\">" + tipKey + "</span><button class=\"copy-content square\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" : "") + "<div class=\"row flex items-go-x\"><span class=\"label\">模型：</span><span class=\"value\">" + (tipModel || "-") + "</span><button class=\"copy-content square\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + (node.remark ? "<div class=\"row flex items-go-x\"><span class=\"label\">备注：</span><span class=\"value\">" + node.remark + "</span><button class=\"copy-content square\" data-copy=\"" + node.remark + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" : "");
             var tooltip = createTooltip(tooltipId, tooltipHTML);
 
             nameSpan.on("mouseenter", function() {
@@ -806,7 +806,7 @@ function renderResponse(container, msg, groups) {
         const speedClass = getSpeedClass(r.firstTokenTime);
         const totalStr = r.totalDuration ? `耗时${(r.totalDuration / 1000).toFixed(1)}s` : "";
         const statusText = getStatusText(r.status);
-        $(".name", meta).innerHTML = remark ? `${name}<span class="model-remark"> ${remark}</span>` : name;
+        $(".name", meta).innerHTML = remark ? `${name}<span class="remark"> ${remark}</span>` : name;
         $(".time", meta).textContent = timeStr;
 
         if (isMulti) {
