@@ -63,7 +63,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.5.11</span>
+			<span class="version">v5.6.0</span>
 		</div>
 		<div class="workspace , flex items-go-x">
 			<span>当前存储目录：</span>
@@ -130,19 +130,19 @@
 						<svg width="16" height="16"><use href="#icon-attach"></use></svg>
 					</button>
 					<div class="mode-selector , flex items-go-x" role="radiogroup">
-						<span class="mode-option selected" data-mode="chat">💬 聊天</span>
-						<span class="mode-option" data-mode="embedding">🔢 嵌入</span>
+						<span class="option selected" data-mode="chat">💬 聊天</span>
+						<span class="option" data-mode="embedding">🔢 嵌入</span>
 					</div>
 					<div class="send-btn-group split-btn" title="发送">
-						<button class="send split-btn-main primary , flex items-go-x icon-only">
+						<button class="send main primary , flex items-go-x icon-only">
 							<svg width="16" height="16"><use href="#icon-send"></use></svg>
 						</button>
-						<button class="send-mode-toggle split-btn-drop , flex items-go-x icon-only">
+						<button class="send-mode-toggle drop , flex items-go-x icon-only">
 							<svg width="12" height="12"><use href="#icon-chevron-down"></use></svg>
 						</button>
-						<div class="split-btn-menu">
-							<div class="split-btn-option selected" data-value="enter">Enter 发送</div>
-							<div class="split-btn-option" data-value="ctrl-enter">Ctrl+Enter 发送</div>
+						<div class="menu">
+							<div class="option selected" data-value="enter">Enter 发送</div>
+							<div class="option" data-value="ctrl-enter">Ctrl+Enter 发送</div>
 						</div>
 					</div>
 					<button class="stop btn hidden" disabled>停止</button>
@@ -159,13 +159,13 @@
 </main>
 <!-- ========== Templates ========== -->
 <template id="edit-group-dialog">
-	<dialog class="editing">
+	<dialog class="editing endpoint">
 		<h3></h3>
 		<form class="flex items-go-y">
 			<label class="flex items-go-y">名称: <input class="group-name"></label>
 			<label class="flex items-go-y">Base URL（选填）:
 				<input class="group-url" placeholder="https://api.example.com">
-				<span class="inherit-hint"></span>
+				<span class="hint"></span>
 				<div class="hint-text">若路径以 # 结尾，则直接使用该路径</div>
 			</label>
 			<label class="flex items-go-y">接口风格:
@@ -183,11 +183,11 @@
 						<svg width="14" height="14"><use href="#icon-eye"></use></svg>
 					</button>
 				</div>
-				<span class="inherit-hint"></span>
+				<span class="hint"></span>
 			</label>
 			<label class="flex items-go-y">模型名（选填）:
 				<input class="group-modelid" placeholder="如 gpt-4o">
-				<span class="inherit-hint"></span>
+				<span class="hint"></span>
 			</label>
 			<label class="flex items-go-y">备注（选填）:
 				<input class="group-remark" placeholder="仅用于显示">

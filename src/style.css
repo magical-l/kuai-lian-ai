@@ -593,7 +593,7 @@ button, .btn {
 	}
 }
 /* ========== Jump Buttons ========== */
-.jump {
+.btn-group.jump {
 	margin-left: auto;
 	.btn:hover:not(:disabled) {
 		background: var(--accent-light);
@@ -937,12 +937,12 @@ aside .one.endpoint {
 	}
 }
 
-.inherit-hint {
+dialog.editing.endpoint .hint {
 	font-size: 11px;
 	color: var(--text-muted);
 	display: block;
 }
-.handle {
+.drag.handle {
 	cursor: grab;
 	color: var(--text-muted);
 	padding: 2px;
@@ -1177,7 +1177,7 @@ aside .one.endpoint {
 	}
 }
 /* ========== Dialogs ========== */
-.editing {
+dialog.editing.endpoint {
 	background: var(--bg-base);
 	padding: var(--space-6);
 	border-radius: var(--radius-xl);
@@ -1552,7 +1552,7 @@ dialog::backdrop {
 	border: 1px solid var(--border-default);
 	border-radius: 6px;
 	overflow: hidden;
-	& .mode-option {
+	& .option {
 		display: flex;
 		align-items: center;
 		height: 40px;
@@ -1564,7 +1564,7 @@ dialog::backdrop {
 		transition: none;
 		user-select: none;
 		& input { display: none; }
-		& + .mode-option {
+		& + .option {
 			border-left: 1px solid var(--border-default);
 		}
 		&.selected {
@@ -1582,24 +1582,24 @@ dialog::backdrop {
 	position: relative;
 	display: inline-flex;
 	height: 40px;
-	.split-btn-option.selected {
+	.option.selected {
 		color: var(--accent-primary);
 		font-weight: 500;
 	}
-	.split-btn-option:hover {
+	.option:hover {
 		background: var(--bg-hover);
 	}
-	.split-btn-option {
+	.option {
 		padding: 8px 12px;
 		cursor: pointer;
 		font-size: 13px;
 		color: var(--text-base);
 	}
 
-	&.open .split-btn-menu {
+	&.open .menu {
 		display: block;
 	}
-	.split-btn-menu {
+	.menu {
 		position: absolute;
 		bottom: 100%;
 		right: 0;
@@ -1613,13 +1613,13 @@ dialog::backdrop {
 		z-index: 100;
 	}
 
-	&.open .split-btn-drop {
+	&.open .drop {
 		background: var(--accent-primary-hover);
 	}
-	.split-btn-drop:hover {
+	.drop:hover {
 		background: var(--accent-primary-hover);
 	}
-	.split-btn-drop {
+	.drop {
 		height: 40px;
 		width: 28px;
 		border: 1px solid var(--accent-primary);
@@ -1632,10 +1632,10 @@ dialog::backdrop {
 		justify-content: center;
 		padding: 0;
 	}
-	.split-btn-main:hover {
+	.main:hover {
 		background: var(--accent-primary-hover);
 	}
-	.split-btn-main {
+	.main {
 		height: 40px;
 		padding: 0 12px;
 		border: 1px solid var(--accent-primary);
@@ -1657,33 +1657,5 @@ dialog::backdrop {
 	margin: 8px 0;
 	font-family: var(--font-mono, monospace);
 	font-size: 13px;
-	& .embedding-header {
-		font-weight: 600;
-		margin-bottom: 8px;
-		font-family: var(--font-ui, sans-serif);
-	}
-	& .embedding-meta {
-		display: flex;
-		gap: 16px;
-		margin-bottom: 8px;
-		color: var(--text-muted);
-		font-family: var(--font-ui, sans-serif);
-		font-size: 12px;
-	}
-	& .embedding-preview {
-		word-break: break-all;
-		margin-bottom: 8px;
-		color: var(--text-secondary);
-	}
-	& .embedding-copy-btn {
-		background: var(--bg-elevated);
-		border: 1px solid var(--border-default);
-		border-radius: 4px;
-		padding: 4px 10px;
-		cursor: pointer;
-		font-size: 12px;
-		&:hover {
-			background: var(--bg-hover);
-		}
-	}
+
 }

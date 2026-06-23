@@ -41,7 +41,7 @@ async function init() {
 	// 分裂式按钮：发送模式切换
 	const btnGroup = $('.send-btn-group');
 	const toggle = $('.send-mode-toggle');
-	const options = $$('.split-btn-option', btnGroup);
+	const options = $$('.option', btnGroup);
 	// 初始化选中状态
 	if (!sendOnEnter) {
 		options[0].classList.remove('selected');
@@ -120,7 +120,7 @@ async function init() {
 			handleSend();
 		}
 	};
-	document.querySelectorAll('.mode-selector .mode-option').forEach(el => {
+	document.querySelectorAll('.mode-selector .option').forEach(el => {
 		el.onclick = () => {
 			document.querySelector('.mode-selector .selected')?.classList.remove('selected');
 			el.classList.add('selected');

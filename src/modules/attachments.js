@@ -136,9 +136,9 @@ function addInheritIcon(inputEl) {
 }
 
 function showEditGroupDialog(node, parentId, onSave) {
-	var exist = $('dialog.editing');
+	var exist = $('dialog.editing.endpoint');
 	if (exist) exist.remove();
-	var dialog = fromTemplate('edit-group-dialog', '.editing');
+	var dialog = fromTemplate('edit-group-dialog', '.editing.endpoint');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
 	var keyInput = $(".group-key", dialog);
