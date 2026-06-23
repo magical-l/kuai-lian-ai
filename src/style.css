@@ -825,11 +825,6 @@ aside .one.endpoint {
 		gap: var(--space-1);
 		margin-top: var(--space-1);
 	}
-	.badge {
-		font-size: 10px;
-		color: var(--text-muted);
-		font-weight: 400;
-	}
 	/* group-header → <header> */
 	> header {
 		padding: var(--space-1) var(--space-2);
