@@ -615,7 +615,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 	container.querySelectorAll('li').forEach(el => el.remove());
 	sessions.sort((a, b) => b.createdAt - a.createdAt);
 	sessions.forEach(session => {
-		const sessionEl = mk('li', 'session item');
+		const sessionEl = mk('li', 'one session');
 		if (session.id === selectedSessionId) {
 			sessionEl.classList.add('selected');
 		}

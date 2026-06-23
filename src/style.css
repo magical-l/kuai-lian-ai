@@ -1031,58 +1031,60 @@ aside .one.endpoint {
 }
 
 /* ========== Session List ========== */
-.session {
-	&.item {
-		padding: var(--space-3);
-		margin-bottom: var(--space-3);
-		cursor: pointer;
-		border-radius: var(--radius-md);
-		border: 1px solid transparent;
-		transition: all var(--transition-fast);
+.one.session {
+	padding: var(--space-3);
+	margin-bottom: var(--space-3);
+	cursor: pointer;
+	border-radius: var(--radius-md);
+	border: 1px solid transparent;
+	transition: all var(--transition-fast);
 
-		&:hover {
-			background: var(--bg-hover);
-		}
+	&:hover {
+		background: var(--bg-hover);
+	}
 
-		&.selected {
-			background: var(--accent-light);
-			border-color: rgba(37, 99, 235, 0.3);
+	&.selected {
+		background: var(--accent-light);
+		border-color: rgba(37, 99, 235, 0.3);
+		& .title {
+			color: var(--accent-primary);
 		}
-		.session.actions {
-			gap: var(--space-1);
-		}
-		.session.time {
+	}
+
+	& .title {
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--text-primary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	& .meta {
+		align-items: center;
+		justify-content: space-between;
+		margin-top: var(--space-1);
+
+		.time {
 			font-size: 11px;
 			color: var(--text-muted);
 		}
-		.session.info {
-			align-items: center;
-			justify-content: space-between;
-			margin-top: var(--space-1);
-		}
 
-		&.selected .session.title {
-			color: var(--accent-primary);
-		}
-		.session.title {
-			font-size: 13px;
-			font-weight: 500;
-			color: var(--text-primary);
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-	}
-	&.actions {
-		& button, & .btn {
-			border: none;
-			--btn-p: 2px;
+		.actions {
+			gap: var(--space-1);
+
+			& button, & .btn {
+				border: none;
+				--btn-p: 2px;
+			}
+
+			.square {
+				--side: 18px;
+			}
 		}
 	}
-	& .square {
-		--side: 18px;
-	}
-	&.title-edit {
+
+	& .title-edit {
 		font-size: 13px;
 		font-weight: 500;
 		padding: 2px 6px;
