@@ -82,6 +82,32 @@ function bindSelectorEvents() {
             toggleModelSelection(btn.dataset.model, true);
         };
     });
+
+    // 为每个选中的模型标签添加 tooltip
+    $$('.selected.endpoint.list .one.endpoint').forEach(tag => {
+        var selModelId = tag.dataset.model;
+        var selInfo = findModelById(getGroups(), selModelId);
+        if (!selInfo) return;
+        var selNode = selInfo.node;
+        var selAncestors = selInfo.ancestors || [];
+        var selRcfg = resolveNodeConfig(selModelId);
+        var selDisplayName = [...selAncestors.map(a => a.name), selNode.name].join("/");
+        var selTooltipId = "tooltip-sel-" + selModelId.replace(/[:\/\\]/g, '-');
+        var selTooltip = createTooltip(selTooltipId, buildTooltipHTML(selNode, selRcfg, selDisplayName));
+        tag.addEventListener("mouseover", function(e) {
+            if (e.target.closest('.remove.btn')) {
+                selTooltip.hide();
+                return;
+            }
+            selTooltip.show(tag);
+        });
+        tag.addEventListener("mouseleave", function() {
+            selTooltip.hide();
+        });
+        tag.addEventListener("click", function() {
+            selTooltip.hide();
+        });
+    });
 }
 function syncJoinBtnState(nid) {
 	if (!nid) return;
@@ -194,6 +220,24 @@ function showAttachmentPreview(att) {
 		link.click();
 		if (!att.previewUrl) URL.revokeObjectURL(link.href);
 	}
+}
+
+// === 共享 tooltip HTML 构建函数（端点树和已选列表复用）===
+function buildTooltipHTML(node, rcfg, nameOverride) {
+	var styleLabels = {
+		"openai": "OpenAI",
+		"claude": "Claude",
+		"gemini": "Gemini"
+	};
+	function inherited(val, own) {
+		return val && val !== own ? "↑ " : "";
+	}
+	var tipName = nameOverride || node.name;
+	var tipBaseUrl = inherited(rcfg.baseUrl, node.baseUrl) + (rcfg.baseUrl || "");
+	var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? "(已设置)" : "");
+	var tipStyle = inherited(rcfg.style, node.style) ? "↑ " + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || "");
+	var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || "");
+	return "<div class=\"row flex items-go-x\">" + "<span class=\"label\">名称：</span>" + "<span class=\"value\">" + tipName + "</span>" + "<button class=\"copy value square\" data-copy=\"" + tipName + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">地址：</span>" + "<span class=\"value\">" + tipBaseUrl + "</span>" + "<button class=\"copy value square\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">格式：</span>" + "<span class=\"value\">" + tipStyle + "</span>" + "<button class=\"copy value square\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + (rcfg.key ? "<div class=\"row flex items-go-x\"><span class=\"label\">Key：</span><span class=\"value\">" + tipKey + "</span><button class=\"copy value square\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" : "") + "<div class=\"row flex items-go-x\"><span class=\"label\">模型：</span><span class=\"value\">" + (tipModel || "-") + "</span><button class=\"copy value square\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + (node.remark ? "<div class=\"row flex items-go-x\"><span class=\"label\">备注：</span><span class=\"value\">" + node.remark + "</span><button class=\"copy value square\" data-copy=\"" + node.remark + "\" title=\"复制\"><span class=\"icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" : "");
 }
 
 function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, onReorderNodes, onTestConnection, onMoveNode) {
