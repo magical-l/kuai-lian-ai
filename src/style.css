@@ -883,15 +883,6 @@ aside .one.endpoint {
 		color: var(--text-primary);
 		word-break: break-all;
 	}
-	& .model.actions {
-		& button, & .btn {
-			border: none;
-			--btn-p: 2px;
-		}
-		& .square {
-			--side: 18px;
-		}
-	}
 	& .drag.handle {
 		color: var(--text-muted);
 		padding: 2px;

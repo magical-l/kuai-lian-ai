@@ -240,12 +240,12 @@ async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal 
         return provider.parseEmbeddingResponse(data);
     }
 
-async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
+async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) {
 	const startTime = Date.now();
 	clearSessionGenerations(sessionId);
 	const gens = getSessionGenerations(sessionId);
-	modelIds.forEach(id => {
-		gens.set(id, {
+	endpointIds.forEach(endpointId => {
+		gens.set(endpointId, {
 			abortController: new AbortController(),
 			status: 'generating',
 			firstTokenTime: null,
@@ -255,16 +255,16 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 			thinkingDuration: null
 		});
 	});
-	const promises = modelIds.map(async id => {
-		const info = findModelById(groups, id);
-		const state = gens.get(id);
+	const promises = endpointIds.map(async endpointId => {
+		const info = findModelById(groups, endpointId);
+		const state = gens.get(endpointId);
 		if (!info) {
 			state.status = 'failed';
-			state.error = '模型不存在';
+			state.error = '端点不存在';
 			return {
-				modelId: id,
+				endpointId: endpointId,
 				status: 'failed',
-				error: '模型不存在',
+				error: '端点不存在',
 				content: '',
 				timestamp: Date.now()
 			};
@@ -272,7 +272,7 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 		try {
 			const config = resolveNodeConfig(info.node.id);
 			const resultState = await callAPI(config.style || 'openai', config.baseUrl, config.key, (info.node.modelId || info.node.name), messages, chunkState => {
-				const genState = gens.get(id);
+				const genState = gens.get(endpointId);
 				if (genState) {
 					genState.content = chunkState.content;
 					genState.thinking = chunkState.thinking;
@@ -286,7 +286,7 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 					}
 				}
 				const firstTokenTime = genState?.firstTokenTime;
-				onChunk(id, chunkState, firstTokenTime);
+				onChunk(endpointId, chunkState, firstTokenTime);
 			}, state.abortController.signal);
 			state.status = 'completed';
 			state.content = resultState.content;
@@ -295,10 +295,10 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 			const completionTime = Date.now();
 			state.totalDuration = completionTime - startTime;
 			// Immediately update UI for this specific model
-			renderModelSelector(groups, selectedModels, true);
-			updateCardStatus(id, 'completed', null, state, sessionId);
+			renderSelectedEndpoints(groups, selectedEndpoints, true);
+			updateCardStatus(endpointId, 'completed', null, state, sessionId);
 			return {
-				modelId: id,
+				endpointId: endpointId,
 				status: 'completed',
 				thinking: resultState.thinking,
 				content: resultState.content,
@@ -309,14 +309,14 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 			};
 		} catch (err) {
 			const completionTime = Date.now();
-			const genState = gens.get(id);
+			const genState = gens.get(endpointId);
 			if (err.name === 'AbortError') {
 				state.status = 'stopped';
 				// Immediately update UI for this specific model
-				renderModelSelector(groups, selectedModels, true);
-				updateCardStatus(id, 'stopped', null, genState, sessionId);
+				renderSelectedEndpoints(groups, selectedEndpoints, true);
+				updateCardStatus(endpointId, 'stopped', null, genState, sessionId);
 				return {
-					modelId: id,
+					endpointId: endpointId,
 					status: 'stopped',
 					thinking: genState?.thinking || '',
 					content: genState?.content || '',
@@ -329,10 +329,10 @@ async function callAllModels(groups, modelIds, messages, onChunk, sessionId) {
 			state.status = 'failed';
 			state.error = err.message;
 			// Immediately update UI for this specific model
-			renderModelSelector(groups, selectedModels, true);
-			updateCardStatus(id, 'failed', err.message, genState, sessionId);
+			renderSelectedEndpoints(groups, selectedEndpoints, true);
+			updateCardStatus(endpointId, 'failed', err.message, genState, sessionId);
 			return {
-				modelId: id,
+				endpointId: endpointId,
 				status: 'failed',
 				error: err.message,
 				content: '',

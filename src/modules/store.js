@@ -207,9 +207,9 @@ async function deleteNode(nodeId) {
 				node.children?.forEach(collectKeys);
 			};
 			collectKeys(nodes[index]);
-			// 从 selectedModels 中移除
-			selectedModels = selectedModels.filter(id => !keysToRemove.has(id));
-			saveDefaultSelectedModels(selectedModels);
+			// 从 selectedEndpoints 中移除
+			selectedEndpoints = selectedEndpoints.filter(id => !keysToRemove.has(id));
+			saveDefaultSelectedEndpoints(selectedEndpoints);
 			nodes.splice(index, 1);
 			return true;
 		}
@@ -334,7 +334,7 @@ async function createSession(firstMessage = null, targetModels = null) {
 			content = [{ type: 'text', text: String(firstMessage) }];
 		}
 		const msg = { role: 'user', content, timestamp: Date.now() };
-		if (targetModels) msg.targetModels = targetModels;
+		if (targetModels) msg.targetEndpoints = targetModels;
 		session.messages.push(msg);
 	}
 	sessionsCache.set(session.id, session);
@@ -372,11 +372,11 @@ async function addMessage(sessionId, role, content, options = {}) {
 		message.content = [{ type: 'text', text: content || '' }];
 	}
 	if (role === 'user') {
-		if (options.targetModels) message.targetModels = options.targetModels;
+		if (options.targetEndpoints) message.targetEndpoints = options.targetEndpoints;
 	} else if (role === 'assistant') {
 		if (options.responses) message.responses = options.responses;
-		if (options.modelId && !options.responses) {
-			message.modelId = options.modelId;
+		if (options.endpointId && !options.responses) {
+			message.endpointId = options.endpointId;
 			message.endpointGroupId = options.endpointGroupId;
 			if (options.usage) message.usage = options.usage;
 		}

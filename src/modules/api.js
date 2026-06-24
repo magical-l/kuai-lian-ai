@@ -24,10 +24,10 @@ function deleteSessionGenerations(sessionId) {
 }
 let currentAbortController = null;
 
-function stopSingleGeneration(sessionId, modelId) {
+function stopSingleGeneration(sessionId, endpointId) {
 	const gens = sessionGenerations.get(sessionId);
 	if (!gens) return;
-	const state = gens.get(modelId);
+	const state = gens.get(endpointId);
 	if (state && state.abortController && state.status === 'generating') {
 		state.abortController.abort();
 	}

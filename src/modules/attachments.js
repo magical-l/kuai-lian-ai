@@ -409,7 +409,7 @@ async function testConnection(nodeId) {
 	if (!provider) return;
 	var key = nodeId;
 	connectionStatus.set(key, { status: 'testing', timestamp: null });
-	renderEndpointList(getGroups(), null, handleNodeEdit, handleNodeDelete, handleReorderNode, testConnection, handleMoveNodeAsChild);
+	updateEndpointTestUI(key);
 	try {
 		var modelType = detectModelType(modelName);
 		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig : provider.testConfig;
@@ -466,7 +466,7 @@ async function testConnection(nodeId) {
 			error: isCorsError ? null : err.message
 		});
 	}
-	renderEndpointList(getGroups(), null, handleNodeEdit, handleNodeDelete, handleReorderNode, testConnection, handleMoveNodeAsChild);
+	updateEndpointTestUI(key);
 }
 
 // 递归收集所有子节点 ID
@@ -490,5 +490,77 @@ function clearTestResults(nodeId) {
 		if (idSet[key]) {
 			connectionStatus.delete(key);
 		}
+	}
+}
+
+let attachmentTooltip = null;
+
+function showAttachmentTooltip(name, targetEl) {
+	if (!attachmentTooltip) {
+		attachmentTooltip = mk('div');
+		attachmentTooltip.style.cssText = 'position:fixed;background:var(--bg-elevated);border:1px solid var(--border-subtle);padding:2px 6px;font-size:11px;border-radius:4px;z-index:9999;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:var(--shadow-sm);pointer-events:none;';
+		doc.body.appendChild(attachmentTooltip);
+	}
+	attachmentTooltip.textContent = name;
+	attachmentTooltip.style.display = 'block';
+	const rect = targetEl.getBoundingClientRect();
+	// 显示在缩略图上方
+	attachmentTooltip.style.left = rect.left + 'px';
+	attachmentTooltip.style.top = (rect.top - 24) + 'px';
+}
+
+function hideAttachmentTooltip() {
+	if (attachmentTooltip) {
+		attachmentTooltip.style.display = 'none';
+	}
+}
+
+function renderPendingAttachments() {
+	const row = $('.attachment.list');
+	if (!row) return;
+	row.innerHTML = '';
+	pendingAttachments.forEach(att => {
+		const thumb = mk('div', `thumb ${att.type === 'image' ? 'image' : 'file'} , flex items-go-x`);
+		thumb.dataset.id = att.id;
+		if (att.type === 'image' && att.previewUrl) {
+			thumb.style.backgroundImage = `url(${att.previewUrl})`;
+		} else {
+			thumb.textContent = '📄';
+		}
+		// hover显示名字
+		thumb.onmouseenter = () => showAttachmentTooltip(att.name, thumb);
+		thumb.onmouseleave = () => hideAttachmentTooltip();
+		const remove = mk('span', 'remove btn');
+		remove.textContent = '×';
+		remove.onclick = (e) => {
+			e.stopPropagation();
+			removeAttachment(att.id);
+			renderPendingAttachments();
+		};
+		thumb.appendChild(remove);
+		// 点击预览
+		thumb.onclick = () => showAttachmentPreview(att);
+		row.appendChild(thumb);
+	});
+}
+
+function showAttachmentPreview(att) {
+	if (att.type === 'image' && att.previewUrl) {
+		// 图片预览弹窗
+		const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+		overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
+		const img = mk('img');
+		img.src = att.previewUrl;
+		img.style.cssText = 'max-width:90%;max-height:90%;border-radius:8px;';
+		overlay.onclick = () => overlay.remove();
+		overlay.appendChild(img);
+		document.body.appendChild(overlay);
+	} else {
+		// 文件下载
+		const link = mk('a');
+		link.href = att.previewUrl || URL.createObjectURL(att.file);
+		link.download = att.name;
+		link.click();
+		if (!att.previewUrl) URL.revokeObjectURL(link.href);
 	}
 }

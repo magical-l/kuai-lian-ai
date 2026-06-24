@@ -63,7 +63,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.7.0</span>
+			<span class="version">v6.0.0</span>
 		</div>
 		<div class="workspace , flex items-go-x">
 			<span>当前存储目录：</span>
@@ -120,7 +120,7 @@
 			<footer class="chat-input-area , flex items-go-y">
 				<div class="divider row"></div>
 				<div class="selected endpoint list , flex items-go-x">
-					<!-- 已选模型标签 -->
+					<!-- 已选端点标签 -->
 				</div>
 				<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
 				<menu class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
@@ -274,13 +274,13 @@
 				<p>端点是线上部署的大模型服务。不同端点有不同地址，同一模型可部署在多个地址，成为不同端点。一个端点可以提供多个模型。</p>
 				<p>* 目前支持OpenAI、Claude、Gemini三种接口格式。国产大模型基本都是OpenAI格式。</p>
 				<p>* 不支持的格式快来贡献代码呀！</p>
-				<p>可以测试连接模型，也可以测试一个端点下添加的所有模型。</p>
+				<p>可以测试连接端点，也可以测试一个端点下添加的所有模型。</p>
 				<p>* 有些服务端点没开CORS，浏览器访问会被拒。我们区分了这种情况，免得以为是服务挂了。</p>
 			</section>
 			<section>
 				<h4>中间：聊天</h4>
-				<p>可以选择一个或多个模型舌战群儒。</p>
-				<p>交谈中可以随时加入未选模型，或移除已选模型（踢出群！）。</p>
+				<p>可以选择一个或多个端点舌战群儒。</p>
+				<p>交谈中可以随时加入未选端点，或移除已选端点（踢出群！）。</p>
 				<p>* 目前多轮对话只会把你的话和该模型之前的回复作为上下文，不搭理其他模型。</p>
 			</section>
 			<section>
@@ -297,7 +297,10 @@
 	<script src="modules/storage-core.js"></script>
 	<script src="modules/providers.js"></script>
 	<script src="modules/ui-utils.js"></script>
-	<script src="modules/model-selector.js"></script>
+	<script src="modules/selected-endpoints.js"></script>
+	<script src="modules/endpoint-tree.js"></script>
+	<script src="modules/messages.js"></script>
+	<script src="modules/session-list.js"></script>
 	<script src="modules/attachments.js"></script>
 	<script src="modules/store.js"></script>
 	<script src="modules/api.js"></script>

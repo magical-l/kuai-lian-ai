@@ -31,9 +31,9 @@
 
 ## 中间：聊天
 
-可以选择一个或多个模型舌战群儒。
+可以选择一个或多个端点舌战群儒。
 
-交谈中可以随时加入未选模型，或移除已选模型（踢出群！）。
+交谈中可以随时加入未选端点，或移除已选端点（踢出群！）。
 
 - 目前多轮对话只会把你的话和该模型之前的回复作为上下文，不搭理其他模型。
 
@@ -76,9 +76,9 @@ You can test connection to a model, or test all models under an endpoint.
 
 ## Center: Chat
 
-Select one or multiple models to chat together.
+Select one or multiple endpoints to chat together.
 
-During conversation, you can add unselected models or remove selected ones (kick them out!) anytime.
+During conversation, you can add unselected endpoints or remove selected ones (kick them out!) anytime.
 
 - Currently, multi-turn conversations only use your messages and that model's previous replies as context, ignoring other models.
 

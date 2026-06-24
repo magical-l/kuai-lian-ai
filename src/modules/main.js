@@ -1,7 +1,7 @@
 // ========== Main Logic ==========
-function loadDefaultSelectedModels() {
+function loadDefaultSelectedEndpoints() {
 	try {
-		const saved = localStorage.getItem('defaultSelectedModels');
+		const saved = localStorage.getItem('defaultSelectedEndpoints');
 		const refs = saved ? JSON.parse(saved) : [];
 		return refs.map(function(r) { return r.includes(':') ? r.split(':')[0] : r; });
 	} catch {
@@ -9,13 +9,13 @@ function loadDefaultSelectedModels() {
 	}
 }
 
-function saveDefaultSelectedModels(models) {
-	localStorage.setItem('defaultSelectedModels', JSON.stringify(models));
+function saveDefaultSelectedEndpoints(endpoints) {
+	localStorage.setItem('defaultSelectedEndpoints', JSON.stringify(endpoints));
 }
-let defaultSelectedModels = loadDefaultSelectedModels();
+let defaultSelectedEndpoints = loadDefaultSelectedEndpoints();
 let currentSession = null;
-let selectedModels = []; // 当前选中模型ID数组
-let sessionGenerations = new Map(); // 按会话隔离的生成状态：Map<sessionId, Map<modelId, state>>
+let selectedEndpoints = []; // 当前选中端点ID数组
+let sessionGenerations = new Map(); // 按会话隔离的生成状态：Map<sessionId, Map<endpointId, state>>
 let lastUserMessage = null;
 let pendingAttachments = []; // 待发送的附件列表
 async function init() {
@@ -88,12 +88,12 @@ async function init() {
 	if (!result.success) {
 		showDirectoryPrompt(result.needUserAction);
 	} else {
-		if (defaultSelectedModels.length > 0) {
-			selectedModels = [...defaultSelectedModels];
+		if (defaultSelectedEndpoints.length > 0) {
+			selectedEndpoints = [...defaultSelectedEndpoints];
 		}
 		// 迁移旧格式引用
-		selectedModels = selectedModels.map(function(r) { return r.includes(':') ? r.split(':')[0] : r; });
-		saveDefaultSelectedModels(selectedModels);
+		selectedEndpoints = selectedEndpoints.map(function(r) { return r.includes(':') ? r.split(':')[0] : r; });
+		saveDefaultSelectedEndpoints(selectedEndpoints);
 		updateDirectoryDisplay();
 		await refreshUI();
 	}
@@ -135,7 +135,7 @@ async function init() {
 	$('.stop.btn').onclick = () => {
 		stopAllGenerations();
 		setButtonState(false, false);
-		renderModelSelector(getGroups(), selectedModels, false);
+		renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
 	};
 	$('.help').onclick = async () => {
 		const saved = await storage.hasSavedHandle();
@@ -214,11 +214,11 @@ async function updateDirectoryDisplay() {
 }
 async function refreshUI() {
     const groups = getGroups();
-    const before = selectedModels.length;
-    selectedModels = selectedModels.filter(id => !!findModelById(groups, id));
+    const before = selectedEndpoints.length;
+    selectedEndpoints = selectedEndpoints.filter(id => !!findModelById(groups, id));
 
-    if (selectedModels.length !== before) {
-        saveDefaultSelectedModels(selectedModels);
+    if (selectedEndpoints.length !== before) {
+        saveDefaultSelectedEndpoints(selectedEndpoints);
     }
 
     if (currentSession && !sessionsCache.has(currentSession.id)) {
@@ -227,11 +227,10 @@ async function refreshUI() {
 
     const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
     const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === "generating");
-    renderModelSelector(groups, selectedModels, isGenerating);
+    renderSelectedEndpoints(groups, selectedEndpoints, isGenerating);
 
     renderEndpointList(
         groups,
-        null,
         handleNodeEdit,
         handleNodeDelete,
         handleReorderNode,
@@ -265,29 +264,30 @@ function updateChatTitleDisplay() {
 }
 async function handleSessionSelect(sessionId) {
 	currentSession = await loadSession(sessionId);
-	// 从会话的最后用户消息恢复模型集
+	// 从会话的最后用户消息恢复端点集
 	const lastUserMsg = currentSession.messages.filter(m => m.role === 'user').pop();
-	if (lastUserMsg?.targetModels) {
-		selectedModels = [...lastUserMsg.targetModels];
+	var targets = lastUserMsg?.targetEndpoints || lastUserMsg?.targetModels;
+	if (targets) {
+		selectedEndpoints = [...targets];
 	} else {
-		selectedModels = [...defaultSelectedModels];
+		selectedEndpoints = [...defaultSelectedEndpoints];
 	}
 	// 迁移旧格式引用
-	selectedModels = selectedModels.map(function(r) { return r.includes(':') ? r.split(':')[0] : r; });
-	saveDefaultSelectedModels(selectedModels);
+	selectedEndpoints = selectedEndpoints.map(function(r) { return r.includes(':') ? r.split(':')[0] : r; });
+	saveDefaultSelectedEndpoints(selectedEndpoints);
 	lastUserMessage = lastUserMsg?.content || null;
 	// 获取当前会话的生成状态
 	const gens = sessionGenerations.get(sessionId);
 	const sessionModels = gens ? Array.from(gens.entries()) : [];
 	await refreshUI();
-	// 只有正在生成的模型才需要恢复流式卡片（已完成的已保存到消息中）
+	// 只有正在生成的端点才需要恢复流式卡片（已完成的已保存到消息中）
 	const generatingModels = sessionModels.filter(([id, state]) => state.status === 'generating');
-	// 如果有正在生成的模型，恢复显示流式卡片
+	// 如果有正在生成的端点，恢复显示流式卡片
 	if (generatingModels.length > 0) {
 		const groups = getGroups();
-		const allModelIds = sessionModels.map(([id]) => id);
-		showThinkingCards(allModelIds, groups, sessionId);
-		// 恢复各状态模型的内容（但只恢复 generating 状态的）
+		const allEndpointIds = sessionModels.map(([id]) => id);
+		showThinkingCards(allEndpointIds, groups, sessionId);
+		// 恢复各状态端点的内容（但只恢复 generating 状态的）
 		generatingModels.forEach(([id, state]) => {
 			if (state.content || state.thinking) {
 				updateStreamingCard(id, state, state.firstTokenTime, groups, sessionId);
@@ -295,9 +295,9 @@ async function handleSessionSelect(sessionId) {
 		});
 		// 恢复按钮状态
 		setButtonState(true, true);
-		renderModelSelector(groups, selectedModels, true);
+		renderSelectedEndpoints(groups, selectedEndpoints, true);
 	}
-	// 如果所有模型都已完成/失败/停止，清理状态（不再需要恢复）
+	// 如果所有端点都已完成/失败/停止，清理状态（不再需要恢复）
 	const allDone = sessionModels.length > 0 && sessionModels.every(([id, state]) => state.status === 'completed' || state.status === 'failed' || state.status === 'stopped');
 	if (allDone) {
 		sessionGenerations.delete(sessionId);
@@ -340,12 +340,12 @@ function handleNodeEdit(nodeId) {
 	});
 }
 async function handleNodeDelete(nodeId) {
-	// 清理 selectedModels 中属于该节点的模型
-	selectedModels = selectedModels.filter(id => {
+	// 清理 selectedEndpoints 中属于该端点的引用
+	selectedEndpoints = selectedEndpoints.filter(id => {
 		const parts = id.split(':');
 		return parts[0] !== nodeId;
 	});
-	saveDefaultSelectedModels(selectedModels);
+	saveDefaultSelectedEndpoints(selectedEndpoints);
 	await deleteNode(nodeId);
 	await refreshUI();
 }
@@ -369,19 +369,19 @@ async function handleMoveNodeAsChild(draggedId, targetParentId) {
 async function handleSend() {
 	const content = await getInputMessage();
 	if (!content || content.length === 0) return; // 处理失败或无文本无附件
-	if (selectedModels.length === 0) {
-		renderModelSelector(getGroups(), selectedModels, false);
+	if (selectedEndpoints.length === 0) {
+		renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
 		return;
 	}
 	let isNewSession = false;
 	if (!currentSession) {
-		currentSession = await createSession(content, [...selectedModels]);
+		currentSession = await createSession(content, [...selectedEndpoints]);
 		isNewSession = true;
 	}
 	// Only addMessage if NOT a new session (createSession already added first message)
 	if (!isNewSession) {
 		await addMessage(currentSession.id, 'user', content, {
-			targetModels: [...selectedModels]
+			targetEndpoints: [...selectedEndpoints]
 		});
 	}
 	// 提取纯文本用于 lastUserMessage
@@ -390,7 +390,7 @@ async function handleSend() {
 	clearInput();
 	clearAttachments();
 	setButtonState(true, true);
-	renderModelSelector(getGroups(), selectedModels, true);
+	renderSelectedEndpoints(getGroups(), selectedEndpoints, true);
 	const groups = getGroups();
 	const messages = currentSession.messages.map(m => {
 		if (m.role === 'assistant' && m.responses) {
@@ -413,13 +413,13 @@ async function handleSend() {
 	// 记录当前会话ID用于后台接收（在创建卡片前定义）
 	const targetSessionId = currentSession.id;
 	// 显示"思考中"状态卡片（使用 targetSessionId 标记）
-	showThinkingCards(selectedModels, groups, targetSessionId);
+	showThinkingCards(selectedEndpoints, groups, targetSessionId);
 	const sortedModels = new Set();
-	const responses = await callAllModels(groups, selectedModels, messages, (modelId, partialContent, firstTokenTime) => {
-		updateStreamingCard(modelId, partialContent, firstTokenTime, groups, targetSessionId);
+	const responses = await callAllModels(groups, selectedEndpoints, messages, (endpointId, partialContent, firstTokenTime) => {
+		updateStreamingCard(endpointId, partialContent, firstTokenTime, groups, targetSessionId);
 		// 只在firstTokenTime首次有值时排序一次
-		if (firstTokenTime != null && !sortedModels.has(modelId)) {
-			sortedModels.add(modelId);
+		if (firstTokenTime != null && !sortedModels.has(endpointId)) {
+			sortedModels.add(endpointId);
 			reorderCardsBySpeed();
 			reorderSelectorTagsBySpeed();
 		}
@@ -431,10 +431,11 @@ async function handleSend() {
 	if (currentSession?.id === targetSessionId) {
 		currentSession = await loadSession(targetSessionId);
 		setButtonState(false, false);
-		renderModelSelector(groups, selectedModels, false);
+		renderSelectedEndpoints(groups, selectedEndpoints, false);
 		await refreshUI();
+	}
 }
-}
+
 
 
 
@@ -443,14 +444,14 @@ async function handleEmbeddingSend() {
 	const input = $('#chat-input');
 	const text = input.value.trim();
 	if (!text) return;
-	if (selectedModels.length === 0) {
-		renderModelSelector(getGroups(), selectedModels, false);
+	if (selectedEndpoints.length === 0) {
+		renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
 		return;
 	}
-	const modelId = selectedModels[0];
-	const info = findModelById(getGroups(), modelId);
+	const endpointId = selectedEndpoints[0];
+	const info = findModelById(getGroups(), endpointId);
 	if (!info) {
-		console.error('模型不存在:', modelId);
+		console.error('模型不存在:', endpointId);
 		return;
 	}
 	clearInput();
@@ -458,7 +459,7 @@ async function handleEmbeddingSend() {
 		currentSession = await createSession(null, []);
 	}
 	await addMessage(currentSession.id, 'user', [{ type: 'text', text: '🔢 嵌入: ' + text }], {
-		targetModels: [modelId]
+		targetEndpoints: [endpointId]
 	});
 	renderMessages(currentSession.messages, getGroups(), handleCopy);
 	const container = $('#chat-messages');
@@ -480,7 +481,7 @@ async function handleEmbeddingSend() {
 		const fullJson = JSON.stringify(emb);
 		await addMessage(currentSession.id, 'assistant', null, {
 			responses: [{
-				modelId: modelId,
+				endpointId: endpointId,
 				status: 'completed',
 				content: '',
 				embeddingResult: {
@@ -502,7 +503,7 @@ async function handleEmbeddingSend() {
 		console.error('嵌入失败:', err);
 		await addMessage(currentSession.id, 'assistant', null, {
 			responses: [{
-				modelId: modelId,
+				endpointId: endpointId,
 				status: 'failed',
 				error: err.message
 			}]
@@ -516,7 +517,7 @@ async function handleEmbeddingSend() {
 
 
 
-function showThinkingCards(modelIds, groups, sessionId) {
+function showThinkingCards(endpoints, groups, sessionId) {
     const container = $("#chat-messages");
     // 移除该 session 已有的 streaming 元素（防重复触发）
     $$(`[data-session-id="${sessionId}"]`).forEach(el => el.remove());
@@ -525,7 +526,7 @@ function showThinkingCards(modelIds, groups, sessionId) {
     const hint = mk('div', 'hint streaming-hint');
     hint.dataset.sessionId = sessionId;
     const hintText = mk('span', 'hint-text');
-    hintText.textContent = `${modelIds.length}个模型正在思考...`;
+    hintText.textContent = `${endpoints.length}个端点正在思考...`;
     hint.appendChild(hintText);
     const stopBtn = mk('button', 'stop btn-stop-inline');
     stopBtn.textContent = '全部停止';
@@ -534,14 +535,14 @@ function showThinkingCards(modelIds, groups, sessionId) {
         stopAllGenerations();
         stopBtn.disabled = true;
         stopBtn.textContent = "已停止";
-        hintText.textContent = `${modelIds.length}个模型（部分已停止）`;
+        hintText.textContent = `${endpoints.length}个端点（部分已停止）`;
     };
     container.addChild(hint);
 
-    modelIds.forEach(id => {
+    endpoints.forEach(id => {
         const card = fromTemplate("response-card-streaming", ".one.response.msg");
         card.dataset.sessionId = sessionId;
-        card.dataset.modelId = id;
+        card.dataset.endpointId = id;
         const info = findModelById(groups, id);
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         $(".response .name", card).textContent = name;
@@ -550,8 +551,8 @@ function showThinkingCards(modelIds, groups, sessionId) {
     scrollToBottom();
 }
 
-function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) {
-	const card = $(`.one.response.msg[data-session-id="${sessionId}"][data-model-id="${modelId}"]`);
+function updateStreamingCard(endpointId, state, firstTokenTime, groups, sessionId) {
+	const card = $(`.one.response.msg[data-session-id="${sessionId}"][data-endpoint-id="${endpointId}"]`);
 	if (!card) return;
 	const thinkingBlock = $('.think', card);
 	if (thinkingBlock) {
@@ -597,9 +598,9 @@ function updateStreamingCard(modelId, state, firstTokenTime, groups, sessionId) 
 	}
 }
 
-function updateCardStatus(modelId, status, error, state = null, sessionId = null) {
+function updateCardStatus(endpointId, status, error, state = null, sessionId = null) {
 	requestAnimationFrame(() => {
-		const selector = sessionId ? `.one.response.msg[data-session-id="${sessionId}"][data-model-id="${modelId}"]` : `.one.response.msg[data-model-id="${modelId}"]`;
+		const selector = sessionId ? `.one.response.msg[data-session-id="${sessionId}"][data-endpoint-id="${endpointId}"]` : `.one.response.msg[data-endpoint-id="${endpointId}"]`;
 		const card = $(selector);
 		if (!card) return;
 		const contentEl = $('.response .content', card);
@@ -659,8 +660,8 @@ function reorderCardsBySpeed() {
         const container = $('#chat-messages');
         const cards = Array.from($$('.one.response.msg[data-session-id]', container));
         cards.sort((a, b) => {
-            const stateA = gens.get(a.dataset.modelId);
-            const stateB = gens.get(b.dataset.modelId);
+            const stateA = gens.get(a.dataset.endpointId);
+            const stateB = gens.get(b.dataset.endpointId);
             return (stateA?.firstTokenTime ?? Infinity) - (stateB?.firstTokenTime ?? Infinity);
         });
         cards.forEach(c => container.appendChild(c));
@@ -675,22 +676,21 @@ function reorderSelectorTagsBySpeed() {
 	const originalTags = [...tags];
 	const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
 	const sortedTags = tags.sort((a, b) => {
-		const aTime = gens ? gens.get(a.dataset.model)?.firstTokenTime : undefined;
-		const bTime = gens ? gens.get(b.dataset.model)?.firstTokenTime : undefined;
+		const aTime = gens ? gens.get(a.dataset.endpoint)?.firstTokenTime : undefined;
+		const bTime = gens ? gens.get(b.dataset.endpoint)?.firstTokenTime : undefined;
 		return (aTime ?? Infinity) - (bTime ?? Infinity);
 	});
 	const needsReorder = sortedTags.some((tag, i) => tag !== originalTags[i]);
 	if (!needsReorder) return;
-	selectedModels = sortedTags.map(tag => tag.dataset.model);
+	selectedEndpoints = sortedTags.map(tag => tag.dataset.endpoint);
 	sortedTags.forEach(tag => summaryEl.appendChild(tag));
 }
 async function handleNewSession() {
 	currentSession = null;
-	selectedModels = [...defaultSelectedModels];
+	selectedEndpoints = [...defaultSelectedEndpoints];
 	lastUserMessage = null;
 	await refreshUI();
 	const inputEl = $('#chat-input');
 	if (inputEl) inputEl.focus();
 }
 init();
-
