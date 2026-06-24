@@ -31,7 +31,7 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
 
             const remarkHtml = (info.node.remark) ? `<span class="remark"> ${info.node.remark}</span>` : "";
             const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
-            return `<span class="${classes}" data-endpoint="${id}"><span class="full name">${fullPath}</span>${remarkHtml}<span class="btn remove" data-endpoint="${id}">✕</span></span>`;
+            return `<li class="${classes}" data-endpoint="${id}"><span class="full name">${fullPath}</span>${remarkHtml}<span class="btn remove" data-endpoint="${id}">✕</span></li>`;
         }).join("");
     }
 

@@ -314,7 +314,11 @@ function createTooltip(id, html) {
 			el.id = id;
 			el.className = 'tooltip';
 			el.innerHTML = html;
-			doc.body.appendChild(el);
+			// 优先挂到最近的 .one.endpoint 下，减少 DOM 嵌套影响
+			var tipParent = triggerEl.closest('.one.endpoint');
+			// span 标签不能包含 div，fallback 到 body
+			if (!tipParent) tipParent = doc.body;
+			tipParent.appendChild(el);
 			$$('button.copy', el).forEach(btn => {
 				btn.onclick = e => {
 					e.stopPropagation();
@@ -334,6 +338,7 @@ function createTooltip(id, html) {
 				}
 			};
 			el.onmouseleave = () => hide();
+			el.onclick = function(e) { e.stopPropagation(); };
 		}
 		// 计算位置
 		const rect = triggerEl.getBoundingClientRect();

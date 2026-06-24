@@ -911,6 +911,7 @@ aside .one.endpoint {
 	min-width: 200px;
 	max-width: 300px;
 	display: none;
+	cursor: default;
 	font-size: 12px;
 	& .row {
 		align-items: center;
