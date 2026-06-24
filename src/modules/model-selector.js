@@ -623,9 +623,11 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 		titleEl.textContent = session.title || '新会话';
 		const meta = mk('div', 'session meta , flex items-go-x');
 		const timeEl = mk('span', 'session time');
-		timeEl.textContent = new Date(session.createdAt).toLocaleDateString('zh-CN', {
-			month: 'short',
-			day: 'numeric'
+		timeEl.textContent = new Date(session.createdAt).toLocaleString('zh-CN', {
+			month: 'numeric',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
 		});
 		const actionsEl = mk('div', 'session actions , flex items-go-x');
 		const editBtn = mk('button', 'action-sm square');
@@ -634,7 +636,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 		editBtn.on('click', e => {
 			e.stopPropagation();
 			const currentTitle = session.title || '新会话';
-			const inputEl = mk('input', 'session title-edit');
+			const inputEl = mk('input', 'editing title');
 			inputEl.type = 'text';
 			inputEl.value = currentTitle;
 			titleEl.style.display = 'none';
