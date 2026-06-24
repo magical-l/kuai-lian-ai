@@ -907,36 +907,36 @@ aside .one.endpoint {
 		gap: var(--space-1);
 		margin-top: var(--space-1);
 	}
-	& .tooltip {
-		position: fixed;
-		z-index: 1000;
-		background: var(--bg-base);
-		border: 1px solid var(--border-default);
-		border-radius: var(--radius-md);
-		padding: var(--space-2);
-		box-shadow: var(--shadow-lg);
-		min-width: 200px;
-		max-width: 300px;
-		display: none;
+}
+.tooltip {
+	position: fixed;
+	z-index: 1000;
+	background: var(--bg-base);
+	border: 1px solid var(--border-default);
+	border-radius: var(--radius-md);
+	padding: var(--space-2);
+	box-shadow: var(--shadow-lg);
+	min-width: 200px;
+	max-width: 300px;
+	display: none;
+	font-size: 12px;
+	& .row {
+		align-items: center;
+		gap: var(--space-1);
+		padding: 2px 0;
+	}
+	& .label {
+		color: var(--text-muted);
+		flex-shrink: 0;
+		width: 40px;
+	}
+	& button.copy.value {
 		font-size: 12px;
-		& .row {
-			align-items: center;
-			gap: var(--space-1);
-			padding: 2px 0;
-		}
-		& .label {
-			color: var(--text-muted);
-			flex-shrink: 0;
-			width: 40px;
-		}
-		& button.copy.value {
-			font-size: 12px;
-			opacity: 0.6;
+		opacity: 0.6;
 
-			&:hover {
-				opacity: 1;
-				color: var(--accent-primary);
-			}
+		&:hover {
+			opacity: 1;
+			color: var(--accent-primary);
 		}
 	}
 }
