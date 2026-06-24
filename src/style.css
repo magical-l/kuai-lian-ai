@@ -218,6 +218,30 @@ button, .btn {
 	height: var(--btn-h);
 	text-decoration: none;
 
+	&:hover {
+		background: var(--accent-light);
+		border-color: var(--accent-primary);
+		color: var(--accent-primary);
+	}
+
+	&:active {
+		transform: scale(0.97);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--accent-primary);
+		outline-offset: 2px;
+	}
+
+	&:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+		transform: none;
+		background: transparent;
+		border-color: var(--border-subtle);
+		color: var(--text-muted);
+	}
+
 	&.square {
 		--side: var(--btn-h);
 	}
@@ -237,33 +261,12 @@ button, .btn {
 
 	&.danger {
 		color: var(--danger);
-		
+
 		&:hover:not(:disabled) {
 			background: var(--danger-light);
 			color: var(--danger);
 			border-color: var(--danger);
 		}
-	}
-
-	&:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
-		transform: none;
-	}
-
-	&:hover:not(:disabled):not(.danger) {
-		background: var(--accent-light);
-		border-color: var(--accent-primary);
-		color: var(--accent-primary);
-	}
-
-	&:active:not(:disabled) {
-		transform: scale(0.97);
-	}
-
-	&:focus-visible {
-		outline: 2px solid var(--accent-primary);
-		outline-offset: 2px;
 	}
 }
 
@@ -293,7 +296,6 @@ aside {
 		justify-content: space-between;
 		align-items: center;
 	}
-
 }
 .list {
 	flex: 1;
@@ -321,6 +323,10 @@ aside {
 	position: relative;
 	z-index: 15;
 
+	&:hover {
+		background: var(--accent-primary);
+	}
+
 	&.row {
 		height: 6px;
 		cursor: row-resize;
@@ -328,10 +334,6 @@ aside {
 	&.col {
 		width: 6px;
 		cursor: col-resize;
-	}
-
-	&:hover {
-		background: var(--accent-primary);
 	}
 }
 /* ============ 各种实例 ============ */
@@ -459,14 +461,14 @@ button, .btn {
 		display: inline-flex;
 		align-items: center;
 
-		&:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
-		}
-
 		&:hover:not(:disabled) {
 			background: var(--danger);
 			color: white;
+		}
+
+		&:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
 		}
 	}
 
@@ -482,9 +484,9 @@ button, .btn {
 			& .copy.icon { display: none; }
 			& .done.icon { display: inline; }
 		}
-		&.content {
-			/* 消息文本复制按钮 — 无需额外样式 */
-		}
+		/* &.content {
+			消息文本复制按钮 — 无需额外样式
+		} */
 		&.code {
 			position: absolute;
 			top: 8px;
@@ -539,9 +541,8 @@ button, .btn {
 		& button, & .btn {
 			--btn-h: 40px;
 		}
-
 		/* 隐藏掉原生的文件输入控件，使用“添加附件按钮” */
-		input[type=file] {
+		& input[type=file] {
 			display: none;
 		}
 	}
@@ -561,6 +562,7 @@ button, .btn {
 	color: var(--text-primary);
 	transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 	box-sizing: border-box;
+
 	&::placeholder {
 		color: var(--text-placeholder);
 	}
@@ -580,6 +582,7 @@ button, .btn {
 		font-size: 12px;
 		font-weight: 600;
 		border-radius: 0;
+
 		&:hover:not(:disabled) {
 			background: var(--accent-light);
 			color: var(--accent-primary);
@@ -863,32 +866,6 @@ aside .one.endpoint {
 		margin-bottom: 0;
 	}
 
-	&.compact {
-		margin-bottom: 0;
-		border-bottom: none;
-		> header {
-			padding: 2px var(--space-2);
-		}
-		.expand {
-			visibility: hidden;
-		}
-	}
-
-	&.dragging {
-		opacity: 0.5;
-	}
-
-	&.drag-over-before {
-		border-top: 3px solid var(--accent-primary);
-	}
-
-	&.drag-over-child {
-		outline: 2px dashed var(--accent-primary);
-		outline-offset: -2px;
-		border-radius: var(--radius-sm);
-		box-shadow: inset 3px 0 0 0 var(--accent-primary);
-	}
-
 	> header {
 		padding: var(--space-1) var(--space-2);
 		background: transparent;
@@ -939,6 +916,32 @@ aside .one.endpoint {
 		gap: var(--space-1);
 		margin-top: var(--space-1);
 		padding-left: 12px;
+	}
+
+	&.compact {
+		margin-bottom: 0;
+		border-bottom: none;
+		> header {
+			padding: 2px var(--space-2);
+		}
+		.expand {
+			visibility: hidden;
+		}
+	}
+
+	&.dragging {
+		opacity: 0.5;
+	}
+
+	&.drag-over-before {
+		border-top: 3px solid var(--accent-primary);
+	}
+
+	&.drag-over-child {
+		outline: 2px dashed var(--accent-primary);
+		outline-offset: -2px;
+		border-radius: var(--radius-sm);
+		box-shadow: inset 3px 0 0 0 var(--accent-primary);
 	}
 }
 .selected.endpoint.list {
@@ -1043,14 +1046,6 @@ aside .one.endpoint {
 		background: var(--bg-hover);
 	}
 
-	&.selected {
-		background: var(--accent-light);
-		border-color: rgba(37, 99, 235, 0.3);
-		& div.title {
-			color: var(--accent-primary);
-		}
-	}
-
 	& .title {
 		font-size: 12px;
 		font-weight: 500;
@@ -1090,6 +1085,14 @@ aside .one.endpoint {
 		border-radius: 0;
 		flex: 1;
 		min-width: 0;
+	}
+
+	&.selected {
+		background: var(--accent-light);
+		border-color: rgba(37, 99, 235, 0.3);
+		& div.title {
+			color: var(--accent-primary);
+		}
 	}
 }
 /* ========== Dialogs ========== */
@@ -1331,6 +1334,10 @@ dialog {
 	border-radius: var(--radius-sm);
 	margin-bottom: var(--space-2);
 	/* thinking-header → <header> */
+	&:not(.collapsed) .icon::before {
+		content: "▼";
+	}
+
 	> header {
 		align-items: center;
 		gap: var(--space-2);
@@ -1350,14 +1357,6 @@ dialog {
 		font-size: 10px;
 		width: 12px;
 		text-align: center;
-	}
-
-	&.collapsed .icon::before {
-		content: "▶";
-	}
-
-	&:not(.collapsed) .icon::before {
-		content: "▼";
 	}
 	/* .thinking-label → .label */
 	& .label {
@@ -1379,6 +1378,9 @@ dialog {
 		border-top: 1px solid var(--border-subtle);
 	}
 
+	&.collapsed .icon::before {
+		content: "▶";
+	}
 	&.collapsed .content {
 		display: none;
 	}
@@ -1413,15 +1415,10 @@ dialog {
 	flex-shrink: 0;
 	border: 1px solid var(--border-subtle);
 
-	&.image {
-		background-size: cover;
-		background-position: center;
+	&:hover .remove {
+		display: block;
 	}
 
-	&.file {
-		font-size: 20px;
-		color: var(--text-muted);
-	}
 	& .remove {
 		position: absolute;
 		top: -4px;
@@ -1440,8 +1437,14 @@ dialog {
 		display: none;
 	}
 
-	&:hover .remove {
-		display: block;
+	&.image {
+		background-size: cover;
+		background-position: center;
+	}
+
+	&.file {
+		font-size: 20px;
+		color: var(--text-muted);
 	}
 }
 /* 模式选择器（聊天/嵌入） */
@@ -1494,9 +1497,6 @@ dialog {
 		color: var(--text-base);
 	}
 
-	&.open .menu {
-		display: block;
-	}
 	& .menu {
 		position: absolute;
 		bottom: 100%;
@@ -1511,9 +1511,6 @@ dialog {
 		z-index: 100;
 	}
 
-	&.open .drop {
-		background: var(--accent-primary-hover);
-	}
 	& .drop:hover {
 		background: var(--accent-primary-hover);
 	}
@@ -1545,6 +1542,14 @@ dialog {
 		align-items: center;
 		justify-content: center;
 	}
+	&.open .menu {
+		display: block;
+	}
+
+	&.open .drop {
+		background: var(--accent-primary-hover);
+	}
+
 }
 /* 嵌入结果 */
 .embedding-result {
