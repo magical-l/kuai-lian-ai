@@ -315,7 +315,7 @@ function createTooltip(id, html) {
 			el.className = 'tooltip';
 			el.innerHTML = html;
 			doc.body.appendChild(el);
-			$$('button.copy-content', el).forEach(btn => {
+			$$('button.copy', el).forEach(btn => {
 				btn.onclick = e => {
 					e.stopPropagation();
 					navigator.clipboard.writeText(btn.dataset.copy);
