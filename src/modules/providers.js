@@ -323,10 +323,8 @@ function createTooltip(id, html) {
 				btn.onclick = e => {
 					e.stopPropagation();
 					navigator.clipboard.writeText(btn.dataset.copy);
-					btn.textContent = '✓';
 					btn.classList.add('copied');
 					setTimeout(() => {
-						btn.textContent = '⧉';
 						btn.classList.remove('copied');
 					}, 1500);
 				};
