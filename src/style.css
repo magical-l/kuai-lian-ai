@@ -28,7 +28,7 @@ textarea {
 	& .btn:first-child {
 		border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 	}
-	.btn:last-child {
+	& .btn:last-child {
 		border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 	}
 }
@@ -50,7 +50,7 @@ textarea {
 }
 /* 通用的.spin类 */
 .spin {
-	animation: spin 1s linear infinite !important;
+	animation: spin 1s linear infinite;
 	display: inline-block;
 	will-change: transform;
 }
@@ -142,28 +142,28 @@ main {
 			align-items: center;
 			gap: var(--space-2);
 		}
-		.workspace {
+		& .workspace {
 			align-items: center;
 			gap: var(--space-2);
 			flex: 1;
 			justify-content: center;
 		}
-		.version {
+		& .version {
 			font-size: 12px;
 			color: var(--text-muted);
 		}
-		.brand {
+		& .brand {
 			font-weight: 600;
 			font-size: 14px;
 			color: var(--text-primary);
 		}
-		.logo {
+		& .logo {
 			width: 24px;
 			height: 24px;
 			align-items: center;
 			justify-content: center;
 		}
-		.branding {
+		& .branding {
 			align-items: center;
 			gap: var(--space-3);
 		}
@@ -430,7 +430,7 @@ button, .btn {
 			color: var(--accent-primary);
 
 			& .spin {
-				animation: spin 0.5s linear infinite !important;
+				animation: spin 0.5s linear infinite;
 				display: inline-block;
 			}
 		}
@@ -735,7 +735,7 @@ button, .btn {
 			& .status-icon {
 				font-size: 10px;
 				&.spinning {
-					animation: spin 1s linear infinite !important;
+					animation: spin 1s linear infinite;
 					display: inline-block;
 					will-change: transform;
 				}
@@ -1346,7 +1346,7 @@ dialog {
 		}
 	}
 	/* .thinking-icon → .icon */
-	.icon {
+	& .icon {
 		font-size: 10px;
 		width: 12px;
 		text-align: center;
@@ -1360,18 +1360,18 @@ dialog {
 		content: "▼";
 	}
 	/* .thinking-label → .label */
-	.label {
+	& .label {
 		color: var(--text-secondary);
 		font-weight: 500;
 	}
 	/* .thinking-duration → .duration */
-	.duration {
+	& .duration {
 		color: var(--text-muted);
 		font-size: 11px;
 		margin-left: auto;
 	}
 	/* .thinking-content → .content */
-	.content {
+	& .content {
 		padding: var(--space-2) var(--space-3);
 		color: var(--text-secondary);
 		font-size: 13px;
@@ -1422,7 +1422,7 @@ dialog {
 		font-size: 20px;
 		color: var(--text-muted);
 	}
-	.remove {
+	& .remove {
 		position: absolute;
 		top: -4px;
 		right: -4px;
@@ -1480,14 +1480,14 @@ dialog {
 	position: relative;
 	display: inline-flex;
 	height: 40px;
-	.option.selected {
+	& .option.selected {
 		color: var(--accent-primary);
 		font-weight: 500;
 	}
-	.option:hover {
+	& .option:hover {
 		background: var(--bg-hover);
 	}
-	.option {
+	& .option {
 		padding: 8px 12px;
 		cursor: pointer;
 		font-size: 13px;
@@ -1497,7 +1497,7 @@ dialog {
 	&.open .menu {
 		display: block;
 	}
-	.menu {
+	& .menu {
 		position: absolute;
 		bottom: 100%;
 		right: 0;
@@ -1514,10 +1514,10 @@ dialog {
 	&.open .drop {
 		background: var(--accent-primary-hover);
 	}
-	.drop:hover {
+	& .drop:hover {
 		background: var(--accent-primary-hover);
 	}
-	.drop {
+	& .drop {
 		height: 40px;
 		width: 28px;
 		border: 1px solid var(--accent-primary);
@@ -1530,10 +1530,10 @@ dialog {
 		justify-content: center;
 		padding: 0;
 	}
-	.main:hover {
+	& .main:hover {
 		background: var(--accent-primary-hover);
 	}
-	.main {
+	& .main {
 		height: 40px;
 		padding: 0 12px;
 		border: 1px solid var(--accent-primary);
