@@ -26,7 +26,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 
     container.querySelectorAll('li').forEach(el => el.remove());
 
-    function renderTreeNode(nodes, parentEl, depth) {
+    function renderTreeNode(nodes, parentEl) {
         nodes.forEach(function(node, index) {
             var hasChildren = node.children && node.children.length > 0;
             var isCollapsed = collapsedEndpoints.has(node.id);
@@ -35,7 +35,6 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             nodeEl.dataset.nodeId = node.id;
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x items-y-near-center");
-            headerEl.style.paddingLeft = (depth * 12 + 4) + "px";
             var dragHandle = mk("span", "handle drag btn , square , flex items-go-x");
             dragHandle.innerHTML = SVG.drag(14);
             dragHandle.title = "拖动排序";
@@ -358,14 +357,14 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                     contentEl.style.display = "none";
                 }
 
-                renderTreeNode(node.children, contentEl, depth + 1);
+                renderTreeNode(node.children, contentEl);
                 nodeEl.addChild(contentEl);
             }
             parentEl.addChild(nodeEl);
         });
     }
 
-    renderTreeNode(nodes, container, 0);
+    renderTreeNode(nodes, container);
     var testAllBtn = $(".test-all");
 
     if (testAllBtn && typeof getGroups === "function") {

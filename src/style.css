@@ -897,6 +897,7 @@ aside .one.endpoint {
 	& .children {
 		gap: var(--space-1);
 		margin-top: var(--space-1);
+		padding-left: 12px;
 	}
 }
 .tooltip {
