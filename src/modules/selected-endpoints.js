@@ -9,7 +9,7 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
     container.classList.toggle("generating", isGenerating);
 
     if (selectedEndpoints.length === 0) {
-        summaryEl.innerHTML = "<span class=\"selector empty-hint\">请选择端点</span>";
+        summaryEl.innerHTML = `<span class="empty hint">请选择端点</span>`;
     } else {
         summaryEl.innerHTML = selectedEndpoints.map(id => {
             const info = findModelById(groups, id);
@@ -31,7 +31,11 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
 
             const remarkHtml = (info.node.remark) ? `<span class="remark"> ${info.node.remark}</span>` : "";
             const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
-            return `<li class="${classes}" data-endpoint="${id}"><span class="full name">${fullPath}</span>${remarkHtml}<span class="btn remove" data-endpoint="${id}">✕</span></li>`;
+            return `<li class="${classes}" data-endpoint="${id}">
+						<span class="full name">${fullPath}</span>
+						${remarkHtml}
+						<span class="btn remove" data-endpoint="${id}">✕</span>
+					</li>`;
         }).join("");
     }
 
@@ -139,10 +143,26 @@ function buildTooltipHTML(node, rcfg, nameOverride) {
 	function inherited(val, own) {
 		return val && val !== own ? "↑ " : "";
 	}
+	function row(label, value, copyValue) {
+		var safe = (copyValue || value || "");
+		return `<div class="row flex items-go-x">
+					<span class="label">${label}：</span>
+					<span class="value">${value || ""}</span>
+					<button class="copy value square" data-copy="${safe}" title="复制">
+						<span class="copy icon ⧉">⧉</span>
+						<span class="done icon">✓</span>
+					</button>
+				</div>`;
+	}
 	var tipName = nameOverride || node.name;
 	var tipBaseUrl = inherited(rcfg.baseUrl, node.baseUrl) + (rcfg.baseUrl || "");
 	var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? "(已设置)" : "");
 	var tipStyle = inherited(rcfg.style, node.style) ? "↑ " + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || "");
 	var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || "");
-	return "<div class=\"row flex items-go-x\">" + "<span class=\"label\">名称：</span>" + "<span class=\"value\">" + tipName + "</span>" + "<button class=\"copy value square\" data-copy=\"" + tipName + "\" title=\"复制\"><span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">地址：</span>" + "<span class=\"value\">" + tipBaseUrl + "</span>" + "<button class=\"copy value square\" data-copy=\"" + (rcfg.baseUrl || "") + "\" title=\"复制\"><span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + "<div class=\"row flex items-go-x\">" + "<span class=\"label\">格式：</span>" + "<span class=\"value\">" + tipStyle + "</span>" + "<button class=\"copy value square\" data-copy=\"" + (rcfg.style || "") + "\" title=\"复制\"><span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + (rcfg.key ? "<div class=\"row flex items-go-x\"><span class=\"label\">Key：</span><span class=\"value\">" + tipKey + "</span><button class=\"copy value square\" data-copy=\"" + (rcfg.key || "") + "\" title=\"复制\"><span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" : "") + "<div class=\"row flex items-go-x\"><span class=\"label\">模型：</span><span class=\"value\">" + (tipModel || "-") + "</span><button class=\"copy value square\" data-copy=\"" + (rcfg.modelId || "") + "\" title=\"复制\"><span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" + (node.remark ? "<div class=\"row flex items-go-x\"><span class=\"label\">备注：</span><span class=\"value\">" + node.remark + "</span><button class=\"copy value square\" data-copy=\"" + node.remark + "\" title=\"复制\"><span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span></button></div>" : "");
+	return row("名称", tipName, tipName) +
+		row("地址", tipBaseUrl, rcfg.baseUrl || "") +
+		row("格式", tipStyle, rcfg.style || "") +
+		(rcfg.key ? row("Key", tipKey, rcfg.key || "") : "") +
+		row("模型", tipModel || "-", rcfg.modelId || "") +
+		(node.remark ? row("备注", node.remark, node.remark) : "");
 }

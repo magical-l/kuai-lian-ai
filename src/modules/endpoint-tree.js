@@ -177,7 +177,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             if (testableIds.length > 0) {
                 batchTestBtn = mk("button");
                 batchTestBtn.className = "test-connection square" + (batchStatus ? " " + batchStatus : "");
-                batchTestBtn.innerHTML = "<span>🔗</span>";
+                batchTestBtn.innerHTML = `<span>🔗</span>`;
 
                 if (hasTesting) {
                     batchTestBtn.classList.add("testing");

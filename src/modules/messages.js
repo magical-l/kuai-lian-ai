@@ -13,7 +13,7 @@ function addCodeCopyButtons(container) {
 		const preEl = codeEl.parentElement;
 		const copyBtn = document.createElement('button');
 		copyBtn.className = 'copy code btn , square icon-only';
-		copyBtn.innerHTML = "<span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span>";
+		copyBtn.innerHTML = `<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>`;
 		copyBtn.title = '复制代码';
 		copyBtn.onclick = () => {
 			navigator.clipboard.writeText(codeEl.textContent).then(() => {
@@ -177,9 +177,16 @@ function renderResponse(container, msg, groups) {
         if (r.embeddingResult) {
             const emb = r.embeddingResult;
             const embMeta = mk("div", "embedding-result");
-            embMeta.innerHTML = `<div class="mb-1"><strong>嵌入维度:</strong> ${emb.dim}</div><div class="mb-1"><strong>预览:</strong> <code>${emb.preview}</code></div>`;
+            embMeta.innerHTML = `<div class="mb-1">
+									<strong>嵌入维度:</strong>
+									${emb.dim}
+								</div>
+								<div class="mb-1">
+									<strong>预览:</strong>
+									<code>${emb.preview}</code>
+								</div>`;
             const copyBtn = mk("button", "copy code btn , square icon-only");
-            copyBtn.innerHTML = "<span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span>";
+            copyBtn.innerHTML = `<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>`;
             copyBtn.title = "复制完整向量";
 
             copyBtn.onclick = () => {
