@@ -1097,6 +1097,9 @@ dialog {
 	&::backdrop {
 		background: rgba(0, 0, 0, 0.3);
 	}
+	& .close.btn.square {
+		--side: 28px;
+	}
 
 	&.editing.endpoint {
 		background: var(--bg-base);
@@ -1152,12 +1155,19 @@ dialog {
 			font-size: 16px;
 			color: var(--text-primary);
 		}
-		
 		& .hint {
 			font-size: 11px;
 			color: var(--text-muted);
 			display: block;
 		}
+		& .apikey.editor {
+			& input {
+				flex: 1;
+			}
+			& button, & .btn {
+				--btn-h: 36px;
+			}
+		} 
 	}
 	&.help {
 		position: relative;
@@ -1251,34 +1261,12 @@ dialog {
 			color: var(--text-primary);
 		}
 	}
-	& .close.btn.square {
-		--side: 28px;
-	}
 }
-.apikey.editor {
-	& input {
-		flex: 1;
-	}
-	& button, & .btn {
-		--btn-h: 36px;
-	}
-} 
 .action-buttons {
 	margin-top: var(--space-5);
 	gap: var(--space-2);
 	justify-content: flex-end;
-	button.primary:hover:not(:disabled) {
-		background: var(--accent-primary-hover);
-	}
-	button.primary {
-		background: var(--accent-primary);
-		color: white;
-	}
-	button:hover:not(:disabled) {
-		background: var(--bg-active);
-		color: var(--text-primary);
-	}
-	button {
+	& button {
 		border: none;
 		border-radius: var(--radius-md);
 		background: var(--bg-muted);
@@ -1287,6 +1275,17 @@ dialog {
 		font-weight: 500;
 		padding: var(--space-2) var(--space-4);
 		height: 32px;
+		&:hover:not(:disabled) {
+			background: var(--bg-active);
+			color: var(--text-primary);
+		}
+		& .primary {
+			background: var(--accent-primary);
+			color: white;
+			&:hover:not(:disabled) {
+				background: var(--accent-primary-hover);
+			}
+		}
 	}
 }
 
