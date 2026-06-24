@@ -123,7 +123,7 @@ function addInheritIcon(inputEl) {
 	icon.title = '继承自父级';
 	icon.style.cssText = 'cursor:help;font-size:12px;color:var(--text-muted);flex-shrink:0;margin-right:3px;';
 	var parent = inputEl.parentNode;
-	if (parent.classList.contains('input-row') || parent.classList.contains('key-input-wrapper')) {
+	if (parent.classList.contains('input-row') || parent.classList.contains('apikey-input-wrapper')) {
 		parent.insertBefore(icon, inputEl);
 		return;
 	}
@@ -221,7 +221,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 
 	doc.body.addChild(dialog);
 	dialog.showModal();
-	var toggleBtn = $('button.toggle-apikey-visibility', dialog);
+	var toggleBtn = $('button.toggle.apikey.visibility', dialog);
 	if (toggleBtn) {
 		toggleBtn.onclick = function(e) {
 			e.preventDefault();

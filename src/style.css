@@ -377,7 +377,7 @@ button, .btn {
 		}
 	}
 
-	&.toggle-apikey-visibility {
+	&.toggle.apikey.visibility {
 		background: var(--bg-base);
 		border: 1px solid var(--border-default);
 		border-radius: var(--radius-md);
@@ -1249,11 +1249,14 @@ dialog {
 	from { transform: scale(0.95); opacity: 0.5; }
 	to { transform: scale(1); opacity: 1; }
 }
-.key-input-wrapper {
+.apikey-input-wrapper {
 	align-items: center;
 	gap: var(--space-1);
-	input {
+	& input {
 		flex: 1;
+	}
+	& button, & .btn {
+		--btn-h: 36px;
 	}
 }
 .action-buttons {
