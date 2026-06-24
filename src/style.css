@@ -1105,7 +1105,6 @@ dialog {
 		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 		border: 1px solid var(--border-subtle);
 		min-width: 360px;
-		animation: dialog-in var(--transition-normal) ease forwards;
 
 		& select {
 			padding: var(--space-2) var(--space-3);
@@ -1252,12 +1251,11 @@ dialog {
 			color: var(--text-primary);
 		}
 	}
+	& .close.btn.square {
+		--side: 28px;
+	}
 }
-@keyframes dialog-in {
-	from { transform: scale(0.95); opacity: 0.5; }
-	to { transform: scale(1); opacity: 1; }
-}
-.apikey.editor{
+.apikey.editor {
 	& input {
 		flex: 1;
 	}
@@ -1290,9 +1288,6 @@ dialog {
 		padding: var(--space-2) var(--space-4);
 		height: 32px;
 	}
-}
-.dialog-close.square {
-	--side: 28px;
 }
 
 /* ========== Streaming Animation ========== */
