@@ -845,7 +845,6 @@ aside .one.endpoint {
 		padding: var(--space-1) var(--space-2);
 		background: transparent;
 		border-radius: 0;
-		cursor: pointer;
 		align-items: flex-start;
 		gap: var(--space-1);
 		border: none;
@@ -877,7 +876,6 @@ aside .one.endpoint {
 		font-weight: 500;
 		color: var(--text-primary);
 		word-break: break-all;
-		cursor: pointer;
 	}
 	& .model.actions {
 		& button, & .btn {
