@@ -804,6 +804,13 @@ button, .btn {
 	}
 }
 /* ========== Endpoint Groups ========== */
+.one.endpoint {
+	& .remark {
+		color: var(--text-muted);
+		font-size: 0.85em;
+		white-space: nowrap;
+	}
+}
 aside .one.endpoint {
 	background: var(--bg-elevated);
 	border-radius: 0;
@@ -845,7 +852,6 @@ aside .one.endpoint {
 		padding: var(--space-1) var(--space-2);
 		background: transparent;
 		border-radius: 0;
-		align-items: flex-start;
 		gap: var(--space-1);
 		border: none;
 		transition: all var(--transition-fast);
@@ -863,13 +869,13 @@ aside .one.endpoint {
 		.actions {
 			gap: 2px;
 			flex-shrink: 0;
+			margin-left: auto;
 		}
 		.square {
 			--side: 22px;
 		}
 	}
 	& .name {
-		flex: 1;
 		min-width: 0;
 		overflow-wrap: break-word;
 		font-size: 13px;
@@ -934,7 +940,6 @@ aside .one.endpoint {
 		}
 	}
 }
-
 .selected.endpoint.list {
 	flex: none;
 	background: var(--bg-muted);
@@ -1000,12 +1005,6 @@ aside .one.endpoint {
 			background: var(--danger-light);
 			color: var(--danger);
 			border-color: var(--danger);
-		}
-
-		& .remark {
-			color: var(--text-muted);
-			font-size: 0.85em;
-			white-space: nowrap;
 		}
 
 		& .remove.btn {

@@ -209,7 +209,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             var nodeEl = mk("li", "one endpoint" + (hasChildren ? "" : " compact"));
             nodeEl.dataset.nodeId = node.id;
             nodeEl.dataset.nodeIndex = index;
-            var headerEl = mk("header", "flex items-go-x");
+            var headerEl = mk("header", "flex items-go-x items-y-near-center");
             headerEl.style.paddingLeft = (depth * 12 + 4) + "px";
             var dragHandle = mk("span", "handle drag btn , square , flex items-go-x");
             dragHandle.innerHTML = SVG.drag(14);
@@ -257,13 +257,6 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             var nameSpan = mk("span", "name");
             var rcfg = resolveNodeConfig(node.id);
             nameSpan.textContent = node.name;
-
-            if (node.remark) {
-                var remSpan = document.createElement("span");
-                remSpan.className = "remark";
-                remSpan.textContent = " " + node.remark;
-                nameSpan.appendChild(remSpan);
-            }
 
             var tooltipId = "tooltip-" + node.id;
 
@@ -490,6 +483,12 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             headerEl.addChild(toggleSpan);
             headerEl.addChild(nameSpan);
             headerEl.addChild(actionsEl);
+            if (node.remark) {
+                var remSpan = document.createElement("span");
+                remSpan.className = "remark";
+                remSpan.textContent = " " + node.remark;
+                headerEl.insertBefore(remSpan, actionsEl);
+            }
             nodeEl.addChild(headerEl);
 
             nodeEl.on("dragover", function(e) {
