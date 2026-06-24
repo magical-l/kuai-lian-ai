@@ -63,7 +63,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v6.0.6</span>
+			<span class="version">v6.0.7</span>
 		</div>
 		<div class="workspace , flex items-go-x">
 			<span>当前存储目录：</span>
@@ -162,35 +162,35 @@
 	<dialog class="editing endpoint">
 		<h3></h3>
 		<form class="flex items-go-y">
-			<label class="flex items-go-y">名称: <input class="group-name"></label>
-			<label class="flex items-go-y">Base URL（选填）:
-				<input class="group-url" placeholder="https://api.example.com">
+			<label class="name editor , flex items-go-y">名称: <input name="name"></label>
+			<label class="url editor , flex items-go-y">Base URL（选填）:
+				<input name="url" placeholder="https://api.example.com">
 				<span class="hint"></span>
 				<div class="hint-text">若路径以 # 结尾，则直接使用该路径</div>
 			</label>
-			<label class="flex items-go-y">接口风格:
-				<select class="group-style">
+			<label class="style editor , flex items-go-y">接口风格:
+				<select name="style">
 					<option value="">（继承）</option>
 					<option value="openai">OpenAI</option>
 					<option value="claude">Claude</option>
 					<option value="gemini">Gemini</option>
 				</select>
 			</label>
-			<label class="flex items-go-y">API Key（选填）:
+			<label class="apikey editor , flex items-go-y">API Key（选填）:
 				<div class="apikey-input-wrapper , flex items-go-x">
-					<input class="group-key" type="password" placeholder="">
+					<input name="apikey" type="password" placeholder="">
 					<button type="button" class="toggle apikey visibility btn , square icon-only" title="显示/隐藏">
 						<svg width="14" height="14"><use href="#icon-eye"></use></svg>
 					</button>
 				</div>
 				<span class="hint"></span>
 			</label>
-			<label class="flex items-go-y">模型名（选填）:
-				<input class="group-modelid" placeholder="如 gpt-4o">
+			<label class="model-id editor , flex items-go-y">模型名（选填）:
+				<input name="model-id" placeholder="如 gpt-4o">
 				<span class="hint"></span>
 			</label>
-			<label class="flex items-go-y">备注（选填）:
-				<input class="group-remark" placeholder="仅用于显示">
+			<label class="remark editor , flex items-go-y">备注（选填）:
+				<input name="remark" placeholder="仅用于显示">
 			</label>
 		</form>
 		<div class="footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>

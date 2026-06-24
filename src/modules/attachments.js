@@ -141,20 +141,20 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var dialog = fromTemplate('edit-group-dialog', '.editing.endpoint');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
-	var keyInput = $(".group-key", dialog);
-	var nameInput = $(".group-name", dialog);
-	var urlInput = $('.group-url', dialog);
-	var modelidInput = $('.group-modelid', dialog);
-	var styleSel = $(".group-style", dialog);
-	var remarkInput = $(".group-remark", dialog);
+	var nameInput = $(".name.editor input[name=\"name\"]", dialog);
+	var urlInput = $('.url.editor input[name="url"]', dialog);
+	var styleSel = $(".style.editor select[name=\"style\"]", dialog);
+	var keyInput = $(".apikey.editor input[name=\"apikey\"]", dialog);
+	var modelidInput = $('.model-id.editor input[name="model-id"]', dialog);
+	var remarkInput = $(".remark.editor input[name=\"remark\"]", dialog);
 
 	setValues(dialog, {
-		'.group-name': node ? node.name : '',
-		'.group-modelid': node ? node.modelId || '' : '',
-		'.group-url': node ? node.baseUrl || '' : '',
-		'.group-style': node ? node.style || '' : '',
-		'.group-key': node ? node.key || '' : '',
-		'.group-remark': node ? node.remark || '' : ''
+		'.name.editor input[name="name"]': node ? node.name : '',
+		'.model-id.editor input[name="model-id"]': node ? node.modelId || '' : '',
+		'.url.editor input[name="url"]': node ? node.baseUrl || '' : '',
+		'.style.editor select[name="style"]': node ? node.style || '' : '',
+		'.apikey.editor input[name="apikey"]': node ? node.key || '' : '',
+		'.remark.editor input[name="remark"]': node ? node.remark || '' : ''
 	});
 
 	// 继承值填入
