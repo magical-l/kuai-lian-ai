@@ -225,6 +225,14 @@ button, .btn {
 	&.icon-only {
 		border: 1px solid transparent;
 		padding: var(--space-1);
+		& svg {
+			width: 100%;
+			height: 100%;
+			max-width: 16px;
+			max-height: 16px;
+			min-width: 12px;
+			min-height: 12px;
+		}
 	}
 
 	&.danger {
@@ -1249,16 +1257,14 @@ dialog {
 	from { transform: scale(0.95); opacity: 0.5; }
 	to { transform: scale(1); opacity: 1; }
 }
-.apikey-input-wrapper {
-	align-items: center;
-	gap: var(--space-1);
+.apikey.editor{
 	& input {
 		flex: 1;
 	}
 	& button, & .btn {
 		--btn-h: 36px;
 	}
-}
+} 
 .action-buttons {
 	margin-top: var(--space-5);
 	gap: var(--space-2);

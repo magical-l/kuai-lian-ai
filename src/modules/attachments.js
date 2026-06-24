@@ -123,7 +123,7 @@ function addInheritIcon(inputEl) {
 	icon.title = '继承自父级';
 	icon.style.cssText = 'cursor:help;font-size:12px;color:var(--text-muted);flex-shrink:0;margin-right:3px;';
 	var parent = inputEl.parentNode;
-	if (parent.classList.contains('input-row') || parent.classList.contains('apikey-input-wrapper')) {
+	if (parent.classList.contains('input-row') || parent.parentElement?.matches('.apikey.editor')) {
 		parent.insertBefore(icon, inputEl);
 		return;
 	}
