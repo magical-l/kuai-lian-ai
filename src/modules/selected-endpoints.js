@@ -1,12 +1,9 @@
 // ========== Selected Endpoint Functions ==========
 function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
-    const container = $(".selected.endpoint.list");
     const summaryEl = $(".selected.endpoint.list");
 
-    if (!container)
+    if (!summaryEl)
         return;
-
-    container.classList.toggle("generating", isGenerating);
 
     if (selectedEndpoints.length === 0) {
         summaryEl.innerHTML = `<span class="empty hint">请选择端点</span>`;
