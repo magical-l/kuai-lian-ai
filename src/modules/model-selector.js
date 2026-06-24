@@ -630,7 +630,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 			minute: '2-digit'
 		});
 		const actionsEl = mk('div', 'session actions , flex items-go-x');
-		const editBtn = mk('button', 'action-sm square');
+		const editBtn = mk('button', 'edit title btn , square icon-only');
 		editBtn.innerHTML = SVG.edit(10);
 		editBtn.title = '编辑标题';
 		editBtn.on('click', e => {
@@ -662,7 +662,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 				}
 			});
 		});
-		const deleteBtn = mk('button', 'action-sm square danger');
+		const deleteBtn = mk('button', 'remove btn , danger , square icon-only');
 		deleteBtn.innerHTML = SVG.del(10);
 		deleteBtn.title = '删除会话';
 		deleteBtn.on('click', e => {
