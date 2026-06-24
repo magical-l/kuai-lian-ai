@@ -800,8 +800,7 @@ function renderResponse(container, msg, groups) {
         const info = findModelById(groups, r.modelId);
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         const remark = info?.node?.remark || "";
-        const isMulti = msg.responses.length > 1;
-        const templateId = isMulti ? 'multi-response-header' : 'response-header';
+        const templateId = 'response-header';
         const meta = fromTemplate(templateId, "header");
         const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
         const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime / 1000).toFixed(1)}s` : "";
@@ -811,33 +810,31 @@ function renderResponse(container, msg, groups) {
         $(".name", meta).innerHTML = remark ? `${name}<span class="remark"> ${remark}</span>` : name;
         $(".time", meta).textContent = timeStr;
 
-        if (isMulti) {
-            if (durationStr) {
-                const durationEl = $(".wait", meta);
-                durationEl.textContent = durationStr;
+        if (durationStr) {
+            const durationEl = $(".wait", meta);
+            durationEl.textContent = durationStr;
 
-                if (speedClass)
-                    durationEl.classList.add(speedClass);
-            }
+            if (speedClass)
+                durationEl.classList.add(speedClass);
+        }
 
-            $(".total", meta).textContent = totalStr;
-            const statusEl = $(".status", meta);
-            statusEl.textContent = statusText;
-            statusEl.classList.add("status");
+        $(".total", meta).textContent = totalStr;
+        const statusEl = $(".status", meta);
+        statusEl.textContent = statusText;
+        statusEl.classList.add("status");
 
-            if (r.status === "completed")
-                statusEl.classList.add("completed");
-            else if (r.status === "failed")
-                statusEl.classList.add("failed");
-            else if (r.status === "stopped")
-                statusEl.classList.add("stopped");
+        if (r.status === "completed")
+            statusEl.classList.add("completed");
+        else if (r.status === "failed")
+            statusEl.classList.add("failed");
+        else if (r.status === "stopped")
+            statusEl.classList.add("stopped");
 
-            const errorEl = $(".error", meta);
+        const errorEl = $(".error", meta);
 
-            if (r.error && errorEl) {
-                errorEl.textContent = r.error;
-                errorEl.style.display = "";
-            }
+        if (r.error && errorEl) {
+            errorEl.textContent = r.error;
+            errorEl.style.display = "";
         }
 
         card.addChild(meta);

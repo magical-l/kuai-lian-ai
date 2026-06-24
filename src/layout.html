@@ -63,7 +63,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v5.6.18</span>
+			<span class="version">v5.6.19</span>
 		</div>
 		<div class="workspace , flex items-go-x">
 			<span>当前存储目录：</span>
@@ -210,28 +210,20 @@
 	</header>
 </template>
 <template id="response-header">
-	<header class="flex items-go-x">
-		<span class="name"></span>
-		<span class="time"></span>
-		<button class="copy content btn , square icon-only" title="复制">
-			<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>
-		</button>
-	</header>
+		<header class="flex items-go-x">
+			<span class="name"></span>
+			<span class="time"></span>
+			<span class="wait time"></span>
+			<span class="total time"></span>
+			<span class="status"></span>
+			<span class="error"></span>
+			<button class="copy content btn , square icon-only" title="复制">
+				<span class="copy icon ⧉">⧉</span>
+				<span class="done icon">✓</span>
+			</button>
+		</header>
 </template>
-<template id="multi-response-header">
-	<header class="flex items-go-x">
-		<span class="name"></span>
-		<span class="time"></span>
-		<span class="wait time"></span>
-		<span class="total time"></span>
-		<span class="status"></span>
-		<span class="error"></span>
-		<button class="copy content btn , square icon-only" title="复制">
-			<span class="copy icon ⧉">⧉</span>
-			<span class="done icon">✓</span>
-		</button>
-	</header>
-</template>
+
 <template id="response-card-streaming">
 	<article class="one thinking response msg">
 		<header class="flex items-go-x">
