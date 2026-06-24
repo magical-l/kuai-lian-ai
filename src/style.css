@@ -186,7 +186,7 @@ main {
 			background: var(--bg-base);
 
 			& .toolbar {
-				padding: var(--space-4) var(--space-6);
+				padding: var(--space-3);
 				background: var(--bg-base);
 				border-bottom: 1px solid var(--border-subtle);
 				align-items: center;
@@ -819,7 +819,7 @@ aside .one.endpoint {
 		> header {
 			padding: 2px var(--space-2);
 		}
-		.toggle {
+		.expand {
 			visibility: hidden;
 		}
 	}

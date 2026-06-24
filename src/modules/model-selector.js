@@ -69,14 +69,14 @@ function toggleModelSelection(id, forceRemove) {
 }
 function bindSelectorEvents() {
     // Make entire model tag clickable for toggle selection
-    $$('.one.endpoint').forEach(tag => {
+    $$('.selected.endpoint.list .one.endpoint').forEach(tag => {
         tag.onclick = e => {
             e.stopPropagation();
             toggleModelSelection(tag.dataset.model);
         };
     });
     // 标签上的小叉：移除该模型
-    $$('.one.endpoint .remove').forEach(function(btn) {
+    $$('.selected.endpoint.list .one.endpoint > .remove.btn').forEach(function(btn) {
         btn.onclick = function(e) {
             e.stopPropagation();
             toggleModelSelection(btn.dataset.model, true);
@@ -96,10 +96,10 @@ function applyJoinBtnUI(btn, nid) {
 	var mid = nid;
 	if (selectedModels.indexOf(mid) >= 0) {
 		btn.title = '已加入当前会话';
-		btn.className = 'action join-session joined';
+		btn.className = 'join-session joined';
 	} else {
 		btn.title = '加入当前会话';
-		btn.className = 'action join-session';
+		btn.className = 'join-session';
 	}
 }
 const collapsedEndpoints = new Set();
@@ -116,8 +116,8 @@ function collapseAllEndpointNodes() {
 	collectIds(getGroups());
 	ids.forEach(function(id) { collapsedEndpoints.add(id); });
 	// 直接操作DOM收起
-	$$('.one.endpoint').forEach(function(el) {
-		var toggle = $('.toggle', el);
+	$$('aside .one.endpoint').forEach(function(el) {
+		var toggle = $('.expand', el);
 		var content = $('.children', el);
 		if (content) content.style.display = 'none';
 		if (toggle) toggle.textContent = '▶';
@@ -161,7 +161,7 @@ function renderPendingAttachments() {
 		// hover显示名字
 		thumb.onmouseenter = () => showAttachmentTooltip(att.name, thumb);
 		thumb.onmouseleave = () => hideAttachmentTooltip();
-		const remove = mk('span', 'btn remove');
+		const remove = mk('span', 'remove btn');
 		remove.textContent = '×';
 		remove.onclick = (e) => {
 			e.stopPropagation();
@@ -211,7 +211,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x");
             headerEl.style.paddingLeft = (depth * 12 + 4) + "px";
-            var dragHandle = mk("span", "btn square handle drag , flex items-go-x");
+            var dragHandle = mk("span", "handle drag btn , square , flex items-go-x");
             dragHandle.innerHTML = SVG.drag(14);
             dragHandle.title = "拖动排序";
             dragHandle.draggable = true;
@@ -230,7 +230,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
                 });
             });
 
-            var toggleSpan = mk("span", "btn toggle");
+            var toggleSpan = mk("span", "expand btn , square , ▶ icon-only");
             toggleSpan.textContent = isCollapsed || !hasContent ? "▶" : "▼";
 
             if (!hasContent)
@@ -298,7 +298,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             });
 
             var actionsEl = mk("div", "actions , flex items-go-x");
-            var addChildBtn = mk("button", "action square");
+            var addChildBtn = mk("button", "add-child btn , square");
             addChildBtn.textContent = "+";
             addChildBtn.title = "添加子节点";
 
@@ -373,7 +373,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
 
             if (testableIds.length > 0) {
                 batchTestBtn = mk("button");
-                batchTestBtn.className = "action test-connection square" + (batchStatus ? " " + batchStatus : "");
+                batchTestBtn.className = "test-connection square" + (batchStatus ? " " + batchStatus : "");
                 batchTestBtn.innerHTML = "<span>🔗</span>";
 
                 if (hasTesting) {
@@ -433,7 +433,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             var joinBtn = null;
 
             if (isSelfTestable) {
-                joinBtn = mk("button", "action join-session square");
+                joinBtn = mk("button", "join-session btn , square");
                 joinBtn.innerHTML = SVG.bubble(12);
                 applyJoinBtnUI(joinBtn, node.id);
 
@@ -455,7 +455,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
                 });
             }
 
-            var editBtn = mk("button", "action square");
+            var editBtn = mk("button", "edit btn , square");
             editBtn.innerHTML = SVG.edit(12);
             editBtn.title = "编辑节点";
 
@@ -464,7 +464,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
                 onNodeEdit(node.id);
             });
 
-            var deleteBtn = mk("button", "action square danger");
+            var deleteBtn = mk("button", "remove btn , danger , square");
             deleteBtn.innerHTML = SVG.del(12);
             deleteBtn.title = "删除节点及其子节点";
 
@@ -589,7 +589,7 @@ function renderEndpointList(nodes, selectedModelId, onNodeEdit, onNodeDelete, on
             }
         });
 
-        testAllBtn.classList.add("action", "test-connection");
+        testAllBtn.classList.add("test-connection");
         var spanEl = $("span", testAllBtn);
 
         if (hasTesting) {
@@ -630,7 +630,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 			minute: '2-digit'
 		});
 		const actionsEl = mk('div', 'session actions , flex items-go-x');
-		const editBtn = mk('button', 'edit title btn , square icon-only');
+		const editBtn = mk('button', 'edit title btn , square , icon-only');
 		editBtn.innerHTML = SVG.edit(10);
 		editBtn.title = '编辑标题';
 		editBtn.on('click', e => {
@@ -662,7 +662,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 				}
 			});
 		});
-		const deleteBtn = mk('button', 'remove btn , danger , square icon-only');
+		const deleteBtn = mk('button', 'remove btn , danger , square , icon-only');
 		deleteBtn.innerHTML = SVG.del(10);
 		deleteBtn.title = '删除会话';
 		deleteBtn.on('click', e => {
@@ -693,7 +693,7 @@ function addCodeCopyButtons(container) {
 	container.querySelectorAll('pre code').forEach(codeEl => {
 		const preEl = codeEl.parentElement;
 		const copyBtn = document.createElement('button');
-		copyBtn.className = 'copy-content code square';
+		copyBtn.className = 'copy-content btn , code , square icon-only';
 		copyBtn.innerHTML = "<span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span>";
 		copyBtn.title = '复制代码';
 		copyBtn.onclick = () => {
@@ -862,7 +862,7 @@ function renderResponse(container, msg, groups) {
             const emb = r.embeddingResult;
             const embMeta = mk("div", "content embedding-result");
             embMeta.innerHTML = `<div class="mb-1"><strong>嵌入维度:</strong> ${emb.dim}</div><div class="mb-1"><strong>预览:</strong> <code>${emb.preview}</code></div>`;
-            const copyBtn = mk("button", "icon-only copy-content code square");
+            const copyBtn = mk("button", "copy-content btn , code , square icon-only");
             copyBtn.innerHTML = "<span class=\"copy icon ⧉\">⧉</span><span class=\"done icon\">✓</span>";
             copyBtn.title = "复制完整向量";
 
