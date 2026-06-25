@@ -5,7 +5,7 @@
 	padding: 0;
 }
 dialog[open] {
-	margin: auto;
+	margin: auto;/* 覆盖*设置的margin：默认居中 */
 }
 html {
 	height: 100%;
@@ -22,9 +22,10 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 textarea {
-	flex: 1;
+	flex: 1;/* 输入框别那么小气，默认拉伸 */
 }
 .btn-group {
+	/* 按钮组的第一个按钮左侧设置圆角，最后一个按钮右侧设置圆角 */
 	& .btn:first-child {
 		border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 	}
@@ -36,17 +37,30 @@ textarea {
 	user-select: none;
 	-webkit-user-select: none;
 
-	&.⧉ {/* 字符偏左上，用translate调整到中间 */
-		transform: translate(0.05em, 0.2em);
+	&.⧉ {
+		translate: 0.05em 0.2em;/* 字符“⧉”偏左上，用translate调整到中间 */
 	}
 }
-/* .done.icon：默认隐藏，自带绿色，作为通用的"完成"图标独立使用 */
-.done.icon { display: none; color: var(--success); font-weight: 600; }
+/* 通用的"完成"图标，可用于任何地方，不限于按钮 */
+.done.icon {
+	display: none;/* 默认隐藏，成功时才显现 */
+	color: var(--success);
+	font-weight: 600;
+
+	&:empty {
+		&::before {
+			content: '✓';
+			color: var(--success);
+			font-weight: 600;
+		}
+	}
+}
 .square {
 	--side: 24px;
+	/* width、height、aspect-ratio互相兜底，避免被意外覆盖其中一个 */
 	width: var(--side);
 	height: var(--side);
-	aspect-ratio: 1;/* 互相兜底 */
+	aspect-ratio: 1;
 }
 /* 转圈动画，表示等待中 */
 .spin {
@@ -331,6 +345,7 @@ aside {
 	}
 }
 /* ============ 各种实例 ============ */
+
 /* ------ 各处按钮 ------ */
 button, .btn {
 	&.use-browser-storage, &.select-dir, &.recover {
@@ -774,7 +789,7 @@ button, .btn {
 		}
 	}
 }
-aside .endpoint.list .one.endpoint {
+aside.endpoint.list .one.endpoint {
 	background: var(--bg-elevated);
 	border-radius: 0;
 	margin-bottom: var(--space-3);
