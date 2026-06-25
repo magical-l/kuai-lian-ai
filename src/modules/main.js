@@ -607,7 +607,7 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 		const meta = $('header', card);
 		const icon = meta ? $('.status-icon', meta) : null;
 		if (icon) {
-			icon.classList.remove('spinning');
+			icon.classList.remove('spin');
 			icon.classList.add('status');
 			icon.classList.add(status);
 			icon.textContent = getStatusText(status);

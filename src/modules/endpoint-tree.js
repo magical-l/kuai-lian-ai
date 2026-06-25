@@ -230,6 +230,9 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                             onTestConnection(id);
                         });
                     }
+                    batchTestBtn.classList.add("testing");
+                    var sp = batchTestBtn.querySelector("span");
+                    if (sp) sp.classList.add("spin");
                 });
             }
 
@@ -475,6 +478,34 @@ function updateEndpointTestUI(nodeId) {
 		} else {
 			if (hasFail && !hasSuccess) testAllBtn.classList.add("failed");
 			else if (hasSuccess && !hasFail) testAllBtn.classList.add("connected");
+		}
+	}
+	// 3. 更新父级 batch 测试按钮
+	var container = nodeEl ? nodeEl.parentElement : null;
+	if (container && container.classList.contains('children')) {
+		var parentEl = container.closest('.one.endpoint');
+		if (parentEl) {
+			var parentBtn = parentEl.querySelector('.test-connection');
+			if (parentBtn) {
+				var childNodes = container.querySelectorAll(':scope > .one.endpoint');
+				var anyTesting = false, anyFail = false, anySuccess = false;
+				childNodes.forEach(function(child) {
+					var cs = connectionStatus.get(child.dataset.nodeId);
+					if (cs) {
+						if (cs.status === "testing") anyTesting = true;
+						else if (cs.status === "connected") anySuccess = true;
+						else if (cs.status === "failed" || cs.status === "cors_blocked") anyFail = true;
+					}
+				});
+				if (!anyTesting) {
+					parentBtn.classList.remove("testing");
+					var s = parentBtn.querySelector('span');
+					if (s) s.classList.remove("spin");
+					parentBtn.classList.remove("connected", "failed");
+					if (anyFail && !anySuccess) parentBtn.classList.add("failed");
+					else if (anySuccess && !anyFail) parentBtn.classList.add("connected");
+				}
+			}
 		}
 	}
 }
