@@ -203,6 +203,9 @@ main {
 button, .btn {
 	--btn-h: 24px;
 	--btn-p: var(--space-1);
+	--hover-bg: var(--accent-light);
+	--hover-border: var(--accent-primary);
+	--hover-color: var(--accent-primary);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -218,11 +221,28 @@ button, .btn {
 	height: var(--btn-h);
 	text-decoration: none;
 
-	/* 视觉类 — 两条分支共享 */
+	&:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+	&:not(:disabled) {
+		&:hover {
+			background: var(--hover-bg);
+			border-color: var(--hover-border);
+			color: var(--hover-color);
+		}
+		&:focus-visible {
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 2px;
+		}
+		&:active {
+			transform: scale(0.97);
+		}
+	}
+
 	&.square {
 		--side: var(--btn-h);
 	}
-
 	&.icon-only {
 		border: 1px solid transparent;
 		padding: var(--space-1);
@@ -235,44 +255,18 @@ button, .btn {
 			min-height: 12px;
 		}
 	}
-
 	&.danger {
+		--hover-bg: var(--danger-light);
+		--hover-border: var(--danger);
+		--hover-color: var(--danger);
 		color: var(--danger);
-	}
-
-	/* 分支 A :disabled */
-	&:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
-		transform: none;
-	}
-
-	/* 分支 B :not(:disabled) */
-	&:not(:disabled) {
-		&:hover {
-			background: var(--accent-light);
-			border-color: var(--accent-primary);
-			color: var(--accent-primary);
-		}
-		&:active {
-			transform: scale(0.97);
-		}
-		&:focus-visible {
-			outline: 2px solid var(--accent-primary);
-			outline-offset: 2px;
-		}
-		&.danger:hover {
-			background: var(--danger-light);
-			color: var(--danger);
-			border-color: var(--danger);
-		}
 	}
 }
 
 .workspace .tip,
 .workspace.directory .name {
 	color: var(--text-muted);
-		overflow: hidden;
+	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	font-size: 12px;
@@ -339,6 +333,8 @@ aside {
 /* ------ 各处按钮 ------ */
 button, .btn {
 	&.use-browser-storage {
+		--hover-bg: #1D4ED8;
+		--hover-color: #fff;
 		background: #2563EB;
 		color: #fff;
 		border: none;
@@ -348,13 +344,11 @@ button, .btn {
 		font-size: 13px;
 		font-weight: 500;
 		transition: background var(--transition-fast);
-
-		&:hover {
-			background: #1D4ED8;
-		}
 	}
 
 	&.select-dir {
+		--hover-bg: var(--accent-primary-hover);
+		--hover-color: white;
 		background: var(--accent-primary);
 		color: white;
 		border: none;
@@ -364,13 +358,11 @@ button, .btn {
 		height: 28px;
 		cursor: pointer;
 		border-radius: var(--radius-sm);
-
-		&:hover {
-			background: var(--accent-primary-hover);
-		}
 	}
 
 	&.recover {
+		--hover-bg: #047857;
+		--hover-color: white;
 		background: var(--success);
 		color: white;
 		border: none;
@@ -380,59 +372,30 @@ button, .btn {
 		height: 28px;
 		cursor: pointer;
 		border-radius: var(--radius-sm);
-
-		&:hover {
-			background: #047857;
-		}
 	}
 
 	&.toggle.apikey.visibility {
+		--hover-bg: var(--bg-muted);
+		--hover-border: var(--border-subtle);
+		--hover-color: var(--text-secondary);
 		background: var(--bg-base);
 		border: 1px solid var(--border-default);
 		border-radius: var(--radius-md);
 		padding: 6px 8px;
-
-		&:not(:disabled) {
-			&:hover {
-				background: var(--bg-muted);
-				color: var(--text-secondary);
-				border-color: var(--border-subtle);
-			}
-		}
 	}
 
 	&.join-session {
 		color: var(--accent-primary);
 		font-weight: 600;
 
-		&:not(:disabled) {
-			&:hover {
-				background: var(--accent-light);
-			}
-		}
-
 		&.joined {
 			background: var(--success-light);
 			color: var(--success);
-
-			&:not(:disabled) {
-				&:hover {
-					background: var(--success-light);
-					color: var(--success);
-				}
-			}
 		}
 	}
 
 	&.test-connection {
 		color: var(--text-muted);
-
-		&:not(:disabled) {
-			&:hover {
-				background: var(--accent-light);
-				color: var(--accent-primary);
-			}
-		}
 
 		&.testing {
 			background: var(--accent-light);
@@ -456,6 +419,8 @@ button, .btn {
 	}
 
 	&.stop {
+		--hover-bg: var(--danger);
+		--hover-color: white;
 		background: var(--danger-light);
 		color: var(--danger);
 		border: 1px solid var(--danger);
@@ -467,17 +432,6 @@ button, .btn {
 		cursor: pointer;
 		display: inline-flex;
 		align-items: center;
-
-		&:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
-		}
-		&:not(:disabled) {
-			&:hover {
-				background: var(--danger);
-				color: white;
-			}
-		}
 	}
 
 	&.help {
@@ -590,13 +544,6 @@ button, .btn {
 		font-size: 12px;
 		font-weight: 600;
 		border-radius: 0;
-
-		&:not(:disabled) {
-			&:hover {
-				background: var(--accent-light);
-				color: var(--accent-primary);
-			}
-		}
 	}
 }
 /* ========== Messages ========== */
@@ -889,12 +836,8 @@ aside .one.endpoint {
 		}
 		/* header 内的操作按钮 */
 		& button, & .btn {
+			--hover-border: var(--border-subtle);
 			border: 1px solid transparent;
-			&:not(:disabled) {
-				&:hover {
-					border-color: var(--border-subtle);
-				}
-			}
 		}
 		.actions {
 			gap: 2px;
@@ -1188,6 +1131,8 @@ dialog {
 			gap: var(--space-2);
 			justify-content: flex-end;
 			& button {
+				--hover-bg: var(--bg-active);
+				--hover-color: var(--text-primary);
 				border: none;
 				border-radius: var(--radius-md);
 				background: var(--bg-muted);
@@ -1196,20 +1141,11 @@ dialog {
 				font-weight: 500;
 				padding: var(--space-2) var(--space-4);
 				height: 32px;
-				&:not(:disabled) {
-					&:hover {
-						background: var(--bg-active);
-						color: var(--text-primary);
-					}
-				}
 				&.primary {
+					--hover-bg: var(--accent-primary-hover);
+					--hover-color: white;
 					background: var(--accent-primary);
 					color: white;
-					&:not(:disabled) {
-						&:hover {
-							background: var(--accent-primary-hover);
-						}
-					}
 				}
 			}
 		}
@@ -1527,10 +1463,10 @@ dialog {
 		z-index: 100;
 	}
 
-	& .drop:hover {
-		background: var(--accent-primary-hover);
-	}
+
 	& .drop {
+		--hover-bg: var(--accent-primary-hover);
+		--hover-color: white;
 		height: 40px;
 		width: 28px;
 		border: 1px solid var(--accent-primary);
@@ -1543,10 +1479,10 @@ dialog {
 		justify-content: center;
 		padding: 0;
 	}
-	& .main:hover {
-		background: var(--accent-primary-hover);
-	}
+
 	& .main {
+		--hover-bg: var(--accent-primary-hover);
+		--hover-color: white;
 		height: 40px;
 		padding: 0 12px;
 		border: 1px solid var(--accent-primary);
