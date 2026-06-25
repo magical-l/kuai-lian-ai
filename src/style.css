@@ -79,6 +79,7 @@ textarea {
 	flex-shrink: 0;
 	&:active { cursor: grabbing; }
 }
+.editor .flex.items-go-x { & input, & select { flex: 1; } }
 /* ================== 选择：没那么理所当然的样式，只是本项目的选择 ================== */
 /* ============ 基础元素（有些是标签有些是等价于标签的类）默认属性 ============ */
 :root {
@@ -134,6 +135,8 @@ textarea {
 	--space-6: 24px;
 	--space-7: 28px;
 	--space-8: 32px;
+	--btn-h: 24px;
+	--btn-p: var(--space-1);
 }
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-thumb {
@@ -202,8 +205,6 @@ main {
 	}
 }
 button, .btn {
-	--btn-h: 24px;
-	--btn-p: var(--space-1);
 	--hover-bg: var(--accent-light);
 	--hover-border: var(--accent-primary);
 	--hover-color: var(--accent-primary);
@@ -898,9 +899,7 @@ main {
 				
 				> menu {
 					gap: 4px;
-					& button, & .btn {
-						--btn-h: 40px;
-					}
+					--btn-h: 40px;
 					/* 隐藏掉原生的文件输入控件，使用“添加附件按钮” */
 					& input[type=file] {
 						display: none;
@@ -1322,13 +1321,9 @@ dialog {
 			display: block;
 		}
 		& .apikey.editor {
-			& input {
-				flex: 1;
-			}
-			& button, & .btn {
-				--btn-h: 36px;
-			}
-		} 
+			--btn-h: 36px;
+			/* & input { flex: 1; } */
+		}
 		> footer {
 			margin-top: var(--space-5);
 			gap: var(--space-2);
@@ -1382,10 +1377,10 @@ dialog {
 			display: flex;
 			align-items: center;
 			justify-content: center;
-		}
-		> .close:hover {
-			color: var(--text-primary);
-			background: var(--bg-muted);
+			&:hover {
+				color: var(--text-primary);
+				background: var(--bg-muted);
+			}
 		}
 		& .workspace.directory {
 			background: var(--bg-muted);
@@ -1462,5 +1457,7 @@ dialog {
 @media (max-width: 768px) {
 	#chat-messages { padding: var(--space-4); }
 	.chat-input-area { padding: 8px; }
-	.msg.request, .msg.response { max-width: 95%; }
+	.msg {
+		&.request, &.response { max-width: 95%; }
+	}
 }
