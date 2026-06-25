@@ -9,7 +9,7 @@ dialog[open] {
 }
 html {
 	height: 100%;
-	scrollbar-gutter: unset;/* 这个页面确定不滚 */
+	scrollbar-gutter: unset;/* 覆盖引入的css的设置：这个页面确定不滚 */
 }
 body {
 	font-family: var(--font-sans);
@@ -46,15 +46,19 @@ textarea {
 	--side: 24px;
 	width: var(--side);
 	height: var(--side);
-	aspect-ratio: 1;
+	aspect-ratio: 1;/* 互相兜底 */
 }
-/* 通用的.spin类 */
+/* 转圈动画，表示等待中 */
 .spin {
 	animation: spin 1s linear infinite;
 	display: inline-block;
 	will-change: transform;
 }
-
+@keyframes spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+/* 拖拽把手，通常是⋮⋮ */
 .drag.handle {
 	cursor: grab;
 	align-items: center;
@@ -102,7 +106,7 @@ textarea {
 	--radius-xl: 16px;
 	--transition-fast: 120ms ease;
 	--transition-normal: 180ms ease;
-	--decoration-animation-duration: 1s;
+
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
 	--shadow-md: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 	--shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -120,9 +124,6 @@ textarea {
 ::-webkit-scrollbar {
 	width: 5px;
 }
-::-webkit-scrollbar-track {
-	background: transparent;
-}
 ::-webkit-scrollbar-thumb {
 	background: var(--border-default);
 	border-radius: 3px;
@@ -130,12 +131,12 @@ textarea {
 ::-webkit-scrollbar-thumb:hover {
 	background: var(--border-strong);
 }
-.flex {
+.flex {/* 覆盖引入的css的设置 */
 	align-items: stretch;
 	flex-wrap: nowrap;
 }
 del {
-	color: gray;
+	color: var(--text-muted);
 	text-decoration: line-through;
 	text-decoration-style: double;
 }
@@ -227,13 +228,14 @@ button, .btn {
 	user-select: none;
 	-webkit-user-select: none;
 	border-radius: var(--radius-sm);
-	transition: all var(--transition-fast);
+	transition: background var(--transition-fast),
+				color var(--transition-fast),
+				border-color var(--transition-fast);
 	color: var(--text-muted);
 	background: transparent;
 	border: 1px solid var(--border-subtle);
 	padding: var(--btn-p);
 	height: var(--btn-h);
-	text-decoration: none;
 
 	&:disabled {
 		opacity: 0.45;
@@ -254,6 +256,9 @@ button, .btn {
 		}
 	}
 
+	&:is(a) {
+		text-decoration: none;
+	}
 	&.square {
 		--side: var(--btn-h);
 	}
@@ -333,8 +338,6 @@ aside {
 button, .btn {
 	&.use-browser-storage, &.select-dir, &.recover {
 		border: none;
-		cursor: pointer;
-		border-radius: var(--radius-sm);
 		font-size: 13px;
 		font-weight: 500;
 	}
@@ -390,18 +393,17 @@ button, .btn {
 		color: var(--text-muted);
 
 		&.testing {
-			background: var(--accent-light);
 			color: var(--accent-primary);
 		}
 
 		&.connected {
-			color: var(--success) !important;
-			background: var(--success-light) !important;
+			color: var(--success);
+			background: var(--success-light);
 		}
 
 		&.failed {
-			color: var(--danger) !important;
-			background: var(--danger-light) !important;
+			color: var(--danger);
+			background: var(--danger-light);
 		}
 	}
 
@@ -416,9 +418,6 @@ button, .btn {
 		height: 40px;
 		font-size: 13px;
 		font-weight: 500;
-		cursor: pointer;
-		display: inline-flex;
-		align-items: center;
 	}
 
 	&.help {
@@ -510,7 +509,7 @@ button, .btn {
 /* ========== Jump Buttons ========== */
 .btn-group.jump {
 	margin-left: auto;
-	.btn {
+	& .btn {
 		background: var(--bg-elevated);
 		padding: 0;
 		font-size: 12px;
@@ -709,7 +708,7 @@ button, .btn {
 		border-radius: var(--radius-sm);
 		object-fit: cover;
 		background: var(--bg-subtle);
-		.remove:hover {
+		& .remove:hover {
 			background: #b91c1c;
 		}
 	}
@@ -796,7 +795,7 @@ aside .one.endpoint {
 		border-radius: 0;
 		gap: var(--space-1);
 		border: none;
-		transition: all var(--transition-fast);
+		transition: background var(--transition-fast);
 
 		&:hover {
 			background: var(--bg-muted);
@@ -806,12 +805,12 @@ aside .one.endpoint {
 			--hover-border: var(--border-subtle);
 			border: 1px solid transparent;
 		}
-		.actions {
+		& .actions {
 			gap: 2px;
 			flex-shrink: 0;
 			margin-left: auto;
 		}
-		.square {
+		& .square {
 			--side: 22px;
 		}
 	}
@@ -846,7 +845,7 @@ aside .one.endpoint {
 		> header {
 			padding: 2px var(--space-2);
 		}
-		.expand {
+		& .expand {
 			visibility: hidden;
 		}
 	}
@@ -887,9 +886,9 @@ aside .one.endpoint {
 	}
 	& .one.endpoint {
 		display: inline-flex;
-		--ep-bg: transparent;
+		--ep-bg: var(--accent-light);
 		--ep-color: inherit;
-		--ep-border: transparent;
+		--ep-border: var(--accent-primary);
 		background: var(--ep-bg);
 		border-color: var(--ep-border);
 		align-items: center;
@@ -898,12 +897,11 @@ aside .one.endpoint {
 		border-radius: var(--radius-sm);
 		font-size: 12px;
 		cursor: pointer;
-		transition: all var(--transition-fast);
+		transition: background var(--transition-fast), border-color var(--transition-fast);
 		border: 1px solid transparent;
 
-		background: var(--accent-light);
 		color: var(--ep-color, var(--accent-primary));
-		border: 1px solid var(--accent-primary);
+		border: 1px solid var(--ep-border);
 		padding: var(--space-1) var(--space-3);
 		box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
 
@@ -949,7 +947,7 @@ aside .one.endpoint {
 			font-size: 10px;
 			cursor: pointer;
 			color: var(--text-muted);
-			transition: all var(--transition-fast);
+			transition: background var(--transition-fast), color var(--transition-fast);
 			flex-shrink: 0;
 
 			&:hover {
@@ -967,7 +965,7 @@ aside .one.endpoint {
 	cursor: pointer;
 	border-radius: var(--radius-md);
 	border: 1px solid transparent;
-	transition: all var(--transition-fast);
+	transition: background var(--transition-fast), border-color var(--transition-fast);
 
 	&:hover {
 		background: var(--bg-hover);
@@ -987,12 +985,12 @@ aside .one.endpoint {
 		justify-content: space-between;
 		margin-top: 2px;
 
-		.time {
+		& .time {
 			font-size: 11px;
 			color: var(--text-muted);
 		}
 
-		.actions {
+		& .actions {
 			gap: var(--space-1);
 
 			& .btn {
@@ -1015,9 +1013,8 @@ aside .one.endpoint {
 	}
 
 	&.selected {
-		background: var(--accent-light);
 		border-color: rgba(37, 99, 235, 0.3);
-		& div.title {
+		& .title {
 			color: var(--accent-primary);
 		}
 	}
@@ -1200,20 +1197,8 @@ dialog {
 	}
 }
 
-/* ========== Streaming Animation ========== */
-@keyframes spin {
-	from {
-		transform: rotate(0deg);
-	}
-	to {
-		transform: rotate(360deg);
-	}
-}
 /* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
-	:root {
-		--decoration-animation-duration: 0.01ms;
-	}
 	*, *::before, *::after {
 		transition-duration: 0.01ms !important;
 	}
@@ -1298,7 +1283,7 @@ dialog {
 	&.streaming {
 		background: var(--bg-subtle);
 		border: 1px solid var(--border-default);
-		.content {
+		& .content {
 			display: block;
 			border-top: none;
 		}
