@@ -24,6 +24,44 @@ body {
 textarea {
 	flex: 1;/* 输入框别那么小气，默认拉伸 */
 }
+.icon {
+	user-select: none;
+	-webkit-user-select: none;
+}
+/* 通用的"完成"图标，可用于任何地方，不限于按钮 */
+.done.icon {
+	display: none;/* 默认隐藏，成功时才显现 */
+	color: var(--success);
+	font-weight: 600;
+
+	&:empty {
+		&::before {
+			content: '✓';
+			color: var(--success);
+			font-weight: 600;
+		}
+	}
+}
+.⧉.icon {
+	translate: 0.05em 0.2em;/* 字符“⧉”偏左上，用translate调整到中间 */
+}
+.square {
+	--side: 24px;
+	/* width、height、aspect-ratio互相兜底，避免被意外覆盖其中一个 */
+	width: var(--side);
+	height: var(--side);
+	aspect-ratio: 1;
+}
+/* 转圈动画，表示等待中 */
+.spin {
+	animation: spin 1s linear infinite;
+	display: inline-block;
+	will-change: transform;
+}
+@keyframes spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
 .btn-group {
 	/* 横排：首项左圆角，末项右圆角 */
 	&.flex.items-go-x {
@@ -44,54 +82,12 @@ textarea {
 		}
 	}
 }
-.icon {
-	user-select: none;
-	-webkit-user-select: none;
-
-	&.⧉ {
-		translate: 0.05em 0.2em;/* 字符“⧉”偏左上，用translate调整到中间 */
-	}
-}
-/* 通用的"完成"图标，可用于任何地方，不限于按钮 */
-.done.icon {
-	display: none;/* 默认隐藏，成功时才显现 */
-	color: var(--success);
-	font-weight: 600;
-
-	&:empty {
-		&::before {
-			content: '✓';
-			color: var(--success);
-			font-weight: 600;
-		}
-	}
-}
-.square {
-	--side: 24px;
-	/* width、height、aspect-ratio互相兜底，避免被意外覆盖其中一个 */
-	width: var(--side);
-	height: var(--side);
-	aspect-ratio: 1;
-}
-/* 转圈动画，表示等待中 */
-.spin {
-	animation: spin 1s linear infinite;
-	display: inline-block;
-	will-change: transform;
-}
-@keyframes spin {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
-}
-/* 拖拽把手，通常是⋮⋮ */
-.drag.handle {
-	cursor: grab;
-	align-items: center;
-	flex-shrink: 0;
-	&:active { cursor: grabbing; }
-}
 /* 编辑控件 */
-.editor .flex.items-go-x { & input, & select { flex: 1; } }
+.editor {
+	& .flex.items-go-x {
+		& input, & select { flex: 1; }
+	}
+}
 /* 选择器：从多个备选项中选择一个或多个项的控件 */
 .selector {
     /* 如果使用radio/checkbox，选项.option应该用<label> */
@@ -111,6 +107,13 @@ textarea {
             --hover-border: transparent;
         }
     }
+}
+/* 拖拽把手，通常是⋮⋮ */
+.drag.handle {
+	cursor: grab;
+	align-items: center;
+	flex-shrink: 0;
+	&:active { cursor: grabbing; }
 }
 
 /* ================== 选择：没那么理所当然的样式，只是本项目的选择 ================== */
