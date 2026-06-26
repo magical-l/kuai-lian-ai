@@ -1243,7 +1243,7 @@ aside.endpoint.list .one.endpoint {
 	}
 }
 /* 模式选择器（聊天/嵌入） */
-.mode-selector {
+.model-task.selector {
 	display: inline-flex;
 	border: 1px solid var(--border-default);
 	border-radius: 6px;
@@ -1263,12 +1263,12 @@ aside.endpoint.list .one.endpoint {
 		& + .option {
 			border-left: 1px solid var(--border-default);
 		}
-		&.selected {
+		&:has(input:checked) {
 			background: var(--bg-active);
 			color: var(--text-primary);
 			font-weight: 500;
 		}
-		&:hover:not(.selected) {
+		&:hover:not(:has(input:checked)) {
 			background: var(--bg-hover);
 		}
 	}

@@ -120,17 +120,15 @@ async function init() {
 			handleSend();
 		}
 	};
-	document.querySelectorAll('.mode-selector .option').forEach(el => {
-		el.onclick = () => {
-			document.querySelector('.mode-selector .selected')?.classList.remove('selected');
-			el.classList.add('selected');
-			inputMode = el.dataset.mode;
+	document.querySelectorAll('.model-task.selector input[name="taskMode"]').forEach(el => {
+		el.addEventListener('change', () => {
+			inputMode = el.value;
 			console.log("Mode:", inputMode);
 			const input = $('#chat-input');
 			input.placeholder = inputMode === 'chat' ? '输入消息...' : '输入要嵌入的文本...';
 			$('.add.attachment.btn').style.display = inputMode === 'chat' ? '' : 'none';
 			$('.file-input').style.display = inputMode === 'chat' ? '' : 'none';
-		};
+		});
 	});
 	$('.stop.btn').onclick = () => {
 		stopAllGenerations();
