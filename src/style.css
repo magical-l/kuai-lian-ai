@@ -25,12 +25,23 @@ textarea {
 	flex: 1;/* 输入框别那么小气，默认拉伸 */
 }
 .btn-group {
-	/* 按钮组的第一个按钮左侧设置圆角，最后一个按钮右侧设置圆角 */
-	& > :first-child {
-		border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-	}
-	& > :last-child {
-		border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+	/* 横排：首项左圆角，末项右圆角 */
+	&.flex.items-go-x {
+		> :first-child {
+			border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+		}
+		> :last-child {
+			border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+		}
+	} 
+	/* 竖排：首项上圆角，末项下圆角 */
+	&.flex.items-go-y {
+		> :first-child {
+			border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+		}
+		> :last-child {
+			border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+		}
 	}
 }
 .icon {
@@ -79,7 +90,29 @@ textarea {
 	flex-shrink: 0;
 	&:active { cursor: grabbing; }
 }
+/* 编辑控件 */
 .editor .flex.items-go-x { & input, & select { flex: 1; } }
+/* 选择器：从多个备选项中选择一个或多个项的控件 */
+.selector {
+    /* 如果使用radio/checkbox，选项.option应该用<label> */
+    & label.option {
+        & input { display: none; }
+    }
+    /* 选项用按钮时的样式 */
+    & label.option.btn {
+        &:has(input:checked) {
+            /* 选中态适配：映射到按钮变量 */
+            --btn-bg: var(--selector-bg, var(--bg-active));
+            --btn-color: var(--selector-color, var(--text-primary));
+            --btn-font-weight: var(--selector-font-weight, 500);
+            /* 选中态按钮适配：锁住 hover，不让 .btn 的 hover 干扰 */
+            --hover-bg: var(--btn-bg);
+            --hover-color: var(--btn-color);
+            --hover-border: transparent;
+        }
+    }
+}
+
 /* ================== 选择：没那么理所当然的样式，只是本项目的选择 ================== */
 /* ============ 基础元素（有些是标签有些是等价于标签的类）默认属性 ============ */
 :root {
@@ -1242,21 +1275,12 @@ aside.endpoint.list .one.endpoint {
 		color: var(--text-muted);
 	}
 }
-/* 模式选择器（聊天/嵌入） */
 .model-task.selector {
-	display: inline-flex;
-	& .option {
-		--btn-h: 40px;
-		--btn-p: 0 12px;
-		--btn-font-size: 13px;
-		--btn-bg: var(--bg-base);
-		& input { display: none; }
-		&:has(input:checked) {
-			--btn-bg: var(--accent-primary);
-			--btn-color: white;
-			--btn-font-weight: 500;
-		}
-	}
+    --btn-h: 40px;
+    --btn-p: 0 12px;
+    --btn-font-size: 13px;
+    --selector-bg: var(--accent-primary);
+    --selector-color: white;
 }
 
 /* ============ 各种弹窗 ============ */
