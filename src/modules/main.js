@@ -528,7 +528,7 @@ function showThinkingCards(endpoints, groups, sessionId) {
     const hintText = mk('span', 'hint-text');
     hintText.textContent = `${endpoints.length}个端点正在思考...`;
     hint.appendChild(hintText);
-    const stopBtn = mk('button', 'stop btn-stop-inline');
+    const stopBtn = mk('button', 'stop all btn');
     stopBtn.textContent = '全部停止';
     hint.appendChild(stopBtn);
     stopBtn.onclick = () => {

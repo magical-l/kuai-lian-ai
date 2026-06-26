@@ -108,7 +108,7 @@ textarea {
 	--success: #059669;
 	--success-light: rgba(5, 150, 105, 0.1);
 	--danger: #DC2626;
-	--danger-light: rgba(220, 38, 38, 0.08);
+	--danger-light: rgba(220, 38, 38, 0.15);
 	--warning: #D97706;
 	--warning-light: rgba(217, 119, 6, 0.1);
 	/* 用户消息 */
@@ -208,19 +208,24 @@ button, .btn {
 	--hover-bg: var(--accent-light);
 	--hover-border: var(--accent-primary);
 	--hover-color: var(--accent-primary);
+	--btn-bg: transparent;
+	--btn-color: var(--text-muted);
+	--btn-border: 1px solid var(--border-subtle);
+	--btn-font-size: inherit;
+	--btn-font-weight: inherit;
+	--btn-radius: var(--radius-sm);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
 	user-select: none;
 	-webkit-user-select: none;
-	border-radius: var(--radius-sm);
-	transition: background var(--transition-fast),
-				color var(--transition-fast),
-				border-color var(--transition-fast);
-	color: var(--text-muted);
-	background: transparent;
-	border: 1px solid var(--border-subtle);
+	border-radius: var(--btn-radius);
+	color: var(--btn-color);
+	background: var(--btn-bg);
+	border: var(--btn-border);
+	font-size: var(--btn-font-size);
+	font-weight: var(--btn-font-weight);
 	padding: var(--btn-p);
 	height: var(--btn-h);
 
@@ -250,8 +255,8 @@ button, .btn {
 		--side: var(--btn-h);
 	}
 	&.icon-only {
-		border: 1px solid transparent;
-		padding: var(--space-1);
+		--btn-border: 1px solid transparent;
+		--btn-p: var(--space-1);
 		& svg {
 			width: 100%;
 			height: 100%;
@@ -265,21 +270,12 @@ button, .btn {
 		--hover-bg: var(--danger-light);
 		--hover-border: var(--danger);
 		--hover-color: var(--danger);
-		color: var(--danger);
+		--btn-color: var(--danger);
 	}
 }
 dialog {
 	&::backdrop { background: rgba(0, 0, 0, 0.3); }
 	& .close.btn.square { --side: 28px; }
-}
-
-.workspace .tip,
-.workspace.directory .name {
-	color: var(--text-muted);
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	font-size: 12px;
 }
 
 aside {
@@ -387,95 +383,104 @@ aside {
 	}
 }
 
+.workspace .tip,
+.workspace.directory .name {
+	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 12px;
+}
+
 /* ============ 各处按钮 ============ */
 button, .btn {
-	&.use-browser-storage, &.select-dir, &.recover {
-		border: none;
-		font-size: 13px;
-		font-weight: 500;
-	}
-
 	&.use-browser-storage {
 		--hover-bg: #1D4ED8;
 		--hover-color: #fff;
-		background: #2563EB;
-		color: #fff;
-		padding: 6px 14px;
+		--btn-bg: #2563EB;
+		--btn-color: #fff;
+		--btn-border: none;
+		--btn-p: 6px 14px;
+		--btn-font-size: 13px;
+		--btn-font-weight: 500;
 		transition: background var(--transition-fast);
 	}
 
 	&.select-dir {
 		--hover-bg: var(--accent-primary-hover);
 		--hover-color: white;
-		background: var(--accent-primary);
-		color: white;
-		padding: var(--space-2) var(--space-3);
-		height: 28px;
+		--btn-bg: var(--accent-primary);
+		--btn-color: white;
+		--btn-border: none;
+		--btn-p: var(--space-2) var(--space-3);
+		--btn-font-size: 13px;
+		--btn-font-weight: 500;
 	}
 
 	&.recover {
 		--hover-bg: #047857;
 		--hover-color: white;
-		background: var(--success);
-		color: white;
-		padding: var(--space-2) var(--space-3);
-		height: 28px;
+		--btn-bg: var(--success);
+		--btn-color: white;
+		--btn-border: none;
+		--btn-p: var(--space-2) var(--space-3);
+		--btn-font-size: 13px;
+		--btn-font-weight: 500;
 	}
 
 	&.toggle.apikey.visibility {
 		--hover-bg: var(--bg-muted);
 		--hover-border: var(--border-subtle);
 		--hover-color: var(--text-secondary);
-		background: var(--bg-base);
-		border: 1px solid var(--border-default);
-		border-radius: var(--radius-md);
-		padding: 6px 8px;
+		--btn-bg: var(--bg-base);
+		--btn-border: 1px solid var(--border-default);
+		--btn-radius: var(--radius-md);
+		--btn-p: 6px 8px;
 	}
 
 	&.join-session {
-		color: var(--accent-primary);
-		font-weight: 600;
+		--btn-color: var(--accent-primary);
+		--btn-font-weight: 600;
 
 		&.joined {
-			background: var(--success-light);
-			color: var(--success);
+			--btn-bg: var(--success-light);
+			--btn-color: var(--success);
 		}
 	}
 
 	&.test-connection {
-		color: var(--text-muted);
+		--btn-color: var(--text-muted);
 
 		&.testing {
-			color: var(--accent-primary);
+			--btn-color: var(--accent-primary);
 		}
 
 		&.connected {
-			color: var(--success);
-			background: var(--success-light);
+			--btn-color: var(--success);
+			--btn-bg: var(--success-light);
 		}
 
 		&.failed {
-			color: var(--danger);
-			background: var(--danger-light);
+			--btn-color: var(--danger);
+			--btn-bg: var(--danger-light);
 		}
 	}
 
 	&.stop {
 		--hover-bg: var(--danger);
 		--hover-color: white;
-		background: var(--danger-light);
-		color: var(--danger);
-		border: 1px solid var(--danger);
-		border-radius: var(--radius-sm);
-		padding: 0 12px;
-		height: 40px;
-		font-size: 13px;
-		font-weight: 500;
+		--btn-bg: var(--danger-light);
+		--btn-color: var(--danger);
+		--btn-border: 1px solid var(--danger);
+		--btn-p: 0 12px;
+		--btn-h: 40px;
+		--btn-font-size: 13px;
+		--btn-font-weight: 500;
 	}
 
 	&.help {
-		font-size: 14px;
-		font-weight: 600;
+		--btn-font-size: 14px;
+		--btn-font-weight: 600;
 	}
 
 	&.copy {
@@ -808,11 +813,11 @@ main {
 				& .btn-group.jump {
 					margin-left: auto;
 					& .btn {
-						background: var(--bg-elevated);
-						padding: 0;
-						font-size: 12px;
-						font-weight: 600;
-						border-radius: 0;
+						--btn-bg: var(--bg-elevated);
+						--btn-p: 0;
+						--btn-font-size: 12px;
+						--btn-font-weight: 600;
+						--btn-radius: 0;
 					}
 				}
 			}
@@ -844,19 +849,16 @@ main {
 					color: var(--text-secondary);
 					padding: var(--space-1) var(--space-6);
 
-					& .btn-stop-inline {
+					& .stop.all.btn {
 						--btn-h: 22px;
-						padding: 0 var(--space-2);
-						font-size: 11px;
-						font-weight: 500;
-						border: 1px solid var(--danger);
-						border-radius: var(--radius-sm);
-						background: transparent;
-						color: var(--danger);
-
-						&:hover {
-							background: var(--danger-light);
-						}
+						--btn-p: 0 var(--space-2);
+						--btn-font-size: 11px;
+						--btn-font-weight: 500;
+						--hover-bg: var(--danger-light);
+						--hover-border: var(--accent-light);
+						--hover-color: var(--danger);
+						/* border: 1px solid var(--danger); */
+						/* color: var(--danger); */
 					}
 				}
 			}
@@ -983,7 +985,7 @@ aside.endpoint.list .one.endpoint {
 		/* header 内的操作按钮 */
 		& button, & .btn {
 			--hover-border: var(--border-subtle);
-			border: 1px solid transparent;
+			--btn-border: 1px solid transparent;
 		}
 		& .actions {
 			gap: 2px;
@@ -1174,7 +1176,7 @@ aside.endpoint.list .one.endpoint {
 			gap: var(--space-1);
 
 			& .btn {
-				border: none;
+				--btn-border: none;
 				--btn-p: 2px;
 			}
 		}
@@ -1331,19 +1333,19 @@ dialog {
 			& button {
 				--hover-bg: var(--bg-active);
 				--hover-color: var(--text-primary);
-				border: none;
-				border-radius: var(--radius-md);
-				background: var(--bg-muted);
-				color: var(--text-secondary);
-				font-size: 13px;
-				font-weight: 500;
-				padding: var(--space-2) var(--space-4);
-				height: 32px;
+				--btn-border: none;
+				--btn-radius: var(--radius-md);
+				--btn-bg: var(--bg-muted);
+				--btn-color: var(--text-secondary);
+				--btn-font-size: 13px;
+				--btn-font-weight: 500;
+				--btn-p: var(--space-2) var(--space-4);
+				--btn-h: 32px;
 				&.primary {
 					--hover-bg: var(--accent-primary-hover);
 					--hover-color: white;
-					background: var(--accent-primary);
-					color: white;
+					--btn-bg: var(--accent-primary);
+					--btn-color: white;
 				}
 			}
 		}
@@ -1407,6 +1409,7 @@ dialog {
 				margin-top: 6px;
 			}
 			& .actions {
+				--btn-h: 28px;
 				gap: var(--space-2);
 			}
 		}
