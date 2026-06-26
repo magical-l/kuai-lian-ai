@@ -26,10 +26,10 @@ textarea {
 }
 .btn-group {
 	/* 按钮组的第一个按钮左侧设置圆角，最后一个按钮右侧设置圆角 */
-	& .btn:first-child {
+	& > :first-child {
 		border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 	}
-	& .btn:last-child {
+	& > :last-child {
 		border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 	}
 }
@@ -1245,31 +1245,16 @@ aside.endpoint.list .one.endpoint {
 /* 模式选择器（聊天/嵌入） */
 .model-task.selector {
 	display: inline-flex;
-	border: 1px solid var(--border-default);
-	border-radius: 6px;
-	overflow: hidden;
 	& .option {
-		display: flex;
-		align-items: center;
-		height: 40px;
-		padding: 0 12px;
-		cursor: pointer;
-		font-size: 13px;
-		color: var(--text-muted);
-		background: var(--bg-base);
-		transition: none;
-		user-select: none;
+		--btn-h: 40px;
+		--btn-p: 0 12px;
+		--btn-font-size: 13px;
+		--btn-bg: var(--bg-base);
 		& input { display: none; }
-		& + .option {
-			border-left: 1px solid var(--border-default);
-		}
 		&:has(input:checked) {
-			background: var(--bg-active);
-			color: var(--text-primary);
-			font-weight: 500;
-		}
-		&:hover:not(:has(input:checked)) {
-			background: var(--bg-hover);
+			--btn-bg: var(--accent-primary);
+			--btn-color: white;
+			--btn-font-weight: 500;
 		}
 	}
 }
