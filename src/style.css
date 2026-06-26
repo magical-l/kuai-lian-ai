@@ -153,57 +153,6 @@ del {
 	text-decoration: line-through;
 	text-decoration-style: double;
 }
-main {
-	height: 100%;
-	overflow: hidden;
-	background: var(--bg-subtle);
-
-	> header {
-		align-items: center;
-		justify-content: space-between;
-		padding: var(--space-2) var(--space-4);
-		background: var(--bg-muted);
-		border-bottom: 1px solid var(--border-subtle);
-		height: 36px;
-
-		& nav {
-			align-items: center;
-			gap: var(--space-2);
-		}
-		& .workspace {
-			align-items: center;
-			gap: var(--space-2);
-			flex: 1;
-			justify-content: center;
-		}
-		& .version {
-			font-size: 12px;
-			color: var(--text-muted);
-		}
-		& .brand {
-			font-weight: 600;
-			font-size: 14px;
-			color: var(--text-primary);
-		}
-		& .logo {
-			width: 24px;
-			height: 24px;
-			align-items: center;
-			justify-content: center;
-		}
-		& .branding {
-			align-items: center;
-			gap: var(--space-3);
-		}
-
-		& button, & .btn {
-			& .icon {
-				width: 14px;
-				height: 14px;
-			}
-		}
-	}
-}
 button, .btn {
 	--hover-bg: var(--accent-light);
 	--hover-border: var(--accent-primary);
@@ -277,7 +226,6 @@ dialog {
 	&::backdrop { background: rgba(0, 0, 0, 0.3); }
 	& .close.btn.square { --side: 28px; }
 }
-
 aside {
 	background: var(--bg-base);
 	min-width: 180px;
@@ -382,14 +330,63 @@ aside {
 		& .menu { display: block; }
 	}
 }
-
-.workspace .tip,
-.workspace.directory .name {
+.workspace-setting .cur {
 	color: var(--text-muted);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	font-size: 12px;
+}
+main {
+	height: 100%;
+	overflow: hidden;
+	background: var(--bg-subtle);
+
+	> header {
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--space-2) var(--space-4);
+		background: var(--bg-muted);
+		border-bottom: 1px solid var(--border-subtle);
+		height: 36px;
+
+		& nav {
+			align-items: center;
+			gap: var(--space-2);
+		}
+		& .workspace-setting {
+			align-items: center;
+			gap: var(--space-2);
+			flex: 1;
+			justify-content: center;
+		}
+		& .version {
+			font-size: 12px;
+			color: var(--text-muted);
+		}
+		& .brand {
+			font-weight: 600;
+			font-size: 14px;
+			color: var(--text-primary);
+		}
+		& .logo {
+			width: 24px;
+			height: 24px;
+			align-items: center;
+			justify-content: center;
+		}
+		& .branding {
+			align-items: center;
+			gap: var(--space-3);
+		}
+
+		& button, & .btn {
+			& .icon {
+				width: 14px;
+				height: 14px;
+			}
+		}
+	}
 }
 
 /* ============ 各处按钮 ============ */
@@ -1384,7 +1381,7 @@ dialog {
 				background: var(--bg-muted);
 			}
 		}
-		& .workspace.directory {
+		& .workspace-setting {
 			background: var(--bg-muted);
 			padding: var(--space-3);
 			border-radius: var(--radius-md);
@@ -1392,7 +1389,7 @@ dialog {
 			& h4 {
 				margin-bottom: var(--space-2);
 			}
-			& .info {
+			& .field {
 				align-items: center;
 				gap: var(--space-3);
 				justify-content: space-between;

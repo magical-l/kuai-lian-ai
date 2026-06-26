@@ -63,21 +63,22 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v6.0.25</span>
+			<span class="version">v6.0.27</span>
 		</div>
-		<div class="workspace , flex items-go-x">
-			<span>当前存储目录：</span>
-			<span class="tip">未选择目录</span>
-			<button class="change-dir btn square icon-only" title="更换目录">
-				<svg class="icon"><use href="#icon-folder"></use></svg>
-			</button>
-			<button class="delete-dir btn , danger square" title="弃用目录">
-				<span style="font-size:16px;font-weight:700">×</span>
-			</button>
-			<button class="wipe-dir btn , danger square icon-only" title="清空数据">
-				<svg class="icon"><use href="#icon-trash"></use></svg>
-			</button>
-		</div>
+		<div class="workspace-setting , flex items-go-x">
+			<span class="label">当前存储目录：</span>
+			<span class="cur">未选择目录</span>
+			<div class="actions , flex items-go-x">
+				<button class="change-dir btn square icon-only" title="更换目录">
+					<svg class="icon"><use href="#icon-folder"></use></svg>
+				</button>
+				<button class="delete-dir btn , danger square" title="弃用目录">
+					<span style="font-size:16px;font-weight:700">×</span>
+				</button>
+				<button class="wipe-dir btn , danger square icon-only" title="清空数据">
+					<svg class="icon"><use href="#icon-trash"></use></svg>
+				</button>
+			</div></div>
 		<nav class="flex items-go-x">
 			<button class="toggle-sidebar , btn square icon-only" title="显示/隐藏右侧栏">
 				<svg class="icon"><use href="#icon-sidebar-open"></use></svg>
@@ -257,10 +258,10 @@
 				<p>首次打开页面需选择一个本地文件夹做工作目录，端点信息、会话记录将保存于该目录，随时可换，可自己在操作系统里查看、备份。</p>
 				<p>后续重新打开页面可能会需要重新确认一下该目录（浏览器干的）。</p>
 			</section>
-			<section class="workspace directory">
+			<section class="workspace-setting">
 				<h4>存储目录</h4>
-				<div class="info , flex items-go-x">
-					<span class="name"></span>
+				<div class="field , flex items-go-x">
+					<span class="cur"></span>
 					<div class="actions , flex items-go-x">
 						<button class="recover">恢复目录</button>
 						<button class="select-dir"></button>

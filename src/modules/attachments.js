@@ -292,8 +292,8 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 	const dirName = storage.getDirectoryName();
 	const displayInfo = storage.getDisplayInfo();
 	const hasDir = storage.mode === 'directory';
-	$('.name', dialog).textContent = '当前存储：' + displayInfo.text + (hasDir ? '' : '（浏览器存储）');
-	$('.name', dialog).title = displayInfo.title;
+	$('.cur', dialog).textContent = '当前存储：' + displayInfo.text + (hasDir ? '' : '（浏览器存储）');
+	$('.cur', dialog).title = displayInfo.title;
 	const changeDirBtn = $('.select-dir', dialog);
 	changeDirBtn.textContent = hasDir ? '更换目录' : '选择目录存储';
 	const restoreBtn = $('.recover', dialog);
@@ -306,8 +306,8 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 				await loadEndpoints();
 				await loadSessionsIndex();
 				const dispInfo = storage.getDisplayInfo();
-				$('.name', dialog).textContent = '当前存储：' + dispInfo.text;
-				$('.name', dialog).title = dispInfo.title;
+				$('.cur', dialog).textContent = '当前存储：' + dispInfo.text;
+				$('.cur', dialog).title = dispInfo.title;
 				updateDirectoryDisplay();
 				await refreshUI();
 				closeHelpDialog(dialog, true);
@@ -317,7 +317,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 		};
 		if (!hasPendingHandle) restoreBtn.remove();
 	}
-	const warningEl = $('.workspace.directory .warning', dialog);
+	const warningEl = $('.workspace-setting .warning', dialog);
 	if (!forceSelectDirectory) warningEl.remove();
 	const closeBtn = $('.close', dialog);
 	if (closeBtn) {
@@ -334,8 +334,8 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 		const success = await selectDirectory();
 		if (success) {
 			const dispInfo2 = storage.getDisplayInfo();
-			$('.name', dialog).textContent = '当前存储：' + dispInfo2.text;
-			$('.name', dialog).title = dispInfo2.title;
+			$('.cur', dialog).textContent = '当前存储：' + dispInfo2.text;
+			$('.cur', dialog).title = dispInfo2.title;
 			updateDirectoryDisplay();
 			await refreshUI();
 			if (forceSelectDirectory) {
