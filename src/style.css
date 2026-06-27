@@ -7,17 +7,6 @@ body {
 	background: var(--bg-base);
 }
 
-/* 转圈动画，表示等待中 */
-.spin {
-	animation: spin 1s linear infinite;
-	display: inline-block;
-	will-change: transform;
-}
-@keyframes spin {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
-}
-
 /* ================== 选择：没那么理所当然的样式，只是本项目的选择 ================== */
 /* ============ 基础元素（有些是标签有些是等价于标签的类）默认属性 ============ */
 html {
@@ -88,12 +77,6 @@ body {
 	--btn-h: 24px;
 	--btn-p: var(--space-1);
 }
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-thumb {
-	background: var(--border-default);
-	border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 .flex {/* 覆盖引入的css的设置 */
 	align-items: stretch;
 	flex-wrap: nowrap;
