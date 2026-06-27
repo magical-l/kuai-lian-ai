@@ -1,19 +1,10 @@
-/* ================== 理所当然 ================== */
-dialog[open] {
-	margin: auto;/* 覆盖*设置的margin：默认居中 */
+/* ============ 基础元素（有些是标签有些是等价于标签的类）默认属性 ============ */
+html {
+	height: 100%;
 }
 body {
 	color: var(--text-primary);
 	background: var(--bg-base);
-}
-
-/* ================== 选择：没那么理所当然的样式，只是本项目的选择 ================== */
-/* ============ 基础元素（有些是标签有些是等价于标签的类）默认属性 ============ */
-html {
-	height: 100%;
-	scrollbar-gutter: unset;/* 覆盖引入的css的设置：这个页面确定不滚 */
-}
-body {
 	font-family: var(--font-sans);
 	font-size: 14px;
 	line-height: 1.55;
@@ -85,10 +76,6 @@ del {
 	color: var(--text-muted);
 	text-decoration: line-through;
 	text-decoration-style: double;
-}
-dialog {
-	&::backdrop { background: rgba(0, 0, 0, 0.3); }
-	& .close.btn.square { --side-len: 28px; }
 }
 aside {
 	background: var(--bg-base);
