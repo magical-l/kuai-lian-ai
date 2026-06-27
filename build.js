@@ -10,6 +10,9 @@ const { execSync } = require('child_process');
 const SRC = 'src';
 const DST = 'dist';
 
+const DEV_MODE = process.argv.includes('--dev');
+const DEV_CSS_DIR = path.resolve(__dirname, '..', 'css', 'css');
+
 const MODULE_ORDER = [
 	'storage-core.js',
 	'providers.js',
@@ -117,6 +120,32 @@ function isSourceAsset(src) {
 	return src === 'style.css' || src.startsWith('modules/');
 }
 
+function tryInlineLocalCSS(html) {
+	if (!DEV_MODE) return html;
+	const localCSSFiles = [
+		{ url: 'css.lwj621.workers.dev/css/common.css', local: 'common.css' },
+		{ url: 'css.lwj621.workers.dev/css/layout.css', local: 'layout.css' },
+	];
+	for (const { url, local } of localCSSFiles) {
+		const localPath = path.join(DEV_CSS_DIR, local);
+		try {
+			if (!fs.existsSync(localPath)) {
+				console.warn(`  [dev] local CSS not found: ${localPath}, skipping`);
+				continue;
+			}
+			const content = fs.readFileSync(localPath, 'utf8');
+			html = html.replace(
+				new RegExp(`<link\\s[^>]*href="https://${url}"[^>]*>`, 'g'),
+				() => '<style>' + compressCSS(content) + '</style>'
+			);
+			console.log(`  [dev] inlined local ${local}`);
+		} catch (e) {
+			console.warn(`  [dev] failed to read ${localPath}: ${e.message}`);
+		}
+	}
+	return html;
+}
+
 function buildSinglePage(html) {
 	// 内联 CSS：<link href="style.css"> → <style>inline</style>
 	const cssContent = read(SRC, 'style.css');
@@ -142,6 +171,7 @@ function buildSinglePage(html) {
 	const svgDataUri = 'data:image/svg+xml;base64,' + svgBase64;
 	html = html.replace(/src="[^"]*logo\.svg"/g, 'src="' + svgDataUri + '"');
 	html = html.replace(/href="[^"]*logo\.svg"/g, 'href="' + svgDataUri + '"');
+	html = tryInlineLocalCSS(html);
 	return html;
 }
 
@@ -169,6 +199,7 @@ function buildExtension(html) {
 		'<script src="storage-core.js"></script>\n' +
 		'\t<script src="cors-proxy.js"></script>\n' +
 		'\t<script src="app.js"></script>');
+	html = tryInlineLocalCSS(html);
 	return html;
 }
 
