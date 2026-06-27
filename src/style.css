@@ -1,57 +1,12 @@
 /* ================== 理所当然 ================== */
-* {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
-}
 dialog[open] {
 	margin: auto;/* 覆盖*设置的margin：默认居中 */
 }
-html {
-	height: 100%;
-	scrollbar-gutter: unset;/* 覆盖引入的css的设置：这个页面确定不滚 */
-}
 body {
-	font-family: var(--font-sans);
-	font-size: 14px;
-	line-height: 1.55;
 	color: var(--text-primary);
 	background: var(--bg-base);
-	height: 100dvh;
-	overflow: hidden;
-	-webkit-font-smoothing: antialiased;
 }
-textarea {
-	flex: 1;/* 输入框别那么小气，默认拉伸 */
-}
-.icon {
-	user-select: none;
-	-webkit-user-select: none;
-}
-/* 通用的"完成"图标，可用于任何地方，不限于按钮 */
-.done.icon {
-	display: none;/* 默认隐藏，成功时才显现 */
-	color: var(--success);
-	font-weight: 600;
 
-	&:empty {
-		&::before {
-			content: '✓';
-			color: var(--success);
-			font-weight: 600;
-		}
-	}
-}
-.⧉.icon {
-	translate: 0.05em 0.2em;/* 字符“⧉”偏左上，用translate调整到中间 */
-}
-.square {
-	--side: 24px;
-	/* width、height、aspect-ratio互相兜底，避免被意外覆盖其中一个 */
-	width: var(--side);
-	height: var(--side);
-	aspect-ratio: 1;
-}
 /* 转圈动画，表示等待中 */
 .spin {
 	animation: spin 1s linear infinite;
@@ -62,62 +17,21 @@ textarea {
 	from { transform: rotate(0deg); }
 	to { transform: rotate(360deg); }
 }
-.btn-group {
-	/* 横排：首项左圆角，末项右圆角 */
-	&.flex.items-go-x {
-		> :first-child {
-			border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-		}
-		> :last-child {
-			border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-		}
-	} 
-	/* 竖排：首项上圆角，末项下圆角 */
-	&.flex.items-go-y {
-		> :first-child {
-			border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-		}
-		> :last-child {
-			border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-		}
-	}
-}
-/* 编辑控件 */
-.editor {
-	& .flex.items-go-x {
-		& input, & select { flex: 1; }
-	}
-}
-/* 选择器：从多个备选项中选择一个或多个项的控件 */
-.selector {
-    /* 如果使用radio/checkbox，选项.option应该用<label> */
-    & label.option {
-        & input { display: none; }
-    }
-    /* 选项用按钮时的样式 */
-    & label.option.btn {
-        &:has(input:checked) {
-            /* 选中态适配：映射到按钮变量 */
-            --btn-bg: var(--selector-bg, var(--bg-active));
-            --btn-color: var(--selector-color, var(--text-primary));
-            --btn-font-weight: var(--selector-font-weight, 500);
-            /* 选中态按钮适配：锁住 hover，不让 .btn 的 hover 干扰 */
-            --hover-bg: var(--btn-bg);
-            --hover-color: var(--btn-color);
-            --hover-border: transparent;
-        }
-    }
-}
-/* 拖拽把手，通常是⋮⋮ */
-.drag.handle {
-	cursor: grab;
-	align-items: center;
-	flex-shrink: 0;
-	&:active { cursor: grabbing; }
-}
 
 /* ================== 选择：没那么理所当然的样式，只是本项目的选择 ================== */
 /* ============ 基础元素（有些是标签有些是等价于标签的类）默认属性 ============ */
+html {
+	height: 100%;
+	scrollbar-gutter: unset;/* 覆盖引入的css的设置：这个页面确定不滚 */
+}
+body {
+	font-family: var(--font-sans);
+	font-size: 14px;
+	line-height: 1.55;
+	height: 100dvh;
+	overflow: hidden;
+	-webkit-font-smoothing: antialiased;
+}
 :root {
 	/* 背景层级 */
 	--bg-base: #FFFFFF;
@@ -237,7 +151,7 @@ button, .btn {
 		text-decoration: none;
 	}
 	&.square {
-		--side: var(--btn-h);
+		--side-len: var(--btn-h);
 	}
 	&.icon-only {
 		--btn-border: 1px solid transparent;
@@ -260,7 +174,7 @@ button, .btn {
 }
 dialog {
 	&::backdrop { background: rgba(0, 0, 0, 0.3); }
-	& .close.btn.square { --side: 28px; }
+	& .close.btn.square { --side-len: 28px; }
 }
 aside {
 	background: var(--bg-base);
@@ -269,7 +183,7 @@ aside {
 	width: 260px;
 
 	> header {
-		padding: var(--space-2) var(--space-3);
+	padding: var(--space-2) var(--space-3);
 		font-weight: 600;
 		font-size: 13px;
 		color: var(--text-secondary);
@@ -283,6 +197,7 @@ aside {
 .list {
 	flex: 1;
 	overflow-y: auto;
+	padding: var(--space-2);
 }
 .divider {
 	background: var(--border-subtle);
@@ -536,10 +451,10 @@ button, .btn {
 		}
 	}
 
-	&.add.attachment {
-		--side: 40px;
-		background: var(--bg-muted);
-	}
+		&.add.attachment.square {
+			--side-len: 40px;
+			background: var(--bg-muted);
+		}
 }
 
 /* ============ 单个端点（通用） ============ */
@@ -761,7 +676,7 @@ button, .btn {
 		> header {
 			align-items: center;
 			gap: var(--space-2);
-			padding: var(--space-2);
+		padding: var(--space-2);
 			cursor: pointer;
 			color: var(--text-muted);
 			font-size: 12px;
@@ -858,6 +773,7 @@ main {
 			& #chat-messages {
 				flex: 1 1 auto;
 				overflow-y: auto;
+		padding: var(--space-2);
 				padding: var(--space-6) var(--space-6) 0;
 				scroll-padding-bottom: 130px;
 				gap: var(--space-5);
@@ -1026,7 +942,7 @@ aside.endpoint.list .one.endpoint {
 			margin-left: auto;
 		}
 		& .square {
-			--side: 22px;
+			--side-len: 22px;
 		}
 	}
 	& .name {
@@ -1439,6 +1355,7 @@ dialog {
 		}
 		> article {
 			overflow-y: auto;
+		padding: var(--space-2);
 			flex: 1;
 			min-height: 0;
 			color: var(--text-secondary);
