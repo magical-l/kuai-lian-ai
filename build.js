@@ -45,6 +45,69 @@ function compressCSS(css) {
 	return css.split('\n').map(l => l.trim()).filter(Boolean).join('');
 }
 
+function validateCSS(css, filePath) {
+	const lines = css.replace(/\/\*[\s\S]*?\*\//g, '').split('\n');
+	let depth = 0, inDecl = false, errors = [];
+
+	for (let i = 0; i < lines.length; i++) {
+		const ln = lines[i];
+		if (!ln.trim()) { if (inDecl) continue; else continue; }
+
+		const opens = (ln.match(/\{/g) || []).length;
+		const closes = (ln.match(/\}/g) || []).length;
+		const prevDepth = depth;
+		depth += opens - closes;
+
+		if (prevDepth === 0 && opens === 0) { inDecl = false; continue; }
+
+		if (opens + closes > 0) {
+			inDecl = false;
+			// 同行声明：提取 { 和 } 之间的声名文本做校验
+			const braceOpen = ln.indexOf('{');
+			const braceClose = ln.lastIndexOf('}');
+			if (braceOpen >= 0 && braceClose > braceOpen) {
+				const inline = ln.slice(braceOpen + 1, braceClose).trim();
+				if (inline) {
+					for (const part of inline.split(';')) {
+						const d = part.trim();
+						if (!d) continue;
+						if (!/^\s*[a-zA-Z@_-][\w-]*\s*:/.test(d + ';'))
+							errors.push(`  ${filePath}:${i + 1}: invalid declaration — "${d};"`);
+					}
+				}
+			}
+			continue;
+		}
+
+		// 多行声明延续行：跳过检查
+		if (inDecl) { if (ln.trimEnd().endsWith(';')) inDecl = false; continue; }
+
+		// 新开始的多行声明（有 : 但未以 ; 结尾）
+		if (ln.includes(':') && !ln.trimEnd().endsWith(';')) {
+			const colonAt = ln.indexOf(':');
+			const prop = ln.slice(0, colonAt).trim();
+			if (!/^[a-zA-Z@_-][\w-]*$/.test(prop))
+				errors.push(`  ${filePath}:${i + 1}: invalid property name — "${prop}"`);
+			inDecl = true;
+			continue;
+		}
+
+		// 单行声明
+		if (ln.trimEnd().endsWith(';')) {
+			if (!/^\s*[a-zA-Z@_-][\w-]*\s*:.+;/.test(ln))
+				errors.push(`  ${filePath}:${i + 1}: invalid declaration — "${ln.trim()}"`);
+		}
+	}
+
+	if (depth !== 0) errors.push(`  Brace mismatch in ${filePath}: unpaired braces (net: ${depth})`);
+
+	if (errors.length) {
+		console.error('\nCSS validation failed:');
+		errors.forEach(e => console.error(e));
+		process.exit(1);
+	}
+}
+
 function compressJS(js) {
 	return js.split('\n').map(l => l.trimEnd()).filter(l => l !== '').join('\n');
 }
@@ -56,8 +119,10 @@ function isSourceAsset(src) {
 
 function buildSinglePage(html) {
 	// 内联 CSS：<link href="style.css"> → <style>inline</style>
+	const cssContent = read(SRC, 'style.css');
+	validateCSS(cssContent, 'src/style.css');
 	html = html.replace(/<link\s[^>]*href="style\.css"[^>]*>/g, () => {
-		return '<style>' + compressCSS(read(SRC, 'style.css')) + '</style>';
+		return '<style>' + compressCSS(cssContent) + '</style>';
 	});
 	// 内联 JS：<script src="modules/X.js"> → <script>inline</script>
 	html = html.replace(/<script\s[^>]*src="modules\/([^"]+)"[^>]*><\/script>/g, (m, file) => {
@@ -82,8 +147,10 @@ function buildSinglePage(html) {
 
 function buildExtension(html) {
 	// 内联 CSS
+	const cssContent = read(SRC, 'style.css');
+	validateCSS(cssContent, 'src/style.css');
 	html = html.replace(/<link\s[^>]*href="style\.css"[^>]*>/g, () => {
-		return '<style>' + compressCSS(read(SRC, 'style.css')) + '</style>';
+		return '<style>' + compressCSS(cssContent) + '</style>';
 	});
 	// 修正 vendor CSS 路径（源码版用 ../vendor/，构建版统一用 vendor/）
 	html = html.replace(/href="\.\.\/vendor\//g, 'href="vendor/');
