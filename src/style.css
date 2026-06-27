@@ -107,23 +107,7 @@ aside.list > ol {
 	flex: 1;
 	min-height: 0;
 }
-.divider {
-	background: var(--border-subtle);
-	flex-shrink: 0;
-	position: relative;
-	z-index: 15;
 
-	&:hover { background: var(--accent-primary); }
-
-	&.row {
-		height: 6px;
-		cursor: row-resize;
-	}
-	&.col {
-		width: 6px;
-		cursor: col-resize;
-	}
-}
 /* 分裂式按钮 */
 .split-btn {
 	position: relative;
