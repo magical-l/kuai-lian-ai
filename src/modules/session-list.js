@@ -1,6 +1,6 @@
 // ========== Session List Functions ==========
 function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessionEdit, onSessionDelete) {
-	const container = $('.session.list');
+	const container = document.querySelector('aside.session.list > ol');
 	container.querySelectorAll('li').forEach(el => el.remove());
 	sessions.sort((a, b) => b.createdAt - a.createdAt);
 	sessions.forEach(session => {

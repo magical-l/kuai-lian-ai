@@ -183,7 +183,8 @@ aside {
 	width: 260px;
 
 	> header {
-	padding: var(--space-2) var(--space-3);
+		margin: 0;
+		padding: var(--space-2) var(--space-3);
 		font-weight: 600;
 		font-size: 13px;
 		color: var(--text-secondary);
@@ -196,8 +197,14 @@ aside {
 }
 .list {
 	flex: 1;
-	overflow-y: auto;
-	padding: var(--space-2);
+	&:is(ul) { margin-block: 0; }
+}
+aside.list > ol {
+	list-style: none;
+	margin: 0;
+	padding: var(--space-1);
+	flex: 1;
+	min-height: 0;
 }
 .divider {
 	background: var(--border-subtle);
@@ -909,7 +916,7 @@ main {
 		border-radius: 8px;
 	}
 }
-aside.endpoint.list .one.endpoint {
+aside.endpoint .one.endpoint {
 	background: var(--bg-elevated);
 	border-radius: 0;
 	margin-bottom: var(--space-3);

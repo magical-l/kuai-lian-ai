@@ -22,7 +22,7 @@ function collapseAllEndpointNodes() {
 }
 
 function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onTestConnection, onMoveNode) {
-    var container = $(".endpoint.list");
+    var container = document.querySelector("aside.endpoint.list > ol");
 
     container.querySelectorAll('li').forEach(el => el.remove());
 
