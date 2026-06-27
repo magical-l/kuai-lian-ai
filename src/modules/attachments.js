@@ -108,7 +108,7 @@ function clearInput() {
 
 function setButtonState(sendDisabled, stopEnabled) {
 	$('.send').disabled = sendDisabled;
-	$('.send-btn-group').style.display = stopEnabled ? 'none' : '';
+	$('.split.btn-group').style.display = stopEnabled ? 'none' : '';
 	$('.stop.btn').disabled = !stopEnabled;
 	$('.stop.btn').classList.toggle('hidden', !stopEnabled);
 }

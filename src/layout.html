@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN" class="thin-scrollbar">
-<head>
+<!DOCTYPE html><html lang="zh-CN" class="thin-scrollbar"><head>
 <!--
 	Copyright (c) 2026 magicall
 	快连AI (Kuai Lian AI) is licensed under Mulan PSL v2.
@@ -65,7 +63,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v6.1.5</span>
+			<span class="version">v6.1.6</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -131,24 +129,21 @@
 				<menu class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
 					<div class="attachment list , flex items-go-x flexible scrollable" style="gap:4px"></div>
 					<input type="file" class="file-input" multiple accept="*/*">
-					<button class="add attachment btn , flex items-go-x square icon-only" title="添加附件">
+					<button class="add attachment btn , square icon-only" title="添加附件">
 						<svg><use href="#icon-attach"></use></svg>
 					</button>
 					<div class="model-task selector btn-group , inline flex items-go-x" role="radiogroup">
 						<label class="option btn"><input type="radio" name="taskMode" value="chat" checked> 💬 聊天</label>
 						<label class="option btn"><input type="radio" name="taskMode" value="embedding"> 🔢 嵌入</label>
 					</div>
-					<div class="send-btn-group split-btn" title="发送">
-						<button class="send main primary , flex items-go-x icon-only">
+					<div class="split btn-group : send, flex items-go-x items-from-left" title="发送">
+						<button class="main btn : send , icon-only">
 							<svg><use href="#icon-send"></use></svg>
 						</button>
-						<button class="send-mode-toggle drop , flex items-go-x icon-only">
+						<button class="secondary btn : send-shotcut-selector , icon-only">
 							<svg><use href="#icon-chevron-down"></use></svg>
 						</button>
-						<div class="menu">
-							<div class="option selected" data-value="enter">Enter 发送</div>
-							<div class="option" data-value="ctrl-enter">Ctrl+Enter 发送</div>
-						</div>
+						<div class="popup at-outside-top , flex items-go-y"><label class="option btn"><input type="radio" name="sendMode" value="enter" checked> Enter 发送</label><label class="option btn"><input type="radio" name="sendMode" value="ctrl-enter"> Ctrl+Enter 发送</label></div>
 					</div>
 					<button class="stop btn hidden" disabled>停止</button>
 				</menu>

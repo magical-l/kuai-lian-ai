@@ -39,29 +39,22 @@ async function init() {
 		}
 	});
 	// 分裂式按钮：发送模式切换
-	const btnGroup = $('.send-btn-group');
-	const toggle = $('.send-mode-toggle');
-	const options = $$('.option', btnGroup);
-	// 初始化选中状态
-	if (!sendOnEnter) {
-		options[0].classList.remove('selected');
-		options[1].classList.add('selected');
+	const btnGroup = $('.split.btn-group');
+	const toggle = $('.send-shotcut-selector');
+	// 从 localStorage 同步 radio 选中状态
+	if (localStorage.getItem('sendMode') === 'ctrl-enter') {
+		btnGroup.querySelector('.option.btn input[value="ctrl-enter"]').checked = true;
 	}
 	// 点击下拉按钮
 	toggle.on('click', e => {
 		e.stopPropagation();
 		btnGroup.classList.toggle('open');
 	});
-	// 选择选项
-	options.forEach(opt => {
-		opt.on('click', e => {
-			e.stopPropagation();
-			const value = opt.dataset.value;
-			sendOnEnter = value === 'enter';
-			localStorage.setItem('sendMode', value);
-			// 更新选中状态
-			options.forEach(o => o.classList.remove('selected'));
-			opt.classList.add('selected');
+	// 选择选项（radio change 事件）
+	btnGroup.querySelectorAll('.option.btn input[type=radio]').forEach(radio => {
+		radio.on('change', () => {
+			sendOnEnter = radio.value === 'enter';
+			localStorage.setItem('sendMode', radio.value);
 			btnGroup.classList.remove('open');
 		});
 	});
