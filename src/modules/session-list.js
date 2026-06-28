@@ -51,7 +51,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 				}
 			});
 		});
-		const deleteBtn = mk('button', 'remove btn , danger , square , icon-only');
+		const deleteBtn = mk('button', 'remove btn danger , square , icon-only');
 		deleteBtn.innerHTML = SVG.del(10);
 		deleteBtn.title = '删除会话';
 		deleteBtn.on('click', e => {

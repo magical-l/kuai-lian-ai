@@ -145,7 +145,7 @@ function buildTooltipHTML(node, rcfg, nameOverride) {
 		return `<div class="row flex items-go-x">
 					<span class="label">${label}：</span>
 					<span class="value">${value || ""}</span>
-					<button class="copy value square" data-copy="${safe}" title="复制">
+					<button class="copy value btn , square" data-copy="${safe}" title="复制">
 						<span class="copy icon ⧉">⧉</span>
 						<span class="done icon">✓</span>
 					</button>

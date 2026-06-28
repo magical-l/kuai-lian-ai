@@ -505,7 +505,8 @@ function showAttachmentTooltip(name, targetEl) {
 	attachmentTooltip.style.display = 'block';
 	const rect = targetEl.getBoundingClientRect();
 	// 显示在缩略图上方
-	attachmentTooltip.style.left = rect.left + 'px';
+	attachmentTooltip.style.right = (window.innerWidth - rect.right) + 'px';
+	attachmentTooltip.style.left = 'auto';
 	attachmentTooltip.style.top = (rect.top - 24) + 'px';
 }
 

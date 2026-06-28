@@ -63,31 +63,31 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v6.1.6</span>
+			<span class="version">v6.1.7</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
 			<span class="cur">未选择目录</span>
 			<div class="actions , flex items-go-x">
-				<button class="change-dir btn square icon-only" title="更换目录">
+				<button class="change-dir btn , square icon-only" title="更换目录">
 					<svg class="icon"><use href="#icon-folder"></use></svg>
 				</button>
-				<button class="delete-dir btn , danger square" title="弃用目录">
+				<button class="delete-dir btn , danger , square" title="弃用目录">
 					<span style="font-size:16px;font-weight:700">×</span>
 				</button>
-				<button class="wipe-dir btn , danger square icon-only" title="清空数据">
+				<button class="wipe-dir btn , danger , square icon-only" title="清空数据">
 					<svg class="icon"><use href="#icon-trash"></use></svg>
 				</button>
 			</div></div>
 		<nav class="flex items-go-x">
-			<button class="toggle-sidebar , btn square icon-only" title="显示/隐藏右侧栏">
+			<button class="toggle-sidebar btn , square icon-only" title="显示/隐藏右侧栏">
 				<svg class="icon"><use href="#icon-sidebar-open"></use></svg>
 			</button>
-			<button class="help btn square" title="帮助">?</button>
-			<a class="github btn" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
+			<button class="help btn , square" title="帮助">?</button>
+			<a class="github btn , square" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
 				<img alt="GitHub" class="icon" src="https://github.githubassets.com/favicons/favicon.svg">
 			</a>
-			<a class="gitee btn" href="https://gitee.com/magicall/kuai-lian-ai" target="_blank" title="@Gitee">
+			<a class="gitee btn , square" href="https://gitee.com/magicall/kuai-lian-ai" target="_blank" title="@Gitee">
 				<img alt="Gitee" class="icon" src="https://gitee.com/favicon.ico">
 			</a>
 		</nav>
@@ -97,9 +97,9 @@
 			<header class="flex items-go-x">
 				<span>AI服务端点</span>
 				<span class="flex items-go-x" style="gap:4px">
-					<button class="icon-only test-all square" title="测试全部连接"></button>
-					<button class="icon-only collapse-all square" title="收起全部"></button>
-					<button class="add-group square" title="新增端点">
+					<button class="test-all btn , square icon-only" title="测试全部连接"></button>
+					<button class="collapse-all btn , square icon-only" title="收起全部"></button>
+					<button class="add-group btn , square" title="新增端点">
 						<span style="font-size:16px;font-weight:700">+</span>
 					</button>
 				</span>
@@ -136,14 +136,23 @@
 						<label class="option btn"><input type="radio" name="taskMode" value="chat" checked> 💬 聊天</label>
 						<label class="option btn"><input type="radio" name="taskMode" value="embedding"> 🔢 嵌入</label>
 					</div>
-					<div class="split btn-group : send, flex items-go-x items-from-left" title="发送">
-						<button class="main btn : send , icon-only">
+					<div class="split btn-group : send , flex items-go-x items-from-left" title="发送">
+						<button class="main btn : send , primary icon-only">
 							<svg><use href="#icon-send"></use></svg>
 						</button>
 						<button class="secondary btn : send-shotcut-selector , icon-only">
 							<svg><use href="#icon-chevron-down"></use></svg>
 						</button>
-						<div class="popup at-outside-top , flex items-go-y"><label class="option btn"><input type="radio" name="sendMode" value="enter" checked> Enter 发送</label><label class="option btn"><input type="radio" name="sendMode" value="ctrl-enter"> Ctrl+Enter 发送</label></div>
+						<div class="popup at-outside-top , flex items-go-y">
+							<label class="option btn">
+								<input type="radio" name="sendMode" value="enter" checked>
+								Enter 发送
+							</label>
+							<label class="option btn">
+								<input type="radio" name="sendMode" value="ctrl-enter">
+								Ctrl+Enter 发送
+							</label>
+						</div>
 					</div>
 					<button class="stop btn hidden" disabled>停止</button>
 				</menu>
@@ -196,8 +205,8 @@
 		</form>
 		<div class="footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
 		<footer class="flex items-go-x">
-			<button class="cancel">✗</button>
-			<button class="save primary">✓</button>
+			<button class="cancel btn">✗</button>
+			<button class="save btn primary">✓</button>
 		</footer>
 	</dialog>
 </template>
@@ -246,7 +255,7 @@
 	<dialog class="help">
 		<header>
 			<h3>快<del>恋爱</del>连AI 使用帮助</h3>
-			<button class="close square btn">✗</button>
+			<button class="close btn , square">✗</button>
 		</header>
 		<article>
 			<section>
@@ -262,9 +271,9 @@
 				<div class="field , flex items-go-x">
 					<span class="cur"></span>
 					<div class="actions , flex items-go-x">
-						<button class="recover">恢复目录</button>
-						<button class="select-dir"></button>
-						<button class="use-browser-storage">使用浏览器存储</button>
+						<button class="recover btn primary">恢复目录</button>
+						<button class="select-dir btn"></button>
+						<button class="use-browser-storage btn">使用浏览器存储</button>
 					</div>
 				</div>
 				<p class="warning">请选择存储模式：选择本地目录，或使用浏览器内置存储（无需选目录）</p>

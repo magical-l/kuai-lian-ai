@@ -32,29 +32,30 @@ body {
 	/* 强调色 */
 	--accent-primary: #5B8DEF;
 	--accent-primary-hover: #4A7BDE;
-	--accent-light: rgba(91, 141, 239, 0.08);
-	--accent-muted: rgba(91, 141, 239, 0.15);
+	--accent-light: rgba(91, 141, 239, 0.12);
+	--accent-muted: rgba(91, 141, 239, 0.25);
 	/* 功能色 */
 	--success: #059669;
-	--success-light: rgba(5, 150, 105, 0.1);
+	--success-light: rgba(5, 150, 105, 0.12);
 	--danger: #DC2626;
-	--danger-light: rgba(220, 38, 38, 0.15);
+	--danger-light: rgba(220, 38, 38, 0.12);
 	--warning: #D97706;
-	--warning-light: rgba(217, 119, 6, 0.1);
+	--warning-light: rgba(217, 119, 6, 0.12);
 	/* 用户消息 */
 	--user-msg-bg: #5B8DEF;
 	--user-msg-text: #FFFFFF;
 	/* 尺寸 */
-	--radius-sm: 6px;
-	--radius-md: 8px;
-	--radius-lg: 12px;
-	--radius-xl: 16px;
+	--radius-sm: 0;
+	--radius-md: 0;
+	--radius-lg: 0;
+	--radius-xl: 0;
 	--transition-fast: 120ms ease;
 	--transition-normal: 180ms ease;
 
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
 	--shadow-md: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 	--shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+	--shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
 	--font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	/* 间距节奏 */
 	--space-1: 4px;
@@ -113,21 +114,16 @@ aside.list > ol {
 	height: 40px;
 
 	& .main.btn, & .secondary.btn {
-		--hover-bg: var(--accent-primary-hover);
-		--hover-color: white;
 		height: 40px;
-		background: var(--accent-primary);
-		color: white;
-		border: 1px solid var(--accent-primary);
 	}
 	& .main.btn {
 		padding: 0 12px;
-		border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+		border-radius: var(--btn-radius) 0 0 var(--btn-radius);
 		border-right: none;
 	}
 	& .secondary.btn {
 		width: 28px;
-		border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+		border-radius: 0 var(--btn-radius) var(--btn-radius) 0;
 		border-left-color: rgba(255, 255, 255, 0.4);
 	}
 	& .popup {
@@ -136,6 +132,9 @@ aside.list > ol {
 		background: var(--bg-base);
 	}
 	& .option.btn {
+		--btn-bg: transparent;
+		--hover-bg: var(--accent-light);
+		--hover-color: var(--accent-primary);
 		padding: 8px 12px;
 		font-size: 13px;
 		color: var(--text-primary);
@@ -166,7 +165,6 @@ main {
 		align-items: center;
 		justify-content: space-between;
 		padding: var(--space-2) var(--space-4);
-		background: var(--bg-muted);
 		border-bottom: 1px solid var(--border-subtle);
 		height: 36px;
 
@@ -202,8 +200,8 @@ main {
 
 		& button, & .btn {
 			& .icon {
-				width: 14px;
-				height: 14px;
+				width: var(--icon-max-width);
+				height: var(--icon-max-height);
 			}
 		}
 	}
@@ -211,48 +209,15 @@ main {
 
 /* ============ 各处按钮 ============ */
 button, .btn {
-	&.use-browser-storage {
-		--hover-bg: #1D4ED8;
-		--hover-color: #fff;
-		--btn-bg: #2563EB;
-		--btn-color: #fff;
-		--btn-border: none;
-		--btn-p: 6px 14px;
-		--btn-font-size: 13px;
-		--btn-font-weight: 500;
-		transition: background var(--transition-fast);
-	}
-
-	&.select-dir {
-		--hover-bg: var(--accent-primary-hover);
-		--hover-color: white;
-		--btn-bg: var(--accent-primary);
-		--btn-color: white;
-		--btn-border: none;
-		--btn-p: var(--space-2) var(--space-3);
-		--btn-font-size: 13px;
-		--btn-font-weight: 500;
-	}
-
+	--btn-radius: 4px;
 	&.recover {
-		--hover-bg: #047857;
-		--hover-color: white;
-		--btn-bg: var(--success);
-		--btn-color: white;
-		--btn-border: none;
 		--btn-p: var(--space-2) var(--space-3);
 		--btn-font-size: 13px;
-		--btn-font-weight: 500;
 	}
 
 	&.toggle.apikey.visibility {
-		--hover-bg: var(--bg-muted);
-		--hover-border: var(--border-subtle);
-		--hover-color: var(--text-secondary);
-		--btn-bg: var(--bg-base);
-		--btn-border: 1px solid var(--border-default);
-		--btn-radius: var(--radius-md);
-		--btn-p: 6px 8px;
+		--hover-bg: var(--accent-light);
+		--hover-color: var(--accent-primary);
 	}
 
 	&.join-session {
@@ -322,7 +287,6 @@ button, .btn {
 
 		&.add.attachment.square {
 			--side-len: 40px;
-			background: var(--bg-muted);
 		}
 }
 
@@ -340,7 +304,7 @@ button, .btn {
 		border: 1px solid var(--border-default);
 		border-radius: var(--radius-md);
 		padding: var(--space-2);
-		box-shadow: var(--shadow-lg);
+		box-shadow: var(--shadow-md);
 		min-width: 200px;
 		max-width: 300px;
 		display: none;
@@ -596,7 +560,7 @@ button, .btn {
 	& .embedding-result {
 		background: var(--bg-subtle);
 		border: 1px solid var(--border-subtle);
-		border-radius: 8px;
+		border-radius: var(--radius-md);
 		padding: 12px;
 		margin: 8px 0;
 		font-family: var(--font-mono, monospace);
@@ -772,12 +736,12 @@ main {
 	& img {
 		max-width: 90%;
 		max-height: 90%;
-		border-radius: 8px;
+		border-radius: var(--radius-md);
 	}
 }
 aside.endpoint .one.endpoint {
 	background: var(--bg-elevated);
-	border-radius: 0;
+	border-radius: var(--radius-md);
 	margin-bottom: var(--space-3);
 	border: 1px solid var(--border-subtle);
 	box-shadow: var(--shadow-sm);
@@ -795,13 +759,9 @@ aside.endpoint .one.endpoint {
 		transition: background var(--transition-fast);
 
 		&:hover {
-			background: var(--bg-muted);
+			background: var(--bg-subtle);
 		}
 		/* header 内的操作按钮 */
-		& button, & .btn {
-			--hover-border: var(--border-subtle);
-			--btn-border: 1px solid transparent;
-		}
 		& .actions {
 			gap: 2px;
 			flex-shrink: 0;
@@ -1010,7 +970,7 @@ aside.endpoint .one.endpoint {
 	}
 
 	&.selected {
-		border-color: rgba(37, 99, 235, 0.3);
+		border-color: var(--accent-muted);
 		& .title {
 			color: var(--accent-primary);
 		}
@@ -1034,8 +994,8 @@ aside.endpoint .one.endpoint {
 
 	& .remove {
 		position: absolute;
-		top: -4px;
-		right: -4px;
+		top: 0;
+		right: 0;
 		width: 16px;
 		height: 16px;
 		border: none;
@@ -1048,6 +1008,10 @@ aside.endpoint .one.endpoint {
 		text-align: center;
 		cursor: pointer;
 		display: none;
+
+		&:hover {
+			background: #b91c1c;
+		}
 	}
 
 	&.image {
@@ -1074,7 +1038,7 @@ dialog {
 		background: var(--bg-base);
 		padding: var(--space-6);
 		border-radius: var(--radius-xl);
-		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+		box-shadow: var(--shadow-xl);
 		border: 1px solid var(--border-subtle);
 		min-width: 360px;
 
@@ -1122,22 +1086,10 @@ dialog {
 			gap: var(--space-2);
 			justify-content: flex-end;
 			& button {
-				--hover-bg: var(--bg-active);
-				--hover-color: var(--text-primary);
-				--btn-border: none;
 				--btn-radius: var(--radius-md);
-				--btn-bg: var(--bg-muted);
-				--btn-color: var(--text-secondary);
 				--btn-font-size: 13px;
-				--btn-font-weight: 500;
 				--btn-p: var(--space-2) var(--space-4);
 				--btn-h: 32px;
-				&.primary {
-					--hover-bg: var(--accent-primary-hover);
-					--hover-color: white;
-					--btn-bg: var(--accent-primary);
-					--btn-color: white;
-				}
 			}
 		}
 	}
@@ -1150,14 +1102,14 @@ dialog {
 		background: var(--bg-base);
 		padding: var(--space-7) var(--space-6) var(--space-6);
 		border-radius: var(--radius-lg);
-		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+		box-shadow: var(--shadow-xl);
 		border: 1px solid var(--border-subtle);
 		max-width: 800px;
 		width: 90%;
 		> header {
 			display: flex;
 			justify-content: space-between;
-			align-items: flex-start;
+			align-items: center;
 			margin-bottom: var(--space-5);
 		}
 		> .close {
@@ -1201,6 +1153,8 @@ dialog {
 			}
 			& .actions {
 				--btn-h: 28px;
+				--btn-font-size: 13px;
+				--btn-p: var(--space-2) var(--space-3);
 				gap: var(--space-2);
 			}
 		}
