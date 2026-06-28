@@ -18,7 +18,7 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 			hour: '2-digit',
 			minute: '2-digit'
 		});
-		const actionsEl = mk('div', 'session actions , flex items-go-x');
+		const actionsEl = mk('div', 'btn-group session actions , flex items-go-x');
 		const editBtn = mk('button', 'edit title btn , square , icon-only');
 		editBtn.innerHTML = SVG.edit(10);
 		editBtn.title = '编辑标题';

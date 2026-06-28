@@ -14,42 +14,42 @@ body {
 }
 :root {
 	/* 背景层级 */
-	--bg-base: #FFFFFF;
-	--bg-subtle: #F9FAFB;
-	--bg-muted: #F3F4F6;
+		/* --bg-base: #FFFFFF; */
+		/* --bg-subtle: #F9FAFB; */
+		/* --bg-muted: #F3F4F6; */
 	--bg-elevated: #FFFFFF;
 	--bg-hover: #F3F4F6;
-	--bg-active: #E5E7EB;
+		/* --bg-active: #E5E7EB; */
 	/* 边框 */
-	--border-subtle: #E5E7EB;
-	--border-default: #D1D5DB;
-	--border-strong: #9CA3AF;
+		/* --border-subtle: #E5E7EB; */
+		/* --border-default: #D1D5DB; */
+		/* --border-strong: #9CA3AF; */
 	/* 文字 */
-	--text-primary: #111827;
-	--text-secondary: #374151;
-	--text-muted: #6B7280;
+		/* --text-primary: #111827; */
+		/* --text-secondary: #374151; */
+		/* --text-muted: #6B7280; */
 	--text-placeholder: #9CA3AF;
 	/* 强调色 */
-	--accent-primary: #5B8DEF;
-	--accent-primary-hover: #4A7BDE;
-	--accent-light: rgba(91, 141, 239, 0.12);
+		/* --accent-primary: #5B8DEF; */
+		/* --accent-primary-hover: #4A7BDE; */
+		/* --accent-light: rgba(91, 141, 239, 0.12); */
 	--accent-muted: rgba(91, 141, 239, 0.25);
 	/* 功能色 */
-	--success: #059669;
-	--success-light: rgba(5, 150, 105, 0.12);
-	--danger: #DC2626;
-	--danger-light: rgba(220, 38, 38, 0.12);
-	--warning: #D97706;
+		/* --success: #059669; */
+		/* --success-light: rgba(5, 150, 105, 0.12); */
+		/* --danger: #DC2626; */
+		/* --danger-light: rgba(220, 38, 38, 0.12); */
+		/* --warning: #D97706; */
 	--warning-light: rgba(217, 119, 6, 0.12);
 	/* 用户消息 */
 	--user-msg-bg: #5B8DEF;
 	--user-msg-text: #FFFFFF;
 	/* 尺寸 */
-	--radius-sm: 0;
-	--radius-md: 0;
-	--radius-lg: 0;
-	--radius-xl: 0;
-	--transition-fast: 120ms ease;
+	/* --radius-sm: 0; */
+	/* --radius-md: 0; */
+	/* --radius-lg: 0; */
+	/* --radius-xl: 0; */
+		/* --transition-fast: 120ms ease; */
 	--transition-normal: 180ms ease;
 
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -58,7 +58,7 @@ body {
 	--shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
 	--font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	/* 间距节奏 */
-	--space-1: 4px;
+		/* --space-1: 4px; */
 	--space-2: 8px;
 	--space-3: 12px;
 	--space-4: 16px;
@@ -66,8 +66,8 @@ body {
 	--space-6: 24px;
 	--space-7: 28px;
 	--space-8: 32px;
-	--btn-h: 24px;
-	--btn-p: var(--space-1);
+	/* --btn-h: 24px; */
+		/* --btn-p: var(--space-1); */
 }
 .flex {/* 覆盖引入的css的设置 */
 	align-items: stretch;
@@ -209,16 +209,6 @@ main {
 
 /* ============ 各处按钮 ============ */
 button, .btn {
-	--btn-radius: 4px;
-	&.recover {
-		--btn-p: var(--space-2) var(--space-3);
-		--btn-font-size: 13px;
-	}
-
-	&.toggle.apikey.visibility {
-		--hover-bg: var(--accent-light);
-		--hover-color: var(--accent-primary);
-	}
 
 	&.join-session {
 		--btn-color: var(--accent-primary);
@@ -254,16 +244,12 @@ button, .btn {
 		--btn-bg: var(--danger-light);
 		--btn-color: var(--danger);
 		--btn-border: 1px solid var(--danger);
-		--btn-p: 0 12px;
-		--btn-h: 40px;
+		/* --btn-p: 0 12px; */
+		/* --btn-h: 40px; */
 		--btn-font-size: 13px;
 		--btn-font-weight: 500;
 	}
 
-	&.help {
-		--btn-font-size: 14px;
-		--btn-font-weight: 600;
-	}
 
 	&.copy {
 		&.copied {
@@ -593,13 +579,6 @@ main {
 
 				& .btn-group.jump {
 					margin-left: auto;
-					& .btn {
-						--btn-bg: var(--bg-elevated);
-						--btn-p: 0;
-						--btn-font-size: 12px;
-						--btn-font-weight: 600;
-						--btn-radius: 0;
-					}
 				}
 			}
 
@@ -632,8 +611,8 @@ main {
 					padding: var(--space-1) var(--space-6);
 
 					& .stop.all.btn {
-						--btn-h: 22px;
-						--btn-p: 0 var(--space-2);
+						/* --btn-h: 22px; */
+						/* --btn-p: 0 var(--space-2); */
 						--btn-font-size: 11px;
 						--btn-font-weight: 500;
 						--hover-bg: var(--danger-light);
@@ -683,7 +662,7 @@ main {
 				
 				> menu {
 					gap: 4px;
-					--btn-h: 40px;
+					/* --btn-h: 40px; */
 					/* 隐藏掉原生的文件输入控件，使用“添加附件按钮” */
 					& input[type=file] {
 						display: none;
@@ -763,7 +742,7 @@ aside.endpoint .one.endpoint {
 		}
 		/* header 内的操作按钮 */
 		& .actions {
-			gap: 2px;
+			/* gap: 2px; */
 			flex-shrink: 0;
 			margin-left: auto;
 		}
@@ -947,14 +926,9 @@ aside.endpoint .one.endpoint {
 			color: var(--text-muted);
 		}
 
-		& .actions {
+		/* & .actions {
 			gap: var(--space-1);
-
-			& .btn {
-				--btn-border: none;
-				--btn-p: 2px;
-			}
-		}
+		} */
 	}
 
 	& input.editing.title {
@@ -1025,8 +999,8 @@ aside.endpoint .one.endpoint {
 	}
 }
 .model-task.selector {
-    --btn-h: 40px;
-    --btn-p: 0 12px;
+    /* --btn-h: 40px; */
+    /* --btn-p: 0 12px; */
     --btn-font-size: 13px;
     --selector-bg: var(--accent-primary);
     --selector-color: white;
@@ -1078,7 +1052,7 @@ dialog {
 			display: block;
 		}
 		& .apikey.editor {
-			--btn-h: 36px;
+			/* --btn-h: 36px; */
 			/* & input { flex: 1; } */
 		}
 		> footer {
@@ -1088,8 +1062,8 @@ dialog {
 			& button {
 				--btn-radius: var(--radius-md);
 				--btn-font-size: 13px;
-				--btn-p: var(--space-2) var(--space-4);
-				--btn-h: 32px;
+				/* --btn-p: var(--space-2) var(--space-4); */
+				/* --btn-h: 32px; */
 			}
 		}
 	}
@@ -1152,9 +1126,9 @@ dialog {
 				margin-top: 6px;
 			}
 			& .actions {
-				--btn-h: 28px;
+				/* --btn-h: 28px; */
 				--btn-font-size: 13px;
-				--btn-p: var(--space-2) var(--space-3);
+				/* --btn-p: var(--space-2) var(--space-3); */
 				gap: var(--space-2);
 			}
 		}

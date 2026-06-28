@@ -100,7 +100,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 tooltip.hide();
             });
 
-            var actionsEl = mk("div", "actions , flex items-go-x");
+            var actionsEl = mk("div", "btn-group actions , flex items-go-x");
             var addChildBtn = mk("button", "add-child btn , square");
             addChildBtn.textContent = "+";
             addChildBtn.title = "添加子节点";
