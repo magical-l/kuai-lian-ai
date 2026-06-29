@@ -533,7 +533,7 @@ function showThinkingCards(endpoints, groups, sessionId) {
     const hint = mk('div', 'hint streaming-hint');
     hint.dataset.sessionId = sessionId;
     const hintText = mk('span', 'hint-text');
-    hintText.textContent = `${endpoints.length}个端点正在思考...`;
+    hintText.textContent = `${endpoints.length}个端点思考中`;
     hint.appendChild(hintText);
     const stopBtn = mk('button', 'stop all btn');
     stopBtn.textContent = '全部停止';
