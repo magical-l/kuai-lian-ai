@@ -553,7 +553,7 @@ function updateStreamingCard(endpointId, state, firstTokenTime, groups, sessionI
 	const thinkingBlock = $('.think', card);
 	if (thinkingBlock) {
 		if (state.thinking && state.thinking.trim()) {
-			thinkingBlock.style.display = 'block';
+			thinkingBlock.classList.remove('hidden');
 			thinkingBlock.classList.add('streaming');
 			const thinkingContent = $('.content', thinkingBlock);
 			if (thinkingContent) {
@@ -572,10 +572,10 @@ function updateStreamingCard(endpointId, state, firstTokenTime, groups, sessionI
 				}
 			}
 		} else {
-			thinkingBlock.style.display = 'none';
+			thinkingBlock.classList.add('hidden');
 		}
 	}
-	const contentEl = $('.response .content', card);
+	const contentEl = $('.say', card);
 	if (contentEl) {
 		contentEl.textContent = state.content || '';
 	}
@@ -599,7 +599,7 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 		const selector = sessionId ? `.one.response.msg[data-session-id="${sessionId}"][data-endpoint-id="${endpointId}"]` : `.one.response.msg[data-endpoint-id="${endpointId}"]`;
 		const card = $(selector);
 		if (!card) return;
-		const contentEl = $('.response .content', card);
+		const contentEl = $('.say', card);
 		const meta = $('header', card);
 		const icon = meta ? $('.status-icon', meta) : null;
 		if (icon) {
@@ -625,7 +625,6 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 				const thinkingBlock = $('.think', card);
 				if (thinkingBlock) {
 					thinkingBlock.classList.remove('streaming');
-					thinkingBlock.classList.add('collapsed');
 					const durationEl = $('.duration', thinkingBlock);
 					if (durationEl) {
 						durationEl.textContent = `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s`;

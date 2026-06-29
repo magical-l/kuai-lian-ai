@@ -187,7 +187,7 @@ function initScrollPaddingObserver() {
 
 // ========== Thinking Block Toggle ==========
 function toggleThinking(headerEl) {
-	const block = headerEl.closest('.thinking-block');
+	const block = headerEl.closest('.think');
 	if (!block) return;
 	block.classList.toggle('collapsed');
 }

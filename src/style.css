@@ -73,6 +73,7 @@ body {
 	align-items: stretch;
 	flex-wrap: nowrap;
 }
+.hidden { display: none; }
 del {
 	color: var(--text-muted);
 	text-decoration: line-through;
@@ -469,7 +470,7 @@ button, .btn {
 				font-size: 10px;
 			}
 		}
-		> .content {
+		.say {
 			background: var(--bg-base);
 			color: var(--text-primary);
 		}

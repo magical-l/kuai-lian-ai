@@ -167,12 +167,34 @@ function renderResponse(container, msg, groups) {
             });
         };
 
-        if (r.content) {
-            const contentEl = mk("div", "content");
-            contentEl.innerHTML = renderMarkdown(r.content);
-            addCodeCopyButtons(contentEl);
-            card.addChild(contentEl);
+        const contentWrapper = mk("div", "content");
+        if (r.thinking) {
+            const thinkEl = mk("div", "think");
+            const thinkHeader = mk("header", "btn , flex items-go-x");
+            const icon = mk("span", "icon");
+            const label = mk("span", "label");
+            label.textContent = "思考";
+            thinkHeader.addChild(icon);
+            thinkHeader.addChild(label);
+            if (r.thinkingDuration) {
+                const duration = mk("span", "duration");
+                duration.textContent = `耗时 ${(r.thinkingDuration/1000).toFixed(1)}s`;
+                thinkHeader.addChild(duration);
+            }
+            thinkHeader.onclick = function() { toggleThinking(this); };
+            thinkEl.addChild(thinkHeader);
+            const thinkContent = mk("div", "content");
+            thinkContent.textContent = r.thinking;
+            thinkEl.addChild(thinkContent);
+            contentWrapper.addChild(thinkEl);
         }
+        if (r.content) {
+            const sayEl = mk("div", "say");
+            sayEl.innerHTML = renderMarkdown(r.content);
+            addCodeCopyButtons(sayEl);
+            contentWrapper.addChild(sayEl);
+        }
+        card.addChild(contentWrapper);
 
         if (r.embeddingResult) {
             const emb = r.embeddingResult;

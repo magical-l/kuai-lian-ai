@@ -63,7 +63,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v6.1.13</span>
+			<span class="version">v6.1.14</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -235,22 +235,24 @@
 </template>
 
 <template id="response-card-streaming">
-	<article class="one thinking response msg">
-		<header class="flex items-go-x">
-			<span class="name"></span>
-			<span class="icon status-icon spin">◐</span>
-		</header>
-		<div class="think streaming , hidden">
-			<header class="btn , flex items-go-x">
-				<span class="icon"></span>
-				<span class="label">思考</span>
-				<span class="duration"></span>
+		<article class="one thinking response msg">
+			<header class="flex items-go-x">
+				<span class="name"></span>
+				<span class="icon status-icon spin">◐</span>
 			</header>
-			<div class="content">等待思考...</div>
-		</div>
-		<div class="content">等待回复...</div>
-	</article>
-</template>
+			<div class="content">
+				<div class="think hidden">
+					<header class="btn , flex items-go-x">
+						<span class="icon"></span>
+						<span class="label">思考</span>
+						<span class="duration"></span>
+					</header>
+					<div class="content">等待思考...</div>
+				</div>
+				<div class="say">等待回复...</div>
+			</div>
+		</article>
+	</template>
 <template id="help-dialog">
 	<dialog class="help">
 		<header>
