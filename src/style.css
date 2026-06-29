@@ -570,11 +570,10 @@ main {
 				height: 40px;
 				--btn-h: 26px;
 				--btn-p: var(--space-1) var(--space-3);
+				font-size: 13px;
 				> span {
 					color: var(--text-muted);
-					font-size: 13px;
 				}
-
 				& .btn-group.jump {
 					margin-left: auto;
 				}
@@ -583,8 +582,7 @@ main {
 			& #chat-messages {
 				flex: 1 1 auto;
 				overflow-y: auto;
-		padding: var(--space-2);
-				padding: var(--space-6) var(--space-6) 0;
+				padding: var(--space-2);
 				scroll-padding-bottom: 130px;
 				gap: var(--space-5);
 				background: var(--bg-subtle);
@@ -629,7 +627,7 @@ main {
 				border-top: 1px solid var(--border-subtle);
 				background: var(--bg-base);
 				flex: 1 1 auto;
-				min-height: 145px;
+				min-height: 160px;
 
 				& #chat-input {
 					width: 100%;
@@ -1008,7 +1006,6 @@ aside.endpoint .one.endpoint {
 dialog {
 	&.editing.endpoint {
 		background: var(--bg-base);
-		padding: var(--space-6);
 		border-radius: var(--radius-xl);
 		box-shadow: var(--shadow-xl);
 		border: 1px solid var(--border-subtle);
@@ -1039,7 +1036,6 @@ dialog {
 			gap: var(--space-4);
 		}
 		& h3 {
-			margin-bottom: var(--space-5);
 			font-weight: 600;
 			font-size: 16px;
 			color: var(--text-primary);
@@ -1050,8 +1046,7 @@ dialog {
 			display: block;
 		}
 		& .apikey.editor {
-			/* --btn-h: 36px; */
-			/* & input { flex: 1; } */
+			--btn-h: 36px;
 		}
 		> footer {
 			margin-top: var(--space-5);
@@ -1060,8 +1055,8 @@ dialog {
 			& button {
 				--btn-radius: var(--radius-md);
 				--btn-font-size: 13px;
-				/* --btn-p: var(--space-2) var(--space-4); */
-				/* --btn-h: 32px; */
+				--btn-p: var(--space-2) var(--space-4);
+				--btn-h: 32px;
 			}
 		}
 	}
@@ -1072,7 +1067,7 @@ dialog {
 		max-height: 80vh;
 		overflow: hidden;
 		background: var(--bg-base);
-		padding: var(--space-7) var(--space-6) var(--space-6);
+		padding: var(--space-2) var(--space-5) var(--space-2);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-xl);
 		border: 1px solid var(--border-subtle);
@@ -1082,7 +1077,6 @@ dialog {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			margin-bottom: var(--space-5);
 		}
 		> .close {
 			border: none;
@@ -1103,10 +1097,6 @@ dialog {
 			background: var(--bg-muted);
 			padding: var(--space-3);
 			border-radius: var(--radius-md);
-			margin-bottom: var(--space-5);
-			& h4 {
-				margin-bottom: var(--space-2);
-			}
 			& .field {
 				align-items: center;
 				gap: var(--space-3);
@@ -1124,30 +1114,22 @@ dialog {
 				margin-top: 6px;
 			}
 			& .actions {
-				/* --btn-h: 28px; */
+				--btn-h: 28px;
 				--btn-font-size: 13px;
-				/* --btn-p: var(--space-2) var(--space-3); */
+				--btn-p: var(--space-2) var(--space-3);
 				gap: var(--space-2);
 			}
 		}
 		& section {
-			margin-bottom: var(--space-4);
 			& h4 {
 				font-weight: 600;
 				font-size: 14px;
 				color: var(--text-primary);
-				margin-bottom: var(--space-2);
-			}
-			& ul {
-				margin-left: var(--space-4);
-			}
-			& li {
-				margin-bottom: var(--space-3);
+				margin-block: 0;
 			}
 		}
 		> article {
 			overflow-y: auto;
-		padding: var(--space-2);
 			flex: 1;
 			min-height: 0;
 			color: var(--text-secondary);
@@ -1155,7 +1137,6 @@ dialog {
 			line-height: 1.6;
 		}
 		& h3 {
-			margin-bottom: var(--space-4);
 			font-weight: 600;
 			font-size: 18px;
 			color: var(--text-primary);
