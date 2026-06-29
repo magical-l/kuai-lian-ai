@@ -4,23 +4,22 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 	container.querySelectorAll('li').forEach(el => el.remove());
 	sessions.sort((a, b) => b.createdAt - a.createdAt);
 	sessions.forEach(session => {
-		const sessionEl = mk('li', 'one session');
+		const sessionEl = fromTemplate('one-session', 'li');
 		if (session.id === selectedSessionId) {
 			sessionEl.classList.add('selected');
 		}
-		const titleEl = mk('div', 'session title');
+		const titleEl = sessionEl.querySelector('.session.title');
+		const meta = sessionEl.querySelector('.session.meta');
+		const timeEl = sessionEl.querySelector('.session.time');
+		const editBtn = sessionEl.querySelector('.edit.title');
+		const deleteBtn = sessionEl.querySelector('.remove');
 		titleEl.textContent = session.title || '新会话';
-		const meta = mk('div', 'session meta , flex items-go-x');
-		const timeEl = mk('span', 'session time');
 		timeEl.textContent = new Date(session.createdAt).toLocaleString('zh-CN', {
 			month: 'numeric',
 			day: 'numeric',
 			hour: '2-digit',
 			minute: '2-digit'
 		});
-		const actionsEl = mk('div', 'btn-group session actions , flex items-go-x');
-		const editBtn = mk('button', 'edit title btn , bare icon-only , square');
-		editBtn.innerHTML = SVG.edit(10);
 		editBtn.title = '编辑标题';
 		editBtn.on('click', e => {
 			e.stopPropagation();
@@ -51,19 +50,10 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 				}
 			});
 		});
-		const deleteBtn = mk('button', 'remove btn , danger bare icon-only , square');
-		deleteBtn.innerHTML = SVG.del(10);
-		deleteBtn.title = '删除会话';
 		deleteBtn.on('click', e => {
 			e.stopPropagation();
 			confirmAction('确定删除该会话？', () => onSessionDelete(session.id));
 		});
-		actionsEl.addChild(editBtn);
-		actionsEl.addChild(deleteBtn);
-		meta.addChild(timeEl);
-		meta.addChild(actionsEl);
-		sessionEl.addChild(titleEl);
-		sessionEl.addChild(meta);
 		sessionEl.on('click', () => onSessionSelect(session.id));
 		container.addChild(sessionEl);
 	});

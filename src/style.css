@@ -219,9 +219,12 @@ button, .btn {
 			--btn-text-color: var(--success);
 		}
 	}
-	&.join-session:has(input:checked) svg path {
-		fill: currentColor;
-	}
+		&.join-session svg use {
+			fill: none;
+		}
+		&.join-session:has(input:checked) svg use {
+			fill: currentColor;
+		}
 	&.join-session input[type=checkbox] {
 		position: absolute;
 		opacity: 0;
@@ -287,6 +290,7 @@ button, .btn {
 		}
 	}
 }
+
 
 /* ============ 单个端点（通用） ============ */
 .one.endpoint {
@@ -362,7 +366,7 @@ button, .btn {
 				background: #f6f8fa;
 				border-radius: var(--radius-sm);
 				padding: 12px 16px;
-				margin: 8px 0;
+				margin: 8px;
 				overflow-x: auto;
 				position: relative;
 				& code {
@@ -757,7 +761,6 @@ aside.endpoint .one.endpoint {
 		}
 		/* header 内的操作按钮 */
 		& .actions {
-			/* gap: 2px; */
 			flex-shrink: 0;
 			margin-left: auto;
 		}
@@ -940,10 +943,6 @@ aside.endpoint .one.endpoint {
 			font-size: 11px;
 			color: var(--text-muted);
 		}
-
-		/* & .actions {
-			gap: var(--space-1);
-		} */
 	}
 
 	& input.editing.title {

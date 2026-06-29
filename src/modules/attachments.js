@@ -228,7 +228,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			e.preventDefault();
 			var isPw = keyInput.type === 'password';
 			keyInput.type = isPw ? 'text' : 'password';
-			toggleBtn.innerHTML = isPw ? SVG.eyeOff : SVG.eye;
+			toggleBtn.innerHTML = isPw ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-eye-off"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-eye"/></svg>';
 		};
 	}
 	// Enter → 切到下一个输入框

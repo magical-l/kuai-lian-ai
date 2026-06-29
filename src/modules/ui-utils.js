@@ -106,7 +106,7 @@ function initDividers() {
 	function updateSidebarToggleIcon(isHidden) {
 		const useEl = document.querySelector('.toggle-sidebar use');
 		if (useEl) {
-			useEl.setAttribute('href', isHidden ? '#icon-sidebar-closed' : '#icon-sidebar-open');
+			useEl.setAttribute('href', isHidden ? 'icons.svg#icon-sidebar-closed' : 'icons.svg#icon-sidebar-open');
 		}
 	}
 	if (btnToggleSidebar && sidebarRight && dividerRight) {

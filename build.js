@@ -214,6 +214,11 @@ fs.writeFileSync(path.join(DST, 'kuai-lian-ai.html'), mainHTML, 'utf8');
 fs.copyFileSync(path.join(DST, 'kuai-lian-ai.html'), 'kuai-lian-ai.html');
 console.log(`Built ${DST}/kuai-lian-ai.html`);
 
+	// 1b. 复制 icons.svg（SVG sprite，供 standalone HTML 引用）
+	copy(path.join(SRC, 'icons.svg'), path.join(DST, 'icons.svg'));
+	fs.copyFileSync(path.join(DST, 'icons.svg'), 'icons.svg');
+	console.log('Copied icons.svg');
+
 // ====== 2. Chrome 扩展 ======
 const extDir = path.join(DST, 'extension');
 
@@ -245,6 +250,7 @@ for (const f of fs.readdirSync('vendor')) {
 
 // 2e. 复制 SVG 图标
 copy('logo.svg', path.join(extDir, 'logo.svg'));
+copy(path.join(SRC, 'icons.svg'), path.join(extDir, 'icons.svg'));
 
 console.log(`Built ${extDir}/`);
 

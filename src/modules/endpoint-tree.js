@@ -31,12 +31,12 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             var hasChildren = node.children && node.children.length > 0;
             var isCollapsed = collapsedEndpoints.has(node.id);
             var hasContent = hasChildren;
-            var nodeEl = mk("li", "one endpoint" + (hasChildren ? "" : " compact"));
+            var nodeEl = fromTemplate('one-endpoint', 'li');
+            if (!hasChildren) nodeEl.classList.add('compact');
             nodeEl.dataset.nodeId = node.id;
             nodeEl.dataset.nodeIndex = index;
-            var headerEl = mk("header", "flex items-go-x items-y-near-center");
-            var dragHandle = mk("span", "handle drag btn , bare icon-only , square , flex items-go-x");
-            dragHandle.innerHTML = SVG.drag(14);
+            var headerEl = nodeEl.querySelector('header');
+            var dragHandle = nodeEl.querySelector('.handle');
             dragHandle.title = "拖动排序";
             dragHandle.draggable = true;
 
@@ -54,7 +54,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 });
             });
 
-            var toggleSpan = mk("span", "expand btn , bare icon-only , square , ▶");
+            var toggleSpan = nodeEl.querySelector('.expand');
             toggleSpan.textContent = isCollapsed || !hasContent ? "▶" : "▼";
 
             if (!hasContent)
@@ -78,7 +78,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 }
             });
 
-            var nameSpan = mk("span", "name");
+            var nameSpan = nodeEl.querySelector('.name');
             var rcfg = resolveNodeConfig(node.id);
             nameSpan.textContent = node.name;
 
@@ -100,10 +100,8 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 tooltip.hide();
             });
 
-            var actionsEl = mk("div", "btn-group actions , flex items-go-x");
-            var addChildBtn = mk("button", "add-child btn , bare icon-only , square");
-            addChildBtn.textContent = "+";
-            addChildBtn.title = "添加子节点";
+            var actionsEl = nodeEl.querySelector('.actions');
+            var addChildBtn = actionsEl.querySelector('.add-child');
 
             addChildBtn.on("click", function(e) {
                 e.stopPropagation();
@@ -172,18 +170,16 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                     batchStatus = "failed";
             }
 
-            var batchTestBtn = null;
-
-            if (testableIds.length > 0) {
-                batchTestBtn = mk("button");
+            var batchTestBtn = actionsEl.querySelector('.test-connection');
+            if (testableIds.length === 0) {
+                batchTestBtn.style.display = 'none';
+            } else {
                 batchTestBtn.className = "test-connection btn , bare icon-only , square" + (batchStatus ? " " + batchStatus : "");
-                batchTestBtn.innerHTML = `<span>🔗</span>`;
-
                 if (hasTesting) {
                     batchTestBtn.classList.add("testing");
-                    $("span", batchTestBtn).classList.add("spin");
+                    var sp = batchTestBtn.querySelector("span");
+                    if (sp) sp.classList.add("spin");
                 }
-
                 if (!hasTesting) {
                     var successCount = 0, failCount = 0, firstError = null;
 
@@ -231,18 +227,16 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                         });
                     }
                     batchTestBtn.classList.add("testing");
-                    var sp = batchTestBtn.querySelector("span");
-                    if (sp) sp.classList.add("spin");
+                    var sp2 = batchTestBtn.querySelector("span");
+                    if (sp2) sp2.classList.add("spin");
                 });
             }
 
-            var joinBtn = null;
-
-            if (isSelfTestable) {
-                joinBtn = mk("label", "join-session btn , bare icon-only , square");
-                joinBtn.innerHTML = '<input type="checkbox" hidden>' + SVG.bubble(12);
+            var joinBtn = actionsEl.querySelector('.join-session');
+            if (!isSelfTestable) {
+                joinBtn.style.display = 'none';
+            } else {
                 applyJoinBtnUI(joinBtn, node.id);
-
                 var cb = joinBtn.querySelector("input[type=checkbox]");
                 cb.addEventListener("change", function(e) {
                     e.stopPropagation();
@@ -262,18 +256,14 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 });
             }
 
-            var editBtn = mk("button", "edit btn , bare icon-only , square");
-            editBtn.innerHTML = SVG.edit(12);
-            editBtn.title = "编辑节点";
+            var editBtn = actionsEl.querySelector('.edit');
 
             editBtn.on("click", function(e) {
                 e.stopPropagation();
                 onNodeEdit(node.id);
             });
 
-            var deleteBtn = mk("button", "remove btn , danger bare icon-only , square");
-            deleteBtn.innerHTML = SVG.del(12);
-            deleteBtn.title = "删除节点及其子节点";
+            var deleteBtn = actionsEl.querySelector('.remove');
 
             deleteBtn.on("click", function(e) {
                 e.stopPropagation();
@@ -283,27 +273,12 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 });
             });
 
-            actionsEl.addChild(addChildBtn);
-
-            if (batchTestBtn)
-                actionsEl.addChild(batchTestBtn);
-
-            if (joinBtn)
-                actionsEl.addChild(joinBtn);
-
-            actionsEl.addChild(editBtn);
-            actionsEl.addChild(deleteBtn);
-            headerEl.addChild(dragHandle);
-            headerEl.addChild(toggleSpan);
-            headerEl.addChild(nameSpan);
-            headerEl.addChild(actionsEl);
             if (node.remark) {
                 var remSpan = document.createElement("span");
                 remSpan.className = "remark";
                 remSpan.textContent = " " + node.remark;
                 headerEl.insertBefore(remSpan, actionsEl);
             }
-            nodeEl.addChild(headerEl);
 
             nodeEl.on("dragover", function(e) {
                 e.preventDefault();

@@ -129,6 +129,8 @@ function applyJoinBtnUI(btn, nid) {
 		btn.title = '加入当前会话';
 		if (cb) cb.checked = false;
 	}
+	var useEl = btn.querySelector('svg use');
+	if (useEl) useEl.style.fill = selectedEndpoints.indexOf(eid) >= 0 ? 'currentColor' : '';
 }
 
 // === 共享 tooltip HTML 构建函数（端点树和已选列表复用）===

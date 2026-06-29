@@ -14,7 +14,8 @@ function saveDefaultSelectedEndpoints(endpoints) {
 }
 let defaultSelectedEndpoints = loadDefaultSelectedEndpoints();
 let currentSession = null;
-let selectedEndpoints = []; // 当前选中端点ID数组
+// 声明在 selected-endpoints.js
+selectedEndpoints = []; // 当前选中端点ID数组
 let sessionGenerations = new Map(); // 按会话隔离的生成状态：Map<sessionId, Map<endpointId, state>>
 let lastUserMessage = null;
 let pendingAttachments = []; // 待发送的附件列表
@@ -92,7 +93,6 @@ async function init() {
 	}
 	$('.add-group').onclick = handleAddGroup;
 	$('.collapse-all').onclick = collapseAllEndpointNodes;
-	$('.collapse-all').innerHTML = SVG.collapseAll;
 	$('.test-all').onclick = function() {
 		var allIds = [];
 		function collectIds(nodes) {
@@ -105,7 +105,6 @@ async function init() {
 		collectIds(getGroups());
 		allIds.forEach(function(id) { testConnection(id); });
 	};
-	$('.test-all').innerHTML = SVG.testAll;
 	$('.send').onclick = () => {
 		if (inputMode === 'embedding') {
 			handleEmbeddingSend();

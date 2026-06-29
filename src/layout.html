@@ -20,40 +20,7 @@
 <link href="style.css" rel="stylesheet">
 </head>
 <body>
-<svg xmlns="http://www.w3.org/2000/svg" class="hidden">
-	<symbol id="icon-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-	</symbol>
-	<symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M3 6h18"></path>
-		<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-		<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-		<path d="M12 6v16"></path>
-	</symbol>
-	<symbol id="icon-sidebar-open" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1">
-		<rect x="1" y="1" width="12" height="12" rx="1"></rect>
-		<line x1="8" y1="1" x2="8" y2="13"></line>
-		<rect x="8" y="1" width="5" height="12" fill="currentColor" stroke="none"></rect>
-	</symbol>
-	<symbol id="icon-sidebar-closed" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1">
-		<rect x="1" y="1" width="12" height="12" rx="1"></rect>
-		<line x1="8" y1="1" x2="8" y2="13"></line>
-		<rect x="8" y="1" width="5" height="12" fill="none" stroke="none"></rect>
-	</symbol>
-	<symbol id="icon-attach" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-	</symbol>
-	<symbol id="icon-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M12 19V5M5 12l7-7 7 7"></path>
-	</symbol>
-	<symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M6 9l6 6 6-6"></path>
-	</symbol>
-	<symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-		<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-		<circle cx="12" cy="12" r="3"></circle>
-	</symbol>
-</svg>
+
 <script src="modules/boot.js"></script>
 
 <main class="flex items-go-y">
@@ -63,25 +30,25 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快连AI</span>
-			<span class="version">v6.1.17</span>
+			<span class="version">v6.1.18</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
 			<span class="cur">未选择目录</span>
 			<div class="btn-group actions , flex items-go-x">
 				<button class="change-dir btn , bare icon-only , square" title="更换目录">
-					<svg class="icon"><use href="#icon-folder"></use></svg>
+					<svg class="icon"><use href="icons.svg#icon-folder"></use></svg>
 				</button>
 				<button class="delete-dir btn , danger bare icon-only , square" title="弃用目录">
 					<span style="font-size:16px;font-weight:700">×</span>
 				</button>
 				<button class="wipe-dir btn , danger bare icon-only , square" title="清空数据">
-					<svg class="icon"><use href="#icon-trash"></use></svg>
+					<svg class="icon"><use href="icons.svg#icon-trash"></use></svg>
 				</button>
 			</div></div>
 		<nav class="flex items-go-x">
 			<button class="toggle-sidebar btn , bare icon-only , square" title="显示/隐藏右侧栏">
-				<svg class="icon"><use href="#icon-sidebar-open"></use></svg>
+				<svg class="icon"><use href="icons.svg#icon-sidebar-open"></use></svg>
 			</button>
 			<button class="help btn , bare icon-only , square" title="帮助">?</button>
 			<a class="github btn , bare icon-only , square" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
@@ -97,8 +64,10 @@
 			<header class="flex items-go-x">
 				<span>AI服务端点</span>
 				<span class="btn-group , flex items-go-x">
-					<button class="test-all btn , bare icon-only , square" title="测试全部连接"></button>
-					<button class="collapse-all btn , bare icon-only , square" title="收起全部"></button>
+					<button class="test-all btn , bare icon-only , square" title="测试全部连接">🔗</button>
+					<button class="collapse-all btn , bare icon-only , square" title="收起全部">
+							<svg width="14" height="14" viewBox="0 0 24 24"><use href="icons.svg#icon-collapse-all"/></svg>
+						</button>
 					<button class="add-group btn , bare icon-only , square" title="新增端点">
 						<span style="font-size:16px;font-weight:700">+</span>
 					</button>
@@ -130,7 +99,7 @@
 					<div class="attachment list , flex items-go-x flexible scrollable" style="gap:4px"></div>
 					<input type="file" class="file-input" multiple accept="*/*">
 					<button class="add attachment btn , square icon-only" title="添加附件">
-						<svg><use href="#icon-attach"></use></svg>
+						<svg><use href="icons.svg#icon-attach"></use></svg>
 					</button>
 					<div class="model-task selector btn-group , inline flex items-go-x" role="radiogroup">
 						<label class="option btn"><input type="radio" name="taskMode" value="chat" checked> 💬 聊天</label>
@@ -138,10 +107,10 @@
 					</div>
 					<div class="split btn-group : send , flex items-go-x items-from-left" title="发送">
 						<button class="main btn : send , primary , icon-only">
-							<svg><use href="#icon-send"></use></svg>
+							<svg><use href="icons.svg#icon-send"></use></svg>
 						</button>
 						<button class="secondary btn : send-shotcut-selector , icon-only">
-							<svg><use href="#icon-chevron-down"></use></svg>
+							<svg><use href="icons.svg#icon-chevron-down"></use></svg>
 						</button>
 						<div class="popup at-outside-top , flex items-go-y">
 							<label class="option btn">
@@ -190,7 +159,7 @@
 				<div class="flex items-go-x" style="align-items: center;gap: var(--space-1)">
 					<input name="apikey" type="password">
 					<button type="button" class="toggle apikey visibility btn , square icon-only" title="显示/隐藏">
-						<svg><use href="#icon-eye"></use></svg>
+						<svg><use href="icons.svg#icon-eye"></use></svg>
 					</button>
 				</div>
 				<span class="hint"></span>
@@ -303,6 +272,41 @@
 			</section>
 		</article>
 	</dialog>
+</template>
+<template id="one-endpoint">
+	<li class="one endpoint">
+		<header class="flex items-go-x items-y-near-center">
+			<span class="handle drag btn , bare icon-only , square , flex items-go-x" draggable="true" title="拖动排序">⋮⋮</span>
+			<span class="expand btn , bare icon-only , square">▶</span>
+			<span class="name"></span>
+			<div class="btn-group actions , flex items-go-x">
+				<button class="add-child btn , bare icon-only , square" title="添加子节点">+</button>
+				<button class="test-connection btn , bare icon-only , square" title="测试连接"><span>🔗</span></button>
+				<label class="join-session btn , bare icon-only , square" title="加入当前会话">
+					<input type="checkbox" hidden>
+					<svg viewBox="0 0 24 24"  stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-bubble"/></svg>
+				</label>
+				<button class="edit btn , bare icon-only , square" title="编辑节点">✎</button>
+				<button class="remove btn , danger bare icon-only , square" title="删除节点及其子节点">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-trash"/></svg>
+				</button>
+			</div>
+		</header>
+	</li>
+</template>
+<template id="one-session">
+	<li class="one session">
+		<div class="session title">新会话</div>
+		<div class="session meta , flex items-go-x">
+			<span class="session time"></span>
+			<div class="btn-group session actions , flex items-go-x">
+				<button class="edit title btn , bare icon-only , square" title="编辑标题">✎</button>
+				<button class="remove btn , danger bare icon-only , square" title="删除会话">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-trash"/></svg>
+				</button>
+			</div>
+		</div>
+	</li>
 </template>
 <div class="js container">
 	<script src="../vendor/marked.min.js"></script>
