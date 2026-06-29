@@ -121,12 +121,13 @@ function syncJoinBtnState(nid) {
 function applyJoinBtnUI(btn, nid) {
 	if (!btn || !nid) return;
 	var eid = nid;
+	var cb = btn.querySelector('input[type=checkbox]');
 	if (selectedEndpoints.indexOf(eid) >= 0) {
 		btn.title = '已加入当前会话';
-		btn.className = 'join-session joined';
+		if (cb) cb.checked = true;
 	} else {
 		btn.title = '加入当前会话';
-		btn.className = 'join-session';
+		if (cb) cb.checked = false;
 	}
 }
 

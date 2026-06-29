@@ -215,10 +215,19 @@ button, .btn {
 		--btn-text-color: var(--accent-primary);
 		--btn-font-weight: 600;
 
-		&.joined {
-			--btn-bg: var(--success-light);
+		&:has(input:checked) {
 			--btn-text-color: var(--success);
 		}
+	}
+	&.join-session:has(input:checked) svg path {
+		fill: currentColor;
+	}
+	&.join-session input[type=checkbox] {
+		position: absolute;
+		opacity: 0;
+		width: 0;
+		height: 0;
+		pointer-events: none;
 	}
 
 	&.test-connection {
@@ -468,6 +477,22 @@ button, .btn {
 			}
 			& .status-icon {
 				font-size: 10px;
+			}
+			& .stop-one.btn {
+				--btn-h: 20px;
+				--btn-w: 20px;
+				margin-left: auto;
+				display: none;
+
+				&.visible { display: inline-flex; }
+
+				&::before {
+					content: '';
+					width: 8px;
+					height: 8px;
+					background: currentColor;
+					border-radius: 1px;
+				}
 			}
 		}
 		.say {

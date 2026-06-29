@@ -553,6 +553,17 @@ function showThinkingCards(endpoints, groups, sessionId) {
         const info = findModelById(groups, id);
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         $(".response .name", card).textContent = name;
+        // 单端点停止按钮
+        const stopBtn = $('.stop-one', card);
+        if (stopBtn) {
+            stopBtn.classList.add('visible');
+            stopBtn.onclick = (e) => {
+                e.stopPropagation();
+                stopSingleGeneration(sessionId, id);
+                stopBtn.disabled = true;
+                stopBtn.classList.remove('visible');
+            };
+        }
         container.addChild(card);
     });
     scrollToBottom();
@@ -605,6 +616,9 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 		const selector = sessionId ? `.one.response.msg[data-session-id="${sessionId}"][data-endpoint-id="${endpointId}"]` : `.one.response.msg[data-endpoint-id="${endpointId}"]`;
 		const card = $(selector);
 		if (!card) return;
+		// 端点已完成/停止/失败，隐藏停止按钮
+		const stopBtn = $('.stop-one', card);
+		if (stopBtn) stopBtn.classList.remove('visible');
 		const contentEl = $('.say', card);
 		const meta = $('header', card);
 		const icon = meta ? $('.status-icon', meta) : null;

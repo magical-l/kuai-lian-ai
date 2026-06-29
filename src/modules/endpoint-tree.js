@@ -239,11 +239,12 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             var joinBtn = null;
 
             if (isSelfTestable) {
-                joinBtn = mk("button", "join-session btn , bare icon-only , square");
-                joinBtn.innerHTML = SVG.bubble(12);
+                joinBtn = mk("label", "join-session btn , bare icon-only , square");
+                joinBtn.innerHTML = '<input type="checkbox" hidden>' + SVG.bubble(12);
                 applyJoinBtnUI(joinBtn, node.id);
 
-                joinBtn.on("click", function(e) {
+                var cb = joinBtn.querySelector("input[type=checkbox]");
+                cb.addEventListener("change", function(e) {
                     e.stopPropagation();
                     var eid = node.id;
 
