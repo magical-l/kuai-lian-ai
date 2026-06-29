@@ -107,10 +107,11 @@ function clearInput() {
 }
 
 function setButtonState(sendDisabled, stopEnabled) {
-	$('.send').disabled = sendDisabled;
-	$('.split.btn-group').style.display = stopEnabled ? 'none' : '';
-	$('.stop.btn').disabled = !stopEnabled;
-	$('.stop.btn').classList.toggle('hidden', !stopEnabled);
+	const area = $('footer.chat-input-area');
+	$('.send', area).disabled = sendDisabled;
+	$('.split.btn-group', area).style.display = stopEnabled ? 'none' : '';
+	$('.stop.btn', area).disabled = !stopEnabled;
+	$('.stop.btn', area).classList.toggle('hidden', !stopEnabled);
 }
 
 function addInheritIcon(inputEl) {

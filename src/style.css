@@ -242,14 +242,20 @@ button, .btn {
 		--hover-bg: var(--danger);
 		--hover-text-color: white;
 		--btn-bg: var(--danger-light);
-		--btn-text-color: var(--danger);
+		--btn-text-color: #DC2626;
 		--btn-border: 1px solid var(--danger);
-		/* --btn-p: 0 12px; */
-		/* --btn-h: 40px; */
-		--btn-font-size: 13px;
 		--btn-font-weight: 500;
+		line-height: 1;
+		overflow: hidden;
+		& .stop-icon {
+			display: block;
+			width: 14px;
+			height: 14px;
+			background: var(--btn-text-color);
+			border-radius: 2px;
+			flex-shrink: 0;
+		}
 	}
-
 
 	&.copy {
 		&.copied {
@@ -591,8 +597,8 @@ main {
 				& .streaming-hint {
 					order: 999;
 					margin-top: auto;
-					margin-left: calc(-1 * var(--space-6));
-					margin-right: calc(-1 * var(--space-6));
+					/* margin-left: calc(-1 * var(--space-6));
+					margin-right: calc(-1 * var(--space-6)); */
 					position: sticky;
 					bottom: 0;
 					z-index: 2;

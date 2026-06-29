@@ -406,7 +406,8 @@ async function handleSend() {
 	// 显示"思考中"状态卡片（使用 targetSessionId 标记）
 	showThinkingCards(selectedEndpoints, groups, targetSessionId);
 	const sortedModels = new Set();
-	const responses = await callAllModels(groups, selectedEndpoints, messages, (endpointId, partialContent, firstTokenTime) => {
+	try {
+		const responses = await callAllModels(groups, selectedEndpoints, messages, (endpointId, partialContent, firstTokenTime) => {
 		updateStreamingCard(endpointId, partialContent, firstTokenTime, groups, targetSessionId);
 		// 只在firstTokenTime首次有值时排序一次
 		if (firstTokenTime != null && !sortedModels.has(endpointId)) {
@@ -418,12 +419,16 @@ async function handleSend() {
 	await addMessage(targetSessionId, 'assistant', null, {
 		responses
 	});
-	sessionGenerations.delete(targetSessionId);
-	if (currentSession?.id === targetSessionId) {
-		currentSession = await loadSession(targetSessionId);
+	} catch (err) {
+		console.error('Session generation error:', err);
+	} finally {
+		sessionGenerations.delete(targetSessionId);
 		setButtonState(false, false);
 		renderSelectedEndpoints(groups, selectedEndpoints, false);
-		await refreshUI();
+		if (currentSession?.id === targetSessionId) {
+			currentSession = await loadSession(targetSessionId);
+			await refreshUI();
+		}
 	}
 }
 
