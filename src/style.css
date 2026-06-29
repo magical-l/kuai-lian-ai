@@ -66,7 +66,7 @@ body {
 	--space-6: 24px;
 	--space-7: 28px;
 	--space-8: 32px;
-	/* --btn-h: 24px; */
+	--btn-h: 24px;
 		/* --btn-p: var(--space-1); */
 }
 .flex {/* 覆盖引入的css的设置 */
@@ -134,7 +134,7 @@ aside.list > ol {
 	& .option.btn {
 		--btn-bg: transparent;
 		--hover-bg: var(--accent-light);
-		--hover-color: var(--accent-primary);
+		--hover-text-color: var(--accent-primary);
 		padding: 8px 12px;
 		font-size: 13px;
 		color: var(--text-primary);
@@ -211,38 +211,38 @@ main {
 button, .btn {
 
 	&.join-session {
-		--btn-color: var(--accent-primary);
+		--btn-text-color: var(--accent-primary);
 		--btn-font-weight: 600;
 
 		&.joined {
 			--btn-bg: var(--success-light);
-			--btn-color: var(--success);
+			--btn-text-color: var(--success);
 		}
 	}
 
 	&.test-connection {
-		--btn-color: var(--text-muted);
+		--btn-text-color: var(--text-muted);
 
 		&.testing {
-			--btn-color: var(--accent-primary);
+			--btn-text-color: var(--accent-primary);
 		}
 
 		&.connected {
-			--btn-color: var(--success);
+			--btn-text-color: var(--success);
 			--btn-bg: var(--success-light);
 		}
 
 		&.failed {
-			--btn-color: var(--danger);
+			--btn-text-color: var(--danger);
 			--btn-bg: var(--danger-light);
 		}
 	}
 
 	&.stop {
 		--hover-bg: var(--danger);
-		--hover-color: white;
+		--hover-text-color: white;
 		--btn-bg: var(--danger-light);
-		--btn-color: var(--danger);
+		--btn-text-color: var(--danger);
 		--btn-border: 1px solid var(--danger);
 		/* --btn-p: 0 12px; */
 		/* --btn-h: 40px; */
@@ -270,10 +270,6 @@ button, .btn {
 			&.copied { opacity: 1; border-color: var(--success); }
 		}
 	}
-
-		&.add.attachment.square {
-			--side-len: 40px;
-		}
 }
 
 /* ============ 单个端点（通用） ============ */
@@ -617,7 +613,7 @@ main {
 						--btn-font-weight: 500;
 						--hover-bg: var(--danger-light);
 						--hover-border: var(--accent-light);
-						--hover-color: var(--danger);
+						--hover-text-color: var(--danger);
 						/* border: 1px solid var(--danger); */
 						/* color: var(--danger); */
 					}
@@ -662,7 +658,7 @@ main {
 				
 				> menu {
 					gap: 4px;
-					/* --btn-h: 40px; */
+					--btn-h: 40px;
 					/* 隐藏掉原生的文件输入控件，使用“添加附件按钮” */
 					& input[type=file] {
 						display: none;

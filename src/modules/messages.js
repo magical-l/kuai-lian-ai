@@ -12,7 +12,7 @@ function addCodeCopyButtons(container) {
 	container.querySelectorAll('pre code').forEach(codeEl => {
 		const preEl = codeEl.parentElement;
 		const copyBtn = document.createElement('button');
-		copyBtn.className = 'copy code btn , square icon-only';
+		copyBtn.className = 'copy code btn , bare icon-only , square';
 		copyBtn.innerHTML = `<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>`;
 		copyBtn.title = '复制代码';
 		copyBtn.onclick = () => {
@@ -185,7 +185,7 @@ function renderResponse(container, msg, groups) {
 									<strong>预览:</strong>
 									<code>${emb.preview}</code>
 								</div>`;
-            const copyBtn = mk("button", "copy code btn , square icon-only");
+            const copyBtn = mk("button", "copy code btn , bare icon-only , square");
             copyBtn.innerHTML = `<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>`;
             copyBtn.title = "复制完整向量";
 

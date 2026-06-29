@@ -35,7 +35,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             nodeEl.dataset.nodeId = node.id;
             nodeEl.dataset.nodeIndex = index;
             var headerEl = mk("header", "flex items-go-x items-y-near-center");
-            var dragHandle = mk("span", "handle drag btn , square , flex items-go-x");
+            var dragHandle = mk("span", "handle drag btn , bare icon-only , square , flex items-go-x");
             dragHandle.innerHTML = SVG.drag(14);
             dragHandle.title = "拖动排序";
             dragHandle.draggable = true;
@@ -54,7 +54,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 });
             });
 
-            var toggleSpan = mk("span", "expand btn , square , ▶ icon-only");
+            var toggleSpan = mk("span", "expand btn , bare icon-only , square , ▶");
             toggleSpan.textContent = isCollapsed || !hasContent ? "▶" : "▼";
 
             if (!hasContent)
@@ -101,7 +101,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             });
 
             var actionsEl = mk("div", "btn-group actions , flex items-go-x");
-            var addChildBtn = mk("button", "add-child btn , square");
+            var addChildBtn = mk("button", "add-child btn , bare icon-only , square");
             addChildBtn.textContent = "+";
             addChildBtn.title = "添加子节点";
 
@@ -176,7 +176,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 
             if (testableIds.length > 0) {
                 batchTestBtn = mk("button");
-                batchTestBtn.className = "test-connection btn , square" + (batchStatus ? " " + batchStatus : "");
+                batchTestBtn.className = "test-connection btn , bare icon-only , square" + (batchStatus ? " " + batchStatus : "");
                 batchTestBtn.innerHTML = `<span>🔗</span>`;
 
                 if (hasTesting) {
@@ -239,7 +239,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             var joinBtn = null;
 
             if (isSelfTestable) {
-                joinBtn = mk("button", "join-session btn , square");
+                joinBtn = mk("button", "join-session btn , bare icon-only , square");
                 joinBtn.innerHTML = SVG.bubble(12);
                 applyJoinBtnUI(joinBtn, node.id);
 
@@ -261,7 +261,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 });
             }
 
-            var editBtn = mk("button", "edit btn , square");
+            var editBtn = mk("button", "edit btn , bare icon-only , square");
             editBtn.innerHTML = SVG.edit(12);
             editBtn.title = "编辑节点";
 
@@ -270,7 +270,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 onNodeEdit(node.id);
             });
 
-            var deleteBtn = mk("button", "remove btn , danger , square");
+            var deleteBtn = mk("button", "remove btn , danger bare icon-only , square");
             deleteBtn.innerHTML = SVG.del(12);
             deleteBtn.title = "删除节点及其子节点";
 

@@ -31,7 +31,7 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
             return `<li class="${classes}" data-endpoint="${id}">
 						<span class="full name">${fullPath}</span>
 						${remarkHtml}
-						<span class="btn remove" data-endpoint="${id}">✕</span>
+						<span class="btn remove bare icon-only" data-endpoint="${id}">✕</span>
 					</li>`;
         }).join("");
     }
@@ -145,7 +145,7 @@ function buildTooltipHTML(node, rcfg, nameOverride) {
 		return `<div class="row flex items-go-x">
 					<span class="label">${label}：</span>
 					<span class="value">${value || ""}</span>
-					<button class="copy value btn , square" data-copy="${safe}" title="复制">
+					<button class="copy value btn , bare icon-only , square" data-copy="${safe}" title="复制">
 						<span class="copy icon ⧉">⧉</span>
 						<span class="done icon">✓</span>
 					</button>
