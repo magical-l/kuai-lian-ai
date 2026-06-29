@@ -185,9 +185,3 @@ function initScrollPaddingObserver() {
 	new ResizeObserver(syncScrollPadding).observe(sticky);
 }
 
-// ========== Thinking Block Toggle ==========
-function toggleThinking(headerEl) {
-	const block = headerEl.closest('.think');
-	if (!block) return;
-	block.classList.toggle('collapsed');
-}

@@ -115,50 +115,107 @@ function renderMessages(messages, groups, onCopy) {
 function renderResponse(container, msg, groups) {
     const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
     sorted.forEach((r, i) => {
-        const card = mk("article", "one response msg , flex items-go-y");
         const info = findModelById(groups, r.endpointId);
-        const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
-        const remark = info?.node?.remark || "";
-        const templateId = 'response-header';
-        const meta = fromTemplate(templateId, "header");
-        const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
-        const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime / 1000).toFixed(1)}s` : "";
-        const speedClass = getSpeedClass(r.firstTokenTime);
-        const totalStr = r.totalDuration ? `耗时${(r.totalDuration / 1000).toFixed(1)}s` : "";
-        const statusText = getStatusText(r.status);
-        $(".name", meta).innerHTML = remark ? `${name}<span class="remark"> ${remark}</span>` : name;
-        $(".time", meta).textContent = timeStr;
-
-        if (durationStr) {
-            const durationEl = $(".wait", meta);
-            durationEl.textContent = durationStr;
-
-            if (speedClass)
-                durationEl.classList.add(speedClass);
+        // 找已有的 streaming card
+        let existing = container.querySelector(`.one.response.msg[data-endpoint-id="${r.endpointId}"]`);
+        if (!existing) {
+            // 没有 streaming card（切换会话等场景），从 template 建一张
+            existing = fromTemplate("response-card-streaming", ".one.response.msg");
+            if (!existing) return;
+            existing.dataset.endpointId = r.endpointId;
+            const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
+            const nameEl = $('.name', existing);
+            if (nameEl) {
+                const remark = info?.node?.remark || "";
+                nameEl.innerHTML = remark ? `${name}<span class="remark"> ${remark}</span>` : name;
+            }
+            container.appendChild(existing);
         }
 
-        $(".total", meta).textContent = totalStr;
-        const statusEl = $(".status", meta);
-        statusEl.textContent = statusText;
-        statusEl.classList.add("status");
+        // 移除流式加载时的 spinner 图标
+        const spinIcon = $('.status-icon', existing);
+        if (spinIcon) spinIcon.remove();
 
-        if (r.status === "completed")
-            statusEl.classList.add("completed");
-        else if (r.status === "failed")
-            statusEl.classList.add("failed");
-        else if (r.status === "stopped")
-            statusEl.classList.add("stopped");
+        // 升级 .say：textContent → innerHTML (markdown)
+        const sayEl = $('.say', existing);
+        if (sayEl && r.content) {
+            sayEl.innerHTML = renderMarkdown(r.content);
+            addCodeCopyButtons(sayEl);
+        }
 
-        const errorEl = $(".error", meta);
+        // 更新 header
+        const meta = $('header', existing);
+        if (!meta) return;
 
-        if (r.error && errorEl) {
+        const nameEl = $('.name', meta);
+        if (nameEl && info) {
+            const remark = info?.node?.remark || "";
+            const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
+            nameEl.innerHTML = remark ? `${name}<span class="remark"> ${remark}</span>` : name;
+        }
+
+        const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
+        let timeEl = $('.time', meta);
+        if (!timeEl) {
+            timeEl = mk('span', 'time');
+            if (nameEl) nameEl.insertAdjacentElement('afterend', timeEl);
+        }
+        timeEl.textContent = timeStr;
+
+        const durationStr = r.firstTokenTime ? `反应${(r.firstTokenTime / 1000).toFixed(1)}s` : "";
+        if (durationStr) {
+            let waitEl = $('.wait', meta);
+            if (!waitEl) {
+                waitEl = mk('span', 'wait time');
+                if (nameEl) nameEl.insertAdjacentElement('afterend', waitEl);
+            }
+            waitEl.textContent = durationStr;
+            const speedClass = getSpeedClass(r.firstTokenTime);
+            if (speedClass) waitEl.classList.add(speedClass);
+        }
+
+        const totalStr = r.totalDuration ? `耗时${(r.totalDuration / 1000).toFixed(1)}s` : "";
+        if (totalStr) {
+            let totalEl = $('.total', meta);
+            if (!totalEl) {
+                totalEl = mk('span', 'total time');
+                const insertAfter = $('.status', meta) || $('.wait', meta) || $('.time', meta) || nameEl;
+                if (insertAfter) insertAfter.insertAdjacentElement('afterend', totalEl);
+            }
+            totalEl.textContent = totalStr;
+        }
+
+        let statusEl = $('.status', meta);
+        if (!statusEl) {
+            statusEl = mk('span', 'status');
+            const insertAfter = $('.total', meta) || $('.wait', meta) || $('.time', meta) || nameEl;
+            if (insertAfter) insertAfter.insertAdjacentElement('afterend', statusEl);
+        }
+        statusEl.textContent = getStatusText(r.status);
+        if (r.status === "completed") statusEl.classList.add("completed");
+        else if (r.status === "failed") statusEl.classList.add("failed");
+        else if (r.status === "stopped") statusEl.classList.add("stopped");
+
+        let errorEl = $('.error', meta);
+        if (r.error) {
+            if (!errorEl) {
+                errorEl = mk('span', 'error');
+                (statusEl || $('.total', meta) || nameEl).insertAdjacentElement('afterend', errorEl);
+            }
             errorEl.textContent = r.error;
             errorEl.style.display = "";
+        } else if (errorEl) {
+            errorEl.style.display = "none";
         }
 
-        card.addChild(meta);
-
-        const copyBtn = $('.copy.content', meta);
+        // 复制按钮
+        let copyBtn = $('.copy.content', meta);
+        if (!copyBtn) {
+            copyBtn = mk('button', 'copy content btn , bare icon-only , square');
+            copyBtn.innerHTML = '<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>';
+            copyBtn.title = '复制';
+            (errorEl || statusEl || $('.total', meta) || nameEl).insertAdjacentElement('afterend', copyBtn);
+        }
         copyBtn.onclick = () => {
             navigator.clipboard.writeText(r.content || "").then(() => {
                 copyBtn.classList.add("copied");
@@ -167,50 +224,56 @@ function renderResponse(container, msg, groups) {
             });
         };
 
-        const contentWrapper = mk("div", "content");
+        // 更新思考块
         if (r.thinking) {
-            const thinkEl = mk("div", "think");
-            const thinkHeader = mk("header", "btn , flex items-go-x");
-            const icon = mk("span", "icon");
-            const label = mk("span", "label");
-            label.textContent = "思考";
-            thinkHeader.addChild(icon);
-            thinkHeader.addChild(label);
-            if (r.thinkingDuration) {
-                const duration = mk("span", "duration");
-                duration.textContent = `耗时 ${(r.thinkingDuration/1000).toFixed(1)}s`;
-                thinkHeader.addChild(duration);
+            let thinkBlock = $('.think', existing);
+            if (!thinkBlock) {
+                thinkBlock = mk('details', 'think');
+                thinkBlock.open = true;
+                const thinkSummary = mk('summary');
+                const summaryFlex = mk('div', 'flex items-go-x');
+                const label = mk('span', 'label');
+                label.textContent = '思考';
+                summaryFlex.addChild(label);
+                const duration = mk('span', 'duration');
+                summaryFlex.addChild(duration);
+                thinkSummary.addChild(summaryFlex);
+                thinkBlock.addChild(thinkSummary);
+                const thinkContent = mk('div', 'text');
+                thinkBlock.addChild(thinkContent);
+                const contentWrapper = $('.content', existing);
+                if (contentWrapper) contentWrapper.insertBefore(thinkBlock, $('.say', existing));
             }
-            thinkHeader.onclick = function() { toggleThinking(this); };
-            thinkEl.addChild(thinkHeader);
-            const thinkContent = mk("div", "content");
-            thinkContent.textContent = r.thinking;
-            thinkEl.addChild(thinkContent);
-            contentWrapper.addChild(thinkEl);
+            thinkBlock.classList.remove('hidden');
+            const thinkText = $('.text', thinkBlock);
+            if (thinkText) thinkText.textContent = r.thinking;
+            const durationEl = $('.duration', thinkBlock);
+            if (durationEl && r.thinkingDuration) {
+                durationEl.textContent = `耗时 ${(r.thinkingDuration/1000).toFixed(1)}s`;
+            }
         }
-        if (r.content) {
-            const sayEl = mk("div", "say");
-            sayEl.innerHTML = renderMarkdown(r.content);
-            addCodeCopyButtons(sayEl);
-            contentWrapper.addChild(sayEl);
-        }
-        card.addChild(contentWrapper);
 
+        // embedding 结果（非流式场景，append 到 card 末尾）
         if (r.embeddingResult) {
             const emb = r.embeddingResult;
-            const embMeta = mk("div", "embedding-result");
+            let embMeta = $('.embedding-result', existing);
+            if (!embMeta) {
+                embMeta = mk('div', 'embedding-result');
+                existing.addChild(embMeta);
+            }
             embMeta.innerHTML = `<div class="mb-1">
-									<strong>嵌入维度:</strong>
-									${emb.dim}
-								</div>
-								<div class="mb-1">
-									<strong>预览:</strong>
-									<code>${emb.preview}</code>
-								</div>`;
+                    <strong>嵌入维度:</strong>
+                    ${emb.dim}
+                </div>
+                <div class="mb-1">
+                    <strong>预览:</strong>
+                    <code>${emb.preview}</code>
+                </div>`;
             const copyBtn = mk("button", "copy code btn , bare icon-only , square");
-            copyBtn.innerHTML = `<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>`;
+            copyBtn.innerHTML = '<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>';
             copyBtn.title = "复制完整向量";
-
+            const previewRow = embMeta.querySelector('.mb-1:last-child');
+            previewRow.addChild(copyBtn);
             copyBtn.onclick = () => {
                 const codeText = previewRow.querySelector('code').textContent;
                 navigator.clipboard.writeText(codeText).then(() => {
@@ -218,13 +281,7 @@ function renderResponse(container, msg, groups) {
                     setTimeout(() => copyBtn.classList.remove("copied"), 1500);
                 });
             };
-
-            const previewRow = embMeta.querySelector('.mb-1:last-child');
-            previewRow.addChild(copyBtn);
-            card.addChild(embMeta);
         }
-
-        container.addChild(card);
     });
 }
 

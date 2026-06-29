@@ -239,10 +239,21 @@ async function refreshUI() {
         handleSessionDelete
     );
 
+    const container = $('#chat-messages');
     if (currentSession) {
-        renderMessages(currentSession.messages, groups, handleCopy);
+        const hasStreamingCards = container.querySelector(`.one.response.msg[data-session-id="${currentSession.id}"]`);
+        if (hasStreamingCards) {
+            // 流式完成后升级模式：清除 hint，升级 .say 为 markdown
+            container.querySelectorAll('.streaming-hint').forEach(el => el.remove());
+            const lastMsg = currentSession.messages[currentSession.messages.length - 1];
+            if (lastMsg && lastMsg.responses) {
+                renderResponse(container, lastMsg, groups);
+            }
+        } else {
+            renderMessages(currentSession.messages, groups, handleCopy);
+        }
     } else {
-        $("#chat-messages").innerHTML = "";
+        container.innerHTML = "";
     }
 }
 
@@ -555,20 +566,15 @@ function updateStreamingCard(endpointId, state, firstTokenTime, groups, sessionI
 		if (state.thinking && state.thinking.trim()) {
 			thinkingBlock.classList.remove('hidden');
 			thinkingBlock.classList.add('streaming');
-			const thinkingContent = $('.content', thinkingBlock);
+			thinkingBlock.open = true;
+			const thinkingContent = $('.text', thinkingBlock);
 			if (thinkingContent) {
 				thinkingContent.textContent = state.thinking;
 			}
-			let thinkingHeader = $('.btn', thinkingBlock);
-			if (thinkingHeader) {
-				thinkingHeader.onclick = function() {
-					toggleThinking(this);
-				};
-				if (state.thinkingDuration) {
-					const durationEl = $('.duration', thinkingHeader);
-					if (durationEl) {
-						durationEl.textContent = `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s`;
-					}
+			if (state.thinkingDuration) {
+				const durationEl = $('.duration', thinkingBlock);
+				if (durationEl) {
+					durationEl.textContent = `耗时 ${(state.thinkingDuration/1000).toFixed(1)}s`;
 				}
 			}
 		} else {
