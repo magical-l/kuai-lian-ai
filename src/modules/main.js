@@ -239,20 +239,26 @@ async function refreshUI() {
     );
 
     const container = $('#chat-messages');
-    if (currentSession) {
-        const hasStreamingCards = container.querySelector(`.one.response.msg[data-session-id="${currentSession.id}"]`);
-        if (hasStreamingCards) {
-            // 流式完成后升级模式：清除 hint，升级 .say 为 markdown
-            container.querySelectorAll('.streaming-hint').forEach(el => el.remove());
-            const lastMsg = currentSession.messages[currentSession.messages.length - 1];
-            if (lastMsg && lastMsg.responses) {
-                renderResponse(container, lastMsg, groups);
+    const doUpdate = () => {
+        if (currentSession) {
+            const hasStreamingCards = container.querySelector(`.one.response.msg[data-session-id="${currentSession.id}"]`);
+            if (hasStreamingCards) {
+                container.querySelectorAll('.streaming-hint').forEach(el => el.remove());
+                const lastMsg = currentSession.messages[currentSession.messages.length - 1];
+                if (lastMsg && lastMsg.responses) {
+                    renderResponse(container, lastMsg, groups);
+                }
+            } else {
+                renderMessages(currentSession.messages, groups, handleCopy);
             }
         } else {
-            renderMessages(currentSession.messages, groups, handleCopy);
+            container.innerHTML = "";
         }
+    };
+    if (document.startViewTransition) {
+        document.startViewTransition(doUpdate);
     } else {
-        container.innerHTML = "";
+        doUpdate();
     }
 }
 

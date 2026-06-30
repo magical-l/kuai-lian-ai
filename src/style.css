@@ -1181,3 +1181,8 @@ dialog {
 		&.request, &.response { max-width: 95%; }
 	}
 }
+
+/* ============ View Transitions ============ */
+aside.endpoint.list { view-transition-name: sidebar-left; }
+aside.session.list { view-transition-name: sidebar-right; }
+#chat-messages { view-transition-name: main-chat; }
