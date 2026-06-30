@@ -153,6 +153,11 @@ function buildSinglePage(html) {
 	html = html.replace(/<link\s[^>]*href="style\.css"[^>]*>/g, () => {
 		return '<style>' + compressCSS(cssContent) + '</style>';
 	});
+	// 内联 highlight CSS
+	const hlCSSText = read('vendor', 'highlight-github.min.css');
+	html = html.replace(/<link\s[^>]*href="\.\.\/vendor\/highlight-github\.min\.css"[^>]*>/g, () => {
+		return '<style>' + compressCSS(hlCSSText) + '</style>';
+	});
 	// 内联 JS：<script src="modules/X.js"> → <script>inline</script>
 	html = html.replace(/<script\s[^>]*src="modules\/([^"]+)"[^>]*><\/script>/g, (m, file) => {
 		return '<script>' + compressJS(read(SRC, 'modules', file)) + '</script>';
@@ -181,6 +186,11 @@ function buildExtension(html) {
 	validateCSS(cssContent, 'src/style.css');
 	html = html.replace(/<link\s[^>]*href="style\.css"[^>]*>/g, () => {
 		return '<style>' + compressCSS(cssContent) + '</style>';
+	});
+	// 内联 highlight CSS
+	const extHLCSSText = read('vendor', 'highlight-github.min.css');
+	html = html.replace(/<link\s[^>]*href="\.\.\/vendor\/highlight-github\.min\.css"[^>]*>/g, () => {
+		return '<style>' + compressCSS(extHLCSSText) + '</style>';
 	});
 	// 修正 vendor CSS 路径（源码版用 ../vendor/，构建版统一用 vendor/）
 	html = html.replace(/href="\.\.\/vendor\//g, 'href="vendor/');
