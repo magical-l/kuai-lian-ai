@@ -192,4 +192,3 @@ function initScrollPaddingObserver() {
 	syncScrollPadding();
 	new ResizeObserver(syncScrollPadding).observe(sticky);
 }
-

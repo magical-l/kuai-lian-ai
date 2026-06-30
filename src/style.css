@@ -127,7 +127,10 @@ aside.list > ol {
 		border-radius: 0 var(--btn-radius) var(--btn-radius) 0;
 		border-left-color: rgba(255, 255, 255, 0.4);
 	}
-	& .popup {
+	& [popover] {
+		position: fixed;
+		bottom: 60px;
+		right: 20px;
 		box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 		min-width: 140px;
 		background: var(--bg-base);
@@ -148,7 +151,7 @@ aside.list > ol {
 		}
 	}
 
-	&.open > .secondary.btn { background: var(--accent-primary-hover); }
+	& .secondary.btn.active { background: var(--accent-primary-hover); }
 }
 .workspace-setting .cur {
 	color: var(--text-muted);

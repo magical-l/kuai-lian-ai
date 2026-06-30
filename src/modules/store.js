@@ -111,7 +111,6 @@ async function tryRestoreDirectory() {
 	const sessions = await storage.loadSessions();
 	sessions.forEach(s => sessionsCache.set(s.id, s));
 	updateDirectoryDisplay();
-	await refreshUI();
 	return { success: true };
 }
 

@@ -39,29 +39,38 @@ async function init() {
 			}
 		}
 	});
-	// 分裂式按钮：发送模式切换
+	// 分裂式按钮：发送模式切换（Popover API）
 	const btnGroup = $('.split.btn-group');
 	const toggle = $('.send-shotcut-selector');
 	// 从 localStorage 同步 radio 选中状态
 	if (localStorage.getItem('sendMode') === 'ctrl-enter') {
 		btnGroup.querySelector('.option.btn input[value="ctrl-enter"]').checked = true;
 	}
-	// 点击下拉按钮
-	toggle.on('click', e => {
-		e.stopPropagation();
-		btnGroup.classList.toggle('open');
-	});
-	// 选择选项（radio change 事件）
+	// 选择选项（radio change 事件）：自动关闭 popover
+	const sendModePop = document.getElementById('sendModePop');
 	btnGroup.querySelectorAll('.option.btn input[type=radio]').forEach(radio => {
 		radio.on('change', () => {
 			sendOnEnter = radio.value === 'enter';
 			localStorage.setItem('sendMode', radio.value);
-			btnGroup.classList.remove('open');
+			sendModePop?.hidePopover();
 		});
 	});
-	// 点击外部关闭
-	document.on('click', () => {
-		btnGroup.classList.remove('open');
+	// Popover 开关事件：打开时定位 + 同步按钮高亮
+	sendModePop?.addEventListener('toggle', (e) => {
+		toggle.classList.toggle('active', e.newState === 'open');
+		if (e.newState === 'open') {
+			const btnRect = toggle.getBoundingClientRect();
+			sendModePop.style.position = 'fixed';
+			sendModePop.style.bottom = (window.innerHeight - btnRect.top + 8) + 'px';
+			sendModePop.style.right = (window.innerWidth - btnRect.right) + 'px';
+		}
+	});
+	// 后备：点击 toggle 按钮时确保 popover 正确弹出
+	toggle.on('click', (e) => {
+		e.stopPropagation();
+		if (sendModePop?.togglePopover) {
+			sendModePop.togglePopover();
+		}
 	});
 	// 粘贴图片处理
 	chatInput.on('paste', async (e) => {
