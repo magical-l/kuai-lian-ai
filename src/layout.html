@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.2.1</span>
+			<span class="version">v6.2.2</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -112,15 +112,15 @@
 						<button class="secondary btn : send-shotcut-selector , icon-only" popovertarget="sendModePop">
 							<svg><use href="icons.svg#icon-chevron-down"></use></svg>
 						</button>
-						<div class="popup , flex items-go-y" id="sendModePop" popover="auto">
-							<label class="option btn">
-								<input type="radio" name="sendMode" value="enter" checked>
-								Enter 发送
-							</label>
-							<label class="option btn">
-								<input type="radio" name="sendMode" value="ctrl-enter">
-								Ctrl+Enter 发送
-							</label>
+						<div id="sendModePop" popover="auto">
+							<div class="flex items-go-y">
+								<label class="option btn">
+									Enter 发送 <input type="radio" name="sendMode" value="enter" checked>
+								</label>
+								<label class="option btn">
+									Ctrl+Enter 发送 <input type="radio" name="sendMode" value="ctrl-enter">
+								</label>
+							</div>
 						</div>
 					</div>
 					<button class="stop btn square hidden" disabled aria-label="停止生成"><span class="stop-icon"></span></button>

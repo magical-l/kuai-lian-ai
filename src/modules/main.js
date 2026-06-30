@@ -55,22 +55,19 @@ async function init() {
 			sendModePop?.hidePopover();
 		});
 	});
-	// Popover 开关事件：打开时定位 + 同步按钮高亮
-	sendModePop?.addEventListener('toggle', (e) => {
-		toggle.classList.toggle('active', e.newState === 'open');
+	// Popover 打开前定位 + 同步按钮高亮
+	sendModePop?.addEventListener('beforetoggle', (e) => {
 		if (e.newState === 'open') {
 			const btnRect = toggle.getBoundingClientRect();
 			sendModePop.style.position = 'fixed';
-			sendModePop.style.bottom = (window.innerHeight - btnRect.top + 8) + 'px';
-			sendModePop.style.right = (window.innerWidth - btnRect.right) + 'px';
+			const popHeight = sendModePop.getBoundingClientRect().height || 88;
+			const popWidth = sendModePop.getBoundingClientRect().width || 140;
+			sendModePop.style.top = (btnRect.top - popHeight - 8) + 'px';
+			sendModePop.style.left = (btnRect.right - popWidth) + 'px';
 		}
 	});
-	// 后备：点击 toggle 按钮时确保 popover 正确弹出
-	toggle.on('click', (e) => {
-		e.stopPropagation();
-		if (sendModePop?.togglePopover) {
-			sendModePop.togglePopover();
-		}
+	sendModePop?.addEventListener('toggle', (e) => {
+		toggle.classList.toggle('active', e.newState === 'open');
 	});
 	// 粘贴图片处理
 	chatInput.on('paste', async (e) => {
