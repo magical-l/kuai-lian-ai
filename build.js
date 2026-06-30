@@ -120,27 +120,54 @@ function isSourceAsset(src) {
 	return src === 'style.css' || src.startsWith('modules/');
 }
 
+function syncGetURL(url) {
+	try {
+		if (process.platform === 'win32') {
+			return execSync(
+				`powershell -Command "(Invoke-WebRequest -Uri '${url}' -UseBasicParsing).Content"`,
+				{ encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] }
+			).trim();
+		}
+		return execSync(`curl -sf "${url}"`, { encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+	} catch {
+		return null;
+	}
+}
+
 function tryInlineLocalCSS(html) {
-	if (!DEV_MODE) return html;
-	const localCSSFiles = [
-		{ url: 'css.lwj621.workers.dev/css/common.css', local: 'common.css' },
-		{ url: 'css.lwj621.workers.dev/css/layout.css', local: 'layout.css' },
+	const remoteCSSFiles = [
+		{ url: 'css.lwj621.workers.dev/css/common.css', label: 'common.css' },
+		{ url: 'css.lwj621.workers.dev/css/layout.css', label: 'layout.css' },
 	];
-	for (const { url, local } of localCSSFiles) {
-		const localPath = path.join(DEV_CSS_DIR, local);
-		try {
-			if (!fs.existsSync(localPath)) {
-				console.warn(`  [dev] local CSS not found: ${localPath}, skipping`);
-				continue;
+	for (const { url, label } of remoteCSSFiles) {
+		let content = null;
+		// 1. 开发模式：优先用本地文件
+		if (DEV_MODE) {
+			const localPath = path.join(DEV_CSS_DIR, label);
+			try {
+				if (fs.existsSync(localPath)) {
+					content = fs.readFileSync(localPath, 'utf8');
+					console.log(`  [dev] inlined local ${label}`);
+				}
+			} catch (e) {
+				console.warn(`  [dev] failed to read ${localPath}: ${e.message}`);
 			}
-			const content = fs.readFileSync(localPath, 'utf8');
+		}
+		// 2. 从 CDN fetch（构建时内联，确保扩展/单页不依赖外网）
+		if (!content) {
+			const cdnURL = `https://${url}`;
+			content = syncGetURL(cdnURL);
+			if (content) {
+				console.log(`  fetched ${url} (${(content.length / 1024).toFixed(1)} KB)`);
+			} else {
+				console.warn(`  [warn] failed to fetch ${cdnURL}, leaving external link`);
+			}
+		}
+		if (content) {
 			html = html.replace(
 				new RegExp(`<link\\s[^>]*href="https://${url}"[^>]*>`, 'g'),
 				() => '<style>' + compressCSS(content) + '</style>'
 			);
-			console.log(`  [dev] inlined local ${local}`);
-		} catch (e) {
-			console.warn(`  [dev] failed to read ${localPath}: ${e.message}`);
 		}
 	}
 	return html;
@@ -194,13 +221,8 @@ function buildExtension(html) {
 	});
 	// 修正 vendor CSS 路径（源码版用 ../vendor/，构建版统一用 vendor/）
 	html = html.replace(/href="\.\.\/vendor\//g, 'href="vendor/');
-	// 内联 vendor JS
-	html = html.replace(/<script\s[^>]*src="[^"]*vendor\/marked\.min\.js"[^>]*><\/script>/g, () => {
-		return '<script>' + read('vendor', 'marked.min.js') + '</script>';
-	});
-	html = html.replace(/<script\s[^>]*src="[^"]*vendor\/highlight\.min\.js"[^>]*><\/script>/g, () => {
-		return '<script>' + read('vendor', 'highlight.min.js') + '</script>';
-	});
+	// 修正 vendor JS 路径（构建版用 vendor/）
+	html = html.replace(/src="\.\.\/vendor\//g, 'src="vendor/');
 	// boot.js: 改为外部引用
 	html = html.replace(/<script\s[^>]*src="modules\/boot\.js"[^>]*><\/script>/g,
 		'<script src="boot.js"></script>');
