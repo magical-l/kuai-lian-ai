@@ -1,7 +1,10 @@
 ---
-name: API层
-description: 流式SSE处理、多模型并发、停止机制、格式转换、thinking标签解析、嵌入请求
-type: module-documentation
+title: API 层
+covers_file: [src/modules/api.js, src/modules/shared.js]
+depends_on: [providers.md]
+api_signature: callAllModels, callAPI, callProvider, callEmbedding, stopAllGenerations
+last_updated: 2026-07-01
+why_exists: 流式 SSE 处理、多模型并发调度、停止机制和 Provider 格式转换
 ---
 
 # API 层（src/modules/shared.js + src/modules/api.js）

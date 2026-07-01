@@ -1,6 +1,10 @@
 ---
-name: endpoint-tree
-description: 端点树模块 — 递归渲染、拖拽排序、展开/收起、测试 UI、勾选、右键菜单
+title: 端点树
+covers_file: [src/modules/endpoint-tree.js]
+depends_on: [ui.md]
+api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI
+last_updated: 2026-07-01
+why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
 # 快连AI 端点树模块文档

@@ -1,7 +1,10 @@
 ---
-name: Provider 抽象层 + DOM 工具集
-description: 三 provider 格式抽象（openai/claude/gemini）对比、嵌入请求、DOM 辅助函数
-type: module-documentation
+title: Provider 抽象层 + DOM 工具集
+covers_file: [src/modules/providers.js]
+depends_on: []
+api_signature: providers.openai, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip
+last_updated: 2026-07-01
+why_exists: 三种 Provider 格式差异的封装和公共 DOM 辅助函数的复用
 ---
 
 # Provider 抽象层 + DOM 工具集（src/modules/providers.js）

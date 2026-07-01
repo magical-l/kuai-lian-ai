@@ -1,8 +1,10 @@
 ---
-title: CORS Proxy Architecture
-created: 2026-07-01
-status: active
-depends_on: background.js, cors-proxy.js
+title: CORS 代理
+covers_file: [src/extension/cors-proxy.js, src/extension/background.js]
+depends_on: [overview.md]
+api_signature: window.__EXTENSION_FETCH__, fetchStream, fetchSimple
+last_updated: 2026-07-01
+why_exists: 扩展模式下通过 Service Worker 端口通信实现 CORS 代理，绕过浏览器同源策略
 ---
 
 # CORS Proxy Architecture

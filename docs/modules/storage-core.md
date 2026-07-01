@@ -1,7 +1,10 @@
 ---
-name: 存储层核心 — storage-core.js
-description: BrowserStorage / DirectoryStorage 双后端设计，统一 storage 接口，扩展版独立实现
-type: architecture
+title: 存储层核心
+covers_file: [src/modules/storage-core.js, src/extension/storage-core.js]
+depends_on: []
+api_signature: storage 对象（init/selectMode/switchMode/loadEndpoints/saveEndpoints/loadSessions/...）
+last_updated: 2026-07-01
+why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+File System Access）
 ---
 
 # 存储层核心

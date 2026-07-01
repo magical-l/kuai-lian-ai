@@ -1,8 +1,10 @@
 ---
-title: Chrome Extension Overview
-created: 2026-07-01
-version: 6.2.2
-status: active
+title: Chrome Extension 概览
+covers_file: [src/extension/manifest.json, src/extension/background.js, src/extension/storage-core.js, src/extension/_locales/zh_CN/messages.json]
+depends_on: []
+api_signature: chrome.runtime, chrome.action, chrome.runtime.connect
+last_updated: 2026-07-01
+why_exists: 双产物中 Chrome 扩展的生命周期、权限模型和 CORS 代理架构概览
 ---
 
 # Chrome Extension Overview

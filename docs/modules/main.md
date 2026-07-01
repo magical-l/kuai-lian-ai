@@ -1,6 +1,10 @@
 ---
-name: main
-description: 主模块 — 初始化、发送、流式卡片、事件处理、store/API 交互关系
+title: 主模块（编排层）
+covers_file: [src/modules/main.js]
+depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
+api_signature: init, handleSend, handleEmbeddingSend, refreshUI, handleSessionSelect
+last_updated: 2026-07-01
+why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
 # 快连AI 主模块文档

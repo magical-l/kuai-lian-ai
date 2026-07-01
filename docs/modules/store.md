@@ -1,7 +1,10 @@
 ---
-name: 数据管理层 — store.js
-description: 端点树 CRUD、会话管理、旧数据迁移、继承链配置解析
-type: architecture
+title: 数据管理层
+covers_file: [src/modules/store.js]
+depends_on: [storage-core.md]
+api_signature: getGroups, getNode, addNode, updateNode, deleteNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
+last_updated: 2026-07-01
+why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
 # 数据管理层
