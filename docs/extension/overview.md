@@ -1,9 +1,9 @@
 ---
 title: Chrome Extension 概览
-covers_file: [src/extension/manifest.json, src/extension/background.js, src/extension/storage-core.js, src/extension/_locales/zh_CN/messages.json]
+covers_file: [src/extension/manifest.json, src/extension/background.js, src/extension/storage-core.js, src/extension/_locales/zh_CN/messages.json, src/modules/boot.js]
 depends_on: []
 api_signature: chrome.runtime, chrome.action, chrome.runtime.connect
-last_updated: 2026-07-01
+last_updated: 2026-07-02
 why_exists: 双产物中 Chrome 扩展的生命周期、权限模型和 CORS 代理架构概览
 ---
 
@@ -94,6 +94,18 @@ cors-proxy.js 使用 `chrome.runtime.connect({ name: 'cors-proxy' })` 建立命�
 | 自动重连 | 手动实现 | 不适用 |
 | `chrome.runtime.lastError` | 端口关闭时触发 | 支持 |
 | 超时控制 | background 侧无内置超时 | 30 秒默认超时 |
+
+## 环境检测机制
+
+`src/modules/boot.js` 在页面加载时立即执行：
+
+1. **检测扩展环境**：检查 `chrome.runtime?.id` 是否存在。若存在，设置 `window.__IS_EXTENSION__ = true`。
+2. **设置 CORS 代理钩子**：扩展环境下将 `window.__EXTENSION_FETCH__` 设为 `extensionFetch()`（来自 cors-proxy.js），供 API 层在需要时通过 Service Worker 中转请求。
+3. **字体处理**：扩展环境下 DOM 中已有 Google Fonts 链接（由 boot.js 构建时内联或预留），检测到非扩展环境时动态注入 `<link href="...Plus+Jakarta+Sans...">`。扩展版构建时跳过字体注入以减少包体积。
+
+这两个标志影响其他模块的行为：
+- **存储层**：扩展模式下 `storage-core.js` 使用 `chrome.storage.local` 替代 IndexedDB
+- **API 层**：模块代码当前使用原生 `fetch()` 通过扩展页面特权上下文直接跨域访问；`__EXTENSION_FETCH__` 是预留钩子，用于需要 Service Worker 中介的特定场景
 
 ## 与单页面版本的配合方式
 

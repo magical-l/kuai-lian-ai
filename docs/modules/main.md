@@ -229,6 +229,8 @@ radio change → setThemePref(mode)
 
 ### 9. 与 store/API 层的交互关系
 
+以下调用涉及模块：[store.md](./store.md) · [api.md](./api.md) · [shared.md](./shared.md)
+
 | 调用 | 方向 | 用途 |
 |------|------|------|
 | `getGroups()` | main → store | 获取端点树数据 |

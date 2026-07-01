@@ -3,7 +3,7 @@ title: 技术架构
 covers_file: [src/layout.html, src/style.css, src/modules/storage-core.js, src/modules/providers.js, src/modules/boot.js, src/modules/main.js]
 depends_on: []
 api_signature: window.__STORAGE__ / window.__IS_EXTENSION__ / window.__EXTENSION_FETCH__
-last_updated: 2026-07-01
+last_updated: 2026-07-02
 why_exists: 定义快连AI的技术选型、模块依赖关系和数据流向，作为所有代码改动的架构参照
 ---
 
@@ -35,6 +35,8 @@ main.js（事件处理入口）
            │
            └─→ providers.js（DOM辅助：$ / $$ / mk / fromTemplate / setValues）
 ```
+
+各层对应的模块文档：[存储层](../modules/storage-core.md) · [数据管理](../modules/store.md) · [API 层](../modules/api.md) · [Provider 格式](../modules/providers.md) · [UI 组件](../modules/ui.md) · [端点树](../modules/endpoint-tree.md) · [主逻辑](../modules/main.md)
 
 ### 模块依赖关系链
 
@@ -83,7 +85,7 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 
 ### 环境检测
 
-boot.js 在页面加载时立即执行，检测 chrome.runtime.id 设置 window.__IS_EXTENSION__，随后根据环境动态注入/移除 Google Fonts。该标志影响存储后端选择（扩展模式下 chrome.storage 替代 IndexedDB）和 API 请求路径（扩展模式下启用 window.__EXTENSION_FETCH__ 绕过 CORS）。
+环境检测（`__IS_EXTENSION__` / `__EXTENSION_FETCH__` / Google Fonts 按环境注入/跳过）在 `boot.js` 中实现，详见 [`docs/extension/overview.md`](../extension/overview.md) 的与单页面版本配合部分。
 
 ## 函数索引
 
