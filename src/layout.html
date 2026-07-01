@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.3.0</span>
+			<span class="version">v6.3.1</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -51,9 +51,9 @@
 				<svg class="icon"><use href="icons.svg#icon-sidebar-open"></use></svg>
 			</button>
 			<button class="help btn , bare icon-only , square" title="帮助">?</button>
-			<button class="theme btn , bare icon-only , square" title="切换主题">
+			<button class="theme btn , bare icon-only , square" popovertarget="themePop" title="切换主题">
 				<svg class="icon"><use href="icons.svg#icon-sun"></use></svg>
-			</button>
+				</button>
 			<a class="github btn , bare icon-only , square" href="https://github.com/magical-l/kuai-lian-ai" target="_blank" title="@GitHub">
 				<img alt="GitHub" class="icon" src="https://github.githubassets.com/favicons/favicon.svg">
 			</a>
@@ -61,6 +61,23 @@
 				<img alt="Gitee" class="icon" src="https://gitee.com/favicon.ico">
 			</a>
 		</nav>
+		<div id="themePop" popover role="menu">
+			<label class="option btn , flex items-go-x">
+				<input type="radio" name="theme" value="light" checked>
+				<svg class="icon" style="width:16px;height:16px"><use href="icons.svg#icon-sun"></use></svg>
+				亮色模式
+			</label>
+			<label class="option btn , flex items-go-x">
+				<input type="radio" name="theme" value="dark">
+				<svg class="icon" style="width:16px;height:16px"><use href="icons.svg#icon-moon"></use></svg>
+				暗色模式
+			</label>
+			<label class="option btn , flex items-go-x">
+				<input type="radio" name="theme" value="system">
+				<svg class="icon" style="width:16px;height:16px"><use href="icons.svg#icon-auto"></use></svg>
+				跟随系统
+			</label>
+		</div>
 	</header>
 	<div class="main-row , flex items-go-x">
 		<aside class="endpoint list , flex items-go-y">

@@ -69,11 +69,12 @@ common.css 和 layout.css 运行时从 `https://css.lwj621.workers.dev/css/` 加
 
 此外还覆写了硬编码颜色（代码块背景 `#f6f8fa` → `#2d2d3f`、等待慢速指示器 `#ea580c` → `#fb923c`、慢速端点赞章）。
 
-**交互机制**（三态，见 main.md §主题管理）：
+**交互机制**（见 main.md §主题管理）：
 - 无 class → 跟随系统 `prefers-color-scheme` 自动切换
 - `html.dark` → 强制暗色
 - `html.light` → 强制亮色
-- 点击主题按钮按 `light → dark → 系统` 顺序循环
+- 点击工具栏主题按钮 → 弹出 Popover 菜单，三个选项（亮色/暗色/跟随系统），各带独立 SVG 图标（icon-sun/icon-moon/icon-auto）
+- Popover 通过 CSS anchor positioning 定位在按钮正下方居中（`anchor-name: --theme-btn` + `position-anchor` + `translate: -50%`）
 
 偏好存于 `settings.theme`（IndexedDB / File System Access）。
 
@@ -307,4 +308,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 ## 决策日志
 
 - 2026-07-01: 初始文档创建。确认 style.css 实际 ~1200 行（非预估的 3000+）、:has() 共 3 处（非"大量"）
-- 2026-07-01: 暗色模式实现。采用 `html.dark` class 覆写全部 CSS 变量，而非 `prefers-color-scheme` 媒体查询。交互三态（亮→暗→跟随系统），偏好持久化到 settings。html.dark 块约 40 行，新增 4 个 SVG icon 符号。版本 6.3.0。
+- 2026-07-01: 暗色模式实现。采用 `html.dark` class 覆写全部 CSS 变量，而非 `prefers-color-scheme` 媒体查询。交互三态（亮→暗→跟随系统），偏好持久化到 settings。html.dark 块约 40 行，新增 4 个 SVG icon 符号。版本 6.3.1。

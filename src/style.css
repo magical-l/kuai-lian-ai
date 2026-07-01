@@ -82,6 +82,7 @@ html.dark {
 	--border-default: #3e3f5e;
 	--border-strong: #5a5d7a;
 	--border-color: #3e3f5e;
+	--odd-row-bg: #282945;
 	--text-primary: #e8e9f0;
 	--text-secondary: #b0b2c5;
 	--text-muted: #7a7d9a;
@@ -179,6 +180,7 @@ aside.list > ol {
 	}
 	& [popover] {
 		position: fixed;
+		color: var(--text-primary);
 		margin: 0;
 		bottom: 60px;
 		right: 20px;
@@ -191,6 +193,7 @@ aside.list > ol {
 	}
 	& .option.btn {
 		--btn-bg: transparent;
+		--btn-h: auto;
 		--hover-bg: var(--accent-light);
 		--hover-text-color: var(--accent-primary);
 		padding: 8px 12px;
@@ -207,6 +210,52 @@ aside.list > ol {
 
 	& .secondary.btn.active { background: var(--accent-primary-hover); }
 }
+
+/* ============ 主题选择 Popover ============ */
+.theme.btn {
+	anchor-name: --theme-btn;
+}
+#themePop {
+	position: fixed;
+	position-anchor: --theme-btn;
+	top: anchor(--theme-btn bottom);
+	left: anchor(--theme-btn center);
+	translate: -50% 4px;
+	margin: 0;
+	border: none;
+	padding: 8px;
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-lg);
+	background: var(--bg-elevated);
+	border: 1px solid var(--border-subtle);
+	color: var(--text-primary);
+	min-width: 130px;
+
+	& .option.btn {
+		--btn-bg: transparent;
+		--btn-h: auto;
+		--hover-bg: var(--accent-light);
+		--hover-text-color: var(--accent-primary);
+		padding: 10px 16px;
+		font-size: 13px;
+		color: var(--text-primary);
+		gap: var(--space-2);
+		cursor: pointer;
+		border-radius: var(--radius-sm);
+
+		& input[type=radio] { display: none; }
+
+		&:has(input:checked) {
+			color: var(--accent-primary);
+			font-weight: 500;
+		}
+
+		&:hover {
+			background: var(--bg-hover);
+		}
+	}
+}
+
 .workspace-setting .cur {
 	color: var(--text-muted);
 	overflow: hidden;
@@ -1081,6 +1130,7 @@ aside.endpoint .one.endpoint {
 dialog {
 	&.editing.endpoint {
 		background: var(--bg-base);
+		color: var(--text-primary);
 		border-radius: var(--radius-xl);
 		box-shadow: var(--shadow-xl);
 		border: 1px solid var(--border-subtle);
@@ -1137,6 +1187,7 @@ dialog {
 	}
 	&.help {
 		position: relative;
+		color: var(--text-primary);
 		display: flex;
 		flex-direction: column;
 		max-height: 80vh;

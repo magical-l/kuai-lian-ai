@@ -164,10 +164,16 @@ async function init() {
 	};
 	// 主题初始化
 	initTheme();
-	$('.theme.btn').on('click', async () => {
-		const next = getNextTheme(themeMode);
-		await setThemePref(next);
-		updateThemeIcon(next);
+	// 主题选择 radio 切换
+	document.querySelectorAll('#themePop input[type=radio]').forEach(radio => {
+		radio.addEventListener('change', async () => {
+			if (radio.checked) {
+				const mode = radio.value === 'system' ? null : radio.value;
+				await setThemePref(mode);
+				updateThemeIcon(mode);
+				document.getElementById('themePop')?.hidePopover();
+			}
+		});
 	});
 }
 async function handleDeleteDirectory() {
@@ -741,22 +747,17 @@ function applyThemeClass(mode) {
 function updateThemeIcon(mode) {
 	const icon = $('.theme.btn svg use');
 	if (!icon) return;
-	if (mode === 'dark') {
-		icon.setAttribute('href', 'icons.svg#icon-moon');
-	} else if (mode === 'light') {
-		icon.setAttribute('href', 'icons.svg#icon-sun');
-	} else {
-		// 跟随系统 — 根据当前系统状态显示对应图标
-		const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-		icon.setAttribute('href', isDark ? 'icons.svg#icon-moon' : 'icons.svg#icon-sun');
-	}
+	const iconName = mode === 'dark' ? 'moon' : mode === 'light' ? 'sun' : 'auto';
+	icon.setAttribute('href', `icons.svg#icon-${iconName}`);
 }
 
 async function initTheme() {
-	const settings = await window.__STORAGE__.loadSettings();
-	themeMode = settings.theme || null;
+	themeMode = localStorage.getItem('themePref') || null;
 	applyThemeClass(themeMode);
 	updateThemeIcon(themeMode);
+	// 同步 radio 选中状态
+	const themeRadio = document.querySelector(`#themePop input[value="${themeMode || 'system'}"]`);
+	if (themeRadio) themeRadio.checked = true;
 
 	// 监听系统主题变化（仅在跟随系统时自动切换）
 	const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -771,20 +772,12 @@ async function initTheme() {
 async function setThemePref(mode) {
 	themeMode = mode;
 	applyThemeClass(mode);
-	const settings = await window.__STORAGE__.loadSettings();
+	updateThemeIcon(mode);
 	if (mode) {
-		settings.theme = mode;
+		localStorage.setItem('themePref', mode);
 	} else {
-		delete settings.theme;
+		localStorage.removeItem('themePref');
 	}
-	await window.__STORAGE__.saveSettings(settings);
-}
-
-// 循环：light → dark → null(系统)
-function getNextTheme(current) {
-	if (current === 'light') return 'dark';
-	if (current === 'dark') return null;
-	return 'light';
 }
 
 init();

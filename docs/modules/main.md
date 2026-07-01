@@ -58,8 +58,7 @@ description: 主模块 — 初始化、发送、流式卡片、事件处理、st
 | `initTheme` | 主题初始化：读 settings → 同步 html.class → 注册 matchMedia 监听 |
 | `applyThemeClass` | 操作 html 的 `.dark`/`.light` class |
 | `setThemePref` | 三态切换：存 settings → 应用 class → 更新按钮图标 |
-| `getNextTheme` | 循环逻辑：light → dark → null → light |
-| `updateThemeIcon` | 同步切换按钮的 SVG icon（sun↔moon） |
+| `updateThemeIcon` | 同步切换按钮的 SVG icon（sun↔moon↔auto） |
 
 ---
 
@@ -197,7 +196,7 @@ showThinkingCards(idList, groups, sessionId)
 
 ### 8. 主题管理
 
-行 730+。三态循环（亮 → 暗 → 跟随系统）：
+行 730+。Popover 下拉选择 + radio 直选（亮色/暗色/跟随系统），不再用循环切换。
 
 ```
 initTheme()  [init() 末尾调用]
@@ -206,13 +205,21 @@ initTheme()  [init() 末尾调用]
   │     ├── mode='dark'  → html.classList.add('dark')
   │     ├── mode='light' → html.classList.add('light')
   │     └── mode=null    → 移除 class（跟随系统）
-  ├── updateThemeIcon(mode) 切换按钮的 SVG icon
+  ├── updateThemeIcon(mode)  切换按钮的 SVG icon（sun/moon/auto）
+  ├── 同步 radio 选中状态（#themePop input[value="dark|light|system"]）
   └── matchMedia('prefers-color-scheme: dark').addListener
         └── 仅在 themeMode=null 时自动切换
 
-点击按钮 → setThemePref(getNextTheme(themeMode))
-  ├── 更新 themeMode
-  ├── applyThemeClass + updateThemeIcon
+#themePop CSS anchor positioning（纯 CSS，无 JS）
+  ├── anchor-name: --theme-btn（按钮上）
+  ├── position-anchor: --theme-btn（popover 上）
+  ├── top: anchor(--theme-btn bottom)
+  ├── left: anchor(--theme-btn center)
+  └── translate: -50% 4px（居中 + 下方偏移）
+
+radio change → setThemePref(mode)
+  ├── themeMode = mode
+  ├── applyThemeClass + updateThemeIcon + 同步 radio
   └── saveSettings({ theme: 'light' | 'dark' | undefined })
 ```
 
@@ -256,4 +263,4 @@ initTheme()  [init() 末尾调用]
 | 2026-04-26 | refreshUI 中使用 startViewTransition | 平滑 DOM 更新过渡效果，CSS View Transition API |
 | 2026-04-26 | 流式卡片完成后不立即移除，由 refreshUI 统一清理 | 避免中途移除导致闪烁、避免与 reorderCardsBySpeed 竞争 |
 | 2026-04-27 | 嵌入模式独立为一个函数而非 handleSend 的分支 | 嵌入流程差异太大（单端点、无 streaming、特殊 UI），合并只会增加 if-else |
-| 2026-07-01 | 暗色模式：三态（亮/暗/系统）存储到 settings.theme；html.className 驱动；matchMedia 监听 | 跟随系统为默认，手动切换可覆盖。settings 统一管理而非 localStorage 单独存 |
+| 2026-07-01 | 暗色模式：Popover 下拉选择（亮/暗/系统），radio 直选替代三态循环；beforetoggle 动态定位；settings.theme 持久化；html.className 驱动 | 三态循环 + 同图标用户无法区分当前模式，Popover 下拉 + 独立图标（sun/moon/auto）更清晰 |

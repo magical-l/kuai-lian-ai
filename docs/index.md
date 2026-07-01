@@ -41,4 +41,4 @@ UI Layer（分隔条布局/消息渲染/端点树）→ Store Layer（数据CRUD
 - Chrome 扩展: dist/extension/（含 zip 包）
 - 构建命令: node build.js
 
-当前版本: 6.3.0
+当前版本: 6.3.1
