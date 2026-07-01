@@ -23,12 +23,12 @@ description: 端点树模块 — 递归渲染、拖拽排序、展开/收起、�
 
 ## 函数索引
 
-| 函数 | 行号 | 用途 |
-|------|------|------|
-| `collapsedEndpoints` | 2 | Set 保存当前折叠的节点 ID |
-| `collapseAllEndpointNodes` | 4 | 折叠所有节点（遍历 + DOM 操作） |
-| `renderEndpointList` | 24 | 递归渲染整棵树 |
-| `updateEndpointTestUI` | 400 | 更新单个节点 + 父级 + 全局 test-all 按钮状态 |
+| 函数 | 用途 |
+|------|------|
+| `collapsedEndpoints` | Set 保存当前折叠的节点 ID |
+| `collapseAllEndpointNodes` | 折叠所有节点（遍历 + DOM 操作） |
+| `renderEndpointList` | 递归渲染整棵树 |
+| `updateEndpointTestUI` | 更新单个节点 + 父级 + 全局 test-all 按钮状态 |
 
 ---
 

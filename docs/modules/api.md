@@ -34,12 +34,12 @@ callAllModels → callAPI → callProvider → fetchWithTimeout → processSSESt
 
 ### 流式 SSE 处理
 
-| 函数 | 所在文件 | 行号 | 签名 |
-|---|---|---|---|
-| `processSSEStream` | shared.js | 93 | `(res, provider, state, tagParser, onChunk) => Promise<void>` |
-| `handleParsedChunk` | shared.js | 59 | `(parsed, state, tagParser, onChunk) => void` |
-| `createInitialState` | shared.js | 2 | `() => ThinkingState` |
-| `finalizeState` | shared.js | 125 | `(state) => void` |
+| 函数 | 所在文件 | 签名 |
+|---|---|---|
+| `processSSEStream` | shared.js | `(res, provider, state, tagParser, onChunk) => Promise<void>` |
+| `handleParsedChunk` | shared.js | `(parsed, state, tagParser, onChunk) => void` |
+| `createInitialState` | shared.js | `() => ThinkingState` |
+| `finalizeState` | shared.js | `(state) => void` |
 
 `processSSEStream` 从 `ReadableStream<Uint8Array>` 逐块读取，按 `\n` 分行，过滤 `data:` 前缀，跳过 `[DONE]`。每行 JSON 传给 `provider.parseChunk` 得到结构化的 `parsed` 对象（`{content?, reasoning?, event?}`），再交 `handleParsedChunk` 写入 state。
 
@@ -50,14 +50,14 @@ callAllModels → callAPI → callProvider → fetchWithTimeout → processSSESt
 
 ### 多模型并发
 
-| 函数 | 所在文件 | 行号 | 签名 |
-|---|---|---|---|
-| `callAllModels` | api.js | 243 | `(groups, endpointIds, messages, onChunk, sessionId) => Promise<Result[]>` |
-| `callAPI` | shared.js | 184 | `(style, baseUrl, apiKey, model, messages, onChunk, signal) => Promise<ThinkingState>` |
-| `callProvider` | shared.js | 130 | `(provider, baseUrl, apiKey, model, messages, onChunk, signal) => Promise<ThinkingState>` |
-| `getSessionGenerations` | api.js | 2 | `(sessionId) => Map<string, GenerationState>` |
-| `clearSessionGenerations` | api.js | 9 | `(sessionId) => void` |
-| `deleteSessionGenerations` | api.js | 21 | `(sessionId) => void` |
+| 函数 | 所在文件 | 签名 |
+|---|---|---|
+| `callAllModels` | api.js | `(groups, endpointIds, messages, onChunk, sessionId) => Promise<Result[]>` |
+| `callAPI` | shared.js | `(style, baseUrl, apiKey, model, messages, onChunk, signal) => Promise<ThinkingState>` |
+| `callProvider` | shared.js | `(provider, baseUrl, apiKey, model, messages, onChunk, signal) => Promise<ThinkingState>` |
+| `getSessionGenerations` | api.js | `(sessionId) => Map<string, GenerationState>` |
+| `clearSessionGenerations` | api.js | `(sessionId) => void` |
+| `deleteSessionGenerations` | api.js | `(sessionId) => void` |
 
 `callAllModels` 是为"多模型并行对话"设计的顶层入口：
 1. 清空该 session 的旧 generation 记录
@@ -76,11 +76,11 @@ callAllModels → callAPI → callProvider → fetchWithTimeout → processSSESt
 
 ### 停止生成机制
 
-| 函数 | 所在文件 | 行号 | 签名 |
-|---|---|---|---|
-| `stopSingleGeneration` | api.js | 27 | `(sessionId, endpointId) => void` |
-| `stopSessionGenerations` | api.js | 36 | `(sessionId) => void` |
-| `stopAllGenerations` | api.js | 40 | `() => void` |
+| 函数 | 所在文件 | 签名 |
+|---|---|---|
+| `stopSingleGeneration` | api.js | `(sessionId, endpointId) => void` |
+| `stopSessionGenerations` | api.js | `(sessionId) => void` |
+| `stopAllGenerations` | api.js | `() => void` |
 
 三层停止粒度，均通过 `AbortController.abort()` 实现：
 
@@ -94,11 +94,11 @@ Abort 后 `callProvider` 的 catch 块捕获 `AbortError`，返回当前已累�
 
 ### 格式转换
 
-| 函数 | 所在文件 | 行号 | 签名 |
-|---|---|---|---|
-| `toOpenAIContent` | api.js | 46 | `(contentArray) => Array` |
-| `toClaudeContent` | api.js | 95 | `(contentArray) => Array` |
-| `toGeminiContent` | api.js | 115 | `(contentArray) => Array` |
+| 函数 | 所在文件 | 签名 |
+|---|---|---|
+| `toOpenAIContent` | api.js | `(contentArray) => Array` |
+| `toClaudeContent` | api.js | `(contentArray) => Array` |
+| `toGeminiContent` | api.js | `(contentArray) => Array` |
 
 三个函数将统一的内部附件格式（`{type:'text'|'image'|'file', source:{type,media_type,data}}`）转换为各自 API 体的 `content` 数组格式。
 
@@ -116,11 +116,11 @@ Gemini 对 URL 来源的图片不做内联，因为 Gemini API 本身支持 URL�
 
 ### thinking 标签解析
 
-| 函数 | 所在文件 | 行号 | 签名 |
-|---|---|---|---|
-| `createTagParser` | shared.js | 13 | `() => TagParser` |
-| `processWithTagParser` | shared.js | 21 | `(chunk, state, parser, onChunk) => void` |
-| `THINKING_TAGS` | storage-core.js | 470 | `[{start:'<thinking>', end:'</thinking>'}]` |
+| 函数 | 所在文件 | 签名 |
+|---|---|---|
+| `createTagParser` | shared.js | `() => TagParser` |
+| `processWithTagParser` | shared.js | `(chunk, state, parser, onChunk) => void` |
+| `THINKING_TAGS` | storage-core.js | `[{start:'<thinking>', end:'</thinking>'}]` |
 
 用于第三方 API 在 content 流中嵌入 `<thinking>...</thinking>` 标签（如 DeepSeek）。结构化 API（claude）自带 `content_block_start/thinking_delta` 事件，设置 `needsTagParsing: false` 跳过此处理。
 
@@ -154,9 +154,9 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 
 ### 嵌入请求
 
-| 函数 | 所在文件 | 行号 | 签名 |
-|---|---|---|---|
-| `callEmbedding` | shared.js | 190 | `(style, baseUrl, apiKey, model, input) => Promise<{embedding, model?, usage?}>` |
+| 函数 | 所在文件 | 签名 |
+|---|---|---|
+| `callEmbedding` | shared.js | `(style, baseUrl, apiKey, model, input) => Promise<{embedding, model?, usage?}>` |
 
 专用嵌入请求路径，不经过流式管线：
 1. 按 style 查 provider，检查 `buildEmbeddingRequest` 方法存在

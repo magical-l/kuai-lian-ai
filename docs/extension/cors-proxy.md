@@ -198,14 +198,14 @@ async function extensionFetch(url, options = {}) {
 
 ## 函数索引
 
-| 函数 | 所在文件 | 行号 | 作用 |
-|------|---------|------|------|
-| `connectPort()` | cors-proxy.js | 11-15 | 懒建立命名端口连接 |
-| `fetchSimple()` | cors-proxy.js | 19-51 | 非流式代理请求（sendMessage） |
-| `fetchStream()` | cors-proxy.js | 54-139 | 流式代理请求（命名端口 + ReadableStream） |
-| `extensionFetch()` | cors-proxy.js | 141-148 | 统一入口，路由到 fetchStream/fetchSimple |
-| `chrome.runtime.onConnect` | background.js | 14-92 | 接收命名端口，处理流式/中止消息 |
-| `chrome.runtime.onMessage` | background.js | 95-131 | 接收非流式请求，超时控制 |
+| 函数 | 所在文件 | 作用 |
+|------|---------|------|
+| `connectPort()` | cors-proxy.js | 懒建立命名端口连接 |
+| `fetchSimple()` | cors-proxy.js | 非流式代理请求（sendMessage） |
+| `fetchStream()` | cors-proxy.js | 流式代理请求（命名端口 + ReadableStream） |
+| `extensionFetch()` | cors-proxy.js | 统一入口，路由到 fetchStream/fetchSimple |
+| `chrome.runtime.onConnect` | background.js | 接收命名端口，处理流式/中止消息 |
+| `chrome.runtime.onMessage` | background.js | 接收非流式请求，超时控制 |
 
 ## 设计决策日志
 

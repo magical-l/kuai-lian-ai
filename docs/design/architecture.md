@@ -87,14 +87,14 @@ boot.js 在页面加载时立即执行，检测 chrome.runtime.id 设置 window.
 
 ## 函数索引
 
-| 函数 | 所在文件 | 行号 | 功能 | 可见性 | 备注 |
-|------|----------|------|------|--------|------|
-| init | src/modules/main.js | 22 | 应用初始化入口 | 全局 | 绑定事件、恢复存储、渲染UI |
-| tryRestoreDirectory | src/modules/store.js | 104 | 恢复上次存储模式 | 全局 | 含数据迁移 |
-| getBackend | src/modules/storage-core.js | 407 | 路由到当前存储后端 | 内部 | 目录模式→DirectoryStorage，其他→BrowserStorage |
-| buildSinglePage | build.js | 176 | 构建单页HTML产物 | 内部 | 内联CSS/JS/vendor |
-| buildExtension | build.js | 210 | 构建扩展HTML产物 | 内部 | 拆分外部JS文件 |
-| detectModelType | src/modules/store.js | 50 | 从模型名自动推断类型 | 全局 | 返回 chat/embedding/rerank |
+| 函数 | 所在文件 | 功能 | 可见性 | 备注 |
+|------|----------|------|--------|------|
+| init | src/modules/main.js | 应用初始化入口 | 全局 | 绑定事件、恢复存储、渲染UI |
+| tryRestoreDirectory | src/modules/store.js | 恢复上次存储模式 | 全局 | 含数据迁移 |
+| getBackend | src/modules/storage-core.js | 路由到当前存储后端 | 内部 | 目录模式→DirectoryStorage，其他→BrowserStorage |
+| buildSinglePage | build.js | 构建单页HTML产物 | 内部 | 内联CSS/JS/vendor |
+| buildExtension | build.js | 构建扩展HTML产物 | 内部 | 拆分外部JS文件 |
+| detectModelType | src/modules/store.js | 从模型名自动推断类型 | 全局 | 返回 chat/embedding/rerank |
 
 ## 决策日志
 

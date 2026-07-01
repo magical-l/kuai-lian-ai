@@ -157,20 +157,20 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 
 ## 文件结构（style.css，~1230 行）
 
-| 行号 | 章节 | 内容 |
-|------|------|------|
-| 1-216 | 基础元素 | html/body 默认值、`<aside>` 面板容器、`<main>` + header、flex/hidden/del 标签重置、.split.btn-group（分裂式发送按钮 + popover 菜单）、.workspace-setting |
-| 218-300 | 按钮 | `button, .btn` 基类、join-session（勾选开关）、test-connection（三态：testing/connected/failed）、stop（危险操作）、copy（两态：常态/copied） |
-| 302-342 | 端点面板 | .one.endpoint 卡片、拖拽指示器（drag-over-before/child）、.greyed 禁用态 |
-| 344-583 | 消息 | .one.msg 通用结构、.request（用户消息，靠右 / 蓝底 / 白色）、.response（助手消息，靠左）、think 块、嵌入结果、状态行（wait/status-icon/stop-one） |
-| 584-700 | 主框架 | toolbar、#chat-messages 滚动容器、streaming-hint、.chat-input-area（textarea + 附件栏 + 发送按钮） |
-| 702-736 | 附件 | .one.attachment 缩略图、附件列表布局 |
-| 747-920 | 端点面板（详细） | 分组标题、拖拽状态、紧凑模式（.compact）、选中端点列表（.selected.endpoints）、test-all 按钮 |
-| 922-973 | 会话 | .one.session 条目（标题 + 元信息 + 选中态） |
-| 975-1028 | 附件缩略图 + 模型选择器 | .thumb（圆角/边框/删除按钮）、.model-task.selector |
-| 1030-1170 | 弹窗 | dialog.editing.endpoint（表单/输入/布局）、dialog.help（header/close/内容区） |
-| 1172-1195 | 媒体查询 + View Transitions | prefers-reduced-motion、2 个响应式断点、3 个 view-transition-name |
-| 1197+ | 暗色模式 | `html.dark` 块：全部 CSS 变量暗色覆写 + 硬编码颜色修正 |
+| 章节 | 内容 |
+|------|------|
+| 基础元素 | html/body 默认值、`<aside>` 面板容器、`<main>` + header、flex/hidden/del 标签重置、.split.btn-group（分裂式发送按钮 + popover 菜单）、.workspace-setting |
+| 按钮 | `button, .btn` 基类、join-session（勾选开关）、test-connection（三态：testing/connected/failed）、stop（危险操作）、copy（两态：常态/copied） |
+| 端点面板 | .one.endpoint 卡片、拖拽指示器（drag-over-before/child）、.greyed 禁用态 |
+| 消息 | .one.msg 通用结构、.request（用户消息，靠右 / 蓝底 / 白色）、.response（助手消息，靠左）、think 块、嵌入结果、状态行（wait/status-icon/stop-one） |
+| 主框架 | toolbar、#chat-messages 滚动容器、streaming-hint、.chat-input-area（textarea + 附件栏 + 发送按钮） |
+| 附件 | .one.attachment 缩略图、附件列表布局 |
+| 端点面板（详细） | 分组标题、拖拽状态、紧凑模式（.compact）、选中端点列表（.selected.endpoints）、test-all 按钮 |
+| 会话 | .one.session 条目（标题 + 元信息 + 选中态） |
+| 附件缩略图 + 模型选择器 | .thumb（圆角/边框/删除按钮）、.model-task.selector |
+| 弹窗 | dialog.editing.endpoint（表单/输入/布局）、dialog.help（header/close/内容区） |
+| 媒体查询 + View Transitions | prefers-reduced-motion、2 个响应式断点、3 个 view-transition-name |
+| 暗色模式 | `html.dark` 块：全部 CSS 变量暗色覆写 + 硬编码颜色修正 |
 
 ## 布局系统
 

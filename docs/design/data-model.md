@@ -111,20 +111,20 @@ function migrateEndpoints(data) {
 
 ## 函数索引
 
-| 函数 | 所在文件 | 行号 | 功能 | 可见性 | 备注 |
-|------|----------|------|------|--------|------|
-| findNodeWithAncestors | src/modules/store.js | 8 | 递归查找节点及其祖先链 | 内部 | 返回 {node, ancestors} |
-| resolveNodeConfig | src/modules/store.js | 25 | 沿祖先链继承解析端点配置 | 全局 | 四个字段继承 |
-| detectModelType | src/modules/store.js | 50 | 从模型名推断类型 | 全局 | embedding/rerank/chat |
-| migrateEndpoints | src/modules/store.js | 59 | 旧 groups→nodes 迁移 | 全局 | 自动运行 |
-| addNode | src/modules/store.js | 155 | 创建节点 | 全局 | 支持指定父节点 |
-| updateNode | src/modules/store.js | 185 | 更新节点字段 | 全局 | Object.assign |
-| deleteNode | src/modules/store.js | 197 | 递归删除节点及子代 | 全局 | 同步清理 selectedEndpoints |
-| reorderNode | src/modules/store.js | 226 | 跨级拖动排序 | 全局 | 插入到目标前后 |
-| moveNodeAsChild | src/modules/store.js | 262 | 节点跨级移动 | 全局 | 变为目标子节点 |
-| createSession | src/modules/store.js | 310 | 创建新会话 | 全局 | 自动从首消息生成标题 |
-| addMessage | src/modules/store.js | 362 | 追加消息 | 全局 | 处理多端点 responses |
-| switchMode | src/extension/storage-core.js | 465 | 切换存储后端 | 全局 | 含数据迁移 |
+| 函数 | 所在文件 | 功能 | 可见性 | 备注 |
+|------|----------|------|--------|------|
+| findNodeWithAncestors | src/modules/store.js | 递归查找节点及其祖先链 | 内部 | 返回 {node, ancestors} |
+| resolveNodeConfig | src/modules/store.js | 沿祖先链继承解析端点配置 | 全局 | 四个字段继承 |
+| detectModelType | src/modules/store.js | 从模型名推断类型 | 全局 | embedding/rerank/chat |
+| migrateEndpoints | src/modules/store.js | 旧 groups→nodes 迁移 | 全局 | 自动运行 |
+| addNode | src/modules/store.js | 创建节点 | 全局 | 支持指定父节点 |
+| updateNode | src/modules/store.js | 更新节点字段 | 全局 | Object.assign |
+| deleteNode | src/modules/store.js | 递归删除节点及子代 | 全局 | 同步清理 selectedEndpoints |
+| reorderNode | src/modules/store.js | 跨级拖动排序 | 全局 | 插入到目标前后 |
+| moveNodeAsChild | src/modules/store.js | 节点跨级移动 | 全局 | 变为目标子节点 |
+| createSession | src/modules/store.js | 创建新会话 | 全局 | 自动从首消息生成标题 |
+| addMessage | src/modules/store.js | 追加消息 | 全局 | 处理多端点 responses |
+| switchMode | src/extension/storage-core.js | 切换存储后端 | 全局 | 含数据迁移 |
 
 ## 决策日志
 

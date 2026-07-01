@@ -28,38 +28,38 @@ description: 主模块 — 初始化、发送、流式卡片、事件处理、st
 
 ## 函数索引
 
-| 函数 | 行号 | 用途 |
-|------|------|------|
-| `loadDefaultSelectedEndpoints` | 2 | 从 localStorage 恢复默认端点 |
-| `saveDefaultSelectedEndpoints` | 12 | 持久化默认端点到 localStorage |
-| `init` | 22 | 应用初始化入口 |
-| `handleDeleteDirectory` | 166 | 清除存储配置 |
-| `handleWipeDirectory` | 173 | 清空所有数据 |
-| `updateDirectoryDisplay` | 205 | 更新状态栏存储路径显示 |
-| `refreshUI` | 211 | 全局 UI 重绘（端点树 + 标签栏 + 会话列表 + 消息） |
-| `updateChatTitleDisplay` | 271 | 更新会话标题 |
-| `handleSessionSelect` | 278 | 切换当前会话 |
-| `handleSessionEdit` | 320 | 编辑会话标题 |
-| `handleSessionDelete` | 329 | 删除会话 |
-| `handleAddGroup` | 339 | 新增端点组 |
-| `handleNodeEdit` | 346 | 编辑端点节点 |
-| `handleNodeDelete` | 355 | 删除端点节点 |
-| `handleCopy` | 366 | 复制内容到剪贴板 |
-| `handleReorderNode` | 372 | 同级拖拽重排 |
-| `handleMoveNodeAsChild` | 377 | 跨级拖拽降级 |
-| `handleSend` | 382 | 发送消息（主入口） |
-| `handleEmbeddingSend` | 461 | 嵌入模式发送 |
-| `showThinkingCards` | 538 | 显示流式响应卡片 |
-| `updateStreamingCard` | 583 | 更新单张流式卡片 |
-| `updateCardStatus` | 625 | 更新卡片完成状态 |
-| `reorderCardsBySpeed` | 682 | 按首 token 时间重排卡片 |
-| `reorderSelectorTagsBySpeed` | 697 | 同步重排选中标签 |
-| `handleNewSession` | 714 | 新建会话 |
-| `initTheme` | 730+ | 主题初始化：读 settings → 同步 html.class → 注册 matchMedia 监听 |
-| `applyThemeClass` | 730+ | 操作 html 的 `.dark`/`.light` class |
-| `setThemePref` | 730+ | 三态切换：存 settings → 应用 class → 更新按钮图标 |
-| `getNextTheme` | 730+ | 循环逻辑：light → dark → null → light |
-| `updateThemeIcon` | 730+ | 同步切换按钮的 SVG icon（sun↔moon） |
+| 函数 | 用途 |
+|------|------|
+| `loadDefaultSelectedEndpoints` | 从 localStorage 恢复默认端点 |
+| `saveDefaultSelectedEndpoints` | 持久化默认端点到 localStorage |
+| `init` | 应用初始化入口 |
+| `handleDeleteDirectory` | 清除存储配置 |
+| `handleWipeDirectory` | 清空所有数据 |
+| `updateDirectoryDisplay` | 更新状态栏存储路径显示 |
+| `refreshUI` | 全局 UI 重绘（端点树 + 标签栏 + 会话列表 + 消息） |
+| `updateChatTitleDisplay` | 更新会话标题 |
+| `handleSessionSelect` | 切换当前会话 |
+| `handleSessionEdit` | 编辑会话标题 |
+| `handleSessionDelete` | 删除会话 |
+| `handleAddGroup` | 新增端点组 |
+| `handleNodeEdit` | 编辑端点节点 |
+| `handleNodeDelete` | 删除端点节点 |
+| `handleCopy` | 复制内容到剪贴板 |
+| `handleReorderNode` | 同级拖拽重排 |
+| `handleMoveNodeAsChild` | 跨级拖拽降级 |
+| `handleSend` | 发送消息（主入口） |
+| `handleEmbeddingSend` | 嵌入模式发送 |
+| `showThinkingCards` | 显示流式响应卡片 |
+| `updateStreamingCard` | 更新单张流式卡片 |
+| `updateCardStatus` | 更新卡片完成状态 |
+| `reorderCardsBySpeed` | 按首 token 时间重排卡片 |
+| `reorderSelectorTagsBySpeed` | 同步重排选中标签 |
+| `handleNewSession` | 新建会话 |
+| `initTheme` | 主题初始化：读 settings → 同步 html.class → 注册 matchMedia 监听 |
+| `applyThemeClass` | 操作 html 的 `.dark`/`.light` class |
+| `setThemePref` | 三态切换：存 settings → 应用 class → 更新按钮图标 |
+| `getNextTheme` | 循环逻辑：light → dark → null → light |
+| `updateThemeIcon` | 同步切换按钮的 SVG icon（sun↔moon） |
 
 ---
 

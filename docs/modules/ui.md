@@ -17,54 +17,54 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 ## 函数索引
 
-| 函数 | 文件 | 行号 | 用途 |
-|------|------|------|------|
-| `initDividers` | ui-utils.js | 9 | 初始化 3 个分隔条（左/右/水平）的拖动系统 |
-| `clampSavedHeight` | ui-utils.js | 144 | 视口变化时重新钳制消息区高度 |
-| `scrollToBottom` | ui-utils.js | 157 | 消息容器滚动到底部 |
-| `initScrollNav` | ui-utils.js | 162 | 绑定滚动导航按钮（top/bottom） |
-| `syncScrollPadding` | ui-utils.js | 182 | 同步 sticky 区高度到 messages scroll-padding |
-| `initScrollPaddingObserver` | ui-utils.js | 189 | ResizeObserver 监听 sticky 区变化 |
-| `renderMarkdown` | messages.js | 2 | MD 渲染（marked.js） |
-| `addCodeCopyButtons` | messages.js | 11 | 为 code block 添加复制按钮 |
-| `renderMessages` | messages.js | 30 | 渲染用户消息列表 |
-| `renderResponse` | messages.js | 120 | 渲染多模型响应卡片 |
-| `getStatusText` | messages.js | 288 | 状态 → 图标字符 |
-| `getSpeedClass` | messages.js | 296 | firstTokenTime → CSS class |
-| `formatDateTime` | messages.js | 303 | 时间戳格式化 |
-| `updateChatTitle` | messages.js | 315 | 更新对话标题栏 |
-| `getInputContent` | messages.js | 319 | 获取输入框文本 |
-| `getInputMessage` | messages.js | 323 | 获取输入文本 + 附件（转换后） |
-| `renderSessionList` | session-list.js | 2 | 渲染左侧会话列表 |
-| `renderSelectedEndpoints` | selected-endpoints.js | 2 | 渲染选中端点标签栏 |
-| `toggleEndpointSelection` | selected-endpoints.js | 55 | 勾选/取消勾选端点 |
-| `bindSelectorEvents` | selected-endpoints.js | 71 | 绑定标签栏事件 |
-| `syncJoinBtnState` | selected-endpoints.js | 113 | 同步树中 checkbox 状态 |
-| `applyJoinBtnUI` | selected-endpoints.js | 121 | 更新 checkbox 的选中/未选中状态 |
-| `buildTooltipHTML` | selected-endpoints.js | 137 | 构建 tooltip 内容 HTML |
-| `isTextFile` | attachments.js | 2 | 判断文件扩展名是否为可读取的文本 |
-| `getMediaType` | attachments.js | 9 | 根据扩展名返回 MIME 类型 |
-| `fileToBase64` | attachments.js | 32 | File → base64 |
-| `fileToText` | attachments.js | 63 | File → text |
-| `addAttachment` | attachments.js | 71 | 添加附件到待发送列表 |
-| `removeAttachment` | attachments.js | 94 | 从待发送列表移除附件 |
-| `clearAttachments` | attachments.js | 99 | 清空附件列表 |
-| `clearInput` | attachments.js | 104 | 清空输入框 |
-| `setButtonState` | attachments.js | 109 | 切换发送/停止按钮状态 |
-| `addInheritIcon` | attachments.js | 117 | 继承值旁添加 ↑ 图标 |
-| `showEditGroupDialog` | attachments.js | 139 | 显示端点编辑对话框 |
-| `showDirectoryPrompt` | attachments.js | 280 | 显示目录选择提示 |
-| `hideDirectoryPrompt` | attachments.js | 284 | 隐藏目录选择提示 |
-| `showHelpDialog` | attachments.js | 289 | 显示帮助/存储设置对话框 |
-| `closeHelpDialog` | attachments.js | 361 | 关闭帮助对话框（带动画） |
-| `testConnection` | attachments.js | 402 | 测试端点连接 |
-| `collectDescendantIds` | attachments.js | 474 | 递归收集所有后代 ID |
-| `clearTestResults` | attachments.js | 486 | 清空（子）节点测试结果 |
-| `showAttachmentTooltip` | attachments.js | 499 | 显示附件缩略图 tooltip |
-| `hideAttachmentTooltip` | attachments.js | 514 | 隐藏附件 tooltip |
-| `renderPendingAttachments` | attachments.js | 520 | 渲染待发送附件缩略图 |
-| `showAttachmentPreview` | attachments.js | 549 | 附件预览（图片弹窗/文件下载） |
-| `createTooltip` | providers.js | 284 | tooltip 工厂函数 |
+| 函数 | 文件 | 用途 |
+|------|------|------|
+| `initDividers` | ui-utils.js | 初始化 3 个分隔条（左/右/水平）的拖动系统 |
+| `clampSavedHeight` | ui-utils.js | 视口变化时重新钳制消息区高度 |
+| `scrollToBottom` | ui-utils.js | 消息容器滚动到底部 |
+| `initScrollNav` | ui-utils.js | 绑定滚动导航按钮（top/bottom） |
+| `syncScrollPadding` | ui-utils.js | 同步 sticky 区高度到 messages scroll-padding |
+| `initScrollPaddingObserver` | ui-utils.js | ResizeObserver 监听 sticky 区变化 |
+| `renderMarkdown` | messages.js | MD 渲染（marked.js） |
+| `addCodeCopyButtons` | messages.js | 为 code block 添加复制按钮 |
+| `renderMessages` | messages.js | 渲染用户消息列表 |
+| `renderResponse` | messages.js | 渲染多模型响应卡片 |
+| `getStatusText` | messages.js | 状态 → 图标字符 |
+| `getSpeedClass` | messages.js | firstTokenTime → CSS class |
+| `formatDateTime` | messages.js | 时间戳格式化 |
+| `updateChatTitle` | messages.js | 更新对话标题栏 |
+| `getInputContent` | messages.js | 获取输入框文本 |
+| `getInputMessage` | messages.js | 获取输入文本 + 附件（转换后） |
+| `renderSessionList` | session-list.js | 渲染左侧会话列表 |
+| `renderSelectedEndpoints` | selected-endpoints.js | 渲染选中端点标签栏 |
+| `toggleEndpointSelection` | selected-endpoints.js | 勾选/取消勾选端点 |
+| `bindSelectorEvents` | selected-endpoints.js | 绑定标签栏事件 |
+| `syncJoinBtnState` | selected-endpoints.js | 同步树中 checkbox 状态 |
+| `applyJoinBtnUI` | selected-endpoints.js | 更新 checkbox 的选中/未选中状态 |
+| `buildTooltipHTML` | selected-endpoints.js | 构建 tooltip 内容 HTML |
+| `isTextFile` | attachments.js | 判断文件扩展名是否为可读取的文本 |
+| `getMediaType` | attachments.js | 根据扩展名返回 MIME 类型 |
+| `fileToBase64` | attachments.js | File → base64 |
+| `fileToText` | attachments.js | File → text |
+| `addAttachment` | attachments.js | 添加附件到待发送列表 |
+| `removeAttachment` | attachments.js | 从待发送列表移除附件 |
+| `clearAttachments` | attachments.js | 清空附件列表 |
+| `clearInput` | attachments.js | 清空输入框 |
+| `setButtonState` | attachments.js | 切换发送/停止按钮状态 |
+| `addInheritIcon` | attachments.js | 继承值旁添加 ↑ 图标 |
+| `showEditGroupDialog` | attachments.js | 显示端点编辑对话框 |
+| `showDirectoryPrompt` | attachments.js | 显示目录选择提示 |
+| `hideDirectoryPrompt` | attachments.js | 隐藏目录选择提示 |
+| `showHelpDialog` | attachments.js | 显示帮助/存储设置对话框 |
+| `closeHelpDialog` | attachments.js | 关闭帮助对话框（带动画） |
+| `testConnection` | attachments.js | 测试端点连接 |
+| `collectDescendantIds` | attachments.js | 递归收集所有后代 ID |
+| `clearTestResults` | attachments.js | 清空（子）节点测试结果 |
+| `showAttachmentTooltip` | attachments.js | 显示附件缩略图 tooltip |
+| `hideAttachmentTooltip` | attachments.js | 隐藏附件 tooltip |
+| `renderPendingAttachments` | attachments.js | 渲染待发送附件缩略图 |
+| `showAttachmentPreview` | attachments.js | 附件预览（图片弹窗/文件下载） |
+| `createTooltip` | providers.js | tooltip 工厂函数 |
 
 ---
 

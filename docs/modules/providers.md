@@ -79,51 +79,51 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 
 ### Provider 方法
 
-| 方法 | provider | 行号 | 签名 |
-|---|---|---|---|
-| `buildRequest` | openai | 4 | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
-| `parseChunk` | openai | 18 | `(json) => {content?, reasoning?} | null` |
-| `testConfig` | openai | 26 | `(baseUrl, apiKey, model) => {url, headers, body}` |
-| `buildRequest` | claude | 83 | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
-| `transformMessages` | claude | 101 | `(messages) => Array` |
-| `parseChunk` | claude | 117 | `(json) => {content?, reasoning?, event?} | null` |
-| `testConfig` | claude | 140 | `(baseUrl, apiKey, model) => {url, headers, body}` |
-| `buildRequest` | gemini | 163 | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
-| `transformMessages` | gemini | 174 | `(messages) => Array` |
-| `parseChunk` | gemini | 195 | `(json) => {content?} | null` |
-| `testConfig` | gemini | 201 | `(baseUrl, apiKey, model) => {url, headers, body}` |
+| 方法 | provider | 签名 |
+|---|---|---|
+| `buildRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
+| `parseChunk` | openai | `(json) => {content?, reasoning?} | null` |
+| `testConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
+| `buildRequest` | claude | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
+| `transformMessages` | claude | `(messages) => Array` |
+| `parseChunk` | claude | `(json) => {content?, reasoning?, event?} | null` |
+| `testConfig` | claude | `(baseUrl, apiKey, model) => {url, headers, body}` |
+| `buildRequest` | gemini | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
+| `transformMessages` | gemini | `(messages) => Array` |
+| `parseChunk` | gemini | `(json) => {content?} | null` |
+| `testConfig` | gemini | `(baseUrl, apiKey, model) => {url, headers, body}` |
 
 ### 嵌入方法
 
-| 方法 | provider | 行号 | 签名 |
-|---|---|---|---|
-| `testEmbeddingConfig` | openai | 47 | `(baseUrl, apiKey, model) => {url, headers, body}` |
-| `buildEmbeddingRequest` | openai | 61 | `(baseUrl, apiKey, model, input) => {url, headers, body}` |
-| `parseEmbeddingResponse` | openai | 75 | `(json) => {embedding, model?, usage?}` |
+| 方法 | provider | 签名 |
+|---|---|---|
+| `testEmbeddingConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
+| `buildEmbeddingRequest` | openai | `(baseUrl, apiKey, model, input) => {url, headers, body}` |
+| `parseEmbeddingResponse` | openai | `(json) => {embedding, model?, usage?}` |
 
 ### DOM 工具函数
 
-| 函数 | 行号 | 签名 | 说明 |
-|---|---|---|---|
-| `$` | 227 | `(selector, ctx?) => Element|null` | `querySelector` 简写，默认 ctx=document |
-| `$$` | 231 | `(selector, ctx?) => NodeList` | `querySelectorAll` 简写 |
-| `mk` | 273 | `(tag, className?) => Element` | `document.createElement` + 可选 className |
-| `fromTemplate` | 220 | `(templateId, selector) => Element` | 从 `<template id>` 克隆并 querySelector |
-| `setValues` | 235 | `(ctx, vals)` | 批量设置表单值：`{'.input': 'value'}` |
-| `onClick` | 241 | `(handlers, ctx?)` | 批量绑定 click：`{'.btn': fn}` |
-| `show` | 247 | `(el)` | `el.style.display = ''` |
-| `hide` | 251 | `(el)` | `el.style.display = 'none'` |
-| `toggle` | 255 | `(el, visible)` | `el.style.display = visible ? '' : 'none'` |
-| `confirmAction` | 259 | `(msg, action)` | `if(confirm(msg)) action()` |
-| `text` | 279 | `(el, txt) => el` | `el.textContent = txt`（返回 el 支持链式） |
-| `createTooltip` | 284 | `(id, html) => {show, hide, remove, el}` | 通用 tooltip 组件 |
+| 函数 | 签名 | 说明 |
+|---|---|---|
+| `$` | `(selector, ctx?) => Element|null` | `querySelector` 简写，默认 ctx=document |
+| `$$` | `(selector, ctx?) => NodeList` | `querySelectorAll` 简写 |
+| `mk` | `(tag, className?) => Element` | `document.createElement` + 可选 className |
+| `fromTemplate` | `(templateId, selector) => Element` | 从 `<template id>` 克隆并 querySelector |
+| `setValues` | `(ctx, vals)` | 批量设置表单值：`{'.input': 'value'}` |
+| `onClick` | `(handlers, ctx?)` | 批量绑定 click：`{'.btn': fn}` |
+| `show` | `(el)` | `el.style.display = ''` |
+| `hide` | `(el)` | `el.style.display = 'none'` |
+| `toggle` | `(el, visible)` | `el.style.display = visible ? '' : 'none'` |
+| `confirmAction` | `(msg, action)` | `if(confirm(msg)) action()` |
+| `text` | `(el, txt) => el` | `el.textContent = txt`（返回 el 支持链式） |
+| `createTooltip` | `(id, html) => {show, hide, remove, el}` | 通用 tooltip 组件 |
 
 ### HTMLElement.prototype 扩展
 
-| 方法 | 行号 | 说明 |
-|---|---|---|
-| `H.addChild` | 265 | `this.appendChild(child)` |
-| `H.on` / `D.on` | 268 | `this.addEventListener(event, handler)` + `return this`（支持链式） |
+| 方法 | 说明 |
+|---|---|
+| `H.addChild` | `this.appendChild(child)` |
+| `H.on` / `D.on` | `this.addEventListener(event, handler)` + `return this`（支持链式） |
 
 ## DOM 工具设计说明
 

@@ -123,13 +123,13 @@ cors-proxy.js 使用 `chrome.runtime.connect({ name: 'cors-proxy' })` 建立命�
 
 ## 关键函数索引
 
-| 函数 / 文件 | 作用 | 行号 |
-|------------|------|------|
-| `background.js` | | |
-| `chrome.action.onClicked` | 打开扩展主页面 | 7-9 |
-| `chrome.runtime.onConnect` | 注册流式代理命名端口 | 14-92 |
-| `chrome.runtime.onMessage` | 注册非流式代理 | 95-131 |
-| `activeStreams` Map | 活跃流连接集合 | 12 |
+| 函数 / 文件 | 作用 |
+|------------|------|
+| `background.js` | |
+| `chrome.action.onClicked` | 打开扩展主页面 |
+| `chrome.runtime.onConnect` | 注册流式代理命名端口 |
+| `chrome.runtime.onMessage` | 注册非流式代理 |
+| `activeStreams` Map | 活跃流连接集合 |
 
 | `cors-proxy.js` | | |
 | `connectPort()` | 懒建立命名端口 | 11-15 |

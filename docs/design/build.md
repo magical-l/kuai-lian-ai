@@ -95,17 +95,17 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 
 ## 函数索引
 
-| 函数 | 所在文件 | 行号 | 功能 | 可见性 | 备注 |
-|------|----------|------|------|--------|------|
-| concatModules | build.js | 40 | 按 MODULE_ORDER 拼接所有模块 | 内部 | 用于扩展版 app.js |
-| compressCSS | build.js | 47 | 去空行、trim 行 | 内部 | 不压缩声明（仅去除空白行） |
-| validateCSS | build.js | 51 | CSS 花括号平衡 + 声明语法校验 | 内部 | 花括号/属性名/声明格式 |
-| compressJS | build.js | 114 | 去空行 | 内部 | 不压缩变量名 |
-| syncGetURL | build.js | 123 | 幂等 fetch（支持 Win32/Unix） | 内部 | 用于构建时内联远程CSS |
-| tryInlineLocalCSS | build.js | 137 | 内联远程 CSS（common.css + layout.css） | 内部 | 开发模式优先本地 |
-| buildSinglePage | build.js | 176 | 构建单页HTML | 内部 | 全部内联 |
-| buildExtension | build.js | 210 | 构建扩展版HTML | 内部 | 拆分为外部JS |
-| isSourceAsset | build.js | 119 | 判断是否为源码文件 | 内部 | modules/* 和 style.css |
+| 函数 | 所在文件 | 功能 | 可见性 | 备注 |
+|------|----------|------|--------|------|
+| concatModules | build.js | 按 MODULE_ORDER 拼接所有模块 | 内部 | 用于扩展版 app.js |
+| compressCSS | build.js | 去空行、trim 行 | 内部 | 不压缩声明（仅去除空白行） |
+| validateCSS | build.js | CSS 花括号平衡 + 声明语法校验 | 内部 | 花括号/属性名/声明格式 |
+| compressJS | build.js | 去空行 | 内部 | 不压缩变量名 |
+| syncGetURL | build.js | 幂等 fetch（支持 Win32/Unix） | 内部 | 用于构建时内联远程CSS |
+| tryInlineLocalCSS | build.js | 内联远程 CSS（common.css + layout.css） | 内部 | 开发模式优先本地 |
+| buildSinglePage | build.js | 构建单页HTML | 内部 | 全部内联 |
+| buildExtension | build.js | 构建扩展版HTML | 内部 | 拆分为外部JS |
+| isSourceAsset | build.js | 判断是否为源码文件 | 内部 | modules/* 和 style.css |
 
 ## 决策日志
 
