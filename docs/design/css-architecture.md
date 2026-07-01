@@ -29,8 +29,53 @@ common.css 和 layout.css 运行时从 `https://css.lwj621.workers.dev/css/` 加
 | common.css | `--bg-*`, `--text-*`, `--border-*`, `--accent-*`, `--radius-*`, `--space-*`, `--shadow-*`, `--divider-z`, `--btn-radius`, `--transition-fast` | 构建时 inline 或运行时 `<link>` |
 | style.css :root | `--bg-elevated`, `--bg-hover`, `--accent-muted`, `--warning-light`, `--user-msg-bg`, `--user-msg-text`, `--text-placeholder`, `--transition-normal`, `--btn-h`, 阴影/font/space 兜底值 | 内联 |
 | style.css :root（注释） | 完整的 variables 列表被注释掉作为文档参考（第 17-70 行），实际值在 common.css 中 | — |
+| style.css `html.dark` | 暗色模式全部变量覆写 + 外部 CSS 的 `--border-color` 覆写 | 内联 |
 
 **风险**：style.css 的 `:root` 中大部分变量（如 `--bg-base`）只被注释，实际定义在 common.css。如果 common.css 加载失败，var() 引用会静默回退到 initial 值，导致全页样式丢失。
+
+### 暗色模式
+
+暗色模式通过 `html.dark` class 实现全量 CSS 变量覆写（style.css 第 72-112 行），不依赖 JS 运行时计算颜色。变量覆写清单：
+
+```
+--bg-base: #1a1b2e      (亮色默认 #ffffff)
+--bg-subtle: #1e1f32
+--bg-muted: #282945
+--bg-elevated: #232442
+--bg-hover: #2e2f4e
+--bg-active: #383962
+--border-subtle: #2e2f4e
+--border-default: #3e3f5e
+--border-strong: #5a5d7a
+--border-color: #3e3f5e   (覆写外部 CSS 的 --border-color)
+--text-primary: #e8e9f0
+--text-secondary: #b0b2c5
+--text-muted: #7a7d9a
+--text-placeholder: #5a5d7a
+--accent-primary: #6d9eff  (亮色默认 #5b8def)
+--accent-primary-hover: #5b8def
+--accent-light: rgba(109, 158, 255, 0.15)
+--accent-muted: rgba(109, 158, 255, 0.25)
+--success: #34d399
+--success-light: rgba(52, 211, 153, 0.15)
+--danger: #f87171
+--danger-light: rgba(248, 113, 113, 0.15)
+--warning: #fbbf24
+--warning-light: rgba(251, 191, 36, 0.15)
+--user-msg-bg: #4a7bde
+--user-msg-text: #ffffff
+--shadow-sm/md/lg/xl: 加深阴影
+```
+
+此外还覆写了硬编码颜色（代码块背景 `#f6f8fa` → `#2d2d3f`、等待慢速指示器 `#ea580c` → `#fb923c`、慢速端点赞章）。
+
+**交互机制**（三态，见 main.md §主题管理）：
+- 无 class → 跟随系统 `prefers-color-scheme` 自动切换
+- `html.dark` → 强制暗色
+- `html.light` → 强制亮色
+- 点击主题按钮按 `light → dark → 系统` 顺序循环
+
+偏好存于 `settings.theme`（IndexedDB / File System Access）。
 
 ## 外部 CSS 依赖（layout.css / common.css）
 
@@ -110,7 +155,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 --space-{2..8}      8~32px（兜底）
 ```
 
-## 文件结构（style.css，1196 行）
+## 文件结构（style.css，~1230 行）
 
 | 行号 | 章节 | 内容 |
 |------|------|------|
@@ -125,6 +170,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 | 975-1028 | 附件缩略图 + 模型选择器 | .thumb（圆角/边框/删除按钮）、.model-task.selector |
 | 1030-1170 | 弹窗 | dialog.editing.endpoint（表单/输入/布局）、dialog.help（header/close/内容区） |
 | 1172-1195 | 媒体查询 + View Transitions | prefers-reduced-motion、2 个响应式断点、3 个 view-transition-name |
+| 1197+ | 暗色模式 | `html.dark` 块：全部 CSS 变量暗色覆写 + 硬编码颜色修正 |
 
 ## 布局系统
 
@@ -256,7 +302,9 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 | endpoint-tree.js | 切换状态 | 测试完成后添加 `.connected` / `.failed` |
 | main.js | View Transition | `document.startViewTransition()` 触发 `view-transition-name` 命名的元素过渡 |
 | messages.js | Markdown 渲染 | 代码块渲染到 `.content` 内的 `<pre><code>`，样式在 style.css 第 368-388 行 |
+| main.js | 主题管理 | `initTheme()` 在 `html` 上添加 `.dark` / `.light` class 控制暗色模式；`matchMedia('prefers-color-scheme: dark')` 监听系统主题变化 |
 
 ## 决策日志
 
 - 2026-07-01: 初始文档创建。确认 style.css 实际 ~1200 行（非预估的 3000+）、:has() 共 3 处（非"大量"）
+- 2026-07-01: 暗色模式实现。采用 `html.dark` class 覆写全部 CSS 变量，而非 `prefers-color-scheme` 媒体查询。交互三态（亮→暗→跟随系统），偏好持久化到 settings。html.dark 块约 40 行，新增 4 个 SVG icon 符号。版本 6.3.0。

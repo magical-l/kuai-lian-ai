@@ -467,6 +467,9 @@ if (!window.__IS_EXTENSION__) {
 	storage = window.__STORAGE__;
 	currentMode = storage.mode;
 }
+if (!window.__IS_EXTENSION__) {
+	window.__STORAGE__ = storage;
+}
 const THINKING_TAGS = [{
 	start: '<thinking>',
 	end: '</thinking>'

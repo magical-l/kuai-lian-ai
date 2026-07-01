@@ -28,7 +28,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `renderMarkdown` | messages.js | 2 | MD 渲染（marked.js） |
 | `addCodeCopyButtons` | messages.js | 11 | 为 code block 添加复制按钮 |
 | `renderMessages` | messages.js | 30 | 渲染用户消息列表 |
-| `renderResponse` | messages.js | 115 | 渲染多模型响应卡片 |
+| `renderResponse` | messages.js | 120 | 渲染多模型响应卡片 |
 | `getStatusText` | messages.js | 288 | 状态 → 图标字符 |
 | `getSpeedClass` | messages.js | 296 | firstTokenTime → CSS class |
 | `formatDateTime` | messages.js | 303 | 时间戳格式化 |
@@ -97,9 +97,9 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 **renderMarkdown** (行 2)：封装 `marked.parse`，开启 `breaks` 和 `gfm`。
 
-**renderMessages** (行 30)：清空 `#chat-messages`，遍历 `messages` 数组。用户消息渲染为 `.msg.request.one` 结构（含头像、meta 时间、复制按钮、文本内容、附件栏）。响应消息委托给 `renderResponse`。
+**renderMessages** (行 30)：清空 `#chat-messages`，遍历 `messages` 数组。用户消息渲染为 `.msg.request.one` 结构（含头像、meta 时间、复制按钮、文本内容、附件栏）。响应消息委托给 `renderResponse`（调用前清除所有已有响应卡片的 `data-endpoint-id`，确保每条 assistant 消息都创建独立卡片，不互相覆盖）。
 
-**renderResponse** (行 115)：按 `firstTokenTime` 排序后端响应。对每个 response：
+**renderResponse** (行 120)：按 `firstTokenTime` 排序后端响应。对每个 response：
 - 复用已有的 streaming card（`data-endpoint-id` 匹配），或从 template 新建
 - 更新 header：name + remark + 时间 + 反应耗时 + 总耗时 + 状态 + 错误 + 复制按钮
 - `.say` 内容由 `textContent` 升级为 `innerHTML`（renderMarkdown 渲染）
@@ -214,3 +214,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-04-26 | 消息渲染不做 diff 更新，直接 innerHTML 替换 | 聊天场景消息量小（~100 条），DOM 替换开销可忽略，省去 diff 复杂度 |
 | 2026-04-26 | 流式卡片用 `data-session-id` + `data-endpoint-id` 定位 | 多 session 同时生成时需要区分卡片归属 |
 | 2026-04-27 | Tooltip 优先挂到 `.one.endpoint` 下 | 避免大量 tooltip 浮在 body 层导致 z-index 管理困难 |
+| 2026-07-01 | renderMessages 在调用 renderResponse 前清除已有卡片的 data-endpoint-id | 多轮会话加载时同一 endpoint 在多个 assistant 消息中出现，querySelector 会找到上一轮创建的卡片并覆写，导致之前的 assistant 回复全部丢失 |

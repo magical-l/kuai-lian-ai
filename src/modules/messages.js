@@ -106,6 +106,11 @@ function renderMessages(messages, groups, onCopy) {
 			}
 			container.addChild(msgEl);
 		} else {
+			// 清除之前assistant消息创建的卡片的data-endpoint-id，
+			// 使得renderResponse为每条assistant消息创建新卡片而非覆盖已有卡片
+			container.querySelectorAll('.one.response.msg').forEach(el => {
+				el.removeAttribute('data-endpoint-id');
+			});
 			renderResponse(container, msg, groups);
 		}
 	});

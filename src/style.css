@@ -69,6 +69,56 @@ body {
 	--btn-h: 24px;
 		/* --btn-p: var(--space-1); */
 }
+
+/* ============ 暗色模式 ============ */
+html.dark {
+	--bg-base: #1a1b2e;
+	--bg-subtle: #1e1f32;
+	--bg-muted: #282945;
+	--bg-elevated: #232442;
+	--bg-hover: #2e2f4e;
+	--bg-active: #383962;
+	--border-subtle: #2e2f4e;
+	--border-default: #3e3f5e;
+	--border-strong: #5a5d7a;
+	--border-color: #3e3f5e;
+	--text-primary: #e8e9f0;
+	--text-secondary: #b0b2c5;
+	--text-muted: #7a7d9a;
+	--text-placeholder: #5a5d7a;
+	--accent-primary: #6d9eff;
+	--accent-primary-hover: #5b8def;
+	--accent-light: rgba(109, 158, 255, 0.15);
+	--accent-muted: rgba(109, 158, 255, 0.25);
+	--success: #34d399;
+	--success-light: rgba(52, 211, 153, 0.15);
+	--danger: #f87171;
+	--danger-light: rgba(248, 113, 113, 0.15);
+	--warning: #fbbf24;
+	--warning-light: rgba(251, 191, 36, 0.15);
+	--user-msg-bg: #4a7bde;
+	--user-msg-text: #ffffff;
+	--shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+	--shadow-md: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+	--shadow-lg: 0 4px 6px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3);
+	--shadow-xl: 0 20px 40px rgba(0,0,0,0.5);
+	/* 代码块暗色背景 */
+	& .one.msg .content {
+		& pre { background: #2d2d3f; }
+		& p code { background: #2d2d3f; }
+	}
+	/* 等待延时指示器暗色 */
+	& .one.msg.response > header .wait {
+		&.slow { color: #fb923c; }
+	}
+	/* 慢速端点徽章暗色 */
+	& .selected.endpoint.list .one.endpoint {
+		&.speed-slow {
+			--ep-bg: rgba(234, 88, 12, 0.2);
+			--ep-border: #fb923c;
+		}
+	}
+}
 .flex {/* 覆盖引入的css的设置 */
 	align-items: stretch;
 	flex-wrap: nowrap;

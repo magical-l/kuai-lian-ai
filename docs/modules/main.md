@@ -55,6 +55,11 @@ description: 主模块 — 初始化、发送、流式卡片、事件处理、st
 | `reorderCardsBySpeed` | 682 | 按首 token 时间重排卡片 |
 | `reorderSelectorTagsBySpeed` | 697 | 同步重排选中标签 |
 | `handleNewSession` | 714 | 新建会话 |
+| `initTheme` | 730+ | 主题初始化：读 settings → 同步 html.class → 注册 matchMedia 监听 |
+| `applyThemeClass` | 730+ | 操作 html 的 `.dark`/`.light` class |
+| `setThemePref` | 730+ | 三态切换：存 settings → 应用 class → 更新按钮图标 |
+| `getNextTheme` | 730+ | 循环逻辑：light → dark → null → light |
+| `updateThemeIcon` | 730+ | 同步切换按钮的 SVG icon（sun↔moon） |
 
 ---
 
@@ -190,7 +195,28 @@ showThinkingCards(idList, groups, sessionId)
 | `handleMoveNodeAsChild` | 跨级降级 | clearTestResults → moveNodeAsChild → refreshUI |
 | `handleNewSession()` | 新建会话 | 清空 currentSession → 从 defaultSelectedEndpoints 恢复端点 → refreshUI |
 
-### 8. 与 store/API 层的交互关系
+### 8. 主题管理
+
+行 730+。三态循环（亮 → 暗 → 跟随系统）：
+
+```
+initTheme()  [init() 末尾调用]
+  ├── loadSettings() 读 settings.theme
+  ├── applyThemeClass(mode)
+  │     ├── mode='dark'  → html.classList.add('dark')
+  │     ├── mode='light' → html.classList.add('light')
+  │     └── mode=null    → 移除 class（跟随系统）
+  ├── updateThemeIcon(mode) 切换按钮的 SVG icon
+  └── matchMedia('prefers-color-scheme: dark').addListener
+        └── 仅在 themeMode=null 时自动切换
+
+点击按钮 → setThemePref(getNextTheme(themeMode))
+  ├── 更新 themeMode
+  ├── applyThemeClass + updateThemeIcon
+  └── saveSettings({ theme: 'light' | 'dark' | undefined })
+```
+
+### 9. 与 store/API 层的交互关系
 
 | 调用 | 方向 | 用途 |
 |------|------|------|
@@ -230,3 +256,4 @@ showThinkingCards(idList, groups, sessionId)
 | 2026-04-26 | refreshUI 中使用 startViewTransition | 平滑 DOM 更新过渡效果，CSS View Transition API |
 | 2026-04-26 | 流式卡片完成后不立即移除，由 refreshUI 统一清理 | 避免中途移除导致闪烁、避免与 reorderCardsBySpeed 竞争 |
 | 2026-04-27 | 嵌入模式独立为一个函数而非 handleSend 的分支 | 嵌入流程差异太大（单端点、无 streaming、特殊 UI），合并只会增加 if-else |
+| 2026-07-01 | 暗色模式：三态（亮/暗/系统）存储到 settings.theme；html.className 驱动；matchMedia 监听 | 跟随系统为默认，手动切换可覆盖。settings 统一管理而非 localStorage 单独存 |

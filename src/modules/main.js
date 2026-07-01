@@ -162,6 +162,13 @@ async function init() {
 			await refreshUI();
 		}
 	};
+	// 主题初始化
+	initTheme();
+	$('.theme.btn').on('click', async () => {
+		const next = getNextTheme(themeMode);
+		await setThemePref(next);
+		updateThemeIcon(next);
+	});
 }
 async function handleDeleteDirectory() {
 	const msg = storage.mode === 'browser' ? '确定清除浏览器存储中的所有数据？此操作不可恢复。' : '确定删除当前目录配置？删除后需要重新选择目录。（磁盘上的数据文件不会被删除）';
@@ -719,4 +726,65 @@ async function handleNewSession() {
 	const inputEl = $('#chat-input');
 	if (inputEl) inputEl.focus();
 }
+
+// ========== 主题管理 ==========
+let themeMode = null; // 'light' | 'dark' | null(null=系统)
+
+function applyThemeClass(mode) {
+	const html = document.documentElement;
+	html.classList.remove('dark', 'light');
+	if (mode === 'dark' || mode === 'light') {
+		html.classList.add(mode);
+	}
+}
+
+function updateThemeIcon(mode) {
+	const icon = $('.theme.btn svg use');
+	if (!icon) return;
+	if (mode === 'dark') {
+		icon.setAttribute('href', 'icons.svg#icon-moon');
+	} else if (mode === 'light') {
+		icon.setAttribute('href', 'icons.svg#icon-sun');
+	} else {
+		// 跟随系统 — 根据当前系统状态显示对应图标
+		const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		icon.setAttribute('href', isDark ? 'icons.svg#icon-moon' : 'icons.svg#icon-sun');
+	}
+}
+
+async function initTheme() {
+	const settings = await window.__STORAGE__.loadSettings();
+	themeMode = settings.theme || null;
+	applyThemeClass(themeMode);
+	updateThemeIcon(themeMode);
+
+	// 监听系统主题变化（仅在跟随系统时自动切换）
+	const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+	mediaQuery.addEventListener('change', () => {
+		if (!themeMode) {
+			applyThemeClass(null);
+			updateThemeIcon(null);
+		}
+	});
+}
+
+async function setThemePref(mode) {
+	themeMode = mode;
+	applyThemeClass(mode);
+	const settings = await window.__STORAGE__.loadSettings();
+	if (mode) {
+		settings.theme = mode;
+	} else {
+		delete settings.theme;
+	}
+	await window.__STORAGE__.saveSettings(settings);
+}
+
+// 循环：light → dark → null(系统)
+function getNextTheme(current) {
+	if (current === 'light') return 'dark';
+	if (current === 'dark') return null;
+	return 'light';
+}
+
 init();
