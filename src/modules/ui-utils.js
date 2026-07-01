@@ -117,19 +117,19 @@ function initDividers() {
 		}
 		updateSidebarToggleIcon(savedHidden);
 		btnToggleSidebar.on('click', () => {
-			let isHidden;
-			const doToggle = () => {
-				isHidden = sidebarRight.classList.toggle('hidden');
-				dividerRight.classList.toggle('hidden', isHidden);
-			};
-			if (document.startViewTransition) {
-				document.startViewTransition(doToggle);
-			} else {
-				doToggle();
-			}
-			localStorage.setItem('sidebar-right-hidden', isHidden);
-			updateSidebarToggleIcon(isHidden);
-		});
+				let isHidden;
+				const doToggle = () => {
+					isHidden = sidebarRight.classList.toggle('hidden');
+					dividerRight.classList.toggle('hidden', isHidden);
+					updateSidebarToggleIcon(isHidden);
+				};
+				if (document.startViewTransition) {
+					document.startViewTransition(doToggle);
+				} else {
+					doToggle();
+				}
+				localStorage.setItem('sidebar-right-hidden', isHidden);
+			});
 	}
 	$$('.divider.col').forEach(div => {
 		div.on('mousedown', startDragHorizontal);

@@ -120,6 +120,11 @@ html.dark {
 		}
 	}
 }
+
+/* 暗色下反转 GitHub/Gitee 黑色图标为白色 */
+html.dark .github img, html.dark .gitee img {
+	filter: invert(1);
+}
 .flex {/* 覆盖引入的css的设置 */
 	align-items: stretch;
 	flex-wrap: nowrap;
@@ -796,6 +801,12 @@ main {
 			}
 		}
 	}
+}
+
+/* 附件列表：只允许横向滚动，隐藏空容器的纵向滚动条轨 */
+.attachment.list {
+	overflow-x: auto;
+	overflow-y: hidden;
 }
 
 /* ============ 单个附件（通用） ============ */
