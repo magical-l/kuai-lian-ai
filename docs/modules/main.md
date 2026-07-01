@@ -1,0 +1,232 @@
+---
+name: main
+description: 主模块 — 初始化、发送、流式卡片、事件处理、store/API 交互关系
+---
+
+# 快连AI 主模块文档
+
+文件：`src/modules/main.js`
+
+## 设计意图
+
+`main.js` 是应用的**编排层**（orchestrator），不处理数据持久化（store.js）、不处理 API 协议（shared.js）、不处理 UI 渲染细节（messages.js / endpoint-tree.js / session-list.js 等）。它的职责是：
+
+- 初始化所有组件（分隔条、滚动、输入绑定）
+- 处理用户输入（send/embedding/stop）
+- 协调多模型并行调用（callAllModels）与流式更新
+- 管理会话生命周期（create → select → delete）
+- 转发 store 变更后的 UI 刷新（refreshUI）
+
+全局状态变量（声明在文件顶部，无 `var/let/const`）：
+- `selectedEndpoints`：当前会话选中端点 ID 数组
+- `currentSession`：当前会话对象引用
+- `sessionGenerations`：Map<sessionId, Map<endpointId, generationState>>
+- `lastUserMessage`：最后一条用户消息纯文本
+- `defaultSelectedEndpoints`：localStorage 持久化的默认端点
+
+---
+
+## 函数索引
+
+| 函数 | 行号 | 用途 |
+|------|------|------|
+| `loadDefaultSelectedEndpoints` | 2 | 从 localStorage 恢复默认端点 |
+| `saveDefaultSelectedEndpoints` | 12 | 持久化默认端点到 localStorage |
+| `init` | 22 | 应用初始化入口 |
+| `handleDeleteDirectory` | 166 | 清除存储配置 |
+| `handleWipeDirectory` | 173 | 清空所有数据 |
+| `updateDirectoryDisplay` | 205 | 更新状态栏存储路径显示 |
+| `refreshUI` | 211 | 全局 UI 重绘（端点树 + 标签栏 + 会话列表 + 消息） |
+| `updateChatTitleDisplay` | 271 | 更新会话标题 |
+| `handleSessionSelect` | 278 | 切换当前会话 |
+| `handleSessionEdit` | 320 | 编辑会话标题 |
+| `handleSessionDelete` | 329 | 删除会话 |
+| `handleAddGroup` | 339 | 新增端点组 |
+| `handleNodeEdit` | 346 | 编辑端点节点 |
+| `handleNodeDelete` | 355 | 删除端点节点 |
+| `handleCopy` | 366 | 复制内容到剪贴板 |
+| `handleReorderNode` | 372 | 同级拖拽重排 |
+| `handleMoveNodeAsChild` | 377 | 跨级拖拽降级 |
+| `handleSend` | 382 | 发送消息（主入口） |
+| `handleEmbeddingSend` | 461 | 嵌入模式发送 |
+| `showThinkingCards` | 538 | 显示流式响应卡片 |
+| `updateStreamingCard` | 583 | 更新单张流式卡片 |
+| `updateCardStatus` | 625 | 更新卡片完成状态 |
+| `reorderCardsBySpeed` | 682 | 按首 token 时间重排卡片 |
+| `reorderSelectorTagsBySpeed` | 697 | 同步重排选中标签 |
+| `handleNewSession` | 714 | 新建会话 |
+
+---
+
+## 核心系统详解
+
+### 1. 初始化流程 (init)
+
+行 22-165。顺序：
+
+1. **UI 组件初始化**：`initDividers()`（分隔条拖拽）、`initScrollNav()`（滚动导航按钮）、`initScrollPaddingObserver()`（sticky 区高度监听）
+2. **输入绑定**：
+   - `keydown` 监听：Enter / Ctrl+Enter 切换发送模式，根据 `inputMode` 分流到 `handleSend` 或 `handleEmbeddingSend`
+   - `paste` 监听：剪贴板图片提取 → `addAttachment`
+3. **发送模式选择器**（Popover API）：`#sendModePop` 的 `beforetoggle` 事件定位 position，`toggle` 事件同步按钮 active class。radio change 持久化 `sendMode` 到 localStorage。
+4. **存储恢复**：`tryRestoreDirectory()` → 成功则 `refreshUI`，失败则 `showDirectoryPrompt`
+5. **按钮绑定**：
+   - `.add-group` → `handleAddGroup`
+   - `.collapse-all` → `collapseAllEndpointNodes`
+   - `.test-all` → 遍历所有节点 `testConnection`
+   - `.send` → 按模式分流
+   - `.stop.btn` → `stopAllGenerations` + `setButtonState(false, false)`
+   - `.help` → `showHelpDialog(false, !!saved)`（saved 为是否有已保存的目录 handle）
+   - `.new-session` → `handleNewSession`
+   - `.delete-dir` / `.wipe-dir` → 清除/清空
+   - `.add.attachment.btn` → 触发 `.file-input` 的 click
+   - `.file-input onchange` → 多文件 `addAttachment`
+   - `.change-dir` → 重新选择目录
+
+### 2. 发送主逻辑 (handleSend)
+
+行 382-455。完整流程：
+
+```
+用户点击发送 / Enter
+  │
+  ├─ getInputMessage() → 组合文本 + 附件 content array
+  ├─ selectedEndpoints 为空 → 高亮提示，return
+  ├─ currentSession 不存在 → createSession(content, targets) [新会话]
+  ├─ currentSession 存在 → addMessage('user', content) [追加]
+  ├─ clearInput() + clearAttachments()
+  ├─ setButtonState(true, true) [发送禁用 + 停止启用]
+  ├─ renderMessages() [渲染用户消息到 DOM]
+  ├─ showThinkingCards(selectedEndpoints, groups, targetSessionId) [创建流式卡片]
+  │
+  └─ callAllModels(groups, selectedEndpoints, messages, onChunk)
+       │
+       ├─ onChunk → updateStreamingCard() + reorderCardsBySpeed()
+       │
+       └─ 完成后
+            ├─ addMessage('assistant', null, { responses }) [持久化]
+            ├─ sessionGenerations.delete(targetSessionId)
+            ├─ setButtonState(false, false)
+            └─ refreshUI() [重绘消息区，流式卡片被 renderResponse 替代]
+```
+
+**多模型消息构建**（行 408-423）：
+- 历史 assistant 消息：将多条 `responses` 合并为 `content.join('\n\n---\n\n')`
+- 用户消息：`normalizeMessageContent` → `toOpenAIContent` 标准化为 OpenAI 格式（即使目标 endpoint 用 Claude/Gemini 协议，格式转换在 shared.js 的 callAllModels 内部完成）
+
+### 3. 嵌入模式 (handleEmbeddingSend)
+
+行 461-534。与 handleSend 不同：
+
+- 只取 `selectedEndpoints[0]`（单端点）
+- 创建 `<article class="msg response streaming-embedding">` 显示"🔢 计算嵌入向量..."
+- 调用 `callEmbedding(style, baseUrl, key, modelName, text)`
+- 完成后移除 streaming 卡片，`addMessage` 保存 `embeddingResult`（含 dim、preview、fullJson、model、usage）
+- 失败时标记 `status: failed` + `error`
+- 嵌入结果在 `renderResponse` 中渲染为 `.embedding-result` 块
+
+### 4. 流式卡片生命周期
+
+```
+showThinkingCards(idList, groups, sessionId)
+  │ 创建 streaming-hint 栏 + N 张 fromTemplate("response-card-streaming")
+  │ 每张卡片 data-session-id + data-endpoint-id
+  │
+  ├─ updateStreamingCard(id, state, firstTokenTime, groups, sessionId)
+  │   │ 实时更新 thinking 块 / .say 内容 / 反应耗时
+  │   └─ firstTokenTime 非 null → 添加 .wait 耗时标签
+  │
+  ├─ reorderCardsBySpeed()
+  │   │ 按 firstTokenTime 排序 DOM 中的卡片
+  │   └─ reorderSelectorTagsBySpeed() 同步标签顺序
+  │
+  └─ updateCardStatus(id, status, error, state, sessionId)
+      │ 隐藏 stop-one 按钮
+      │ 切换 status-icon（spin → status class）
+      │ 失败时显示 error 文本
+      │ 完成时显示 totalDuration
+      └─ requestAnimationFrame 内执行（批量 DOM 写入）
+```
+
+卡片完成/失败后，`refreshUI` 调用 `renderResponse` 重新渲染消息区。renderResponse 会复用已有卡片（按 `data-endpoint-id` 匹配），将 `.say` 从 textContent 升级为 `innerHTML`（Markdown 渲染）。
+
+### 5. refreshUI — 全局状态同步枢纽
+
+行 211-269。在 store 变更后统一调用，保证 DOM 与数据层一致：
+
+1. **端点过滤**：移除已不存在的 `selectedEndpoints` ID
+2. **当前会话有效性**：会话已被删除时清空 `currentSession`
+3. **渲染端点标签栏**：`renderSelectedEndpoints`
+4. **渲染端点树**：`renderEndpointList`（递归重绘整棵树）
+5. **渲染会话列表**：`renderSessionList`
+6. **渲染消息区**：
+   - 有流式卡片 → 调用 `renderResponse` 增量更新
+   - 无流式卡片 → `renderMessages` 全量替换
+7. **View Transition**：`document.startViewTransition` 包裹 DOM 更新（降级支持：回退到直接调用）
+
+### 6. 会话选择与恢复 (handleSessionSelect)
+
+行 278-317。切换会话时：
+
+1. `loadSession(sessionId)` 从 store 加载完整会话数据
+2. 从 lastUserMessage 恢复 `selectedEndpoints`（targetEndpoints/targetModels）
+3. 从 `sessionGenerations` 恢复生成状态
+4. `refreshUI` 重绘
+5. 如果有生成中的端点 → `showThinkingCards` 恢复流式卡片 + `updateStreamingCard` 恢复内容 + `setButtonState(true, true)`
+6. 全部完成/失败 → 清理 `sessionGenerations` 条目
+
+### 7. 事件处理函数一览
+
+| handler | 触发 | 行为 |
+|---------|------|------|
+| `handleSessionSelect(id)` | 点击会话 | 加载会话、恢复端点、恢复生成状态 |
+| `handleSessionEdit(id, title)` | 编辑标题 | 原地更新 title → saveSession → refreshUI |
+| `handleSessionDelete(id)` | 删除按钮 | deleteSessionGenerations → deleteSession → refreshUI |
+| `handleAddGroup()` | 添加组 | showEditGroupDialog → addNode → refreshUI |
+| `handleNodeEdit(id)` | 编辑节点 | clearTestResults → showEditGroupDialog → updateNode → refreshUI |
+| `handleNodeDelete(id)` | 删除节点 | 清理 selectedEndpoints 引用 → deleteNode → refreshUI |
+| `handleCopy(content)` | 复制按钮 | navigator.clipboard.writeText |
+| `handleReorderNode` | 拖拽排序 | clearTestResults → reorderNode → refreshUI |
+| `handleMoveNodeAsChild` | 跨级降级 | clearTestResults → moveNodeAsChild → refreshUI |
+| `handleNewSession()` | 新建会话 | 清空 currentSession → 从 defaultSelectedEndpoints 恢复端点 → refreshUI |
+
+### 8. 与 store/API 层的交互关系
+
+| 调用 | 方向 | 用途 |
+|------|------|------|
+| `getGroups()` | main → store | 获取端点树数据 |
+| `getAllSessions()` | main → store | 获取所有会话列表 |
+| `getSession(id)` | main → store | 获取单条会话 |
+| `loadSession(id)` | main → store | 加载完整会话（含消息） |
+| `saveSession(session)` | main → store | 保存会话 |
+| `createSession(msg, targets)` | main → store | 创建新会话 |
+| `addMessage(sid, role, content, opts)` | main → store | 追加消息 |
+| `deleteSession(id)` | main → store | 删除会话 |
+| `addNode(pid, data)` | main → store | 添加节点 |
+| `updateNode(id, data)` | main → store | 更新节点 |
+| `deleteNode(id)` | main → store | 删除节点 |
+| `reorderNode(did, tid, before)` | main → store | 重排节点 |
+| `moveNodeAsChild(did, pid)` | main → store | 移动节点为子 |
+| `resolveNodeConfig(id)` | main → store | 解析节点配置（含继承） |
+| `findModelById(groups, id)` | main → store | 查找端点（带 ancestors） |
+| `getNode(id)` | main → store | 获取单节点 |
+| `callAllModels(groups, ids, msgs, cb, sid)` | main → shared | 多模型并行调用 |
+| `callEmbedding(style, url, key, model, text)` | main → shared | 嵌入向量调用 |
+| `getSessionGenerations(sid)` | main → shared | 获取生成状态 Map |
+| `clearSessionGenerations(sid)` | main → shared | 清除生成状态 |
+| `deleteSessionGenerations(sid)` | main → shared | 删除生成状态 |
+| `stopAllGenerations()` | main → shared | 停止所有生成 |
+| `stopSingleGeneration(sid, eid)` | main → shared | 停止单个端点 |
+
+---
+
+## 决策日志
+
+| 日期 | 决策 | 理由 |
+|------|------|------|
+| 2026-04-23 | sessionGenerations 用双层 Map 按 session 隔离 | 避免多会话并行生成时状态冲突 |
+| 2026-04-26 | handleSend 中新建会话 vs 追加消息用 `isNewSession` 标志 | createSession 已包含第一条消息的 addMessage，追加时重复调用会重复添加 |
+| 2026-04-26 | 消息转换统一走 OpenAI content array 格式 | callAllModels 内部为每个 endpoint 按协议转格式，主逻辑只维护一种中间格式 |
+| 2026-04-26 | refreshUI 中使用 startViewTransition | 平滑 DOM 更新过渡效果，CSS View Transition API |
+| 2026-04-26 | 流式卡片完成后不立即移除，由 refreshUI 统一清理 | 避免中途移除导致闪烁、避免与 reorderCardsBySpeed 竞争 |
+| 2026-04-27 | 嵌入模式独立为一个函数而非 handleSend 的分支 | 嵌入流程差异太大（单端点、无 streaming、特殊 UI），合并只会增加 if-else |
