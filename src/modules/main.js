@@ -656,14 +656,24 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 			if (contentEl) {
 				contentEl.textContent = ''; // Empty content for failed
 			}
-			if (meta && error && !$('.error', meta)) {
-				const errorEl = mk('span', 'response error');
-				errorEl.textContent = error;
-				const statusEl = $('.status', meta) || icon;
-				if (statusEl) {
-					statusEl.insertAdjacentElement('afterend', errorEl);
+			// 插入错误到 .content 中（跟在 .say 后面）
+			if (error) {
+				const contentWrapper = $('.content', card);
+				if (contentWrapper && !$('.error', contentWrapper)) {
+					const errorEl = mk('span', 'response error');
+					errorEl.textContent = error;
+					// 如果有 .say 则在后面插入，否则追加到末尾
+					const sayEl = $('.say', contentWrapper);
+					if (sayEl) {
+						sayEl.insertAdjacentElement('afterend', errorEl);
+					} else {
+						contentWrapper.appendChild(errorEl);
+					}
 				}
 			}
+			// 隐藏复制按钮
+			const copyBtn = $('.copy.content', card);
+			if (copyBtn) copyBtn.style.display = 'none';
 		} else if (status === 'stopped') {} else if (status === 'completed') {
 			if (state && state.thinkingDuration) {
 				const thinkingBlock = $('.think', card);

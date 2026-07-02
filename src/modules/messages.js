@@ -201,11 +201,20 @@ function renderResponse(container, msg, groups) {
         else if (r.status === "failed") statusEl.classList.add("failed");
         else if (r.status === "stopped") statusEl.classList.add("stopped");
 
-        let errorEl = $('.error', meta);
+        // 错误信息：放到 .content 中（在 .say 后面），有错误时隐藏复制按钮
+        let errorEl = $('.error', existing);  // 在整张 card 里找
         if (r.error) {
             if (!errorEl) {
                 errorEl = mk('span', 'error');
-                (statusEl || $('.total', meta) || nameEl).insertAdjacentElement('afterend', errorEl);
+                const contentWrapper = $('.content', existing);
+                if (contentWrapper) {
+                    const sayEl = $('.say', contentWrapper);
+                    if (sayEl) {
+                        sayEl.insertAdjacentElement('afterend', errorEl);
+                    } else {
+                        contentWrapper.appendChild(errorEl);
+                    }
+                }
             }
             errorEl.textContent = r.error;
             errorEl.style.display = "";
@@ -219,7 +228,7 @@ function renderResponse(container, msg, groups) {
             copyBtn = mk('button', 'copy content btn , bare icon-only , square');
             copyBtn.innerHTML = '<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>';
             copyBtn.title = '复制';
-            (errorEl || statusEl || $('.total', meta) || nameEl).insertAdjacentElement('afterend', copyBtn);
+            (statusEl || $('.total', meta) || nameEl).insertAdjacentElement('afterend', copyBtn);
         }
         copyBtn.onclick = () => {
             navigator.clipboard.writeText(r.content || "").then(() => {
@@ -228,6 +237,13 @@ function renderResponse(container, msg, groups) {
                 copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
             });
         };
+
+        // 有错误时隐藏复制按钮
+        if (r.error) {
+            copyBtn.style.display = 'none';
+        } else {
+            copyBtn.style.display = '';
+        }
 
         // 更新思考块
         if (r.thinking) {

@@ -577,10 +577,6 @@ button, .btn {
 			& .status {
 				font-size: 10px;
 			}
-			& .error {
-				color: var(--danger);
-				font-size: 12px;
-			}
 			& .total {
 				color: var(--text-secondary);
 			}
@@ -613,6 +609,11 @@ button, .btn {
 		.say {
 			background: var(--bg-base);
 			color: var(--text-primary);
+		}
+		& .error {
+			color: var(--danger);
+			font-size: 12px;
+			padding: 4px 0;
 		}
 	}
 
