@@ -936,6 +936,12 @@ aside.endpoint .one.endpoint {
 		box-shadow: inset 3px 0 0 0 var(--accent-primary);
 	}
 }
+
+/* 根级 compact 节点保持正常间距 */
+aside.endpoint.list > ol > .one.endpoint.compact {
+	margin-bottom: var(--space-3);
+	border-bottom: 1px solid var(--border-subtle);
+}
 .selected.endpoint.list {
 	flex: none;
 	background: var(--bg-muted);

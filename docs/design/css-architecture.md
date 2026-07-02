@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-01
+last_updated: 2026-07-02
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -308,4 +308,5 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 ## 决策日志
 
 - 2026-07-01: 初始文档创建。确认 style.css 实际 ~1200 行（非预估的 3000+）、:has() 共 3 处（非"大量"）
-- 2026-07-01: 暗色模式实现。采用 `html.dark` class 覆写全部 CSS 变量，而非 `prefers-color-scheme` 媒体查询。交互三态（亮→暗→跟随系统），偏好持久化到 settings。html.dark 块约 40 行，新增 4 个 SVG icon 符号。版本 6.3.1。
+- 2026-07-01: 暗色模式实现。采用 `html.dark` class 覆写全部 CSS 变量，而非 `prefers-color-scheme` 媒体查询。交互三态（亮→暗→跟随系统），偏好持久化到 settings。html.dark 块约 40 行，新增 4 个 SVG icon 符号。版本 6.3.2。
+- 2026-07-02: 根级 compact 节点间距修复。`.compact` 设 `margin-bottom:0` 对子级节点正确（间距由 `.children` 的 gap 控制），但根级 compact 节点（`<ol>` 的直接子元素）丢失了正常间距。新增 `ol > .one.endpoint.compact` 恢复 `margin-bottom:var(--space-3)` 和底部边框。
