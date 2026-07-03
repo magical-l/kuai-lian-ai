@@ -14,387 +14,367 @@ function collapseAllEndpointNodes() {
 	ids.forEach(function(id) { collapsedEndpoints.add(id); });
 	// 直接操作DOM收起
 	$$('aside .one.endpoint').forEach(function(el) {
-		var toggle = $('.expand', el);
-		var content = $('.children', el);
-		if (content) content.style.display = 'none';
-		if (toggle) toggle.textContent = '▶';
+		var detailsEl = el.querySelector('details');
+		if (detailsEl) detailsEl.open = false;
 	});
 }
 
 function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onTestConnection, onMoveNode) {
-    var container = document.querySelector("aside.endpoint.list > ol");
-
-    container.querySelectorAll('li').forEach(el => el.remove());
-
-    function renderTreeNode(nodes, parentEl) {
-        nodes.forEach(function(node, index) {
-            var hasChildren = node.children && node.children.length > 0;
-            var isCollapsed = collapsedEndpoints.has(node.id);
-            var hasContent = hasChildren;
-            var nodeEl = fromTemplate('one-endpoint', 'li');
-            if (!hasChildren) nodeEl.classList.add('compact');
-            nodeEl.dataset.nodeId = node.id;
-            nodeEl.dataset.nodeIndex = index;
-            var headerEl = nodeEl.querySelector('header');
-            var dragHandle = nodeEl.querySelector('.handle');
-            dragHandle.title = "拖动排序";
-            dragHandle.draggable = true;
-
-            dragHandle.on("dragstart", function(e) {
-                e.dataTransfer.setData("text/plain", node.id);
-                e.dataTransfer.effectAllowed = "move";
-                nodeEl.classList.add("dragging");
-            });
-
-            dragHandle.on("dragend", function() {
-                nodeEl.classList.remove("dragging");
-
-                $$(".one.endpoint", container).forEach(function(el) {
-                    el.classList.remove("drag-over", "drag-over-child", "drag-over-before", "drag-over-after");
-                });
-            });
-
-            var toggleSpan = nodeEl.querySelector('.expand');
-            toggleSpan.textContent = isCollapsed || !hasContent ? "▶" : "▼";
-
-            if (!hasContent)
-                toggleSpan.style.visibility = "hidden";
-
-            toggleSpan.on("click", function(e) {
-                e.stopPropagation();
-                var ct = nodeEl.querySelector(".children");
-
-                if (!ct)
-                    return;
-
-                if (ct.style.display === "none") {
-                    ct.style.display = "";
-                    toggleSpan.textContent = "▼";
-                    collapsedEndpoints["delete"](node.id);
-                } else {
-                    ct.style.display = "none";
-                    toggleSpan.textContent = "▶";
-                    collapsedEndpoints.add(node.id);
-                }
-            });
-
-            var nameSpan = nodeEl.querySelector('.name');
-            var rcfg = resolveNodeConfig(node.id);
-            nameSpan.textContent = node.name;
-
-            var tooltipId = "tooltip-" + node.id;
-            var tooltipHTML = buildTooltipHTML(node, rcfg, node.name);
-            var tooltip = createTooltip(tooltipId, tooltipHTML);
-
-            headerEl.on("mouseover", function(e) {
-                if (actionsEl.contains(e.target)) {
-                    tooltip.hide();
-                    return;
-                }
-                tooltip.show(nameSpan);
-            });
-            headerEl.on("mouseleave", function() {
-                tooltip.hide();
-            });
-            headerEl.on("click", function() {
-                tooltip.hide();
-            });
-
-            var actionsEl = nodeEl.querySelector('.actions');
-            var addChildBtn = actionsEl.querySelector('.add-child');
-
-            addChildBtn.on("click", function(e) {
-                e.stopPropagation();
-
-                showEditGroupDialog(null, node.id, function(data) {
-                    addNode(node.id, data).then(function() {
-                        refreshUI();
-                    });
-                });
-            });
-
-            function isNodeTestable(n) {
-                var cfg = resolveNodeConfig(n.id);
-                if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId) return false;
-                var mtype = detectModelType(cfg.modelId);
-                return mtype === 'chat' || mtype === 'embedding';
-            }
-
-            function collectTestable(nds, out) {
-                nds.forEach(function(n) {
-                    if (isNodeTestable(n))
-                        out.push(n.id);
-
-                    if (n.children)
-                        collectTestable(n.children, out);
-                });
-            }
-
-            var testableIds = [];
-            collectTestable([node], testableIds);
-            var isSelfTestable = testableIds.indexOf(node.id) >= 0;
-            var childTestable = testableIds.length - (isSelfTestable ? 1 : 0);
-            var hasTesting = false, allOk = true, anyFailed = false;
-
-            testableIds.forEach(function(id) {
-                var sd = connectionStatus.get(id);
-
-                if (sd) {
-                    if (sd.status === "testing")
-                        hasTesting = true;
-
-                    if (sd.status === "connected")
-                        {} else if (sd.status === "testing")
-                        {} else {
-                        allOk = false;
-
-                        if (sd.status !== "disconnected")
-                            anyFailed = true;
-                    }
-                } else {
-                    allOk = false;
-                }
-            });
-
-            var batchStatus = "";
-
-            if (testableIds.length > 0) {
-                var allTested = testableIds.every(function(id) {
-                    var sd = connectionStatus.get(id);
-                    return sd && sd.status !== "disconnected" && sd.status !== undefined;
-                });
-
-                if (allTested && allOk)
-                    batchStatus = "connected";
-                else if (anyFailed || (allTested && !allOk))
-                    batchStatus = "failed";
-            }
-
-            var batchTestBtn = actionsEl.querySelector('.test-connection');
-            if (testableIds.length === 0) {
-                batchTestBtn.style.display = 'none';
-            } else {
-                batchTestBtn.className = "test-connection btn , bare icon-only , square" + (batchStatus ? " " + batchStatus : "");
-                if (hasTesting) {
-                    batchTestBtn.classList.add("testing");
-                    var sp = batchTestBtn.querySelector("span");
-                    if (sp) sp.classList.add("spin");
-                }
-                if (!hasTesting) {
-                    var successCount = 0, failCount = 0, firstError = null;
-
-                    testableIds.forEach(function(id) {
-                        var sd = connectionStatus.get(id);
-
-                        if (sd) {
-                            if (sd.status === "connected")
-                                successCount++;
-                            else if (sd.status === "failed" || sd.status === "cors_blocked") {
-                                failCount++;
-
-                                if (!firstError && sd.error)
-                                    firstError = sd.error;
-                            }
-                        }
-                    });
-
-                    var testSummary = "";
-
-                    if (failCount > 0) {
-                        testSummary = "✗ " + failCount + "个失败";
-
-                        if (firstError)
-                            testSummary += "：" + firstError;
-                    } else if (successCount > 0 && successCount === testableIds.length) {
-                        testSummary = "✓ 全部成功";
-                    }
-
-                    if (childTestable > 0) {
-                        batchTestBtn.title = "测试连接（含" + (testableIds.length) + "个端点）" + (testSummary ? " — " + testSummary : "");
-                    } else {
-                        batchTestBtn.title = getConnectionStatusText(node.id);
-                    }
-                } else {
-                    batchTestBtn.title = "测试中...";
-                }
-
-                batchTestBtn.on("click", function(e) {
-                    e.stopPropagation();
-
-                    if (onTestConnection) {
-                        testableIds.forEach(function(id) {
-                            onTestConnection(id);
-                        });
-                    }
-                    batchTestBtn.classList.add("testing");
-                    var sp2 = batchTestBtn.querySelector("span");
-                    if (sp2) sp2.classList.add("spin");
-                });
-            }
-
-            var joinBtn = actionsEl.querySelector('.join-session');
-            if (!isSelfTestable) {
-                joinBtn.style.display = 'none';
-            } else {
-                applyJoinBtnUI(joinBtn, node.id);
-                var cb = joinBtn.querySelector("input[type=checkbox]");
-                cb.addEventListener("change", function(e) {
-                    e.stopPropagation();
-                    var eid = node.id;
-
-                    if (selectedEndpoints.includes(eid)) {
-                        selectedEndpoints = selectedEndpoints.filter(function(x) {
-                            return x !== eid;
-                        });
-                    } else {
-                        selectedEndpoints.push(eid);
-                    }
-
-                    saveDefaultSelectedEndpoints(selectedEndpoints);
-                    renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
-                    applyJoinBtnUI(joinBtn, node.id);
-                });
-            }
-
-            var editBtn = actionsEl.querySelector('.edit');
-
-            editBtn.on("click", function(e) {
-                e.stopPropagation();
-                onNodeEdit(node.id);
-            });
-
-            var deleteBtn = actionsEl.querySelector('.remove');
-
-            deleteBtn.on("click", function(e) {
-                e.stopPropagation();
-
-                confirmAction("确定删除节点「" + node.name + "」及其所有子节点和端点？", function() {
-                    onNodeDelete(node.id);
-                });
-            });
-
-            if (node.remark) {
-                var remSpan = document.createElement("span");
-                remSpan.className = "remark";
-                remSpan.textContent = " " + node.remark;
-                headerEl.insertBefore(remSpan, actionsEl);
-            }
-
-            nodeEl.on("dragover", function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.dataTransfer.dropEffect = "move";
-                var draggingEl = $(".dragging", container);
-
-                if (!draggingEl || draggingEl === nodeEl)
-                    return;
-
-                var header = $("header", nodeEl);
-                var headerRect = header.getBoundingClientRect();
-                nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
-
-                if (e.clientY >= headerRect.top && e.clientY <= headerRect.bottom) {
-                    if (e.clientY < headerRect.top + headerRect.height / 2) {
-                        nodeEl.classList.add("drag-over-before");
-                    } else {
-                        nodeEl.classList.add("drag-over-child");
-                    }
-                } else {
-                    nodeEl.classList.add("drag-over-child");
-                }
-            });
-
-            nodeEl.on("dragleave", function() {
-                nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
-            });
-
-            nodeEl.on("drop", function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var willMoveAsChild = nodeEl.classList.contains("drag-over-child");
-                nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
-                var rawData = e.dataTransfer.getData("text/plain");
-                var draggedId = rawData;
-
-                if (!draggedId || draggedId === node.id)
-                    return;
-
-                if (willMoveAsChild) {
-                    if (onMoveNode)
-                        onMoveNode(draggedId, node.id);
-                } else {
-                    if (onReorderNodes)
-                        onReorderNodes(draggedId, node.id, true);
-                }
-            });
-
-            if (hasContent) {
-                var contentEl = mk("div", "children");
-                contentEl.style.gap = "var(--space-1)";
-
-                if (isCollapsed) {
-                    contentEl.style.display = "none";
-                }
-
-                renderTreeNode(node.children, contentEl);
-                nodeEl.addChild(contentEl);
-            }
-            parentEl.addChild(nodeEl);
-        });
-    }
-
-    renderTreeNode(nodes, container);
-    var testAllBtn = $(".test-all");
-
-    if (testAllBtn && typeof getGroups === "function") {
-        var testableIds = [];
-
-        function collectTestable(ns) {
-            ns.forEach(function(n) {
-                var rcfg = resolveNodeConfig(n.id);
-
-                if (rcfg && rcfg.baseUrl && rcfg.modelId && detectModelType(rcfg.modelId) === 'chat' || detectModelType(rcfg.modelId) === 'embedding')
-                    testableIds.push(n.id);
-
-                if (n.children)
-                    collectTestable(n.children);
-            });
-        }
-
-        collectTestable(getGroups());
-        var hasTesting = false, hasFail = false, hasSuccess = false;
-
-        testableIds.forEach(function(id) {
-            var sd = connectionStatus.get(id);
-
-            if (sd) {
-                if (sd.status === "testing")
-                    hasTesting = true;
-                else if (sd.status === "connected")
-                    hasSuccess = true;
-                else if (sd.status === "failed" || sd.status === "cors_blocked")
-                    hasFail = true;
-            }
-        });
-
-        testAllBtn.classList.add("test-connection");
-        var spanEl = $("span", testAllBtn);
-
-        if (hasTesting) {
-            testAllBtn.classList.add("testing");
-
-            if (spanEl)
-                spanEl.classList.add("spin");
-        } else {
-            if (spanEl)
-                spanEl.classList.remove("spin");
-
-            if (hasFail && !hasSuccess)
-                testAllBtn.classList.add("failed");
-            else if (hasSuccess && !hasFail)
-                testAllBtn.classList.add("connected");
-        }
-    }
+	var container = document.querySelector("aside.endpoint.list > ol");
+
+	container.querySelectorAll('li').forEach(el => el.remove());
+
+	function renderTreeNode(nodes, parentEl) {
+		nodes.forEach(function(node, index) {
+			var hasChildren = node.children && node.children.length > 0;
+			var isCollapsed = collapsedEndpoints.has(node.id);
+			var hasContent = hasChildren;
+			var nodeEl = fromTemplate('one-endpoint', 'li');
+			if (!hasChildren) nodeEl.classList.add('compact');
+			nodeEl.dataset.nodeId = node.id;
+			nodeEl.dataset.nodeIndex = index;
+			var summaryEl = nodeEl.querySelector('details > summary');
+			var dragHandle = nodeEl.querySelector('.handle');
+			dragHandle.title = "拖动排序";
+			dragHandle.draggable = true;
+
+			dragHandle.on("dragstart", function(e) {
+				e.dataTransfer.setData("text/plain", node.id);
+				e.dataTransfer.effectAllowed = "move";
+				nodeEl.classList.add("dragging");
+			});
+
+			dragHandle.on("dragend", function() {
+				nodeEl.classList.remove("dragging");
+
+				$$(".one.endpoint", container).forEach(function(el) {
+					el.classList.remove("drag-over", "drag-over-child", "drag-over-before", "drag-over-after");
+				});
+			});
+
+			var detailsEl = nodeEl.querySelector('details');
+			detailsEl.open = hasContent && !isCollapsed;
+
+			detailsEl.addEventListener('toggle', function() {
+				if (detailsEl.open)
+					collapsedEndpoints["delete"](node.id);
+				else
+					collapsedEndpoints.add(node.id);
+			});
+
+			var nameSpan = nodeEl.querySelector('.name');
+			var rcfg = resolveNodeConfig(node.id);
+			nameSpan.textContent = node.name;
+
+			var tooltipId = "tooltip-" + node.id;
+			var tooltipHTML = buildTooltipHTML(node, rcfg, node.name);
+			var tooltip = createTooltip(tooltipId, tooltipHTML);
+
+			summaryEl.on("mouseover", function(e) {
+				if (actionsEl.contains(e.target)) {
+					tooltip.hide();
+					return;
+				}
+				tooltip.show(nameSpan);
+			});
+			summaryEl.on("mouseleave", function() {
+				tooltip.hide();
+			});
+			summaryEl.on("click", function() {
+				tooltip.hide();
+			});
+
+			var actionsEl = nodeEl.querySelector('.actions');
+			var addChildBtn = actionsEl.querySelector('.add-child');
+
+			addChildBtn.on("click", function(e) {
+				e.stopPropagation();
+
+				showEditGroupDialog(null, node.id, function(data) {
+					addNode(node.id, data).then(function() {
+						refreshUI();
+					});
+				});
+			});
+
+			function isNodeTestable(n) {
+				var cfg = resolveNodeConfig(n.id);
+				if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId) return false;
+				var mtype = detectModelType(cfg.modelId);
+				return mtype === 'chat' || mtype === 'embedding';
+			}
+
+			function collectTestable(nds, out) {
+				nds.forEach(function(n) {
+					if (isNodeTestable(n))
+						out.push(n.id);
+
+					if (n.children)
+						collectTestable(n.children, out);
+				});
+			}
+
+			var testableIds = [];
+			collectTestable([node], testableIds);
+			var isSelfTestable = testableIds.indexOf(node.id) >= 0;
+			var childTestable = testableIds.length - (isSelfTestable ? 1 : 0);
+			var hasTesting = false, allOk = true, anyFailed = false;
+
+			testableIds.forEach(function(id) {
+				var sd = connectionStatus.get(id);
+
+				if (sd) {
+					if (sd.status === "testing")
+						hasTesting = true;
+
+					if (sd.status === "connected")
+						{} else if (sd.status === "testing")
+						{} else {
+						allOk = false;
+
+						if (sd.status !== "disconnected")
+							anyFailed = true;
+					}
+				} else {
+					allOk = false;
+				}
+			});
+
+			var batchStatus = "";
+
+			if (testableIds.length > 0) {
+				var allTested = testableIds.every(function(id) {
+					var sd = connectionStatus.get(id);
+					return sd && sd.status !== "disconnected" && sd.status !== undefined;
+				});
+
+				if (allTested && allOk)
+					batchStatus = "connected";
+				else if (anyFailed || (allTested && !allOk))
+					batchStatus = "failed";
+			}
+
+			var batchTestBtn = actionsEl.querySelector('.test-connection');
+			if (testableIds.length === 0) {
+				batchTestBtn.style.display = 'none';
+			} else {
+				batchTestBtn.className = "test-connection btn , bare icon-only , square" + (batchStatus ? " " + batchStatus : "");
+				if (hasTesting) {
+					batchTestBtn.classList.add("testing");
+					var sp = batchTestBtn.querySelector("span");
+					if (sp) sp.classList.add("spin");
+				}
+				if (!hasTesting) {
+					var successCount = 0, failCount = 0, firstError = null;
+
+					testableIds.forEach(function(id) {
+						var sd = connectionStatus.get(id);
+
+						if (sd) {
+							if (sd.status === "connected")
+								successCount++;
+							else if (sd.status === "failed" || sd.status === "cors_blocked") {
+								failCount++;
+
+								if (!firstError && sd.error)
+									firstError = sd.error;
+							}
+						}
+					});
+
+					var testSummary = "";
+
+					if (failCount > 0) {
+						testSummary = "✗ " + failCount + "个失败";
+
+						if (firstError)
+							testSummary += "：" + firstError;
+					} else if (successCount > 0 && successCount === testableIds.length) {
+						testSummary = "✓ 全部成功";
+					}
+
+					if (childTestable > 0) {
+						batchTestBtn.title = "测试连接（含" + (testableIds.length) + "个端点）" + (testSummary ? " — " + testSummary : "");
+					} else {
+						batchTestBtn.title = getConnectionStatusText(node.id);
+					}
+				} else {
+					batchTestBtn.title = "测试中...";
+				}
+
+				batchTestBtn.on("click", function(e) {
+					e.stopPropagation();
+
+					if (onTestConnection) {
+						testableIds.forEach(function(id) {
+							onTestConnection(id);
+						});
+					}
+					batchTestBtn.classList.add("testing");
+					var sp2 = batchTestBtn.querySelector("span");
+					if (sp2) sp2.classList.add("spin");
+				});
+			}
+
+			var joinBtn = actionsEl.querySelector('.join-session');
+			if (!isSelfTestable) {
+				joinBtn.style.display = 'none';
+			} else {
+				applyJoinBtnUI(joinBtn, node.id);
+				var cb = joinBtn.querySelector("input[type=checkbox]");
+				cb.addEventListener("change", function(e) {
+					e.stopPropagation();
+					var eid = node.id;
+
+					if (selectedEndpoints.includes(eid)) {
+						selectedEndpoints = selectedEndpoints.filter(function(x) {
+							return x !== eid;
+						});
+					} else {
+						selectedEndpoints.push(eid);
+					}
+
+					saveDefaultSelectedEndpoints(selectedEndpoints);
+					renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
+					applyJoinBtnUI(joinBtn, node.id);
+				});
+			}
+
+			var editBtn = actionsEl.querySelector('.edit');
+
+			editBtn.on("click", function(e) {
+				e.stopPropagation();
+				onNodeEdit(node.id);
+			});
+
+			var deleteBtn = actionsEl.querySelector('.remove');
+
+			deleteBtn.on("click", function(e) {
+				e.stopPropagation();
+
+				confirmAction("确定删除节点「" + node.name + "」及其所有子节点和端点？", function() {
+					onNodeDelete(node.id);
+				});
+			});
+
+			if (node.remark) {
+				var remSpan = document.createElement("span");
+				remSpan.className = "remark";
+				remSpan.textContent = " " + node.remark;
+				actionsEl.parentElement.insertBefore(remSpan, actionsEl);
+			}
+
+			nodeEl.on("dragover", function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+				e.dataTransfer.dropEffect = "move";
+				var draggingEl = $(".dragging", container);
+
+				if (!draggingEl || draggingEl === nodeEl)
+					return;
+
+				var summary = $("summary", nodeEl);
+				var summaryRect = summary.getBoundingClientRect();
+				nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
+
+				if (e.clientY >= summaryRect.top && e.clientY <= summaryRect.bottom) {
+					if (e.clientY < summaryRect.top + summaryRect.height / 2) {
+						nodeEl.classList.add("drag-over-before");
+					} else {
+						nodeEl.classList.add("drag-over-child");
+					}
+				} else {
+					nodeEl.classList.add("drag-over-child");
+				}
+			});
+
+			nodeEl.on("dragleave", function() {
+				nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
+			});
+
+			nodeEl.on("drop", function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+				var willMoveAsChild = nodeEl.classList.contains("drag-over-child");
+				nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
+				var rawData = e.dataTransfer.getData("text/plain");
+				var draggedId = rawData;
+
+				if (!draggedId || draggedId === node.id)
+					return;
+
+				if (willMoveAsChild) {
+					if (onMoveNode)
+						onMoveNode(draggedId, node.id);
+				} else {
+					if (onReorderNodes)
+						onReorderNodes(draggedId, node.id, true);
+				}
+			});
+
+			if (hasContent) {
+				var contentEl = mk("ol", "children");
+				contentEl.style.gap = "var(--space-1)";
+
+				renderTreeNode(node.children, contentEl);
+				detailsEl.addChild(contentEl);
+			}
+			parentEl.addChild(nodeEl);
+		});
+	}
+
+	renderTreeNode(nodes, container);
+	var testAllBtn = $(".test-all");
+
+	if (testAllBtn && typeof getGroups === "function") {
+		var testableIds = [];
+
+		function collectTestable(ns) {
+			ns.forEach(function(n) {
+				var rcfg = resolveNodeConfig(n.id);
+
+				if (rcfg && rcfg.baseUrl && rcfg.modelId && detectModelType(rcfg.modelId) === 'chat' || detectModelType(rcfg.modelId) === 'embedding')
+					testableIds.push(n.id);
+
+				if (n.children)
+					collectTestable(n.children);
+			});
+		}
+
+		collectTestable(getGroups());
+		var hasTesting = false, hasFail = false, hasSuccess = false;
+
+		testableIds.forEach(function(id) {
+			var sd = connectionStatus.get(id);
+
+			if (sd) {
+				if (sd.status === "testing")
+					hasTesting = true;
+				else if (sd.status === "connected")
+					hasSuccess = true;
+				else if (sd.status === "failed" || sd.status === "cors_blocked")
+					hasFail = true;
+			}
+		});
+
+		testAllBtn.classList.add("test-connection");
+		var spanEl = $("span", testAllBtn);
+
+		if (hasTesting) {
+			testAllBtn.classList.add("testing");
+
+			if (spanEl)
+				spanEl.classList.add("spin");
+		} else {
+			if (spanEl)
+				spanEl.classList.remove("spin");
+
+			if (hasFail && !hasSuccess)
+				testAllBtn.classList.add("failed");
+			else if (hasSuccess && !hasFail)
+				testAllBtn.classList.add("connected");
+		}
+	}
 }
 
 function updateEndpointTestUI(nodeId) {

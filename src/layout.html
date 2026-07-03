@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.3.4</span>
+			<span class="version">v6.3.5</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -112,7 +112,7 @@
 			</dialog>
 		</template>
 
-		<div id="themePop" popover role="menu">
+		<div id="themePop" popover="" role="menu">
 			<label class="option btn , flex items-go-x">
 				<input type="radio" name="theme" value="light" checked>
 				<svg class="icon" style="width:16px;height:16px"><use href="icons.svg#icon-sun"></use></svg>
@@ -146,26 +146,29 @@
 			</header>
 			<ol class="scrollable on-y when-content-long">
 				<template id="one-endpoint">
-					<li class="one endpoint">
-						<header class="flex items-go-x items-y-near-center">
-							<span class="handle drag btn , bare icon-only , square , flex items-go-x" draggable="true" title="拖动排序">⋮⋮</span>
-							<span class="expand btn , bare icon-only , square">▶</span>
-							<span class="name"></span>
-							<div class="btn-group actions , flex items-go-x">
-								<button class="add-child btn , bare icon-only , square" title="添加子节点">+</button>
-								<button class="test-connection btn , bare icon-only , square" title="测试连接"><span>🔗</span></button>
-								<label class="join-session btn , bare icon-only , square" title="加入当前会话">
-									<input type="checkbox" hidden>
-									<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-bubble"></use></svg>
-								</label>
-								<button class="edit btn , bare icon-only , square" title="编辑节点">✎</button>
-								<button class="remove btn , danger bare icon-only , square" title="删除节点及其子节点">
-									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-trash"></use></svg>
-								</button>
-							</div>
-						</header>
-					</li>
-				</template>
+						<li class="one endpoint">
+							<details>
+																<summary>
+									<header class="inline flex items-x-mutex" style="width:95%">
+										<span class="handle drag btn , bare icon-only , square" draggable="true" title="拖动排序">⋮⋮</span>
+										<span class="name"></span>
+										<div class="btn-group actions , flex items-go-x">
+											<button class="add-child btn , bare icon-only , square" title="添加子节点">+</button>
+											<button class="test-connection btn , bare icon-only , square" title="测试连接"><span>🔗</span></button>
+											<label class="join-session btn , bare icon-only , square" title="加入当前会话">
+												<input type="checkbox" hidden>
+												<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-bubble"></use></svg>
+											</label>
+											<button class="edit btn , bare icon-only , square" title="编辑节点">✎</button>
+											<button class="remove btn , danger bare icon-only , square" title="删除节点及其子节点">
+												<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-trash"></use></svg>
+											</button>
+										</div>
+									</header>
+								</summary>
+							</details>
+						</li>
+					</template>
 			</ol>
 			<template id="edit-group-dialog">
 				<dialog class="editing endpoint">

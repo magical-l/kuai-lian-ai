@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI
-last_updated: 2026-07-01
+last_updated: 2026-07-03
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -15,7 +15,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 
 端点树是「左侧面板」的核心组件，以递归树结构展示所有端点节点（小组 → 端点）。每个节点是一个 `fromTemplate("one-endpoint")` 克隆的 `<li>`，包含：
 
-- 展开/收起按钮（▶/▼）
+- `<details>` 原生三角箭头（展开/收起）
 - 拖拽手柄（`.handle`，`draggable=true`）
 - 名称 + remark
 - 操作栏：添加子节点、批量测试、加入会话 checkbox、编辑、删除
@@ -44,15 +44,15 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 
 每个节点渲染流程：
 
-1. **克隆模板**（行 34）：`fromTemplate('one-endpoint', 'li')`，无子节点时添加 `.compact` class
+1. **克隆模板**：`fromTemplate('one-endpoint', 'li')`，无子节点时添加 `.compact` class。模板结构：`<li><details><summary>` 保持原生 `display:list-item` 保留三角 marker，summary 内包 `<header class="inline flex items-x-mutex" style="width:95%">` 含 handle、name、actions 三个子元素，header 用 `width:95%` 避开 marker 占位、`items-x-mutex`(space-between) 分布内容。
 2. **拖拽手柄**（行 39-58）：`dataTransfer.setData("text/plain", node.id)`，dragstart/dragend 事件。可拖拽值为 `effectAllowed = "move"`
-3. **展开/收起**（行 57-79）：
-   - `toggleSpan.textContent` 控制 ▶（收起）/ ▼（展开）
-   - 无子节点时 `visibility: hidden`（保留占位）
-   - 点击切换 `collapsedEndpoints` Set 添加/删除 + DOM 显示/隐藏
+3. **展开/收起**：
+   - `<details>` 原生 `open` 属性 + `<summary>` 原生三角箭头控制显隐
+   - 无子节点时（`.compact`）隐藏三角箭头（`list-style: none` + `::marker`）
+   - `<details>` 的 `toggle` 事件同步 `collapsedEndpoints` Set 状态
 4. **名称 + Tooltip**（行 81-101）：
    - 名称文本设为 `node.name`
-   - `createTooltip(tooltipId, buildTooltipHTML(node, rcfg, node.name))` 绑定到 `headerEl` 的 mouseover/mouseleave/click
+   - `createTooltip(tooltipId, buildTooltipHTML(node, rcfg, node.name))` 绑定到 `summaryEl` 的 mouseover/mouseleave/click
    - tooltip 内容由 `selected-endpoints.js` 的 `buildTooltipHTML` 生成
 5. **操作栏**（行 103-281）：
    - **添加子**：调用 `showEditGroupDialog(null, node.id, ...)` 新增
@@ -64,11 +64,11 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
    - **加入会话**（行 235-257）：checkbox + `applyJoinBtnUI` 同步选中状态，change 事件直接操作 `selectedEndpoints` 数组
    - **编辑/删除**：委托到 `onNodeEdit` / `onNodeDelete`
 6. **拖放排序**（行 283-329）：
-   - `dragover` 根据鼠标在 header 区域的位置，在 `nodeEl` 上添加三类 drop zone class：
+   - `dragover` 根据鼠标在 summary 区域的位置，在 `nodeEl` 上添加三类 drop zone class：
      - `drag-over-before`（上半区 → 插到该节点前）
-     - `drag-over-child`（下半区或非 header 区域 → 作为子节点）
+     - `drag-over-child`（下半区或非 summary 区域 → 作为子节点）
    - `drop` 事件读取 `draggedId`，根据 drop zone 类型调 `onReorderNodes(draggedId, targetId, true)` 或 `onMoveNode(draggedId, node.id)`
-7. **递归子节点**（行 331-342）：有子节点时创建 `<div class="children">`，递归调用 `renderTreeNode`。折叠状态下 `display: none`。
+7. **递归子节点**（行 331-342）：有子节点时创建 `<ol class="children">`（使用 `<details>` 原生 open/close 控制显隐），递归调用 `renderTreeNode`。内容追加到 `<details>` 而非 `<li>`。
 
 ### 2. 拖拽排序：跨级操作
 
@@ -84,8 +84,8 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 ### 3. 展开/收起 (collapsedEndpoints)
 
 - `collapsedEndpoints` 是全局 `Set<nodeId>`
-- `collapseAllEndpointNodes()`：收集所有节点 ID 加入 Set，DOM 直接设置 `display: none` + `textContent: "▶"`
-- 单个节点点击展开/收起：从 Set 删除/添加
+- `collapseAllEndpointNodes()`：收集所有节点 ID 加入 Set，DOM 直接设置 `details.open = false` + `textContent: "▶"`
+- 单个节点 toggle 展开/收起：监听 `<details>` 的 `toggle` 事件同步 Set
 - 数据不持久化（刷新后恢复默认展开）
 
 ### 4. 测试状态 UI 更新 (updateEndpointTestUI)
@@ -136,3 +136,6 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-04-25 | drop zone 分三类（before/child/after），不实现 after | 实际需求只有"插到前"和"变成子"，after 与 before 对称但无使用场景 |
 | 2026-04-26 | 批量测试按钮 title 显示汇总统计 | 测试结果即时反馈，避免用户反复 hover 看每个子节点状态 |
 | 2026-04-27 | 折叠状态不持久化 | 用户对树的折叠习惯变频繁，持久化收益低且增加复杂度 |
+| 2026-07-02 | 端点树结构改为 details/summary/ol，利用原生 open/close 替代手动 display 切换 | 语义化 HTML，减少 JS 手动 DOM 操作，提升可访问性 |
+| 2026-07-02 | 去掉自定义 .expand 按钮，复用 `<summary>` 原生三角箭头 | 自定义按钮与原生功能重复；flex 布局需移到 summary 内层 div 以避免 Chrome 隐藏原生 marker |
+| 2026-07-02 | summary 内包 header(95%+inline-flex+items-x-mutex) 实现 handle+name 左、actions 右布局 | 原生 marker 与 flex 互斥（Chrome），改用 95% 宽度避开 marker 占位 + items-x-mutex(space-between) 分布 |
