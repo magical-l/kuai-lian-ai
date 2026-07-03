@@ -148,6 +148,19 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var keyInput = $(".apikey.editor input[name=\"apikey\"]", dialog);
 	var modelidInput = $('.model-id.editor input[name="model-id"]', dialog);
 	var remarkInput = $(".remark.editor input[name=\"remark\"]", dialog);
+	var typeSel = $('.type.editor select[name="type"]', dialog);
+	var typeHint = $('.detected-hint', dialog);
+
+	function updateTypeHint(detectedType) {
+		if (!typeHint) return;
+		var opt = typeSel.querySelector('option[value="' + detectedType + '"]');
+		var label = opt ? opt.textContent : detectedType;
+		if (detectedType && typeSel.value === detectedType) {
+			typeHint.textContent = '检测为: ' + label;
+		} else {
+			typeHint.textContent = '';
+		}
+	}
 
 	setValues(dialog, {
 		'.name.editor input[name="name"]': node ? node.name : '',
@@ -157,6 +170,15 @@ function showEditGroupDialog(node, parentId, onSave) {
 		'.apikey.editor input[name="apikey"]': node ? node.key || '' : '',
 		'.remark.editor input[name="remark"]': node ? node.remark || '' : ''
 	});
+
+	// type：显式值优先，否则从 modelId 检测作为默认
+	var detectedType = detectModelType(node ? node.modelId || '' : '');
+	if (node && node.type) {
+		typeSel.value = node.type;
+	} else {
+		typeSel.value = detectedType;
+	}
+	updateTypeHint(detectedType);
 
 	// 继承值填入
 	// 对编辑：从 node.id 走 resolveNodeConfig（沿祖先链往上找）
@@ -201,6 +223,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 
 	// 名称 ↔ 模型名连续同步（用 _syncing 防止循环触发）
 	var _nameUserEdited = false;
+	var _typeUserEdited = false;
 	var _syncing = false;
 	nameInput.oninput = function() {
 		if (!_syncing) _nameUserEdited = true;
@@ -216,7 +239,14 @@ function showEditGroupDialog(node, parentId, onSave) {
 			nameInput.value = this.value;
 			_syncing = false;
 		}
+		// type 自动检测（仅在用户未手动修改过 type 时）
+		if (!_typeUserEdited) {
+			var detected = detectModelType(this.value);
+			typeSel.value = detected;
+			updateTypeHint(detected);
+		}
 	};
+	typeSel.onchange = function() { _typeUserEdited = true; };
 	urlInput.oninput = function() { removeIcon(this); };
 	keyInput.oninput = function() { removeIcon(this); };
 
@@ -232,7 +262,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 		};
 	}
 	// Enter → 切到下一个输入框
-	var formFields = [nameInput, urlInput, styleSel, keyInput, modelidInput, remarkInput];
+	var formFields = [nameInput, urlInput, styleSel, keyInput, modelidInput, typeSel, remarkInput];
 	var form = dialog.querySelector('form');
 	if (form) {
 		form.addEventListener('keydown', function(e) {
@@ -261,7 +291,12 @@ function showEditGroupDialog(node, parentId, onSave) {
 				alert('请填写名称');
 				return;
 			}
-			var saveData = { name: theName, style: styleSel.value };
+			var theType = typeSel.value;
+			if (!theType) {
+				alert('请选择类型');
+				return;
+			}
+			var saveData = { name: theName, style: styleSel.value, type: theType };
 			// 可继承字段：节点原本有值则直接保存（含清空为""）；
 			// 节点原本无值则仅当用户手动输入了不同于继承值的值时才保存，否则不传以保持继承
 			var theUrl = urlInput.value.trim();

@@ -24,18 +24,19 @@ async function init() {
 	initScrollNav();
 	initScrollPaddingObserver();
 	let sendOnEnter = localStorage.getItem('sendMode') !== 'ctrl-enter';
-	let inputMode = "chat"; // "chat" | "embedding"
 	const chatInput = $('#chat-input');
+	chatInput.placeholder = '输入消息...';
+	$('.add.attachment.btn').style.display = '';
+	$('.file-input').style.display = '';
+
 	chatInput.on('keydown', e => {
 		if (e.key === 'Enter') {
 			if (sendOnEnter && !e.shiftKey && !e.ctrlKey) {
 				e.preventDefault();
-				if (inputMode === "embedding") handleEmbeddingSend();
-				else handleSend();
+				handleSend();
 			} else if (!sendOnEnter && e.ctrlKey) {
 				e.preventDefault();
-				if (inputMode === "embedding") handleEmbeddingSend();
-				else handleSend();
+				handleSend();
 			}
 		}
 	});
@@ -111,23 +112,7 @@ async function init() {
 		collectIds(getGroups());
 		allIds.forEach(function(id) { testConnection(id); });
 	};
-	$('.send').onclick = () => {
-		if (inputMode === 'embedding') {
-			handleEmbeddingSend();
-		} else {
-			handleSend();
-		}
-	};
-	document.querySelectorAll('.model-task.selector input[name="taskMode"]').forEach(el => {
-		el.addEventListener('change', () => {
-			inputMode = el.value;
-			console.log("Mode:", inputMode);
-			const input = $('#chat-input');
-			input.placeholder = inputMode === 'chat' ? '输入消息...' : '输入要嵌入的文本...';
-			$('.add.attachment.btn').style.display = inputMode === 'chat' ? '' : 'none';
-			$('.file-input').style.display = inputMode === 'chat' ? '' : 'none';
-		});
-	});
+	$('.send').onclick = () => { handleSend(); };
 	$('.stop.btn').onclick = () => {
 		stopAllGenerations();
 		setButtonState(false, false);
@@ -394,7 +379,7 @@ async function handleMoveNodeAsChild(draggedId, targetParentId) {
 }
 async function handleSend() {
 	const content = await getInputMessage();
-	if (!content || content.length === 0) return; // 处理失败或无文本无附件
+	if (!content || content.length === 0) return;
 	if (selectedEndpoints.length === 0) {
 		renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
 		return;
@@ -404,13 +389,11 @@ async function handleSend() {
 		currentSession = await createSession(content, [...selectedEndpoints]);
 		isNewSession = true;
 	}
-	// Only addMessage if NOT a new session (createSession already added first message)
 	if (!isNewSession) {
 		await addMessage(currentSession.id, 'user', content, {
 			targetEndpoints: [...selectedEndpoints]
 		});
 	}
-	// 提取纯文本用于 lastUserMessage
 	const textContent = content.filter(c => c.type === 'text' || c.type === 'file_text').map(c => c.text || '').join('\n');
 	lastUserMessage = textContent;
 	clearInput();
@@ -420,40 +403,77 @@ async function handleSend() {
 	const groups = getGroups();
 	const messages = currentSession.messages.map(m => {
 		if (m.role === 'assistant' && m.responses) {
-			// Multi-model format: concatenate all successful response contents
 			const content = m.responses.filter(r => r.status === 'completed' && r.content).map(r => r.content).join('\n\n---\n\n');
-			return {
-				role: m.role,
-				content
-			};
+			return { role: m.role, content };
 		}
-		// 用户消息：使用 OpenAI 格式转换函数
 		const normalized = normalizeMessageContent(m);
-		return {
-			role: m.role,
-			content: toOpenAIContent(normalized)
-		};
+		return { role: m.role, content: toOpenAIContent(normalized) };
 	});
-	// 渲染用户消息
 	renderMessages(currentSession.messages, groups, handleCopy);
-	// 记录当前会话ID用于后台接收（在创建卡片前定义）
 	const targetSessionId = currentSession.id;
-	// 显示"思考中"状态卡片（使用 targetSessionId 标记）
+	
+	// 按端点类型分流
+	const chatIds = [];
+	const embedIds = [];
+	selectedEndpoints.forEach(id => {
+		const cfg = resolveNodeConfig(id);
+		if (cfg.type === 'embedding') embedIds.push(id);
+		else chatIds.push(id);
+	});
+	
 	showThinkingCards(selectedEndpoints, groups, targetSessionId);
 	const sortedModels = new Set();
+	const allResults = [];
+	
 	try {
-		const responses = await callAllModels(groups, selectedEndpoints, messages, (endpointId, partialContent, firstTokenTime) => {
-		updateStreamingCard(endpointId, partialContent, firstTokenTime, groups, targetSessionId);
-		// 只在firstTokenTime首次有值时排序一次
-		if (firstTokenTime != null && !sortedModels.has(endpointId)) {
-			sortedModels.add(endpointId);
-			reorderCardsBySpeed();
-			reorderSelectorTagsBySpeed();
-		}
-	}, targetSessionId);
-	await addMessage(targetSessionId, 'assistant', null, {
-		responses
-	});
+		// 并行处理嵌入类端点（非流式，速度快）
+		const embedPromises = embedIds.map(async (id) => {
+			const info = findModelById(groups, id);
+			if (!info) {
+				return { endpointId: id, status: 'failed', error: '端点不存在', content: '' };
+			}
+			try {
+				const cfg = resolveNodeConfig(id);
+				const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), textContent);
+				updateCardAsEmbedding(id, result, targetSessionId);
+				return {
+					endpointId: id,
+					status: 'completed',
+					content: '',
+					embeddingResult: {
+						dim: result.embedding.length,
+						preview: '[' + result.embedding.slice(0, 5).map(v => v.toFixed(6)).join(', ') + ', ...]',
+						fullJson: JSON.stringify(result.embedding),
+						model: result.model || (info.node.modelId || info.node.name),
+						usage: result.usage
+					}
+				};
+			} catch (err) {
+				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
+				return { endpointId: id, status: 'failed', error: err.message, content: '' };
+			}
+		});
+		
+		const chatPromise = (async () => {
+			if (chatIds.length === 0) return [];
+			return await callAllModels(groups, chatIds, messages, (endpointId, partialContent, firstTokenTime) => {
+				updateStreamingCard(endpointId, partialContent, firstTokenTime, groups, targetSessionId);
+				if (firstTokenTime != null && !sortedModels.has(endpointId)) {
+					sortedModels.add(endpointId);
+					reorderCardsBySpeed();
+					reorderSelectorTagsBySpeed();
+				}
+			}, targetSessionId);
+		})();
+		
+		const [embedResults, chatResults] = await Promise.all([
+			Promise.all(embedPromises),
+			chatPromise
+		]);
+		
+		allResults.push(...embedResults, ...chatResults);
+		
+		await addMessage(targetSessionId, 'assistant', null, { responses: allResults });
 	} catch (err) {
 		console.error('Session generation error:', err);
 	} finally {
@@ -467,84 +487,6 @@ async function handleSend() {
 	}
 }
 
-
-
-
-
-async function handleEmbeddingSend() {
-	const input = $('#chat-input');
-	const text = input.value.trim();
-	if (!text) return;
-	if (selectedEndpoints.length === 0) {
-		renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
-		return;
-	}
-	const endpointId = selectedEndpoints[0];
-	const info = findModelById(getGroups(), endpointId);
-	if (!info) {
-		console.error('模型不存在:', endpointId);
-		return;
-	}
-	clearInput();
-	if (!currentSession) {
-		currentSession = await createSession(null, []);
-	}
-	await addMessage(currentSession.id, 'user', [{ type: 'text', text: '🔢 嵌入: ' + text }], {
-		targetEndpoints: [endpointId]
-	});
-	renderMessages(currentSession.messages, getGroups(), handleCopy);
-	const container = $('#chat-messages');
-	const msgEl = mk('article', 'msg response , flex items-go-y');
-	msgEl.classList.add('streaming-embedding');
-	const hint = mk('div', 'embedding-thinking');
-	hint.textContent = '🔢 计算嵌入向量...';
-	msgEl.addChild(hint);
-	container.appendChild(msgEl);
-	container.scrollTop = container.scrollHeight;
-	try {
-		const cfg = resolveNodeConfig(info.node.id);
-		const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), text);
-		const card = $('.streaming-embedding');
-		if (card) card.remove();
-		const emb = result.embedding;
-		const dim = emb.length;
-		const preview = '[' + emb.slice(0, 5).map(v => v.toFixed(6)).join(', ') + ', ...]';
-		const fullJson = JSON.stringify(emb);
-		await addMessage(currentSession.id, 'assistant', null, {
-			responses: [{
-				endpointId: endpointId,
-				status: 'completed',
-				content: '',
-				embeddingResult: {
-					dim,
-					preview,
-					fullJson,
-					model: result.model || (info.node.modelId || info.node.name),
-					usage: result.usage
-				}
-			}]
-		});
-		if (currentSession) {
-			currentSession = await loadSession(currentSession.id);
-			await refreshUI();
-		}
-	} catch (err) {
-		const card = $('.streaming-embedding');
-		if (card) card.remove();
-		console.error('嵌入失败:', err);
-		await addMessage(currentSession.id, 'assistant', null, {
-			responses: [{
-				endpointId: endpointId,
-				status: 'failed',
-				error: err.message
-			}]
-		});
-		if (currentSession) {
-			currentSession = await loadSession(currentSession.id);
-			await refreshUI();
-		}
-	}
-}
 
 
 
@@ -791,3 +733,39 @@ async function setThemePref(mode) {
 }
 
 init();
+
+function updateCardAsEmbedding(endpointId, result, sessionId) {
+	const card = $(`.one.response.msg[data-session-id="${sessionId}"][data-endpoint-id="${endpointId}"]`);
+	if (!card) return;
+	const sayEl = $('.say', card);
+	if (sayEl) sayEl.textContent = '';
+	const contentWrapper = $('.content', card);
+	if (contentWrapper) {
+		const existing = $('.embedding-result', contentWrapper);
+		if (existing) existing.remove();
+		
+		const emb = result.embedding;
+		const dim = emb.length;
+		const preview = '[' + emb.slice(0, 5).map(v => v.toFixed(6)).join(', ') + ', ...]';
+		
+		const embDiv = mk('div', 'embedding-result');
+		embDiv.innerHTML = '<div class="mb-1"><strong>嵌入维度:</strong> ' + dim + '</div><div class="mb-1"><strong>预览:</strong> <code>' + preview + '</code></div>';
+		const copyBtn = mk("button", "copy code btn , bare icon-only , square");
+		copyBtn.innerHTML = '<span class="copy icon">\u29c9</span><span class="done icon">\u2713</span>';
+		copyBtn.title = "复制完整向量";
+		const previewRow = embDiv.querySelector('.mb-1:last-child');
+		previewRow.addChild(copyBtn);
+		previewRow.style.display = 'flex';
+		previewRow.style.alignItems = 'center';
+		previewRow.style.gap = '8px';
+		copyBtn.onclick = () => {
+			const codeText = previewRow.querySelector('code').textContent;
+			navigator.clipboard.writeText(codeText).then(() => {
+				copyBtn.classList.add("copied");
+				setTimeout(() => copyBtn.classList.remove("copied"), 1500);
+			});
+		};
+		contentWrapper.addChild(embDiv);
+	}
+	updateCardStatus(endpointId, 'completed', null, null, sessionId);
+}

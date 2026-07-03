@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-02
+last_updated: 2026-07-03
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -111,7 +111,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 - 调用 `addCodeCopyButtons` 为每个 `<pre><code>` 添加复制按钮
 - 处理 thinking 块（`<details class="think">`）：含摘要、耗时、内容
 - 处理 embedding 结果（`.embedding-result`）：维度 + 预览 + 复制完整向量
-
+- 端点树类型筛选栏（`endpoint-tree.js`）：端点树顶部有筛选按钮（全部/嵌入/生图/重排序），点击后遍历端点 li 按类型显示/隐藏
 ### 3. 流式响应卡片渲染
 
 文件：`main.js:538-695`
@@ -181,8 +181,9 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 从 `<template id="edit-group-dialog">` 克隆 `<dialog class="editing endpoint">`。功能：
 
-- 名称 + URL + 格式 + Key + 模型 ID + 备注 6 个字段
+- 名称 + URL + 格式 + Key + 模型 ID + 类型 + 备注 7 个字段
 - 名称与模型 ID 自动同步（用户起始编辑名称后停止自动同步）
+- 类型字段自动从 modelId 检测（chat/embedding/rerank），用户可手动覆盖（覆盖后停止自动检测）
 - 继承值图标（↑）：空字段自动填入祖先值，`addInheritIcon` 添加继承标记
 - Enter 在字段间切换焦点，最后一个字段 Enter 触发保存
 - API Key 显隐切换按钮
@@ -222,3 +223,5 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-01 | renderMessages 在调用 renderResponse 前清除已有卡片的 data-endpoint-id | 多轮会话加载时同一 endpoint 在多个 assistant 消息中出现，querySelector 会找到上一轮创建的卡片并覆写，导致之前的 assistant 回复全部丢失 |
 | 2026-07-02 | 错误信息从 header 移至 `.content`（`.say` 之后），有错误时隐藏复制按钮 | 错误信息过长时 header 空间不足，移到 content 更合理；有错误时复制按钮无意义 |
 | 2026-07-01 | 侧边栏切换时 updateSidebarToggleIcon 移入 doToggle 内部 | icon 在 ViewTransition 路径外更新导致暗色下图标颜色不随状态正确切换。版本 6.3.1。 |
+
+| 2026-07-03 | 端点编辑对话框新增类型选择器，移除全局 taskMode radio | 每个端点独立标注类型（chat/embedding/image/rerank），不再用全局切换；类型自动从 modelId 检测，用户可覆盖 |

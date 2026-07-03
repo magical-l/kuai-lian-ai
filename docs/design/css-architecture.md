@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-02
+last_updated: 2026-07-03
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 

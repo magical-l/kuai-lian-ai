@@ -2,8 +2,8 @@
 title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
-api_signature: init, handleSend, handleEmbeddingSend, refreshUI, handleSessionSelect
-last_updated: 2026-07-02
+api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
+last_updated: 2026-07-03
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -51,8 +51,8 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `handleCopy` | 复制内容到剪贴板 |
 | `handleReorderNode` | 同级拖拽重排 |
 | `handleMoveNodeAsChild` | 跨级拖拽降级 |
-| `handleSend` | 发送消息（主入口） |
-| `handleEmbeddingSend` | 嵌入模式发送 |
+| `handleSend` | 发送消息（主入口，按端点 type 分流 chat/embedding） |
+| `updateCardAsEmbedding` | 嵌入完成后更新卡片（维度/预览/复制） |
 | `showThinkingCards` | 显示流式响应卡片 |
 | `updateStreamingCard` | 更新单张流式卡片 |
 | `updateCardStatus` | 更新卡片完成状态 |
@@ -74,7 +74,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 
 1. **UI 组件初始化**：`initDividers()`（分隔条拖拽）、`initScrollNav()`（滚动导航按钮）、`initScrollPaddingObserver()`（sticky 区高度监听）
 2. **输入绑定**：
-   - `keydown` 监听：Enter / Ctrl+Enter 切换发送模式，根据 `inputMode` 分流到 `handleSend` 或 `handleEmbeddingSend`
+   - `keydown` 监听：Enter / Ctrl+Enter 切换发送模式，统一调用 `handleSend`（按端点 type 内部分流）
    - `paste` 监听：剪贴板图片提取 → `addAttachment`
 3. **发送模式选择器**（Popover API）：`#sendModePop` 的 `beforetoggle` 事件定位 position，`toggle` 事件同步按钮 active class。radio change 持久化 `sendMode` 到 localStorage。
 4. **存储恢复**：`tryRestoreDirectory()` → 成功则 `refreshUI`，失败则 `showDirectoryPrompt`
@@ -82,7 +82,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
    - `.add-group` → `handleAddGroup`
    - `.collapse-all` → `collapseAllEndpointNodes`
    - `.test-all` → 遍历所有节点 `testConnection`
-   - `.send` → 按模式分流
+   - `.send` → `handleSend`
    - `.stop.btn` → `stopAllGenerations` + `setButtonState(false, false)`
    - `.help` → `showHelpDialog(false, !!saved)`（saved 为是否有已保存的目录 handle）
    - `.new-session` → `handleNewSession`
@@ -93,7 +93,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 
 ### 2. 发送主逻辑 (handleSend)
 
-行 382-455。完整流程：
+`handleSend` 是发送的唯一入口，按端点 `type` 内部分流：
 
 ```
 用户点击发送 / Enter
@@ -105,33 +105,33 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
   ├─ clearInput() + clearAttachments()
   ├─ setButtonState(true, true) [发送禁用 + 停止启用]
   ├─ renderMessages() [渲染用户消息到 DOM]
-  ├─ showThinkingCards(selectedEndpoints, groups, targetSessionId) [创建流式卡片]
+  ├─ showThinkingCards(selectedEndpoints, groups, targetSessionId)
   │
-  └─ callAllModels(groups, selectedEndpoints, messages, onChunk)
-       │
-       ├─ onChunk → updateStreamingCard() + reorderCardsBySpeed()
-       │
-       └─ 完成后
-            ├─ addMessage('assistant', null, { responses }) [持久化]
-            ├─ sessionGenerations.delete(targetSessionId)
-            ├─ setButtonState(false, false)
-            └─ refreshUI() [重绘消息区，流式卡片被 renderResponse 替代]
+  ├─ 按 type 分流：
+  │   ├─ chat 端点 → callAllModels(groups, chatIds, messages, onChunk)
+  │   │     ├─ onChunk → updateStreamingCard() + reorderCardsBySpeed()
+  │   │     └─ 完成后返回 responses
+  │   └─ embedding 端点 → Promise.all(embedIds.map(id =>
+  │         callEmbedding(style, url, key, model, text)
+  │         → updateCardAsEmbedding(id, result, sessionId)
+  │         → 返回 { endpointId, embeddingResult }
+  │       ))
+  │
+  └─ 合并结果 → addMessage('assistant', null, { responses }) [持久化]
+       ├─ sessionGenerations.delete(targetSessionId)
+       ├─ setButtonState(false, false)
+       └─ refreshUI()
 ```
 
-**多模型消息构建**（行 408-423）：
+**多模型消息构建**：
 - 历史 assistant 消息：将多条 `responses` 合并为 `content.join('\n\n---\n\n')`
 - 用户消息：`normalizeMessageContent` → `toOpenAIContent` 标准化为 OpenAI 格式（即使目标 endpoint 用 Claude/Gemini 协议，格式转换在 shared.js 的 callAllModels 内部完成）
 
-### 3. 嵌入模式 (handleEmbeddingSend)
-
-行 461-534。与 handleSend 不同：
-
-- 只取 `selectedEndpoints[0]`（单端点）
-- 创建 `<article class="msg response streaming-embedding">` 显示"🔢 计算嵌入向量..."
-- 调用 `callEmbedding(style, baseUrl, key, modelName, text)`
-- 完成后移除 streaming 卡片，`addMessage` 保存 `embeddingResult`（含 dim、preview、fullJson、model、usage）
-- 失败时标记 `status: failed` + `error`
-- 嵌入结果在 `renderResponse` 中渲染为 `.embedding-result` 块
+**嵌入端点的处理**：
+- 不再有独立的 `handleEmbeddingSend`，嵌入逻辑内联在 `handleSend` 中
+- 嵌入端点并发调用 `callEmbedding`，完成后调用 `updateCardAsEmbedding` 替换卡片内容（维度 + 预览 + 复制按钮）
+- 嵌入结果保存为 `embeddingResult`（含 dim、preview、fullJson、model、usage）
+- 嵌入端点不参与 streaming 排序
 
 ### 4. 流式卡片生命周期
 
@@ -271,3 +271,4 @@ radio change → setThemePref(mode)
 | 2026-04-27 | 嵌入模式独立为一个函数而非 handleSend 的分支 | 嵌入流程差异太大（单端点、无 streaming、特殊 UI），合并只会增加 if-else |
 | 2026-07-01 | 暗色模式：Popover 下拉选择（亮/暗/系统），radio 直选替代三态循环；beforetoggle 动态定位；settings.theme 持久化；html.className 驱动 | 三态循环 + 同图标用户无法区分当前模式，Popover 下拉 + 独立图标（sun/moon/auto）更清晰 |
 | 2026-07-02 | 错误信息从 header 移到 .content（跟 .say 同级），有错误时隐藏复制按钮 | 错误信息过长时 header 空间不足，移到 content 更合理；有错误时复制按钮无意义 |
+| 2026-07-03 | 移除全局 inputMode 和 handleEmbeddingSend，handleSend 按端点 type 内部分流 | 端点类型在配置时已知，全局 toggle 是错误抽象；统一入口 + 类型路由使多类型端点并发成为可能 |

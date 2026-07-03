@@ -1,5 +1,12 @@
 // ========== Endpoint Tree Functions ==========
 const collapsedEndpoints = new Set();
+var activeTypeFilters = new Set();
+
+function setEmptyStateVisibility(show) {
+	var aside = document.querySelector('aside.endpoint.list');
+	if (!aside) return;
+	aside.classList.toggle('show-empty-state', show);
+}
 
 function collapseAllEndpointNodes() {
 	// 收集所有节点ID
@@ -66,6 +73,16 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			var rcfg = resolveNodeConfig(node.id);
 			nameSpan.textContent = node.name;
 
+			// 设置类型标签
+			var badge = nodeEl.querySelector('.type-badge');
+			if (badge) {
+				var type = rcfg ? rcfg.type : 'chat';
+				if (type === 'chat') { badge.textContent = '💬'; badge.classList.add('chat'); }
+				else if (type === 'embedding') { badge.textContent = '🔢'; badge.classList.add('embedding'); }
+				else if (type === 'image') { badge.textContent = '🎨'; badge.classList.add('image'); }
+				else if (type === 'rerank') { badge.textContent = '📊'; badge.classList.add('rerank'); }
+			}
+
 			var tooltipId = "tooltip-" + node.id;
 			var tooltipHTML = buildTooltipHTML(node, rcfg, node.name);
 			var tooltip = createTooltip(tooltipId, tooltipHTML);
@@ -100,19 +117,19 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			function isNodeTestable(n) {
 				var cfg = resolveNodeConfig(n.id);
 				if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId) return false;
-				var mtype = detectModelType(cfg.modelId);
-				return mtype === 'chat' || mtype === 'embedding';
+				return cfg.type === 'chat' || cfg.type === 'embedding';
 			}
 
 			function collectTestable(nds, out) {
-				nds.forEach(function(n) {
-					if (isNodeTestable(n))
-						out.push(n.id);
+                nds.forEach(function(n) {
+                    if (isNodeTestable(n)) {
+                        out.push(n.id);
+                    }
 
-					if (n.children)
-						collectTestable(n.children, out);
-				});
-			}
+                    if (n.children)
+                        collectTestable(n.children, out);
+                });
+            }
 
 			var testableIds = [];
 			collectTestable([node], testableIds);
@@ -330,16 +347,16 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 		var testableIds = [];
 
 		function collectTestable(ns) {
-			ns.forEach(function(n) {
-				var rcfg = resolveNodeConfig(n.id);
+            ns.forEach(function(n) {
+                var rcfg = resolveNodeConfig(n.id);
 
-				if (rcfg && rcfg.baseUrl && rcfg.modelId && detectModelType(rcfg.modelId) === 'chat' || detectModelType(rcfg.modelId) === 'embedding')
-					testableIds.push(n.id);
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding"))
+                    testableIds.push(n.id);
 
-				if (n.children)
-					collectTestable(n.children);
-			});
-		}
+                if (n.children)
+                    collectTestable(n.children);
+            });
+        }
 
 		collectTestable(getGroups());
 		var hasTesting = false, hasFail = false, hasSuccess = false;
@@ -375,6 +392,118 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				testAllBtn.classList.add("connected");
 		}
 	}
+	// 初始化类型筛选（仅首次）
+	initEndpointFilter();
+
+	// 重新应用当前的类型筛选
+	applyEndpointFilter();
+	updateEmptyState();
+}
+
+function updateEmptyState() {
+	var aside = document.querySelector('aside.endpoint.list');
+	var emptyState = aside ? aside.querySelector('.empty-state') : null;
+	var emptyHint = emptyState ? emptyState.querySelector('.empty-hint') : null;
+	var resetBtn = emptyState ? emptyState.querySelector('.reset-filter') : null;
+	var addBtn = emptyState ? emptyState.querySelector('.add-endpoint') : null;
+	if (!aside || !emptyState) return;
+
+	var groups = getGroups();
+	var totalNodes = document.querySelectorAll('aside.endpoint.list li.one.endpoint').length;
+	var hiddenNodes = document.querySelectorAll('aside.endpoint.list li.one.endpoint[style*="display: none"]').length;
+	var hasVisible = totalNodes - hiddenNodes;
+
+	if (groups.length === 0) {
+		// 没有建过任何端点：隐藏 ol，显示 empty-state
+		aside.classList.add('show-empty-state');
+		emptyState.classList.remove('hidden');
+		emptyHint.textContent = '目前还没有创建端点。';
+		resetBtn.classList.add('hidden');
+		addBtn.classList.remove('hidden');
+	} else if (groups.length > 0 && hasVisible === 0 && activeTypeFilters.size > 0 && activeTypeFilters.size < 4) {
+		// 筛选后无结果：隐藏 ol，显示 empty-state
+		aside.classList.add('show-empty-state');
+		emptyState.classList.remove('hidden');
+		emptyHint.textContent = '没有符合筛选的端点。';
+		resetBtn.classList.remove('hidden');
+		addBtn.classList.add('hidden');
+	} else {
+		// 有可见端点：恢复 ol，隐藏 empty-state
+		aside.classList.remove('show-empty-state');
+		emptyState.classList.add('hidden');
+	}
+
+	// 绑定「重置筛选」按钮（只绑一次）
+	if (resetBtn && !resetBtn.dataset.bound) {
+		resetBtn.dataset.bound = 'true';
+		resetBtn.onclick = function() {
+			document.querySelectorAll('.type-filter input[type="checkbox"]').forEach(function(cb) { cb.checked = true; });
+			activeTypeFilters.clear();
+			document.querySelectorAll('.type-filter input[type="checkbox"]:checked').forEach(function(cb) { activeTypeFilters.add(cb.value); });
+			applyEndpointFilter();
+			updateEmptyState();
+		};
+	}
+
+	// 绑定「去创建」按钮（只绑一次）
+	if (addBtn && !addBtn.dataset.bound) {
+		addBtn.dataset.bound = 'true';
+		addBtn.onclick = function() {
+			var addGroupBtn = document.querySelector('.add-group.btn');
+			if (addGroupBtn) addGroupBtn.click();
+		};
+	}
+}
+
+// 端点类型筛选
+function initEndpointFilter() {
+	var filterBar = document.querySelector('.type-filter');
+	if (!filterBar || filterBar.dataset.initialized) return;
+	filterBar.dataset.initialized = 'true';
+
+	// 从 checkbox 默认状态初始化 activeTypeFilters
+	activeTypeFilters.clear();
+	filterBar.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+		if (cb.checked) activeTypeFilters.add(cb.value);
+	});
+
+	filterBar.addEventListener('change', function(e) {
+		var checkbox = e.target.closest('input[type="checkbox"]');
+		if (!checkbox) return;
+		if (checkbox.checked) activeTypeFilters.add(checkbox.value);
+		else activeTypeFilters.delete(checkbox.value);
+		applyEndpointFilter();
+		updateEmptyState();
+	});
+}
+
+function applyEndpointFilter() {
+	var items = document.querySelectorAll('aside.endpoint.list li.one.endpoint');
+	for (var i = items.length - 1; i >= 0; i--) {
+		var li = items[i];
+		var badge = li.querySelector('.type-badge');
+		var type = '';
+		if (badge) {
+			if (badge.classList.contains('chat')) type = 'chat';
+			else if (badge.classList.contains('embedding')) type = 'embedding';
+			else if (badge.classList.contains('image')) type = 'image';
+			else if (badge.classList.contains('rerank')) type = 'rerank';
+		}
+
+		if (activeTypeFilters.has(type)) {
+			li.style.display = '';
+		} else {
+			// 分组节点：如果有子节点匹配，也显示
+			var hasMatchingChild = false;
+			var sublist = li.querySelector('details > ol');
+			if (sublist) {
+				hasMatchingChild = Array.from(sublist.querySelectorAll('li.one.endpoint')).some(function(child) {
+					return child.style.display !== 'none';
+				});
+			}
+			li.style.display = hasMatchingChild ? '' : 'none';
+		}
+	}
 }
 
 function updateEndpointTestUI(nodeId) {
@@ -407,13 +536,16 @@ function updateEndpointTestUI(nodeId) {
 	if (testAllBtn && typeof getGroups === "function") {
 		var allTestableIds = [];
 		function collectTestable(ns) {
-			ns.forEach(function(n) {
-				var rcfg = resolveNodeConfig(n.id);
-				if (rcfg && rcfg.baseUrl && rcfg.modelId && (detectModelType(rcfg.modelId) === 'chat' || detectModelType(rcfg.modelId) === 'embedding'))
-					allTestableIds.push(n.id);
-				if (n.children) collectTestable(n.children);
-			});
-		}
+            ns.forEach(function(n) {
+                var rcfg = resolveNodeConfig(n.id);
+
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding"))
+                    testableIds.push(n.id);
+
+                if (n.children)
+                    collectTestable(n.children);
+            });
+        }
 		collectTestable(getGroups());
 		var hasTesting = false, hasFail = false, hasSuccess = false;
 		allTestableIds.forEach(function(id) {

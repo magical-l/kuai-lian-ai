@@ -2,7 +2,7 @@
 title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
-api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI
+api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
 last_updated: 2026-07-03
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
@@ -17,9 +17,10 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 
 - `<details>` 原生三角箭头（展开/收起）
 - 拖拽手柄（`.handle`，`draggable=true`）
-- 名称 + remark
+- 名称 + 类型标签 + remark
 - 操作栏：添加子节点、批量测试、加入会话 checkbox、编辑、删除
 - 节点类型 tooltip（hover 显示继承链配置）
+- 顶部类型筛选栏（全部/嵌入/生图/重排序）
 
 树的数据模型由 `store.js` 管理（`getGroups` / `endpointsData`），`endpoint-tree.js` 只负责 DOM 渲染和交互事件绑定。
 
@@ -31,8 +32,11 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 |------|------|
 | `collapsedEndpoints` | Set 保存当前折叠的节点 ID |
 | `collapseAllEndpointNodes` | 折叠所有节点（遍历 + DOM 操作） |
-| `renderEndpointList` | 递归渲染整棵树 |
+| `renderEndpointList` | 递归渲染整棵树，末尾恢复当前筛选状态，更新空状态提示（无端点/筛选无结果） |
 | `updateEndpointTestUI` | 更新单个节点 + 父级 + 全局 test-all 按钮状态 |
+| `activeTypeFilters` | Set，多选筛选状态（存放选中的 type 值，空 Set = 全部显示） |
+| `initEndpointFilter` | 初始化筛选栏 change 事件委托（防止 render 后重复绑定），操作 `activeTypeFilters` Set |
+| `applyEndpointFilter` | 遍历端点 li 按 `activeTypeFilters` 显示/隐藏，分组节点检查子节点匹配 |
 
 ---
 
@@ -44,20 +48,21 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 
 每个节点渲染流程：
 
-1. **克隆模板**：`fromTemplate('one-endpoint', 'li')`，无子节点时添加 `.compact` class。模板结构：`<li><details><summary>` 保持原生 `display:list-item` 保留三角 marker，summary 内包 `<header class="inline flex items-x-mutex" style="width:95%">` 含 handle、name、actions 三个子元素，header 用 `width:95%` 避开 marker 占位、`items-x-mutex`(space-between) 分布内容。
+1. **克隆模板**：`fromTemplate('one-endpoint', 'li')`，无子节点时添加 `.compact` class。模板结构：`<li><details><summary>` 保持原生 `display:list-item` 保留三角 marker，summary 内包 `<header class="inline flex items-x-mutex" style="width:95%">` 含 handle、type-badge、name、actions 四个子元素，header 用 `width:95%` 避开 marker 占位、`items-x-mutex`(space-between) 分布内容。
 2. **拖拽手柄**（行 39-58）：`dataTransfer.setData("text/plain", node.id)`，dragstart/dragend 事件。可拖拽值为 `effectAllowed = "move"`
 3. **展开/收起**：
    - `<details>` 原生 `open` 属性 + `<summary>` 原生三角箭头控制显隐
    - 无子节点时（`.compact`）隐藏三角箭头（`list-style: none` + `::marker`）
    - `<details>` 的 `toggle` 事件同步 `collapsedEndpoints` Set 状态
-4. **名称 + Tooltip**（行 81-101）：
+4. **名称 + 类型标签 + Tooltip**（行 65-85）：
    - 名称文本设为 `node.name`
+   - 类型标签（`.type-badge`）紧跟在 `.name` 后面，渲染时根据 `rcfg.type` 设置：embedding→🔢、image→🎨、rerank→📊（chat 不显示标签，减少视觉噪音）
    - `createTooltip(tooltipId, buildTooltipHTML(node, rcfg, node.name))` 绑定到 `summaryEl` 的 mouseover/mouseleave/click
    - tooltip 内容由 `selected-endpoints.js` 的 `buildTooltipHTML` 生成
 5. **操作栏**（行 103-281）：
    - **添加子**：调用 `showEditGroupDialog(null, node.id, ...)` 新增
    - **批量测试**（行 116-233）：
-     - 判断可测试节点（recursive `collectTestable`）：需有 `baseUrl + key + modelId`，且 detectModelType 为 chat/embedding
+     - 判断可测试节点（recursive `collectTestable`）：需有 `baseUrl + key + modelId`，且 `config.type` 为 chat/embedding
      - 按钮 CSS class 切换：`connected`（全部成功）/ `failed`（有失败）/ `testing`（旋转动画）
      - 点击触发所有子节点 `onTestConnection(id)`
      - 按钮 title 显示汇总统计："✓ 全部成功" / "✗ N个失败：错误信息"
@@ -69,6 +74,12 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
      - `drag-over-child`（下半区或非 summary 区域 → 作为子节点）
    - `drop` 事件读取 `draggedId`，根据 drop zone 类型调 `onReorderNodes(draggedId, targetId, true)` 或 `onMoveNode(draggedId, node.id)`
 7. **递归子节点**（行 331-342）：有子节点时创建 `<ol class="children">`（使用 `<details>` 原生 open/close 控制显隐），递归调用 `renderTreeNode`。内容追加到 `<details>` 而非 `<li>`。
+8. **类型筛选**：在端点树 header 行（`AI服务端点` 标题右侧）渲染多选 checkbox 组（🔢嵌入/🎨生图/📊重排序）。「全部不选 = 显示所有，选一个或多个 = 只显示匹配类型」。`initEndpointFilter` 用 change 事件委托监听 header 内 `.type-filter` 的 checkbox change，操作 `activeTypeFilters` Set（add/delete），然后调用 `applyEndpointFilter` 遍历所有 `li.one.endpoint`，按 `activeTypeFilters` 匹配显示/隐藏。`renderEndpointList` 末尾自动恢复筛选。分组节点先检查子节点是否有匹配再决定自身显隐。
+
+9. **空状态提示**：`renderEndpointList` 末尾检查 `.endpoint.list .empty-state` 容器，根据情况显示：
+   - 无任何端点时显示「目前还没有创建端点。」+「去创建」按钮（点击触发 `.add-group.btn` 的 click）
+   - 筛选后无结果时显示「没有符合筛选的端点。」+「重置筛选」按钮（点击全选所有 type-filter checkbox 并重新应用）
+   - 其他情况隐藏空状态
 
 ### 2. 拖拽排序：跨级操作
 
@@ -138,4 +149,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-04-27 | 折叠状态不持久化 | 用户对树的折叠习惯变频繁，持久化收益低且增加复杂度 |
 | 2026-07-02 | 端点树结构改为 details/summary/ol，利用原生 open/close 替代手动 display 切换 | 语义化 HTML，减少 JS 手动 DOM 操作，提升可访问性 |
 | 2026-07-02 | 去掉自定义 .expand 按钮，复用 `<summary>` 原生三角箭头 | 自定义按钮与原生功能重复；flex 布局需移到 summary 内层 div 以避免 Chrome 隐藏原生 marker |
-| 2026-07-02 | summary 内包 header(95%+inline-flex+items-x-mutex) 实现 handle+name 左、actions 右布局 | 原生 marker 与 flex 互斥（Chrome），改用 95% 宽度避开 marker 占位 + items-x-mutex(space-between) 分布 |
+| 2026-07-02 | summary 内包 header(95%+inline-flex+items-x-mutex) 实现 handle+name 左、actions 右布局 | 原生 marker 与 flex 互斥（Chrome），改用 95% 宽度避开 marker 占位 + items-x-mutex(space-between) 分布内容 |
+| 2026-07-03 | 端点节点名称旁加类型标签，chat 不显示 | 嵌入/生图端点太多时难以在树中目视定位；chat 为主，标签只对非 chat 类型有意义 |
+| 2026-07-03 | 端点树顶部加类型筛选栏（全部/嵌入/生图/重排序），事件委托避免重绘后丢失 | 筛选需要跨层次（分组节点隐藏前检查子节点匹配），CSS-only 无法处理父子关系；`renderEndpointList` 重绘后自动恢复筛选状态 |
+| 2026-07-03 | 端点树列表为空时显示两种提示：「去创建」（无任何端点）和「重置筛选」（筛选后无结果） | 空列表无提示时用户不知该做什么；区分"没建过"和"被筛掉了"两种场景，各提供对应操作按钮 |

@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.3.5</span>
+			<span class="version">v6.5.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -134,11 +134,27 @@
 		<aside class="endpoint list , flex items-go-y">
 			<header class="flex items-go-x">
 				<span>AI服务端点</span>
+				<div style="display:flex;gap:2px;align-items:center">
+					<div class="btn-group type-filter flex items-go-x">
+						<label class="option btn" title="聊天">
+							<input type="checkbox" value="chat" checked hidden>💬
+						</label>
+						<label class="option btn" title="嵌入">
+							<input type="checkbox" value="embedding" checked hidden>🔢
+						</label>
+						<label class="option btn" title="生图">
+							<input type="checkbox" value="image" checked hidden>🎨
+						</label>
+						<label class="option btn" title="重排序">
+							<input type="checkbox" value="rerank" checked hidden>📊
+						</label>
+					</div>
+				</div>
 				<span class="btn-group , flex items-go-x">
 					<button class="test-all btn , bare icon-only , square" title="测试全部连接">🔗</button>
 					<button class="collapse-all btn , bare icon-only , square" title="收起全部">
-							<svg width="14" height="14" viewBox="0 0 24 24"><use href="icons.svg#icon-collapse-all"></use></svg>
-						</button>
+						<svg width="14" height="14" viewBox="0 0 24 24"><use href="icons.svg#icon-collapse-all"></use></svg>
+					</button>
 					<button class="add-group btn , bare icon-only , square" title="新增端点">
 						<span style="font-size:16px;font-weight:700">+</span>
 					</button>
@@ -146,30 +162,36 @@
 			</header>
 			<ol class="scrollable on-y when-content-long">
 				<template id="one-endpoint">
-						<li class="one endpoint">
-							<details>
-																<summary>
-									<header class="inline flex items-x-mutex" style="width:95%">
-										<span class="handle drag btn , bare icon-only , square" draggable="true" title="拖动排序">⋮⋮</span>
-										<span class="name"></span>
-										<div class="btn-group actions , flex items-go-x">
-											<button class="add-child btn , bare icon-only , square" title="添加子节点">+</button>
-											<button class="test-connection btn , bare icon-only , square" title="测试连接"><span>🔗</span></button>
-											<label class="join-session btn , bare icon-only , square" title="加入当前会话">
-												<input type="checkbox" hidden>
-												<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-bubble"></use></svg>
-											</label>
-											<button class="edit btn , bare icon-only , square" title="编辑节点">✎</button>
-											<button class="remove btn , danger bare icon-only , square" title="删除节点及其子节点">
-												<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-trash"></use></svg>
-											</button>
-										</div>
-									</header>
-								</summary>
-							</details>
-						</li>
-					</template>
+					<li class="one endpoint">
+						<details>
+							<summary>
+								<header class="inline flex items-x-mutex" style="width:95%">
+									<span class="handle drag btn , bare icon-only , square" draggable="true" title="拖动排序">⋮⋮</span>
+									<span class="type-badge"></span>
+									<span class="name"></span>
+									<div class="btn-group actions , flex items-go-x">
+										<button class="add-child btn , bare icon-only , square" title="添加子节点">+</button>
+										<button class="test-connection btn , bare icon-only , square" title="测试连接"><span>🔗</span></button>
+										<label class="join-session btn , bare icon-only , square" title="加入当前会话">
+											<input type="checkbox" hidden>
+											<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-bubble"></use></svg>
+										</label>
+										<button class="edit btn , bare icon-only , square" title="编辑节点">✎</button>
+										<button class="remove btn , danger bare icon-only , square" title="删除节点及其子节点">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="icons.svg#icon-trash"></use></svg>
+										</button>
+									</div>
+								</header>
+							</summary>
+						</details>
+					</li>
+				</template>
 			</ol>
+			<div class="empty-state hidden">
+				<span class="empty-hint"></span>
+				<button class="reset-filter btn , hidden">重置筛选</button>
+				<button class="add-endpoint btn , hidden">去创建</button>
+			</div>
 			<template id="edit-group-dialog">
 				<dialog class="editing endpoint">
 					<h3></h3>
@@ -200,6 +222,15 @@
 						<label class="model-id editor , flex items-go-y">模型名（选填）:
 							<input name="model-id" placeholder="如 gpt-4o">
 							<span class="hint"></span>
+						</label>
+						<label class="type editor , flex items-go-y">类型:
+							<select name="type">
+								<option value="chat">💬 聊天</option>
+								<option value="embedding">🔢 嵌入</option>
+								<option value="image">🎨 生图</option>
+								<option value="rerank">📊 重排序</option>
+							</select>
+							<span class="detected-hint" style="font-size:smaller;color:var(--text-dim)"></span>
 						</label>
 						<label class="remark editor , flex items-go-y">备注（选填）:
 							<input name="remark" placeholder="仅用于显示">
@@ -282,10 +313,7 @@
 					<button class="add attachment btn , square icon-only" title="添加附件">
 						<svg><use href="icons.svg#icon-attach"></use></svg>
 					</button>
-					<div class="model-task selector btn-group , inline flex items-go-x" role="radiogroup">
-						<label class="option btn"><input type="radio" name="taskMode" value="chat" checked> 💬 聊天</label>
-						<label class="option btn"><input type="radio" name="taskMode" value="embedding"> 🔢 嵌入</label>
-					</div>
+					
 					<div class="split btn-group : send , flex items-go-x items-from-left" title="发送">
 						<button class="main btn : send , primary , icon-only">
 							<svg><use href="icons.svg#icon-send"></use></svg>

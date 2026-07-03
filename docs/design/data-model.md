@@ -3,7 +3,7 @@ title: 数据模型
 covers_file: [src/modules/store.js, src/modules/storage-core.js, src/extension/storage-core.js]
 depends_on: [architecture.md]
 api_signature: endpointsData / sessionsCache / storage.loadEndpoints / storage.saveEndpoints / storage.loadSession / storage.saveSession
-last_updated: 2026-07-01
+last_updated: 2026-07-03
 why_exists: 定义端点树、会话和消息的数据结构及存储抽象层，确保前后端存储迁移的正确性
 ---
 
@@ -24,6 +24,7 @@ why_exists: 定义端点树、会话和消息的数据结构及存储抽象层�
       "key": "api-key-string",
       "modelId": "gpt-4o",
       "remark": "仅用于显示的备注",
+      "type": "chat",
       "children": [
         {
           "id": "uuid",
@@ -33,6 +34,7 @@ why_exists: 定义端点树、会话和消息的数据结构及存储抽象层�
           "key": "",
           "modelId": "gpt-4o",
           "remark": "",
+          "type": "",
           "children": []
         }
       ]
@@ -41,11 +43,11 @@ why_exists: 定义端点树、会话和消息的数据结构及存储抽象层�
 }
 ```
 
-**继承机制**：resolveNodeConfig(nodeId) 沿祖先链向上查找缺失字段，覆盖顺序：节点自身 > 父 > 祖父 > ...（从最近祖先开始）。继承字段包括 baseUrl、style、key、modelId。只有这四个字段都解析到有效值（不含空串），该节点才能作为可用的端点。
+**继承机制**：resolveNodeConfig(nodeId) 沿祖先链向上查找缺失字段，覆盖顺序：节点自身 > 父 > 祖父 > ...（从最近祖先开始）。继承字段包括 baseUrl、style、key、modelId、type。其中 type 继承后仍为空时，从 modelId 启发式推断（detectModelType）。只有 baseUrl、key、modelId 都解析到有效值（不含空串），该节点才能作为可用的端点。
 
 一个节点可以作为"端点容器"（有 children 但自身无 modelId），也可以作为"端点叶子"（无 children，有 modelId），或同时兼具两者。
 
-**节点有效性判断**（isNodeTestable）：resolveNodeConfig 返回的配置中 baseUrl、key、modelId 均非空，且 detectModelType 返回 chat 或 embedding。
+**节点有效性判断**（isNodeTestable）：resolveNodeConfig 返回的配置中 baseUrl、key、modelId 均非空，且 config.type 为 chat 或 embedding。
 
 ### 会话和消息结构
 
@@ -114,7 +116,7 @@ function migrateEndpoints(data) {
 | 函数 | 所在文件 | 功能 | 可见性 | 备注 |
 |------|----------|------|--------|------|
 | findNodeWithAncestors | src/modules/store.js | 递归查找节点及其祖先链 | 内部 | 返回 {node, ancestors} |
-| resolveNodeConfig | src/modules/store.js | 沿祖先链继承解析端点配置 | 全局 | 四个字段继承 |
+| resolveNodeConfig | src/modules/store.js | 沿祖先链继承解析端点配置 | 全局 | 五个字段继承 + type 回退 detectModelType |
 | detectModelType | src/modules/store.js | 从模型名推断类型 | 全局 | embedding/rerank/chat |
 | migrateEndpoints | src/modules/store.js | 旧 groups→nodes 迁移 | 全局 | 自动运行 |
 | addNode | src/modules/store.js | 创建节点 | 全局 | 支持指定父节点 |
@@ -129,3 +131,4 @@ function migrateEndpoints(data) {
 ## 决策日志
 
 - 2026-07-01: 初始文档创建
+- 2026-07-03: 节点数据结构新增 type 字段（chat/embedding/image/rerank），resolveNodeConfig 继承五个字段 + type 回退 detectModelType

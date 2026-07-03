@@ -27,7 +27,7 @@ function resolveNodeConfig(nodeId) {
 	const result = findNodeWithAncestors(endpointsData.nodes, nodeId);
 	if (!result) return null;
 	const { node, ancestors } = result;
-	const fields = ['baseUrl', 'style', 'key', 'modelId'];
+	const fields = ["baseUrl", "style", "key", "modelId", "type"];
 	const config = {};
 	for (const f of fields) config[f] = node[f] || '';
 	// 从最近祖先往上走，填补缺失字段
@@ -35,6 +35,10 @@ function resolveNodeConfig(nodeId) {
 		for (const f of fields) {
 			if (!config[f] && ancestors[i][f]) config[f] = ancestors[i][f];
 		}
+	}
+	// type 继承后仍为空 → 从 modelId 启发式推断
+	if (!config.type) {
+		config.type = detectModelType(config.modelId);
 	}
 	return config;
 }
@@ -166,6 +170,7 @@ async function addNode(parentId, data) {
 		key: data.key || '',
 		modelId: data.modelId || '',
 		remark: data.remark || '',
+		type: data.type || '',
 		children: []
 	};
 	if (parentId) {

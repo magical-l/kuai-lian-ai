@@ -282,22 +282,27 @@ function renderResponse(container, msg, groups) {
                 embMeta = mk('div', 'embedding-result');
                 existing.addChild(embMeta);
             }
-            embMeta.innerHTML = `<div class="mb-1">
-                    <strong>嵌入维度:</strong>
-                    ${emb.dim}
-                </div>
-                <div class="mb-1">
-                    <strong>预览:</strong>
-                    <code>${emb.preview}</code>
-                </div>`;
+            embMeta.innerHTML = '<div class="mb-1 flex items-go-x" style="align-items:center;gap:8px">' +
+                '<strong>嵌入维度:</strong> ' + emb.dim +
+                '<button class="expand-json btn bare square icon-only" title="展开完整向量">▶</button>' +
+                '</div>' +
+                '<div class="mb-1"><strong>预览:</strong> <code>' + emb.preview + '</code></div>' +
+                '<pre class="embedding-full-json" style="display:none;font-size:smaller;max-height:200px;overflow:auto;background:var(--bg-dim);padding:8px;border-radius:4px;white-space:pre-wrap;word-break:break-all"></pre>';
+            const fullJsonPre = embMeta.querySelector('.embedding-full-json');
+            fullJsonPre.textContent = emb.fullJson;
+            const expandBtn = embMeta.querySelector('.expand-json');
+            expandBtn.onclick = function() {
+                const isHidden = fullJsonPre.style.display === 'none';
+                fullJsonPre.style.display = isHidden ? '' : 'none';
+                this.textContent = isHidden ? '▼' : '▶';
+            };
             const copyBtn = mk("button", "copy code btn , bare icon-only , square");
-            copyBtn.innerHTML = '<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>';
+            copyBtn.innerHTML = '<span class="copy icon">⧉</span><span class="done icon">✓</span>';
             copyBtn.title = "复制完整向量";
             const previewRow = embMeta.querySelector('.mb-1:last-child');
             previewRow.addChild(copyBtn);
             copyBtn.onclick = () => {
-                const codeText = previewRow.querySelector('code').textContent;
-                navigator.clipboard.writeText(codeText).then(() => {
+                navigator.clipboard.writeText(emb.fullJson).then(() => {
                     copyBtn.classList.add("copied");
                     setTimeout(() => copyBtn.classList.remove("copied"), 1500);
                 });
