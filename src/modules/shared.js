@@ -240,6 +240,79 @@ async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal 
         return provider.parseEmbeddingResponse(data);
     }
 
+function blobToBase64(blob) {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result);
+		reader.onerror = () => reject(new Error('Blob 转 base64 失败'));
+		reader.readAsDataURL(blob);
+	});
+}
+
+async function callImageGeneration(style, baseUrl, apiKey, model, messages) {
+    const provider = providers[style];
+    if (!provider) throw new Error('不支持的接口风格: ' + style);
+    if (!provider.buildImageRequest) throw new Error('该接口不支持生图');
+
+    const req = provider.buildImageRequest(baseUrl, apiKey, model, messages);
+    const res = await fetchWithTimeout(req.url, {
+        method: 'POST',
+        headers: req.headers,
+        body: JSON.stringify(req.body)
+    }, 120000);
+
+    if (!res.ok) {
+        const err = await res.text().catch(() => '');
+        throw new Error('生图请求失败: ' + res.status + (err ? ' - ' + err : ''));
+    }
+
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('text/html')) {
+        const body = await res.text().catch(() => '');
+        const m = body.match(/<title>([^<]+)<\/title>/i);
+        throw new Error('生图请求失败: 服务器返回了HTML页面 — ' + (m ? m[1] : body.slice(0, 100)));
+    }
+
+    const text = await res.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        throw new Error('生图请求失败: 响应体不是有效 JSON — ' + text.slice(0, 100));
+    }
+
+    if (data.error) {
+        const msg = data.error.message || data.error.code || JSON.stringify(data.error);
+        throw new Error('生图请求失败: ' + msg);
+    }
+    if (!data.data || !data.data[0]) {
+        throw new Error('生图响应格式错误: 缺少 data[0]');
+    }
+    const result = {
+        url: data.data[0].url || null,
+        b64_json: data.data[0].b64_json || null,
+        revised_prompt: data.data[0].revised_prompt || null
+    };
+    // 下载图片转 blob URL（当前页面快速显示）+ base64（持久化，支持会话记录加载）
+    if (result.url && !result.b64_json) {
+        try {
+            const imgRes = await fetch(result.url);
+            if (imgRes.ok) {
+                const blob = await imgRes.blob();
+                result.blobUrl = URL.createObjectURL(blob);
+                // 转 base64 用于持久化存储
+                result.imageData = await blobToBase64(blob);
+            }
+        } catch (e) {
+            console.warn('生图图片下载失败，将使用原始 URL:', e.message);
+        }
+    } else if (result.b64_json) {
+        // API 直接返回了 base64，也存为 imageData
+        result.imageData = 'data:image/png;base64,' + result.b64_json;
+    }
+    return result;
+}
+
 async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) {
 	const startTime = Date.now();
 	clearSessionGenerations(sessionId);

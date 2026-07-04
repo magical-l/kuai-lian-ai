@@ -1,6 +1,45 @@
 // ========== Provider 定义（API 格式抽象层）==========
 const providers = {
 	openai: {
+		buildImageRequest(baseUrl, apiKey, model, messages) {
+            let prompt = "";
+
+            for (let i = messages.length - 1; i >= 0; i--) {
+                const m = messages[i];
+
+                if (m.role !== "user")
+                    continue;
+
+                if (typeof m.content === "string") {
+                    prompt = m.content;
+                    break;
+                }
+
+                if (Array.isArray(m.content)) {
+                    const text = m.content.filter(c => c.type === "text").map(c => c.text).join("\n");
+
+                    if (text) {
+                        prompt = text;
+                        break;
+                    }
+                }
+            }
+
+            return {
+                url: baseUrl + "/v1/images/generations",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + apiKey
+                },
+
+                body: {
+                    model,
+                    prompt,
+                    n: 1
+                }
+            };
+        },
 		buildRequest(baseUrl, apiKey, model, messages) {
 			return {
 				url: baseUrl + '/v1/chat/completions',

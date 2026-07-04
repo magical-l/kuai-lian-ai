@@ -308,6 +308,45 @@ function renderResponse(container, msg, groups) {
                 });
             };
         }
+
+        // image 结果（非流式生图场景）
+        if (r.imageResult) {
+            const imgRes = r.imageResult;
+            let imgMeta = $('.image-result', existing);
+            if (!imgMeta) {
+                imgMeta = mk('div', 'image-result');
+                existing.addChild(imgMeta);
+            }
+            // 避免重复渲染（updateCardAsImage 已添加时）
+            const hasImg = imgMeta.querySelector('img');
+            if (!hasImg) {
+                // renderResponse 是会话重渲染，不用 blobUrl（可能已过期）；imageData 是持久化的 base64
+                const imgUrl = imgRes.imageData || imgRes.url || (imgRes.b64_json ? 'data:image/png;base64,' + imgRes.b64_json : null);
+                if (imgUrl) {
+                    const img = mk('img', 'generated');
+                    img.src = imgUrl;
+                    img.style.maxWidth = '100%';
+                    img.style.borderRadius = '8px';
+                    img.onclick = () => {
+                        const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+                        const fullImg = mk('img');
+                        fullImg.src = imgUrl;
+                        overlay.onclick = () => overlay.remove();
+                        overlay.addChild(fullImg);
+                        doc.body.addChild(overlay);
+                    };
+                    imgMeta.addChild(img);
+                }
+                if (imgRes.revised_prompt) {
+                    const revised = mk('div', 'revised-prompt');
+                    revised.textContent = '修订提示: ' + imgRes.revised_prompt;
+                    revised.style.fontSize = 'smaller';
+                    revised.style.color = 'var(--text-dim)';
+                    revised.style.marginTop = '4px';
+                    imgMeta.addChild(revised);
+                }
+            }
+        }
     });
 }
 

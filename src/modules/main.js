@@ -415,16 +415,18 @@ async function handleSend() {
 	// 按端点类型分流
 	const chatIds = [];
 	const embedIds = [];
+	const imgGenerateIds = [];
 	selectedEndpoints.forEach(id => {
 		const cfg = resolveNodeConfig(id);
 		if (cfg.type === 'embedding' || cfg.type === 'embed') embedIds.push(id);
+		else if (cfg.type === 'img-generate' || cfg.type === 'image') imgGenerateIds.push(id);
 		else chatIds.push(id);
 	});
-	
+
 	showThinkingCards(selectedEndpoints, groups, targetSessionId);
 	const sortedModels = new Set();
 	const allResults = [];
-	
+
 	try {
 		// 并行处理嵌入类端点（非流式，速度快）
 		const embedPromises = embedIds.map(async (id) => {
@@ -453,7 +455,35 @@ async function handleSend() {
 				return { endpointId: id, status: 'failed', error: err.message, content: '' };
 			}
 		});
-		
+
+		// 并行处理生图类端点（非流式）
+		const imgGeneratePromises = imgGenerateIds.map(async (id) => {
+			const info = findModelById(groups, id);
+			if (!info) {
+				return { endpointId: id, status: 'failed', error: '端点不存在', content: '' };
+			}
+			try {
+				const cfg = resolveNodeConfig(id);
+				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages);
+				updateCardAsImage(id, result, targetSessionId);
+				return {
+					endpointId: id,
+					status: 'completed',
+					content: result.url || '',
+					imageResult: {
+						blobUrl: result.blobUrl,
+						imageData: result.imageData,
+						url: result.url,
+						b64_json: result.b64_json,
+						revised_prompt: result.revised_prompt
+					}
+				};
+			} catch (err) {
+				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
+				return { endpointId: id, status: 'failed', error: err.message, content: '' };
+			}
+		});
+
 		const chatPromise = (async () => {
 			if (chatIds.length === 0) return [];
 			return await callAllModels(groups, chatIds, messages, (endpointId, partialContent, firstTokenTime) => {
@@ -465,14 +495,15 @@ async function handleSend() {
 				}
 			}, targetSessionId);
 		})();
-		
-		const [embedResults, chatResults] = await Promise.all([
+
+		const [embedResults, imgGenerateResults, chatResults] = await Promise.all([
 			Promise.all(embedPromises),
+			Promise.all(imgGeneratePromises),
 			chatPromise
 		]);
-		
-		allResults.push(...embedResults, ...chatResults);
-		
+
+		allResults.push(...embedResults, ...imgGenerateResults, ...chatResults);
+
 		await addMessage(targetSessionId, 'assistant', null, { responses: allResults });
 	} catch (err) {
 		console.error('Session generation error:', err);
@@ -766,6 +797,46 @@ function updateCardAsEmbedding(endpointId, result, sessionId) {
 			});
 		};
 		contentWrapper.addChild(embDiv);
+	}
+	updateCardStatus(endpointId, 'completed', null, null, sessionId);
+}
+
+function updateCardAsImage(endpointId, result, sessionId) {
+	const card = $(`.one.response.msg[data-session-id="${sessionId}"][data-endpoint-id="${endpointId}"]`);
+	if (!card) return;
+	const sayEl = $('.say', card);
+	if (sayEl) sayEl.textContent = '';
+	const contentWrapper = $('.content', card);
+	if (contentWrapper) {
+		const existing = $('.image-result', contentWrapper);
+		if (existing) existing.remove();
+
+		const imgDiv = mk('div', 'image-result');
+		const imgUrl = result.blobUrl || result.imageData || result.url || (result.b64_json ? 'data:image/png;base64,' + result.b64_json : null);
+		if (imgUrl) {
+			const img = mk('img', 'generated');
+			img.src = imgUrl;
+			img.style.maxWidth = '100%';
+			img.style.borderRadius = '8px';
+			img.onclick = () => {
+				const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+				const fullImg = mk('img');
+				fullImg.src = imgUrl;
+				overlay.onclick = () => overlay.remove();
+				overlay.addChild(fullImg);
+				doc.body.addChild(overlay);
+			};
+			imgDiv.addChild(img);
+		}
+		if (result.revised_prompt) {
+			const revised = mk('div', 'revised-prompt');
+			revised.textContent = '修订提示: ' + result.revised_prompt;
+			revised.style.fontSize = 'smaller';
+			revised.style.color = 'var(--text-dim)';
+			revised.style.marginTop = '4px';
+			imgDiv.addChild(revised);
+		}
+		contentWrapper.addChild(imgDiv);
 	}
 	updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }

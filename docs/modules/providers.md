@@ -3,7 +3,7 @@ title: Provider 抽象层 + DOM 工具集
 covers_file: [src/modules/providers.js]
 depends_on: []
 api_signature: providers.openai, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip
-last_updated: 2026-07-01
+last_updated: 2026-07-04
 why_exists: 三种 Provider 格式差异的封装和公共 DOM 辅助函数的复用
 ---
 
@@ -20,6 +20,16 @@ why_exists: 三种 Provider 格式差异的封装和公共 DOM 辅助函数的�
 嵌入能力通过可选方法 `testEmbeddingConfig` / `buildEmbeddingRequest` / `parseEmbeddingResponse` 扩展，provider 可以不实现（嵌入功能对其不可用）。
 
 DOM 工具集（文件后半部分）提供类 jQuery 简写、模板克隆、批量绑定、tooltip 组件等，保持 UI 代码简洁。
+
+## 生图支持
+
+仅 openai provider 实现了 `buildImageRequest` 方法，用于图片生成（`/v1/images/generations`）。与 `buildRequest` 的区别：
+
+- URL 路径：`{baseUrl}/v1/images/generations`
+- Body：`{ model, prompt, n: 1 }`（从 messages 中提取最后一条 user 文本作为 prompt）
+- 非流式调用，由 `callImageGeneration`（shared.js）处理
+
+claude 和 gemini provider 不实现此方法，`callImageGeneration` 通过 `if (!provider.buildImageRequest) throw` 做前置检查。
 
 ## 三 Provider 对比
 
@@ -85,6 +95,7 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 | 方法 | provider | 签名 |
 |---|---|---|
 | `buildRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
+| `buildImageRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `parseChunk` | openai | `(json) => {content?, reasoning?} | null` |
 | `testConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `buildRequest` | claude | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
@@ -160,3 +171,4 @@ tooltip 内含 copy 按钮（`button.copy`），点击将 `dataset.copy` 值写�
 | 2026-04-23 | claude 设置 `needsTagParsing: false` | claude 使用结构化 thinking 事件，无需 text-level 标签扫描，节省 buffer 开销 |
 | 2026-04-23 | H.addChild / H.on 挂在 prototype 上 | 避免在每个组件中重复 `el.appendChild(child)`，`return this` 支持链式 |
 | 2026-04-23 | tooltip 挂到 `.one.endpoint` 而非 body | 避免 `<span>` 嵌套 `<div>` 的 HTML 规范违规，同时减少 DOM 层级 |
+| 2026-07-04 | openai 新增 buildImageRequest 方法 | 支持生图端点，URL 使用 `/v1/images/generations`，body 从 messages 提取 prompt，非流式 |
