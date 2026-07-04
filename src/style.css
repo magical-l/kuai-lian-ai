@@ -857,9 +857,19 @@ main {
 }
 
 aside.endpoint.list {
-	/* 筛选栏 */
-	& .endpoint-type.filter .option.btn:has(input:checked) {
-		background: var(--accent-primary);
+	& .endpoint-type.icon-only {
+		&.chat::before { content: '💬'; }
+		&.embed::before { content: '🔢'; }
+		&.img-generate::before { content: '🎨'; }
+		&.rerank::before { content: '📊'; }
+	}
+	& .endpoint-type.filter .option.btn {
+		--btn-h: 24px;
+		--icon-max-width: var(--btn-h);
+		--icon-max-height: var(--btn-h);
+		&:has(input:checked) {
+			background: var(--accent-primary);
+		}
 	}
 	/* 根级 compact 节点保持正常间距 */
 	> ol > .one.endpoint.compact {

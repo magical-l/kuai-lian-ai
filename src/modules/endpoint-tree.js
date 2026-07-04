@@ -77,10 +77,10 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			var badge = nodeEl.querySelector('.endpoint-type.badge');
 			if (badge) {
 				var type = rcfg ? rcfg.type : 'chat';
-				if (type === 'chat') { badge.textContent = '💬'; badge.classList.add('chat'); }
-				else if (type === 'embedding') { badge.textContent = '🔢'; badge.classList.add('embedding'); }
-				else if (type === 'image') { badge.textContent = '🎨'; badge.classList.add('image'); }
-				else if (type === 'rerank') { badge.textContent = '📊'; badge.classList.add('rerank'); }
+				if (type === 'chat') { badge.classList.add('chat'); }
+				else if (type === 'embedding' || type === 'embed') { badge.classList.add('embed'); }
+				else if (type === 'image' || type === 'img-generate') { badge.classList.add('img-generate'); }
+				else if (type === 'rerank') { badge.classList.add('rerank'); }
 			}
 
 			var tooltipId = "tooltip-" + node.id;
@@ -117,7 +117,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			function isNodeTestable(n) {
 				var cfg = resolveNodeConfig(n.id);
 				if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId) return false;
-				return cfg.type === 'chat' || cfg.type === 'embedding';
+				return cfg.type === 'chat' || cfg.type === 'embedding' || cfg.type === 'embed';
 			}
 
 			function collectTestable(nds, out) {
@@ -350,7 +350,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
 
-                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding"))
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed"))
                     testableIds.push(n.id);
 
                 if (n.children)
@@ -485,8 +485,8 @@ function applyEndpointFilter() {
 		var type = '';
 		if (badge) {
 			if (badge.classList.contains('chat')) type = 'chat';
-			else if (badge.classList.contains('embedding')) type = 'embedding';
-			else if (badge.classList.contains('image')) type = 'image';
+			else if (badge.classList.contains('embed')) type = 'embed';
+			else if (badge.classList.contains('img-generate')) type = 'img-generate';
 			else if (badge.classList.contains('rerank')) type = 'rerank';
 		}
 
@@ -539,7 +539,7 @@ function updateEndpointTestUI(nodeId) {
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
 
-                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding"))
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed"))
                     testableIds.push(n.id);
 
                 if (n.children)

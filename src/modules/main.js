@@ -417,7 +417,7 @@ async function handleSend() {
 	const embedIds = [];
 	selectedEndpoints.forEach(id => {
 		const cfg = resolveNodeConfig(id);
-		if (cfg.type === 'embedding') embedIds.push(id);
+		if (cfg.type === 'embedding' || cfg.type === 'embed') embedIds.push(id);
 		else chatIds.push(id);
 	});
 	
