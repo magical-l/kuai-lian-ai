@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-03
+last_updated: 2026-07-04
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -48,7 +48,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 
 每个节点渲染流程：
 
-1. **克隆模板**：`fromTemplate('one-endpoint', 'li')`，无子节点时添加 `.compact` class。模板结构：`<li><details><summary>` 保持原生 `display:list-item` 保留三角 marker，summary 内包 `<header class="inline flex items-x-mutex" style="width:95%">` 含 handle、type-badge、name、actions 四个子元素，header 用 `width:95%` 避开 marker 占位、`items-x-mutex`(space-between) 分布内容。
+1. **克隆模板**：`fromTemplate('one-endpoint', 'li')`，无子节点时添加 `.compact` class。模板结构：`<li><details><summary>` 保持原生 `display:list-item` 保留三角 marker，summary 内包 `<header class="inline flex items-x-mutex">` 含 handle、type-badge、name、actions 四个子元素，`inline-flex` 保持与 marker 同行，宽度由 CSS 控制（有 marker 时 `calc(100% - 15px)`，无 marker 时 `.compact` 下 `calc(100% - 5px)`），`items-x-mutex`(space-between) 分布内容。
 2. **拖拽手柄**（行 39-58）：`dataTransfer.setData("text/plain", node.id)`，dragstart/dragend 事件。可拖拽值为 `effectAllowed = "move"`
 3. **展开/收起**：
    - `<details>` 原生 `open` 属性 + `<summary>` 原生三角箭头控制显隐
@@ -153,3 +153,4 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-03 | 端点节点名称旁加类型标签，chat 不显示 | 嵌入/生图端点太多时难以在树中目视定位；chat 为主，标签只对非 chat 类型有意义 |
 | 2026-07-03 | 端点树顶部加类型筛选栏（全部/嵌入/生图/重排序），事件委托避免重绘后丢失 | 筛选需要跨层次（分组节点隐藏前检查子节点匹配），CSS-only 无法处理父子关系；`renderEndpointList` 重绘后自动恢复筛选状态 |
 | 2026-07-03 | 端点树列表为空时显示两种提示：「去创建」（无任何端点）和「重置筛选」（筛选后无结果） | 空列表无提示时用户不知该做什么；区分"没建过"和"被筛掉了"两种场景，各提供对应操作按钮 |
+| 2026-07-04 | summary 内 header 宽度从 inline style 移到 CSS：有 marker 时 `calc(100% - 15px)`，`.compact`（无 marker）时 `calc(100% - 5px)` | 两种场景 marker 宽度不同，分开处理；CSS 控制比内联样式更干净 |

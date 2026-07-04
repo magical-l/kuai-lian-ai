@@ -885,7 +885,11 @@ aside.endpoint.list {
 			}
 			> header {
 				gap: var(--space-1);
+				width: calc(100% - 15px);
 			}
+		}
+		&.compact > details > summary > header {
+			width: calc(100% - 5px);
 		}
 		& .name {
 			min-width: 0;
