@@ -75,3 +75,12 @@ why_exists: 一句话说清设计目的
 ## 决策日志
 - 2026-07-01: 初始文档创建
 ```
+
+## 验收流程
+
+以下信息供全局 CLAUDE.md「五、验收流程」使用：
+
+- **版本号位置**：`src/layout.html` 中 `<span class="version">vX.Y.Z</span>`
+- **语义化版本**：bug 修复/小优化 → 第三位；新功能/增强 → 第二位；重大变更 → 第一位
+- **构建命令**：`node build.js`
+- **文档格式验证**：`python3 scripts/check-docs-format.py`
