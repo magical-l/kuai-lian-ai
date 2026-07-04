@@ -716,7 +716,7 @@ main {
 				}
 			}
 
-			& #chat-messages {
+			& .msg.list {
 				flex: 1 1 auto;
 				overflow-y: auto;
 				padding: var(--space-2);
@@ -1342,7 +1342,7 @@ dialog {
 	}
 }
 @media (max-width: 768px) {
-	#chat-messages { padding: var(--space-4); }
+	.msg.list { padding: var(--space-4); }
 	.chat-input-area { padding: 8px; }
 	.msg {
 		&.request, &.response { max-width: 95%; }
@@ -1352,4 +1352,4 @@ dialog {
 /* ============ View Transitions ============ */
 aside.endpoint.list { view-transition-name: sidebar-left; }
 aside.session.list { view-transition-name: sidebar-right; }
-#chat-messages { view-transition-name: main-chat; }
+.msg.list { view-transition-name: main-chat; }

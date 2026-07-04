@@ -28,7 +28,7 @@ function addCodeCopyButtons(container) {
 }
 
 function renderMessages(messages, groups, onCopy) {
-	const container = $('#chat-messages');
+	const container = $('.msg.list');
 	container.innerHTML = '';
 	messages.forEach((msg, index) => {
 		if (msg.role === 'user') {

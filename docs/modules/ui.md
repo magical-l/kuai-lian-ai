@@ -101,7 +101,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 **renderMarkdown** (行 2)：封装 `marked.parse`，开启 `breaks` 和 `gfm`。
 
-**renderMessages** (行 30)：清空 `#chat-messages`，遍历 `messages` 数组。用户消息渲染为 `.msg.request.one` 结构（含头像、meta 时间、复制按钮、文本内容、附件栏）。响应消息委托给 `renderResponse`（调用前清除所有已有响应卡片的 `data-endpoint-id`，确保每条 assistant 消息都创建独立卡片，不互相覆盖）。
+**renderMessages** (行 30)：清空 `.msg.list`，遍历 `messages` 数组。用户消息渲染为 `.msg.request.one` 结构（含头像、meta 时间、复制按钮、文本内容、附件栏）。响应消息委托给 `renderResponse`（调用前清除所有已有响应卡片的 `data-endpoint-id`，确保每条 assistant 消息都创建独立卡片，不互相覆盖）。
 
 **renderResponse** (行 120)：按 `firstTokenTime` 排序后端响应。对每个 response：
 - 复用已有的 streaming card（`data-endpoint-id` 匹配），或从 template 新建

@@ -242,7 +242,7 @@ async function refreshUI() {
         handleSessionDelete
     );
 
-    const container = $('#chat-messages');
+    const container = $('.msg.list');
     const doUpdate = () => {
         if (currentSession) {
             const hasStreamingCards = container.querySelector(`.one.response.msg[data-session-id="${currentSession.id}"]`);
@@ -491,7 +491,7 @@ async function handleSend() {
 
 
 function showThinkingCards(endpoints, groups, sessionId) {
-    const container = $("#chat-messages");
+    const container = $(".msg.list");
     // 移除该 session 已有的 streaming 元素（防重复触发）
     $$(`[data-session-id="${sessionId}"]`).forEach(el => el.remove());
 
@@ -648,7 +648,7 @@ function reorderCardsBySpeed() {
     requestAnimationFrame(() => {
         const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
         if (!gens) return;
-        const container = $('#chat-messages');
+        const container = $('.msg.list');
         const cards = Array.from($$('.one.response.msg[data-session-id]', container));
         cards.sort((a, b) => {
             const stateA = gens.get(a.dataset.endpointId);

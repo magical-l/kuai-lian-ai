@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-03
+last_updated: 2026-07-04
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -164,7 +164,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 | 按钮 | `button, .btn` 基类、join-session（勾选开关）、test-connection（三态：testing/connected/failed）、stop（危险操作）、copy（两态：常态/copied） |
 | 端点面板 | .one.endpoint 卡片、拖拽指示器（drag-over-before/child）、.greyed 禁用态 |
 | 消息 | .one.msg 通用结构、.request（用户消息，靠右 / 蓝底 / 白色）、.response（助手消息，靠左）、think 块、嵌入结果、状态行（wait/status-icon/stop-one） |
-| 主框架 | toolbar、#chat-messages 滚动容器、streaming-hint、.chat-input-area（textarea + 附件栏 + 发送按钮） |
+| 主框架 | toolbar、.msg.list 滚动容器、streaming-hint、.chat-input-area（textarea + 附件栏 + 发送按钮） |
 | 附件 | .one.attachment 缩略图、附件列表布局 |
 | 端点面板（详细） | 分组标题、拖拽状态、紧凑模式（.compact）、选中端点列表（.selected.endpoints）、test-all 按钮 |
 | 会话 | .one.session 条目（标题 + 元信息 + 选中态） |
@@ -183,7 +183,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 │  ┌──────┬─────────────────────────┬──────────┐   │
 │  │aside │ main                    │ aside    │   │
 │  │.list │ ┌─ toolbar ──────────┐ │ .list    │   │
-│  │.endp.│ ├─ #chat-messages ───┤ │ .session │   │
+│  │.endp.│ ├─ .msg.list ───┤ │ .session │   │
 │  │      │ │  (scrollable)      │ │          │   │
 │  │      │ ├─ .chat-input-area ─┤ │          │   │
 │  │      │ │  (sticky bottom)   │ │          │   │
@@ -202,7 +202,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 ### 消息区布局
 
 ```
-#chat-messages（flex column, overflow-y: auto, scroll-padding-bottom: 130px）
+.msg.list（flex column, overflow-y: auto, scroll-padding-bottom: 130px）
   ├── .one.msg.request（align-self: flex-end; max-width: 90%）
   │     ├── header（用户标签 + 时间）
   │     └── .content（蓝底白字; border-radius-lg）
@@ -284,14 +284,14 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 |----------|---------------------|
 | `aside.endpoint.list` | `sidebar-left` |
 | `aside.session.list` | `sidebar-right` |
-| `#chat-messages` | `main-chat` |
+| `.msg.list` | `main-chat` |
 
 ## 响应式断点
 
 | 断点 | 变化 |
 |------|------|
 | `max-width: 900px` | 侧栏宽度缩至 200px（`min-width: 160px`） |
-| `max-width: 768px` | chat-messages padding 和 input-area padding 缩小；消息 max-width 扩大到 95% |
+| `max-width: 768px` | .msg.list padding 和 input-area padding 缩小；消息 max-width 扩大到 95% |
 
 ## 与 JS 的交互点
 

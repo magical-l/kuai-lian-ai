@@ -9,7 +9,7 @@ function stickyMinHeight() {
 function initDividers() {
 	// 水平分隔线
 	const dividerHorizontal = $('.divider.row');
-	const chatMsg = $('#chat-messages');
+	const chatMsg = $('.msg.list');
 	const mainContent = $('.main-content');
 	const chatHeader = $('.toolbar');
 	const savedLeftWidth = localStorage.getItem('sidebar-left-width');
@@ -144,7 +144,7 @@ function initDividers() {
 function clampSavedHeight() {
 	const savedH = localStorage.getItem('chat-messages-height');
 	if (!savedH) return;
-	const cm = $('#chat-messages');
+	const cm = $('.msg.list');
 	const mc = $('.main-content');
 	const ch = $('.toolbar');
 	if (!cm || !mc || !ch) return;
@@ -155,14 +155,14 @@ function clampSavedHeight() {
 window.addEventListener('resize', clampSavedHeight);
 // ========== Scroll Navigation ==========
 function scrollToBottom() {
-	const el = $('#chat-messages');
+	const el = $('.msg.list');
 	if (el) el.scrollTop = el.scrollHeight;
 }
 
 function initScrollNav() {
 	const btnScrollTop = $('.go-top.btn');
 	const btnScrollBottom = $('.go-bottom.btn');
-	const scrollContainer = $('#chat-messages');
+	const scrollContainer = $('.msg.list');
 	if (!btnScrollTop || !btnScrollBottom || !scrollContainer) return;
 
 	btnScrollTop.onclick = () => {
@@ -181,7 +181,7 @@ function initScrollNav() {
 // sticky 区高度变化时，同步更新消息区 scroll-padding-bottom，防止最后一条消息被遮挡
 function syncScrollPadding() {
 	const sticky = $('.chat-input-area');
-	const msg = $('#chat-messages');
+	const msg = $('.msg.list');
 	if (sticky && msg) msg.style.scrollPaddingBottom = sticky.offsetHeight + 'px';
 }
 window.addEventListener('resize', syncScrollPadding);

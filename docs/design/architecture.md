@@ -3,7 +3,7 @@ title: 技术架构
 covers_file: [src/layout.html, src/style.css, src/modules/storage-core.js, src/modules/providers.js, src/modules/boot.js, src/modules/main.js]
 depends_on: []
 api_signature: window.__STORAGE__ / window.__IS_EXTENSION__ / window.__EXTENSION_FETCH__
-last_updated: 2026-07-03
+last_updated: 2026-07-04
 why_exists: 定义快连AI的技术选型、模块依赖关系和数据流向，作为所有代码改动的架构参照
 ---
 
@@ -102,4 +102,4 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 
 - 2026-07-01: 初始文档创建
 - 2026-07-02: 根级 compact 节点间距修复。`ol > .one.endpoint.compact` 规则新增，恢复根级无子节点端点的正常间距和底部边框。
-- 2026-07-02: Template 就近放置。将 `<template>` 从 `<body>` 底部集中区移到了对应的插入位置旁（`<ol>` 内、`#chat-messages` 内、`<nav>` 后等），使模板与使用上下文同屏可见。
+- 2026-07-02: Template 就近放置。将 `<template>` 从 `<body>` 底部集中区移到了对应的插入位置旁（`<ol>` 内、`.msg.list` 内、`<nav>` 后等），使模板与使用上下文同屏可见。
