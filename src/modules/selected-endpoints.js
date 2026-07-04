@@ -26,9 +26,13 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
                 speedClass ? `speed-${speedClass}` : ""
             ].filter(Boolean).join(" ");
 
+            const rcfg = resolveNodeConfig(id);
+            const typeIconMap = { chat: 'chat', embedding: 'embed', embed: 'embed', image: 'img-generate', 'img-generate': 'img-generate', rerank: 'rerank' };
+            const typeClass = typeIconMap[rcfg?.type] || 'chat';
             const remarkHtml = (info.node.remark) ? `<span class="remark"> ${info.node.remark}</span>` : "";
             const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
             return `<li class="${classes}" data-endpoint="${id}">
+						<span class="endpoint-type badge icon icon-only ${typeClass}"></span>
 						<span class="full name">${fullPath}</span>
 						${remarkHtml}
 						<span class="btn remove bare icon-only" data-endpoint="${id}">✕</span>

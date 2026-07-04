@@ -856,13 +856,22 @@ main {
 	}
 }
 
+/* 类型图标映射 */
+.endpoint-type.badge {
+	font-size: 0.75em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.endpoint-type.icon-only {
+	&.chat::before { content: '💬'; }
+	&.embed::before { content: '🔢'; }
+	&.img-generate::before { content: '🎨'; }
+	&.rerank::before { content: '📊'; }
+}
+
 aside.endpoint.list {
-	& .endpoint-type.icon-only {
-		&.chat::before { content: '💬'; }
-		&.embed::before { content: '🔢'; }
-		&.img-generate::before { content: '🎨'; }
-		&.rerank::before { content: '📊'; }
-	}
 	& .endpoint-type.filter .option.btn {
 		--btn-h: 24px;
 		--icon-max-width: var(--btn-h);
@@ -905,12 +914,7 @@ aside.endpoint.list {
 		&.compact > details > summary > header {
 			width: calc(100% - 5px);
 		}
-		& .endpoint-type.badge {
-			font-size: 0.75em;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-		}
+
 		/* 组节点隐藏「加入会话」按钮 */
 		&:has(> details > .children) > details > summary .join-session.btn {
 			display: none;
