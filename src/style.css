@@ -911,6 +911,10 @@ aside.endpoint.list {
 			align-items: center;
 			justify-content: center;
 		}
+		/* 组节点隐藏「加入会话」按钮 */
+		&:has(> details > .children) > details > summary .join-session.btn {
+			display: none;
+		}
 		& .name {
 			min-width: 0;
 			overflow-wrap: break-word;

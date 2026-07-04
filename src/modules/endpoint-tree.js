@@ -234,28 +234,24 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			}
 
 			var joinBtn = actionsEl.querySelector('.join-session');
-			if (!isSelfTestable) {
-				joinBtn.style.display = 'none';
-			} else {
+			applyJoinBtnUI(joinBtn, node.id);
+			var cb = joinBtn.querySelector("input[type=checkbox]");
+			cb.addEventListener("change", function(e) {
+				e.stopPropagation();
+				var eid = node.id;
+
+				if (selectedEndpoints.includes(eid)) {
+					selectedEndpoints = selectedEndpoints.filter(function(x) {
+						return x !== eid;
+					});
+				} else {
+					selectedEndpoints.push(eid);
+				}
+
+				saveDefaultSelectedEndpoints(selectedEndpoints);
+				renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
 				applyJoinBtnUI(joinBtn, node.id);
-				var cb = joinBtn.querySelector("input[type=checkbox]");
-				cb.addEventListener("change", function(e) {
-					e.stopPropagation();
-					var eid = node.id;
-
-					if (selectedEndpoints.includes(eid)) {
-						selectedEndpoints = selectedEndpoints.filter(function(x) {
-							return x !== eid;
-						});
-					} else {
-						selectedEndpoints.push(eid);
-					}
-
-					saveDefaultSelectedEndpoints(selectedEndpoints);
-					renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
-					applyJoinBtnUI(joinBtn, node.id);
-				});
-			}
+			});
 
 			var editBtn = actionsEl.querySelector('.edit');
 
