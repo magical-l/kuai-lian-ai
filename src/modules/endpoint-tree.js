@@ -74,7 +74,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			nameSpan.textContent = node.name;
 
 			// 设置类型标签
-			var badge = nodeEl.querySelector('.type-badge');
+			var badge = nodeEl.querySelector('.endpoint-type.badge');
 			if (badge) {
 				var type = rcfg ? rcfg.type : 'chat';
 				if (type === 'chat') { badge.textContent = '💬'; badge.classList.add('chat'); }
@@ -437,9 +437,9 @@ function updateEmptyState() {
 	if (resetBtn && !resetBtn.dataset.bound) {
 		resetBtn.dataset.bound = 'true';
 		resetBtn.onclick = function() {
-			document.querySelectorAll('.type-filter input[type="checkbox"]').forEach(function(cb) { cb.checked = true; });
+			document.querySelectorAll('.endpoint-type.filter input[type="checkbox"]').forEach(function(cb) { cb.checked = true; });
 			activeTypeFilters.clear();
-			document.querySelectorAll('.type-filter input[type="checkbox"]:checked').forEach(function(cb) { activeTypeFilters.add(cb.value); });
+			document.querySelectorAll('.endpoint-type.filter input[type="checkbox"]:checked').forEach(function(cb) { activeTypeFilters.add(cb.value); });
 			applyEndpointFilter();
 			updateEmptyState();
 		};
@@ -457,7 +457,7 @@ function updateEmptyState() {
 
 // 端点类型筛选
 function initEndpointFilter() {
-	var filterBar = document.querySelector('.type-filter');
+	var filterBar = document.querySelector('.endpoint-type.filter');
 	if (!filterBar || filterBar.dataset.initialized) return;
 	filterBar.dataset.initialized = 'true';
 
@@ -481,7 +481,7 @@ function applyEndpointFilter() {
 	var items = document.querySelectorAll('aside.endpoint.list li.one.endpoint');
 	for (var i = items.length - 1; i >= 0; i--) {
 		var li = items[i];
-		var badge = li.querySelector('.type-badge');
+		var badge = li.querySelector('.endpoint-type.badge');
 		var type = '';
 		if (badge) {
 			if (badge.classList.contains('chat')) type = 'chat';

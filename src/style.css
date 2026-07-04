@@ -857,6 +857,10 @@ main {
 }
 
 aside.endpoint.list {
+	/* 筛选栏 */
+	& .endpoint-type.filter .option.btn:has(input:checked) {
+		background: var(--accent-primary);
+	}
 	/* 根级 compact 节点保持正常间距 */
 	> ol > .one.endpoint.compact {
 		margin-bottom: var(--space-3);
@@ -890,6 +894,12 @@ aside.endpoint.list {
 		}
 		&.compact > details > summary > header {
 			width: calc(100% - 5px);
+		}
+		& .endpoint-type.badge {
+			font-size: 0.75em;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
 		}
 		& .name {
 			min-width: 0;
@@ -1325,22 +1335,3 @@ dialog {
 aside.endpoint.list { view-transition-name: sidebar-left; }
 aside.session.list { view-transition-name: sidebar-right; }
 #chat-messages { view-transition-name: main-chat; }
-
-/* ============ 类型标签 & 筛选栏 ============ */
-.type-badge {
-	font-size: 0.75em;
-	margin-right: 4px;
-	opacity: 0.8;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	line-height: 1;
-	vertical-align: middle;
-}
-.type-filter .option.btn {
-	padding: 2px 4px;
-	font-size: 0.8em;
-}
-.type-filter .option.btn:has(input:checked) {
-	background: var(--accent-primary);
-}
