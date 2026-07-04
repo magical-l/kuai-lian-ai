@@ -714,6 +714,9 @@ main {
 				& .btn-group.jump {
 					margin-left: auto;
 				}
+				& .new-session.btn {
+					margin-left: auto;
+				}
 			}
 
 			& .msg.list {
@@ -755,6 +758,10 @@ main {
 				}
 			}
 
+			/* 无消息时隐藏跳转按钮 */
+			&:not(:has(.msg.list > .one.msg)) .toolbar .btn-group.jump {
+				display: none;
+			}
 			& .chat-input-area {
 				position: sticky;
 				bottom: 0;
