@@ -469,7 +469,7 @@ async function handleSend() {
 				return {
 					endpointId: id,
 					status: 'completed',
-					content: result.url || '',
+					content: result.url ? '```plaintext\n' + result.url + '\n```' : '',
 					imageResult: {
 						blobUrl: result.blobUrl,
 						imageData: result.imageData,

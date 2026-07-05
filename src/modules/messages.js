@@ -11,19 +11,51 @@ function renderMarkdown(text) {
 function addCodeCopyButtons(container) {
 	container.querySelectorAll('pre code').forEach(codeEl => {
 		const preEl = codeEl.parentElement;
+		// 已包裹过 → 跳过
+		if (preEl.parentElement.tagName === 'DETAILS') return;
+
+		// 清空旧按钮
+		preEl.querySelectorAll('.code-block-toggle, .copy.code').forEach(b => b.remove());
+
+		// 构建 <details><summary>语言 + 复制</summary><pre><code>...</code></pre></details>
+		const details = document.createElement('details');
+		details.className = 'code-block';
+
+		const summary = document.createElement('summary');
+		// 语言标识
+		const langSpan = document.createElement('span');
+		langSpan.className = 'code-lang';
+		const text = codeEl.textContent.trim();
+		const isUrl = /^https?:\/\//.test(text);
+		if (isUrl) {
+			langSpan.textContent = 'URL';
+		} else {
+			const cls = codeEl.className;
+			const langMatch = cls.match(/language-(\w+)/);
+			langSpan.textContent = langMatch ? langMatch[1] : '文本';
+		}
+		summary.appendChild(langSpan);
+
+		// 复制按钮
 		const copyBtn = document.createElement('button');
 		copyBtn.className = 'copy code btn , bare icon-only , square';
-		copyBtn.innerHTML = `<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>`;
-		copyBtn.title = '复制代码';
-		copyBtn.onclick = () => {
+		copyBtn.innerHTML = '<span class="copy icon">⧉</span><span class="done icon">✓</span>';
+		copyBtn.title = '复制';
+		copyBtn.onclick = (e) => {
+			e.stopPropagation();
 			navigator.clipboard.writeText(codeEl.textContent).then(() => {
 				copyBtn.classList.add("copied");
 				clearTimeout(copyBtn._copiedTimer);
 				copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 			});
 		};
-		preEl.appendChild(copyBtn);
-		hljs.highlightElement(codeEl);
+		summary.appendChild(copyBtn);
+
+		details.appendChild(summary);
+		preEl.parentElement.insertBefore(details, preEl);
+		details.appendChild(preEl);
+
+		if (!isUrl) hljs.highlightElement(codeEl);
 	});
 }
 
@@ -146,6 +178,10 @@ function renderResponse(container, msg, groups) {
         if (sayEl && r.content) {
             sayEl.innerHTML = renderMarkdown(r.content);
             addCodeCopyButtons(sayEl);
+            // 代码块默认展开（图片 URL 代码块默认收起）
+            sayEl.querySelectorAll('details.code-block').forEach(d => {
+                d.open = !r.imageResult;
+            });
         }
 
         // 更新 header
@@ -320,23 +356,71 @@ function renderResponse(container, msg, groups) {
             // 避免重复渲染（updateCardAsImage 已添加时）
             const hasImg = imgMeta.querySelector('img');
             if (!hasImg) {
-                // renderResponse 是会话重渲染，不用 blobUrl（可能已过期）；imageData 是持久化的 base64
-                const imgUrl = imgRes.imageData || imgRes.url || (imgRes.b64_json ? 'data:image/png;base64,' + imgRes.b64_json : null);
+                // imageData 是持久化的 base64；旧会话可能只有 url，需要重新下载
+                const needsDownload = !imgRes.imageData && !imgRes.b64_json && imgRes.url;
+                let imgUrl = imgRes.imageData || (imgRes.b64_json ? 'data:image/png;base64,' + imgRes.b64_json : null);
+
                 if (imgUrl) {
+                    // 有 base64 数据 → 显示图片
                     const img = mk('img', 'generated');
                     img.src = imgUrl;
                     img.style.maxWidth = '100%';
                     img.style.borderRadius = '8px';
                     img.onclick = () => {
+                        const src = img.src;
                         const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
                         const fullImg = mk('img');
-                        fullImg.src = imgUrl;
+                        fullImg.src = src;
                         overlay.onclick = () => overlay.remove();
                         overlay.addChild(fullImg);
                         doc.body.addChild(overlay);
                     };
                     imgMeta.addChild(img);
                 }
+
+                // 尝试下载（旧会话只有 url）
+                if (needsDownload) {
+                    fetch(imgRes.url).then(r => {
+                        if (!r.ok) throw new Error('status ' + r.status);
+                        return r.blob();
+                    }).then(blob => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const dataUrl = reader.result;
+                            imgRes.imageData = dataUrl;
+                            // 如果还没显示图片，现在显示
+                            if (!imgMeta.querySelector('img.generated')) {
+                                const img = mk('img', 'generated');
+                                img.src = dataUrl;
+                                img.style.maxWidth = '100%';
+                                img.style.borderRadius = '8px';
+                                img.onclick = () => {
+                                    const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+                                    const fullImg = mk('img');
+                                    fullImg.src = dataUrl;
+                                    overlay.onclick = () => overlay.remove();
+                                    overlay.addChild(fullImg);
+                                    doc.body.addChild(overlay);
+                                };
+                                imgMeta.appendChild(img);
+                            } else {
+                                // 已有 img 元素，只更新 src
+                                const existingImg = imgMeta.querySelector('img.generated');
+                                if (existingImg) existingImg.src = dataUrl;
+                            }
+                        };
+                        reader.readAsDataURL(blob);
+                    }).catch(() => {
+                        // 下载失败 → 过期提示
+                        const expired = mk('div', 'image-expired');
+                        expired.textContent = '⚠ 图片链接已过期，无法加载';
+                        expired.style.fontSize = 'smaller';
+                        expired.style.color = 'var(--warning)';
+                        expired.style.marginTop = '4px';
+                        imgMeta.addChild(expired);
+                    });
+                }
+
                 if (imgRes.revised_prompt) {
                     const revised = mk('div', 'revised-prompt');
                     revised.textContent = '修订提示: ' + imgRes.revised_prompt;
