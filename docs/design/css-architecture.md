@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-04
+last_updated: 2026-07-05
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -26,12 +26,11 @@ common.css 和 layout.css 运行时从 `https://css.lwj621.workers.dev/css/` 加
 
 | 来源 | 内容 | 加载方式 |
 |------|------|----------|
-| common.css | `--bg-*`, `--text-*`, `--border-*`, `--accent-*`, `--radius-*`, `--space-*`, `--shadow-*`, `--divider-z`, `--btn-radius`, `--transition-fast` | 构建时 inline 或运行时 `<link>` |
-| style.css :root | `--bg-elevated`, `--bg-hover`, `--accent-muted`, `--warning-light`, `--user-msg-bg`, `--user-msg-text`, `--text-placeholder`, `--transition-normal`, `--btn-h`, 阴影/font/space 兜底值 | 内联 |
-| style.css :root（注释） | 完整的 variables 列表被注释掉作为文档参考（第 17-70 行），实际值在 common.css 中 | — |
+| common.css | `--bg-*`, `--text-*`, `--border-*`, `--accent-*`, `--radius-*`, `--space-{1..8}`, `--shadow-*`, `--transition-fast`, `--btn-p`, `--btn-h`（32px）及其他 | 构建时 inline 或运行时 `<link>` |
+| style.css :root | `--bg-elevated`, `--bg-hover`, `--accent-muted`, `--warning-light`, `--user-msg-bg/text`, `--text-placeholder`, `--transition-normal`, `--btn-h`（24px 覆盖 common.css 的 32px）, `--font-sans` | 内联 |
 | style.css `html.dark` | 暗色模式全部变量覆写 + 外部 CSS 的 `--border-color` 覆写 | 内联 |
 
-**风险**：style.css 的 `:root` 中大部分变量（如 `--bg-base`）只被注释，实际定义在 common.css。如果 common.css 加载失败，var() 引用会静默回退到 initial 值，导致全页样式丢失。
+**风险**：style.css 的所有 var() 引用的基础变量（如 `--bg-base`、`--radius-*`、`--transition-fast`）实际定义在 common.css。如果 common.css 加载失败，var() 引用会静默回退到 initial 值，导致全页样式丢失。
 
 ### 暗色模式
 
@@ -139,7 +138,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 
 关键规律：**style.css 只写组件结构和行为**（`.one.msg`, `.btn`），**layout.css 提供布局和对齐**（`.flex`, `.items-*`, `.flexible`）。
 
-### style.css 中真正定义的变量
+### style.css 中定义的变量（仅项目专有，非 common.css 兜底）
 
 ```
 --bg-elevated       #FFFFFF
@@ -150,11 +149,13 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 --user-msg-text     #FFFFFF
 --text-placeholder  #9CA3AF
 --transition-normal 180ms ease
---btn-h             24px
+--btn-h             24px（覆盖 common.css 的 32px）
 --font-sans         'Plus Jakarta Sans', system fallback
---shadow-*          4 级阴影值（兜底）
---space-{2..8}      8~32px（兜底）
+--shadow-*          4 级阴影值
+--space-{2..8}      8~32px
 ```
+
+基础变量（`--bg-base`、`--radius-*`、`--shadow-*`、`--space-{1..8}`、`--transition-fast` 等）全部来自 common.css，style.css 只定义项目专有覆盖。
 
 ## 文件结构（style.css，~1230 行）
 
@@ -310,3 +311,5 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-01: 初始文档创建。确认 style.css 实际 ~1200 行（非预估的 3000+）、:has() 共 3 处（非"大量"）
 - 2026-07-01: 暗色模式实现。采用 `html.dark` class 覆写全部 CSS 变量，而非 `prefers-color-scheme` 媒体查询。交互三态（亮→暗→跟随系统），偏好持久化到 settings。html.dark 块约 40 行，新增 4 个 SVG icon 符号。版本 6.3.2。
 - 2026-07-02: 根级 compact 节点间距修复。`.compact` 设 `margin-bottom:0` 对子级节点正确（间距由 `.children` 的 gap 控制），但根级 compact 节点（`<ol>` 的直接子元素）丢失了正常间距。新增 `ol > .one.endpoint.compact` 恢复 `margin-bottom:var(--space-3)` 和底部边框。
+- 2026-07-05: 清除 style.css 中所有注释掉的外部 CSS 变量副本（共 9 组）。这些是 common.css 剥离后的历史快照，其中 `--radius-*: 0` 与实际值（4/6/8/12px）不符。变量分层不再需要在 style.css 中留注释副本，统一在本文档的变量分层表中说明。
+- 2026-07-05: `--shadow-*` 四值和 `--space-{2..8}` 刻度从 style.css 迁移到 common.css，作为跨项目设计令牌统一管理。style.css :root 仅保留项目专有变量（`--bg-elevated`、`--font-sans`、`--btn-h` 等 11 个变量）。
