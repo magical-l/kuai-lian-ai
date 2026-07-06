@@ -40,6 +40,10 @@ function resolveNodeConfig(nodeId) {
 	if (!config.type) {
 		config.type = detectModelType(config.modelId);
 	}
+	// style 继承后仍为空 → 默认 OpenAI
+	if (!config.style) {
+		config.style = "openai";
+	}
 	return config;
 }
 
