@@ -1,4 +1,11 @@
 /* ============ 基础元素（有些是标签有些是等价于标签的类）默认属性 ============ */
+:root {
+	--btn-h: 24px;
+	--icon-width: 16px;
+	--icon-height: 16px;
+	--icon-max-width: 16px;
+	--icon-max-height: 16px;
+}
 html {
 	height: 100%;
 	--bg-elevated: #FFFFFF;
@@ -11,10 +18,6 @@ html {
 	--transition-normal: 180ms ease;
 	--font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	--btn-h: 24px;
-	--icon-width: 16px;
-	--icon-height: 16px;
-	--icon-max-width: 16px;
-	--icon-max-height: 16px;
 
 	/* ============ 暗色模式 ============ */
 	&.dark {

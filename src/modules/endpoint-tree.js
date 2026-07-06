@@ -536,7 +536,7 @@ function updateEndpointTestUI(nodeId) {
                 var rcfg = resolveNodeConfig(n.id);
 
                 if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed"))
-                    testableIds.push(n.id);
+                    allTestableIds.push(n.id);
 
                 if (n.children)
                     collectTestable(n.children);
