@@ -219,7 +219,12 @@ function showEditGroupDialog(node, parentId, onSave) {
 				setRadio('style', '', dialog);
 				if (hasParent) {
 				var inheritLabel = dialog.querySelector('input[name="style"][value=""]').parentElement;
-				if (inheritLabel) inheritLabel.lastChild.textContent = ' 继承自父级（' + rcfg.style + '）';
+				if (inheritLabel) {
+					for (var _i = 0; _i < inheritLabel.childNodes.length; _i++) {
+						var _n = inheritLabel.childNodes[_i];
+						if (_n.nodeType === 3) { _n.nodeValue = ' 继承自父级（' + rcfg.style + '）'; break; }
+					}
+				}
 				}
 			}
 			// type
@@ -229,7 +234,12 @@ function showEditGroupDialog(node, parentId, onSave) {
 				var typeInheritLabel = dialog.querySelector('input[name="type"][value=""]').parentElement;
 				var typeOpt = dialog.querySelector('input[name="type"][value="' + rcfg.type + '"]');
 				var typeName = typeOpt ? typeOpt.parentElement.textContent.trim() : rcfg.type;
-				if (typeInheritLabel) typeInheritLabel.lastChild.textContent = ' 继承自父级（' + typeName + '）';
+				if (typeInheritLabel) {
+					for (var _j = 0; _j < typeInheritLabel.childNodes.length; _j++) {
+						var _m = typeInheritLabel.childNodes[_j];
+						if (_m.nodeType === 3) { _m.nodeValue = ' 继承自父级（' + typeName + '）'; break; }
+					}
+				}
 				}
 			}
 		}
@@ -318,8 +328,11 @@ function showEditGroupDialog(node, parentId, onSave) {
 			}
 			var theType = getRadio('type', dialog);
 			if (!theType) {
-				alert('请选择类型');
-				return;
+				theType = rcfg && rcfg.type;
+				if (!theType) {
+					alert('请选择类型');
+					return;
+				}
 			}
 			var saveData = { name: theName, style: getRadio('style', dialog), type: theType };
 			// 可继承字段：节点原本有值则直接保存（含清空为""）；
