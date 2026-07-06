@@ -164,9 +164,10 @@ function tryInlineLocalCSS(html) {
 			}
 		}
 		if (content) {
+			const escapedUrl = url.replace(/\./g, '\\.');
 			html = html.replace(
-				new RegExp(`<link\\s[^>]*href="https://${url}"[^>]*>`, 'g'),
-				() => '<style>' + compressCSS(content) + '</style>'
+				new RegExp(`@import\\s+url\\(\\s*['\"]https://${escapedUrl}['\"]\\s*\\)\\s*layer\\(base\\)\\s*;`, 'g'),
+				() => '@layer base { ' + compressCSS(content) + ' }'
 			);
 		}
 	}

@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-05
+last_updated: 2026-07-06
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -313,3 +313,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-02: 根级 compact 节点间距修复。`.compact` 设 `margin-bottom:0` 对子级节点正确（间距由 `.children` 的 gap 控制），但根级 compact 节点（`<ol>` 的直接子元素）丢失了正常间距。新增 `ol > .one.endpoint.compact` 恢复 `margin-bottom:var(--space-3)` 和底部边框。
 - 2026-07-05: 清除 style.css 中所有注释掉的外部 CSS 变量副本（共 9 组）。这些是 common.css 剥离后的历史快照，其中 `--radius-*: 0` 与实际值（4/6/8/12px）不符。变量分层不再需要在 style.css 中留注释副本，统一在本文档的变量分层表中说明。
 - 2026-07-05: `--shadow-*` 四值和 `--space-{2..8}` 刻度从 style.css 迁移到 common.css，作为跨项目设计令牌统一管理。style.css :root 仅保留项目专有变量（`--bg-elevated`、`--font-sans`、`--btn-h` 等 11 个变量）。
+- 2026-07-06: 外部 CSS 改用 `@import url(...) layer(base)` 降层，修复 `html { --btn-h: 24px }` 被 `:root` 覆盖的 cascade 问题。新增 `--icon-width/height/max-width/max-height: 16px` 覆盖 common.css 的 36px 默认值，删除 `.btn .icon` 固定宽高规则。common.css 增补 `.btn.icon-only img` 规则。修复 eslint: 清理孤立 `&` 语法错误。
