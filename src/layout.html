@@ -209,22 +209,24 @@
 	</label>
 	<label class="full flex items-go-x items-y-near-center">
 		<span class="label-text">接口风格:</span>
-		<span class="input-block"><select name="style">
-			<option value="">（继承）</option>
-			<option value="openai">ChatGPT式（OpenAI、国内主流）</option>
-			<option value="claude">Claude式（Anthropic）</option>
-			<option value="gemini">Gemini式（Google）</option>
-		</select></span>
+		<span class="input-block">
+			<div class="btn-group , flex items-go-x">
+				<label class="option btn"><input type="radio" name="style" value="" hidden> 继承</label>
+				<label class="option btn"><input type="radio" name="style" value="openai" hidden> ChatGPT式 <span class="hint">OpenAI、国内主流</span></label>
+				<label class="option btn"><input type="radio" name="style" value="claude" hidden> Claude式 <span class="hint">Anthropic</span></label>
+				<label class="option btn"><input type="radio" name="style" value="gemini" hidden> Gemini式 <span class="hint">Google</span></label>
+			</div>
+		</span>
 	</label>
 	<label class="full flex items-go-x items-y-near-center">
 		<span class="label-text">类型:</span>
 		<span class="input-block">
-			<select name="type">
-				<option value="chat">💬 聊天</option>
-				<option value="embed">🔢 嵌入</option>
-				<option value="img-generate">🎨 生图</option>
-				<option value="rerank">📊 重排序</option>
-			</select>
+			<div class="btn-group , flex items-go-x">
+				<label class="option btn"><input type="radio" name="type" value="chat" hidden> 💬 聊天</label>
+				<label class="option btn"><input type="radio" name="type" value="embed" hidden> 🔢 嵌入</label>
+				<label class="option btn"><input type="radio" name="type" value="img-generate" hidden> 🎨 生图</label>
+				<label class="option btn"><input type="radio" name="type" value="rerank" hidden> 📊 重排序</label>
+			</div>
 			<span class="hint"></span>
 		</span>
 	</label>

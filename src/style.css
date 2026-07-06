@@ -346,7 +346,7 @@ button, .btn {
 			pointer-events: none;  /* 禁止再次点击 */
 
 			& .copy.icon { display: none; }
-			& .done.icon { display: inline; }
+			& .done.icon { display: inline !important; }
 		}
 	}
 }
@@ -1237,6 +1237,29 @@ dialog {
 		.input-block > .flex {
 			flex: 1;
 			min-width: 0;
+		}
+		& .btn-group .option.btn {
+			--btn-h: auto;
+			flex-direction: column;
+			align-items: center;
+			gap: 1px;
+			line-height: 1.2;
+			font-size: 13px;
+			padding: 6px 12px 5px;
+			cursor: pointer;
+			transition: background var(--transition-fast);
+		}
+		.btn-group .option.btn .hint {
+			font-size: 10px;
+			opacity: 0.65;
+			line-height: 1.2;
+		}
+		.btn-group .option.btn:has(input:checked) {
+			background: var(--accent-primary);
+			color: #fff;
+		}
+		.btn-group .option.btn:has(input:checked):hover {
+			background: var(--accent-primary-hover);
 		}
 		& form {
 			display: flex;

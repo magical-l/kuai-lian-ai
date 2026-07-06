@@ -144,18 +144,20 @@ function showEditGroupDialog(node, parentId, onSave) {
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
 	var nameInput = $("input[name=\"name\"]", dialog);
 	var urlInput = $('input[name="url"]', dialog);
-	var styleSel = $('select[name="style"]', dialog);
+	var styleSel = dialog.querySelector('input[name="style"]:checked') || dialog.querySelector('input[name="style"]');
 	var keyInput = $("input[name=\"apikey\"]", dialog);
 	var modelidInput = $('input[name="model-id"]', dialog);
 	var remarkInput = $("input[name=\"remark\"]", dialog);
-	var typeSel = $('select[name="type"]', dialog);
-	var typeHint = $('select[name="type"]', dialog).parentElement.querySelector('.hint');
+	var typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
+	var typeHint = dialog.querySelector('input[name="type"]').closest('.input-block').querySelector('.hint');
+		function setRadio(name, val, ctx) { ctx.querySelectorAll('input[name="' + name + '"]').forEach(function(r) { r.checked = r.value === val; }); }
+		function getRadio(name, ctx) { var r = ctx.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
 
 	function updateTypeHint(detectedType) {
 		if (!typeHint) return;
-		var opt = typeSel.querySelector('option[value="' + detectedType + '"]');
-		var label = opt ? opt.textContent : detectedType;
-		if (detectedType && typeSel.value === detectedType) {
+		var opt = typeSel.closest('.btn-group').querySelector('input[value="' + detectedType + '"]');
+		var label = opt ? opt.parentElement.textContent.trim() : detectedType;
+		if (detectedType && getRadio('type', dialog) === detectedType) {
 			typeHint.textContent = '检测为: ' + label;
 		} else {
 			typeHint.textContent = '';
@@ -166,18 +168,20 @@ function showEditGroupDialog(node, parentId, onSave) {
 		'input[name="name"]': node ? node.name : '',
 		'input[name="model-id"]': node ? node.modelId || '' : '',
 		'input[name="url"]': node ? node.baseUrl || '' : '',
-		'select[name="style"]': node ? node.style || '' : '',
+			// style set via setRadio below
 		'input[name="apikey"]': node ? node.key || '' : '',
 		'input[name="remark"]': node ? node.remark || '' : ''
 	});
+		setRadio('style', node ? node.style || '' : '', dialog);
 
 	// type：显式值优先，否则从 modelId 检测作为默认
 	var detectedType = detectModelType(node ? node.modelId || '' : '');
 	if (node && node.type) {
-		typeSel.value = node.type;
+		setRadio('type', node.type, dialog);
 	} else {
-		typeSel.value = detectedType;
+		setRadio('type', detectedType, dialog);
 	}
+	typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
 	updateTypeHint(detectedType);
 
 	// 继承值填入
@@ -212,10 +216,10 @@ function showEditGroupDialog(node, parentId, onSave) {
 			})(modelidInput, node ? node.modelId : '', rcfg.modelId);
 			// style
 			if (!(node ? node.style : '') && rcfg.style) {
-				styleSel.value = '';
+				setRadio('style', '', dialog);
 				if (hasParent) {
-				var inheritOpt = styleSel.querySelector('option[value=""]');
-				if (inheritOpt) inheritOpt.textContent = '继承自父级（' + rcfg.style + '）';
+				var inheritLabel = dialog.querySelector('input[name="style"][value=""]').parentElement;
+				if (inheritLabel) inheritLabel.lastChild.textContent = ' 继承自父级（' + rcfg.style + '）';
 				}
 			}
 		}
@@ -242,11 +246,13 @@ function showEditGroupDialog(node, parentId, onSave) {
 		// type 自动检测（仅在用户未手动修改过 type 时）
 		if (!_typeUserEdited) {
 			var detected = detectModelType(this.value);
-			typeSel.value = detected;
+			setRadio('type', detected, dialog);
 			updateTypeHint(detected);
+			typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
 		}
 	};
 	typeSel.onchange = function() { _typeUserEdited = true; };
+		dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; }); });
 	urlInput.oninput = function() { removeIcon(this); };
 	keyInput.oninput = function() { removeIcon(this); };
 
@@ -262,7 +268,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 		};
 	}
 	// Enter → 切到下一个输入框
-	var formFields = [nameInput, urlInput, styleSel, keyInput, modelidInput, typeSel, remarkInput];
+	var formFields = [nameInput, urlInput, keyInput, modelidInput, remarkInput];
 	var form = dialog.querySelector('form');
 	if (form) {
 		form.addEventListener('keydown', function(e) {
@@ -291,12 +297,12 @@ function showEditGroupDialog(node, parentId, onSave) {
 				alert('请填写名称');
 				return;
 			}
-			var theType = typeSel.value;
+			var theType = getRadio('type', dialog);
 			if (!theType) {
 				alert('请选择类型');
 				return;
 			}
-			var saveData = { name: theName, style: styleSel.value, type: theType };
+			var saveData = { name: theName, style: getRadio('style', dialog), type: theType };
 			// 可继承字段：节点原本有值则直接保存（含清空为""）；
 			// 节点原本无值则仅当用户手动输入了不同于继承值的值时才保存，否则不传以保持继承
 			var theUrl = urlInput.value.trim();
