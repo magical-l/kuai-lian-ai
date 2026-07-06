@@ -163,11 +163,16 @@ function tryInlineLocalCSS(html) {
 				console.warn(`  [warn] failed to fetch ${cdnURL}, leaving external link`);
 			}
 		}
-		if (content) {
-						html = html.replace(
-				new RegExp(`<link\s[^>]*href="https://${url}"[^>]*>`, 'g'),
-				() => '<style>' + compressCSS(content) + '</style>'
-			)		}
+					if (content) {
+				html = html.replace(
+					new RegExp(`<link\s[^>]*href="https://${url}"[^>]*>`, 'g'),
+					() => '<style>' + compressCSS(content) + '</style>'
+				);
+				// 也支持 @import url(...) layer(base) 写法
+				const escaped = url.replace(/[.*+?^${}()|[\]\\\\]/g, '\\$&');
+				const importRE = new RegExp(`@import\\s+url\\(\\s*['"]https://${escaped}['"]\\s*\\)\\s*layer\\(\\w+\\)\\s*;`, 'g');
+				html = html.replace(importRE, () => '@layer base { ' + compressCSS(content) + ' }');
+			}
 	}
 	return html;
 }
