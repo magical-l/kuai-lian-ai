@@ -4099,9 +4099,11 @@ function showEditGroupDialog(node, parentId, onSave) {
 				var typeOpt = dialog.querySelector('input[name="type"][value="' + rcfg.type + '"]');
 				var typeName = typeOpt ? typeOpt.parentElement.textContent.trim() : rcfg.type;
 				if (typeInheritLabel) {
-					for (var _j = 0; _j < typeInheritLabel.childNodes.length; _j++) {
-						var _m = typeInheritLabel.childNodes[_j];
-						if (_m.nodeType === 3) { _m.nodeValue = ' 继承自父级（' + typeName + '）'; break; }
+					var _inp2 = dialog.querySelector('input[name="type"][value=""]');
+					if (_inp2) {
+						var _parent2 = _inp2.parentElement;
+						while (_parent2.childNodes.length > 1) _parent2.removeChild(_parent2.lastChild);
+						_parent2.appendChild(document.createTextNode(' 继承自父级（' + typeName + '）'));
 					}
 				}
 				}
