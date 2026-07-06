@@ -93,7 +93,7 @@
 					<section>
 						<h4>左侧栏：管理端点</h4>
 						<p>端点是线上部署的大模型服务。不同端点有不同地址，同一模型可部署在多个地址，成为不同端点。一个端点可以提供多个模型。</p>
-						<p>* 目前支持OpenAI、Claude、Gemini三种接口格式。国产大模型基本都是OpenAI格式。</p>
+						<p>* 目前支持ChatGPT/OpenAI式、Claude/Anthropic式、Gemini/Google式三种接口格式。国产大模型基本都是ChatGPT/OpenAI格式。</p>
 						<p>* 不支持的格式快来贡献代码呀！</p>
 						<p>可以测试连接端点，也可以测试一个端点下添加的所有模型。</p>
 						<p>* 有些服务端点没开CORS，浏览器访问会被拒。我们区分了这种情况，免得以为是服务挂了。</p>
@@ -211,9 +211,9 @@
 		<span class="label-text">接口风格:</span>
 		<span class="input-block"><select name="style">
 			<option value="">（继承）</option>
-			<option value="openai">OpenAI</option>
-			<option value="claude">Claude</option>
-			<option value="gemini">Gemini</option>
+			<option value="openai">ChatGPT式（OpenAI、国内主流）</option>
+			<option value="claude">Claude式（Anthropic）</option>
+			<option value="gemini">Gemini式（Google）</option>
 		</select></span>
 	</label>
 	<label class="full flex items-go-x items-y-near-center">
