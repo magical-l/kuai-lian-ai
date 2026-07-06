@@ -222,8 +222,27 @@ function showEditGroupDialog(node, parentId, onSave) {
 				if (inheritLabel) inheritLabel.lastChild.textContent = ' 继承自父级（' + rcfg.style + '）';
 				}
 			}
+			// type
+			if (!(node ? node.type : '') && rcfg.type) {
+				setRadio('type', '', dialog);
+				if (hasParent) {
+				var typeInheritLabel = dialog.querySelector('input[name="type"][value=""]').parentElement;
+				var typeOpt = dialog.querySelector('input[name="type"][value="' + rcfg.type + '"]');
+				var typeName = typeOpt ? typeOpt.parentElement.textContent.trim() : rcfg.type;
+				if (typeInheritLabel) typeInheritLabel.lastChild.textContent = ' 继承自父级（' + typeName + '）';
+				}
+			}
 		}
 	}
+
+		// 最顶级节点：去继承、默认ChatGPT式
+		if (!hasParent) {
+			var inheritRadio = dialog.querySelector('input[name="style"][value=""]');
+			if (inheritRadio) inheritRadio.parentElement.remove();
+			var typeInheritRadio = dialog.querySelector('input[name="type"][value=""]');
+			if (typeInheritRadio) typeInheritRadio.parentElement.remove();
+			setRadio('style', node ? node.style || 'openai' : 'openai', dialog);
+		}
 
 	// 名称 ↔ 模型名连续同步（用 _syncing 防止循环触发）
 	var _nameUserEdited = false;
