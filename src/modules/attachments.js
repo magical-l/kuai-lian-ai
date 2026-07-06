@@ -124,7 +124,7 @@ function addInheritIcon(inputEl) {
 	icon.title = '继承自父级';
 	icon.style.cssText = 'cursor:help;font-size:12px;color:var(--text-muted);flex-shrink:0;margin-right:3px;';
 	var parent = inputEl.parentNode;
-	if (parent.classList.contains('input-row') || parent.parentElement?.matches('.apikey.editor')) {
+	if (parent.classList.contains('input-row') || parent.parentElement?.querySelector('input[name="apikey"]')) {
 		parent.insertBefore(icon, inputEl);
 		return;
 	}
@@ -142,14 +142,14 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var dialog = fromTemplate('edit-group-dialog', '.editing.endpoint');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
-	var nameInput = $(".name.editor input[name=\"name\"]", dialog);
-	var urlInput = $('.url.editor input[name="url"]', dialog);
-	var styleSel = $(".style.editor select[name=\"style\"]", dialog);
-	var keyInput = $(".apikey.editor input[name=\"apikey\"]", dialog);
-	var modelidInput = $('.model-id.editor input[name="model-id"]', dialog);
-	var remarkInput = $(".remark.editor input[name=\"remark\"]", dialog);
-	var typeSel = $('.type.editor select[name="type"]', dialog);
-	var typeHint = $('.detected-hint', dialog);
+	var nameInput = $("input[name=\"name\"]", dialog);
+	var urlInput = $('input[name="url"]', dialog);
+	var styleSel = $('select[name="style"]', dialog);
+	var keyInput = $("input[name=\"apikey\"]", dialog);
+	var modelidInput = $('input[name="model-id"]', dialog);
+	var remarkInput = $("input[name=\"remark\"]", dialog);
+	var typeSel = $('select[name="type"]', dialog);
+	var typeHint = $('select[name="type"]', dialog).parentElement.querySelector('.hint');
 
 	function updateTypeHint(detectedType) {
 		if (!typeHint) return;
@@ -163,12 +163,12 @@ function showEditGroupDialog(node, parentId, onSave) {
 	}
 
 	setValues(dialog, {
-		'.name.editor input[name="name"]': node ? node.name : '',
-		'.model-id.editor input[name="model-id"]': node ? node.modelId || '' : '',
-		'.url.editor input[name="url"]': node ? node.baseUrl || '' : '',
-		'.style.editor select[name="style"]': node ? node.style || '' : '',
-		'.apikey.editor input[name="apikey"]': node ? node.key || '' : '',
-		'.remark.editor input[name="remark"]': node ? node.remark || '' : ''
+		'input[name="name"]': node ? node.name : '',
+		'input[name="model-id"]': node ? node.modelId || '' : '',
+		'input[name="url"]': node ? node.baseUrl || '' : '',
+		'select[name="style"]': node ? node.style || '' : '',
+		'input[name="apikey"]': node ? node.key || '' : '',
+		'input[name="remark"]': node ? node.remark || '' : ''
 	});
 
 	// type：显式值优先，否则从 modelId 检测作为默认

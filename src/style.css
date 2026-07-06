@@ -690,8 +690,8 @@ main {
 				padding: var(--space-2) var(--space-3);
 				background: var(--bg-base);
 				border-bottom: 1px solid var(--border-subtle);
-				align-items: center;
-				gap: var(--space-2);
+			align-items: center;
+			gap: var(--space-2);
 				height: 40px;
 				--btn-h: 26px;
 				--btn-p: var(--space-1) var(--space-3);
@@ -708,11 +708,11 @@ main {
 			}
 
 			& .msg.list {
-				flex: 1 1 auto;
+			flex: 1 1 auto;
 				overflow-y: auto;
 				padding: var(--space-2);
 				scroll-padding-bottom: 130px;
-				gap: var(--space-5);
+			gap: var(--space-5);
 				background: var(--bg-subtle);
 				min-height: 100px;
 
@@ -723,14 +723,14 @@ main {
 					bottom: var(--space-4);
 					z-index: 2;
 					align-self: center;
-					flex-shrink: 0;
+				flex-shrink: 0;
 					background: var(--bg-elevated);
 					border: 1px solid var(--border-subtle);
 					border-radius: 999px;
 					box-shadow: var(--shadow-md);
-					display: flex;
-					align-items: center;
-					gap: var(--space-2);
+				display: flex;
+				align-items: center;
+				gap: var(--space-2);
 					font-size: 12px;
 					color: var(--text-secondary);
 					padding: var(--space-1) var(--space-3);
@@ -756,7 +756,7 @@ main {
 				z-index: calc(var(--divider-z) + 10);
 				border-top: 1px solid var(--border-subtle);
 				background: var(--bg-base);
-				flex: 1 1 auto;
+			flex: 1 1 auto;
 				min-height: 160px;
 
 				& #chat-input {
@@ -787,11 +787,11 @@ main {
 				}
 				
 				> menu {
-					gap: 4px;
+				gap: 4px;
 					--btn-h: 40px;
 					/* 隐藏掉原生的文件输入控件，使用“添加附件按钮” */
 					& input[type=file] {
-						display: none;
+					display: none;
 					}
 				}
 			}
@@ -902,7 +902,7 @@ aside.endpoint.list {
 				background: var(--bg-subtle);
 			}
 			> header {
-				gap: var(--space-1);
+			gap: var(--space-1);
 				width: calc(100% - 15px);
 			}
 		}
@@ -1183,12 +1183,18 @@ aside.endpoint.list {
 /* ============ 各种弹窗 ============ */
 dialog {
 	&.editing.endpoint {
+		display: flex;
+		flex-direction: column;
+		max-height: 85vh;
+		overflow: hidden;
 		background: var(--bg-base);
 		color: var(--text-primary);
 		border-radius: var(--radius-xl);
 		box-shadow: var(--shadow-xl);
 		border: 1px solid var(--border-subtle);
 		min-width: 360px;
+		width: 720px;
+		max-width: 90vw;
 
 		& input, & select {
 			padding: var(--space-2) var(--space-3);
@@ -1211,24 +1217,53 @@ dialog {
 			font-weight: 500;
 			color: var(--text-secondary);
 		}
-		& form {
-			gap: var(--space-4);
+		.editor-form > label.full {
+			flex: 0 0 100%;
 		}
-		& h3 {
+		.label-text {
+			width: 120px;
+			text-align: right;
+			flex-shrink: 0;
+		}
+		.input-block {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+			gap: 2px;
+			min-width: 0;
+		}
+		.input-block input,
+		.input-block select,
+		.input-block > .flex {
+			flex: 1;
+			min-width: 0;
+		}
+		& form {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: wrap;
+			gap: var(--space-4); overflow-y: auto; flex: 1; min-height: 0; padding: var(--space-3) var(--space-6) 0;
+		}
+		& header {
+			flex-shrink: 0;
+			padding: var(--space-4) var(--space-6) 0;
+		}
+		& header h3 {
 			font-weight: 600;
 			font-size: 16px;
 			color: var(--text-primary);
+			margin: 0;
 		}
 		& .hint {
 			font-size: 11px;
 			color: var(--text-muted);
 			display: block;
 		}
-		& .apikey.editor {
+		button.toggle.apikey {
 			--btn-h: 36px;
 		}
 		> footer {
-			margin-top: var(--space-5);
+			flex-shrink: 0; padding: var(--space-3) var(--space-6) var(--space-4);
 			gap: var(--space-2);
 			justify-content: flex-end;
 			& button {
@@ -1278,8 +1313,8 @@ dialog {
 			padding: var(--space-3);
 			border-radius: var(--radius-md);
 			& .field {
-				align-items: center;
-				gap: var(--space-3);
+			align-items: center;
+			gap: var(--space-3);
 				justify-content: space-between;
 				flex-wrap: wrap;
 			}
@@ -1297,7 +1332,7 @@ dialog {
 				--btn-h: 28px;
 				--btn-font-size: 13px;
 				--btn-p: var(--space-2) var(--space-3);
-				gap: var(--space-2);
+			gap: var(--space-2);
 			}
 		}
 		& section {

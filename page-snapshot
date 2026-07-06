@@ -1,0 +1,105 @@
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - img "快连AI Logo" [ref=e6]
+        - generic [ref=e7]:
+          - text: 快
+          - deletion [ref=e8]: 恋爱
+          - text: 连AI
+        - generic [ref=e9]: v6.6.4
+      - generic [ref=e10]:
+        - generic [ref=e11]: 当前存储目录：
+        - generic [ref=e12]: 未选择目录
+        - generic [ref=e13]:
+          - button "更换目录" [ref=e14] [cursor=pointer]:
+            - img [ref=e15]
+          - button "×" [ref=e17] [cursor=pointer]:
+            - generic [ref=e18]: ×
+          - button "清空数据" [ref=e19] [cursor=pointer]:
+            - img [ref=e20]
+      - navigation [ref=e22]:
+        - button "显示/隐藏右侧栏" [ref=e23] [cursor=pointer]:
+          - img [ref=e24]
+        - button "?" [ref=e26] [cursor=pointer]
+        - button "切换主题" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+        - link "GitHub" [ref=e30] [cursor=pointer]:
+          - /url: https://github.com/magical-l/kuai-lian-ai
+          - img "GitHub" [ref=e31]
+        - link "Gitee" [ref=e32] [cursor=pointer]:
+          - /url: https://gitee.com/magicall/kuai-lian-ai
+          - img "Gitee" [ref=e33]
+    - generic [ref=e34]:
+      - complementary [ref=e35]:
+        - generic [ref=e36]:
+          - generic [ref=e37]: AI服务端点
+          - generic [ref=e39]:
+            - generic "聊天" [ref=e40] [cursor=pointer]: 💬
+            - generic "嵌入" [ref=e41] [cursor=pointer]: 🔢
+            - generic "生图" [ref=e42] [cursor=pointer]: 🎨
+            - generic "重排序" [ref=e43] [cursor=pointer]: 📊
+          - generic [ref=e44]:
+            - button "🔗" [ref=e45] [cursor=pointer]
+            - button "收起全部" [ref=e46] [cursor=pointer]:
+              - img [ref=e47]
+            - button "+" [ref=e49] [cursor=pointer]:
+              - generic [ref=e50]: +
+        - list [ref=e51]
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]: 会话：
+          - generic [ref=e56]: 新会话
+          - button "新建会话" [ref=e57] [cursor=pointer]
+        - generic [ref=e59]:
+          - list [ref=e61]
+          - textbox "输入消息..." [ref=e62]
+          - list [ref=e63]:
+            - button "添加附件" [ref=e65] [cursor=pointer]:
+              - img [ref=e66]
+            - generic "发送" [ref=e68]:
+              - button [ref=e69] [cursor=pointer]:
+                - img [ref=e70]
+              - button [ref=e72] [cursor=pointer]:
+                - img [ref=e73]
+      - complementary [ref=e76]:
+        - generic [ref=e78]: 会话记录
+        - list [ref=e79]
+  - dialog [ref=e80]:
+    - banner [ref=e81]:
+      - heading "快恋爱连AI 使用帮助" [level=3] [ref=e82]:
+        - text: 快
+        - deletion [ref=e83]: 恋爱
+        - text: 连AI 使用帮助
+    - article [active] [ref=e84]:
+      - generic [ref=e85]: 快连AI是一款极致小巧的小工具，主要用于快速添加和管理大模型服务端点、快速测试连接、简单对话。端点信息、会话记录完全存于你电脑本地，不会翻本地文件（由浏览器严格把关），也不会联网泄漏。
+      - generic [ref=e86]:
+        - heading "选目录" [level=4] [ref=e87]
+        - paragraph [ref=e88]: 首次打开页面需选择一个本地文件夹做工作目录，端点信息、会话记录将保存于该目录，随时可换，可自己在操作系统里查看、备份。
+        - paragraph [ref=e89]: 后续重新打开页面可能会需要重新确认一下该目录（浏览器干的）。
+      - generic [ref=e90]:
+        - heading "存储目录" [level=4] [ref=e91]
+        - generic [ref=e92]:
+          - 'generic "存储位置: 浏览器内部 (IndexedDB)" [ref=e93]': 当前存储：浏览器存储（浏览器存储）
+          - generic [ref=e94]:
+            - button "恢复目录" [ref=e95] [cursor=pointer]
+            - button "选择目录存储" [ref=e96] [cursor=pointer]
+            - button "使用浏览器存储" [ref=e97] [cursor=pointer]
+        - paragraph [ref=e98]: 请选择存储模式：选择本地目录，或使用浏览器内置存储（无需选目录）
+        - paragraph [ref=e99]: 浏览器存储：数据保存在浏览器内部（chrome.storage/IndexedDB），无需选择文件夹，随浏览器自动持久化。
+      - generic [ref=e100]:
+        - heading "左侧栏：管理端点" [level=4] [ref=e101]
+        - paragraph [ref=e102]: 端点是线上部署的大模型服务。不同端点有不同地址，同一模型可部署在多个地址，成为不同端点。一个端点可以提供多个模型。
+        - paragraph [ref=e103]: "* 目前支持OpenAI、Claude、Gemini三种接口格式。国产大模型基本都是OpenAI格式。"
+        - paragraph [ref=e104]: "* 不支持的格式快来贡献代码呀！"
+        - paragraph [ref=e105]: 可以测试连接端点，也可以测试一个端点下添加的所有模型。
+        - paragraph [ref=e106]: "* 有些服务端点没开CORS，浏览器访问会被拒。我们区分了这种情况，免得以为是服务挂了。"
+      - generic [ref=e107]:
+        - heading "中间：聊天" [level=4] [ref=e108]
+        - paragraph [ref=e109]: 可以选择一个或多个端点舌战群儒。
+        - paragraph [ref=e110]: 交谈中可以随时加入未选端点，或移除已选端点（踢出群！）。
+        - paragraph [ref=e111]: "* 目前多轮对话只会把你的话和该模型之前的回复作为上下文，不搭理其他模型。"
+      - generic [ref=e112]:
+        - heading "右侧栏：会话记录" [level=4] [ref=e113]
+        - paragraph [ref=e114]: 可收起，眼不见为净。点击旧会话可再续前缘。
+  - generic [ref=e115]: 🤖 dialog-test
