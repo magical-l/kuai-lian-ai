@@ -37,25 +37,25 @@
 			<span class="cur">未选择目录</span>
 			<div class="actions , btn-group , flex items-go-x">
 				<button class="change-dir btn , bare icon-only , square" title="更换目录">
-					<svg class="fill-style icon"><use href="icons.svg#icon-folder"></use></svg>
+					<span class="fill-style icon"><svg><use href="icons.svg#icon-folder"></use></svg></span>
 				</button>
 				<button class="delete-dir btn , danger , bare icon-only , square" title="弃用目录">
-					<span class="char-style" style="font-size:16px;font-weight:700">×</span>
+					<span class="char-style icon" >×</span>
 				</button>
 				<button class="wipe-dir btn , danger , bare icon-only , square" title="清空数据">
-					<svg class="fill-style icon"><use href="icons.svg#icon-trash"></use></svg>
+					<span class="fill-style icon"><svg><use href="icons.svg#icon-trash"></use></svg></span>
 				</button>
 			</div>
 		</div>
 		<nav class="flex items-go-x">
 			<button class="toggle-sidebar btn , bare icon-only , square" title="显示/隐藏右侧栏">
-				<svg class="fill-style icon"><use href="icons.svg#icon-sidebar-open"></use></svg>
+				<span class="fill-style icon"><svg><use href="icons.svg#icon-sidebar-open"></use></svg></span>
 			</button>
-			<button class="help btn , bare icon-only , square char-style" title="帮助">?</button>
+			<button class="help btn , bare icon-only , square" title="帮助"><span class="char-style icon">?</span></button>
 			<dialog class="help">
 				<header>
 					<h3>快<del>恋爱</del>连AI 使用帮助</h3>
-					<button class="close btn , bare icon-only , square char-style" onclick="closeHelpDialog()">✗</button>
+					<button class="close btn , bare icon-only , square" onclick="closeHelpDialog()"><span class="char-style icon">✗</span></button>
 				</header>
 				<article>
 					<section>
@@ -99,31 +99,31 @@
 			</dialog>
 
 			<button class="theme btn , bare icon-only , square" popovertarget="themePop" title="切换主题">
-				<svg class="fill-style icon"><use href="icons.svg#icon-sun"></use></svg>
+				<span class="fill-style icon"><svg><use href="icons.svg#icon-sun"></use></svg></span>
 			</button>
 			<div id="themePop" popover role="menu">
 				<label class="option btn , flex items-go-x">
 					<input type="radio" name="theme" value="light" checked>
-					<svg class="fill-style icon"><use href="icons.svg#icon-sun"></use></svg>
+					<span class="fill-style icon"><svg><use href="icons.svg#icon-sun"></use></svg></span>
 					亮色模式
 				</label>
 				<label class="option btn , flex items-go-x">
 					<input type="radio" name="theme" value="dark">
-					<svg class="fill-style icon"><use href="icons.svg#icon-moon"></use></svg>
+					<span class="fill-style icon"><svg><use href="icons.svg#icon-moon"></use></svg></span>
 					暗色模式
 				</label>
 				<label class="option btn , flex items-go-x">
 					<input type="radio" name="theme" value="system">
-					<svg class="fill-style icon"><use href="icons.svg#icon-auto"></use></svg>
+					<span class="fill-style icon"><svg><use href="icons.svg#icon-auto"></use></svg></span>
 					跟随系统
 				</label>
 			</div>
 
 			<a title="@GitHub" class="github btn , bare icon-only , square" href="https://github.com/magical-l/kuai-lian-ai" target="_blank">
-				<img alt="GitHub" class="img-style icon src="https://github.githubassets.com/favicons/favicon.svg">
+				<span class="img-style icon"><img alt="GitHub" src="https://github.githubassets.com/favicons/favicon.svg"></span>
 			</a>
 			<a title="@Gitee" class="gitee btn , bare icon-only , square" href="https://gitee.com/magicall/kuai-lian-ai" target="_blank">
-				<img alt="Gitee" class="img-style icon src="https://gitee.com/favicon.ico">
+				<span class="img-style icon"><img alt="Gitee" src="https://gitee.com/favicon.ico"></span>
 			</a>
 		</nav>
 	</header>
@@ -131,7 +131,7 @@
 		<aside class="endpoint list , flex items-go-y">
 			<header class="flex items-go-x">
 				<span>AI服务端点</span>
-				<div class="btn-group endpoint-type filter flex items-go-x">
+				<div class="btn-group endpoint-type filter , flex items-go-x">
 					<label title="聊天" class="endpoint-type option btn : chat , icon-only square">
 						<input type="checkbox" value="chat" checked hidden>
 					</label>
@@ -146,12 +146,12 @@
 					</label>
 				</div>
 				<span class="btn-group , flex items-go-x">
-					<button class="test-all btn , bare icon-only , square char-style" title="测试全部连接">🔗</button>
+					<button class="test-all btn , bare icon-only , square" title="测试全部连接"><span class="char-style icon">🔗</span></button>
 					<button class="collapse-all btn , bare icon-only , square" title="收起全部">
-						<svg class="fill-style icon" width="14" height="14" viewBox="0 0 24 24"><use href="icons.svg#icon-collapse-all"></use></svg>
+						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-collapse-all"></use></svg></span>
 					</button>
-					<button class="add-group btn , bare icon-only , square char-style" title="新增端点">
-						<span class="char-style" style="font-size:16px;font-weight:700">+</span>
+					<button class="add-group btn , bare icon-only , square" title="新增端点">
+						<span class="char-style icon">+</span>
 					</button>
 				</span>
 			</header>
@@ -161,19 +161,19 @@
 						<details>
 							<summary>
 								<header class="inline flex items-x-mutex items-y-near-center">
-									<span class="drag handle btn , bare icon-only , square char-style" draggable="true" title="拖动排序">⋮⋮</span>
+									<span class="drag handle btn , bare icon-only , square" draggable="true" title="拖动排序"><span class="char-style icon">⋮⋮</span></span>
 									<span class="endpoint-type badge char-style icon icon-only"></span>
 									<span class="name"></span>
 									<div class="btn-group actions , flex items-go-x">
-										<button class="add-child btn , bare icon-only , square char-style" title="添加子节点">+</button>
-										<button class="test-connection btn , bare icon-only , square char-style" title="测试连接"><span>🔗</span></button>
+										<button class="add-child btn , bare icon-only , square" title="添加子节点"><span class="char-style icon">+</span></button>
+										<button class="test-connection btn , bare icon-only , square" title="测试连接"><span class="char-style icon">🔗</span></button>
 										<label class="join-session btn , bare icon-only , square" title="加入当前会话">
 											<input type="checkbox" hidden>
-											<svg class="outline-style icon" viewBox="0 0 24 24"><use href="icons.svg#icon-bubble"></use></svg>
+											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-bubble"></use></svg></span>
 										</label>
-										<button class="edit btn , bare char-style icon-only , square" title="编辑节点">✎</button>
+										<button class="edit btn , bare icon-only , square" title="编辑节点"><span class="char-style icon">✎</span></button>
 										<button class="remove btn , danger bare icon-only , square" title="删除节点及其子节点">
-											<svg class="outline-style icon" viewBox="0 0 24 24"><use href="icons.svg#icon-trash"></use></svg>
+											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-trash"></use></svg></span>
 										</button>
 									</div>
 								</header>
@@ -206,8 +206,8 @@
 					<span class="name">我</span>
 					<span class="time"></span>
 					<button class="copy content btn , bare icon-only , square" title="复制">
-						<span class="copy icon , char-style : ⧉">⧉</span>
-						<span class="done icon , char-style : ✓">✓</span>
+						<span class="char-style icon">⧉</span>
+						<span class="char-style icon">✓</span>
 					</button>
 				</header>
 			</template>
@@ -243,15 +243,15 @@
 					<div class="attachment list , flex items-go-x flexible scrollable" style="gap:4px"></div>
 					<input type="file" class="file-input" multiple accept="*/*">
 					<button class="add attachment btn , square icon-only" title="添加附件">
-						<svg class="fill-style icon"><use href="icons.svg#icon-attach"></use></svg>
+						<span class="fill-style icon"><svg><use href="icons.svg#icon-attach"></use></svg></span>
 					</button>
 					
 					<div class="split btn-group : send , flex items-go-x items-from-left" title="发送">
 						<button class="main btn : send , primary , icon-only">
-							<svg class="fill-style icon"><use href="icons.svg#icon-send"></use></svg>
+							<span class="fill-style icon"><svg><use href="icons.svg#icon-send"></use></svg></span>
 						</button>
 						<button class="secondary btn : send-shotcut-selector , icon-only" popovertarget="sendModePop">
-							<svg class="fill-style icon"><use href="icons.svg#icon-chevron-down"></use></svg>
+							<span class="fill-style icon"><svg><use href="icons.svg#icon-chevron-down"></use></svg></span>
 						</button>
 						<div id="sendModePop" popover="auto">
 							<div class="flex items-go-y">
@@ -280,9 +280,9 @@
 						<div class="session meta , flex items-go-x">
 							<span class="session time"></span>
 							<div class="btn-group session actions , flex items-go-x">
-								<button class="edit title btn , bare icon-only , square char-style" title="编辑标题">✎</button>
+								<button class="edit title btn , bare icon-only , square" title="编辑标题"><span class="char-style icon">✎</span></button>
 								<button class="remove btn , danger bare icon-only , square" title="删除会话">
-									<svg class="outline-style icon" viewBox="0 0 24 24"><use href="icons.svg#icon-trash"></use></svg>
+									<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-trash"></use></svg></span>
 								</button>
 							</div>
 						</div>
@@ -335,7 +335,7 @@
 					<span class="flex items-go-x" style="align-items:center;gap:var(--space-1)">
 						<input name="apikey" type="password">
 						<button type="button" class="toggle apikey visibility btn , square icon-only" title="显示/隐藏">
-							<svg class="fill-style icon"><use href="icons.svg#icon-eye"></use></svg>
+							<span class="fill-style icon"><svg><use href="icons.svg#icon-eye"></use></svg></span>
 						</button>
 					</span>
 				</span>
@@ -351,8 +351,8 @@
 			<div class="footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
 		</form>
 		<footer class="flex items-go-x">
-			<button class="cancel btn char-style">✗</button>
-			<button class="save btn primary char-style">✓</button>
+			<button class="cancel btn"><span class="char-style icon">✗</span></button>
+			<button class="save btn primary"><span class="char-style icon">✓</span></button>
 		</footer>
 	</dialog>
 </main>
