@@ -137,9 +137,7 @@ function addInheritIcon(inputEl) {
 }
 
 function showEditGroupDialog(node, parentId, onSave) {
-	var exist = $('dialog.editing.endpoint');
-	if (exist) exist.remove();
-	var dialog = fromTemplate('edit-group-dialog', '.editing.endpoint');
+	var dialog = $('#edit-group-dialog');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
 	var nameInput = $("input[name=\"name\"]", dialog);
@@ -287,12 +285,21 @@ function showEditGroupDialog(node, parentId, onSave) {
 	urlInput.oninput = function() { removeIcon(this); };
 	keyInput.oninput = function() { removeIcon(this); };
 
-	doc.body.addChild(dialog);
 	dialog.show();
-	// show() 不自动处理 Escape
-	dialog.addEventListener('keydown', function(e) {
-		if (e.key === 'Escape') dialog.remove();
-	});
+	// show() 不自动处理 Escape，用闭包注册一次性 document 监听
+	var escHandler = function(e) {
+		if (e.key === 'Escape' && dialog.hasAttribute('open')) {
+			dialog.close();
+			doc.removeEventListener('keydown', escHandler);
+		}
+	};
+	doc.addEventListener('keydown', escHandler);
+	// 关闭时清理监听器
+	var origClose = dialog.close.bind(dialog);
+	dialog.close = function() {
+		doc.removeEventListener('keydown', escHandler);
+		origClose();
+	};
 	var toggleBtn = $('button.toggle.apikey.visibility', dialog);
 	if (toggleBtn) {
 		toggleBtn.onclick = function(e) {
@@ -322,7 +329,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 		});
 	}
 	onClick({
-		'.cancel': function() { dialog.remove(); },
+		'.cancel': function() { dialog.close(); },
 		'.save': function() {
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
@@ -352,7 +359,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			if (theRemark) saveData.remark = theRemark;
 			else saveData.remark = '';
 			onSave(saveData);
-			dialog.remove();
+			dialog.close();
 		}
 	}, dialog);
 }

@@ -179,7 +179,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 文件：`attachments.js:139-278`
 
-从 `<template id="edit-group-dialog">` 克隆 `<dialog class="editing endpoint">`。用 `show()`（非 `showModal()`）打开，不阻塞页面交互，可在编辑时点击后面端点复制字段值。功能：
+直接操作 DOM 中的 `<dialog class="editing endpoint" id="edit-group-dialog">`（非 template 非 clone）。用 `show()`（非 `showModal()`）打开，不阻塞页面交互，可在编辑时点击后面端点复制字段值。功能：
 
 - 名称 + URL + 格式 + Key + 模型 ID + 类型 + 备注 7 个字段
 - 名称与模型 ID 自动同步（用户起始编辑名称后停止自动同步）
@@ -229,3 +229,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-07 | help-dialog 从 template 改为直接 DOM 元素 | 帮助弹窗始终在场，无需 template 克隆 |
 | 2026-07-07 | 端点编辑对话框从 showModal 改为 show() | 编辑时允许点击后面页面操作其他元素 |
 | 2026-07-07 | dialog CSS 用 [open] 属性选择器限定 display:flex | 避免关闭态下 display:flex 覆盖 UA dialog { display:none } 导致 dialog 内容漏出 |
+| 2026-07-07 | 编辑弹窗也从 template 改为直接 DOM 元素，移出 `<aside>` 放到 `<main>` 末尾 | 同步 help-dialog 的模式；避免 show() 无 top layer 时被后序 DOM 元素遮盖 |

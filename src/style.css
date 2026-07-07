@@ -1181,11 +1181,12 @@ aside.endpoint.list {
 	}
 }
 /* ============ 各种弹窗 ============ */
-dialog {
-	&.editing.endpoint[open] {
+dialog[open] {
+	&.editing.endpoint {
 		display: flex;
 		flex-direction: column;
 		outline: none;
+		&:focus-visible { outline: none; }
 		position: fixed;
 		z-index: 1000;
 		inset: 0;
@@ -1305,7 +1306,7 @@ dialog {
 			}
 		}
 	}
-	&.help[open] {
+	&.help {
 		position: relative;
 		color: var(--text-primary);
 		display: flex;

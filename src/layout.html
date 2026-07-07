@@ -190,72 +190,6 @@
 				<button class="reset-filter btn , hidden">重置筛选</button>
 				<button class="add-endpoint btn , hidden">去创建</button>
 			</div>
-			<template id="edit-group-dialog">
-				<dialog class="editing endpoint">
-					<header><h3></h3></header>
-					<form class="editor-form">
-						<label class="full flex items-go-x items-y-near-center">
-							<span class="label-text">名称:</span>
-							<span class="input-block"><input name="name"></span>
-						</label>
-						<label class="full flex items-go-x items-y-near-center">
-							<span class="label-text">Base URL（选填）:</span>
-							<span class="input-block">
-								<input name="url" placeholder="https://api.example.com">
-								<span class="hint">若路径以 # 结尾，则直接使用该路径</span>
-							</span>
-						</label>
-						<label class="full flex items-go-x items-y-near-center">
-							<span class="label-text">接口风格:</span>
-							<span class="input-block">
-								<div class="btn-group , flex items-go-x">
-									<label class="option btn"><input type="radio" name="style" value="" hidden> 继承</label>
-									<label class="option btn"><input type="radio" name="style" value="openai" hidden> ChatGPT式 <span class="hint">OpenAI、国内主流</span></label>
-									<label class="option btn"><input type="radio" name="style" value="claude" hidden> Claude式 <span class="hint">Anthropic</span></label>
-									<label class="option btn"><input type="radio" name="style" value="gemini" hidden> Gemini式 <span class="hint">Google</span></label>
-								</div>
-							</span>
-						</label>
-						<label class="full flex items-go-x items-y-near-center">
-							<span class="label-text">类型:</span>
-							<span class="input-block">
-								<div class="btn-group , flex items-go-x">
-									<label class="option btn"><input type="radio" name="type" value="" hidden> 继承</label>
-									<label class="option btn"><input type="radio" name="type" value="chat" hidden> 💬 聊天</label>
-									<label class="option btn"><input type="radio" name="type" value="embed" hidden> 🔢 嵌入</label>
-									<label class="option btn"><input type="radio" name="type" value="img-generate" hidden> 🎨 生图</label>
-									<label class="option btn"><input type="radio" name="type" value="rerank" hidden> 📊 重排序</label>
-								</div>
-								<span class="hint"></span>
-							</span>
-						</label>
-						<label class="full flex items-go-x items-y-near-center">
-							<span class="label-text">API Key（选填）:</span>
-							<span class="input-block">
-								<span class="flex items-go-x" style="align-items:center;gap:var(--space-1)">
-									<input name="apikey" type="password">
-									<button type="button" class="toggle apikey visibility btn , square icon-only" title="显示/隐藏">
-										<svg><use href="icons.svg#icon-eye"></use></svg>
-									</button>
-								</span>
-							</span>
-						</label>
-						<label class="full flex items-go-x items-y-near-center">
-							<span class="label-text">模型名（选填）:</span>
-							<span class="input-block"><input name="model-id" placeholder="如 gpt-4o"></span>
-						</label>
-						<label class="full flex items-go-x items-y-near-center">
-							<span class="label-text">备注（选填）:</span>
-							<span class="input-block"><input name="remark" placeholder="仅用于显示"></span>
-						</label>
-						<div class="footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
-					</form>
-					<footer class="flex items-go-x">
-						<button class="cancel btn">✗</button>
-						<button class="save btn primary">✓</button>
-					</footer>
-				</dialog>
-			</template>
 		</aside>
 		<div class="divider col left"></div>
 		<section class="main-content , flex items-go-y">
@@ -372,6 +306,70 @@
 			</ol>
 		</aside>
 	</div>
+	<dialog class="editing endpoint" id="edit-group-dialog">
+		<header><h3></h3></header>
+		<form class="editor-form">
+			<label class="full flex items-go-x items-y-near-center">
+				<span class="label-text">名称:</span>
+				<span class="input-block"><input name="name"></span>
+			</label>
+			<label class="full flex items-go-x items-y-near-center">
+				<span class="label-text">Base URL（选填）:</span>
+				<span class="input-block">
+					<input name="url" placeholder="https://api.example.com">
+					<span class="hint">若路径以 # 结尾，则直接使用该路径</span>
+				</span>
+			</label>
+			<label class="full flex items-go-x items-y-near-center">
+				<span class="label-text">接口风格:</span>
+				<span class="input-block">
+					<div class="btn-group , flex items-go-x">
+						<label class="option btn"><input type="radio" name="style" value="" hidden> 继承</label>
+						<label class="option btn"><input type="radio" name="style" value="openai" hidden> ChatGPT式 <span class="hint">OpenAI、国内主流</span></label>
+						<label class="option btn"><input type="radio" name="style" value="claude" hidden> Claude式 <span class="hint">Anthropic</span></label>
+						<label class="option btn"><input type="radio" name="style" value="gemini" hidden> Gemini式 <span class="hint">Google</span></label>
+					</div>
+				</span>
+			</label>
+			<label class="full flex items-go-x items-y-near-center">
+				<span class="label-text">类型:</span>
+				<span class="input-block">
+					<div class="btn-group , flex items-go-x">
+						<label class="option btn"><input type="radio" name="type" value="" hidden> 继承</label>
+						<label class="option btn"><input type="radio" name="type" value="chat" hidden> 💬 聊天</label>
+						<label class="option btn"><input type="radio" name="type" value="embed" hidden> 🔢 嵌入</label>
+						<label class="option btn"><input type="radio" name="type" value="img-generate" hidden> 🎨 生图</label>
+						<label class="option btn"><input type="radio" name="type" value="rerank" hidden> 📊 重排序</label>
+					</div>
+					<span class="hint"></span>
+				</span>
+			</label>
+			<label class="full flex items-go-x items-y-near-center">
+				<span class="label-text">API Key（选填）:</span>
+				<span class="input-block">
+					<span class="flex items-go-x" style="align-items:center;gap:var(--space-1)">
+						<input name="apikey" type="password">
+						<button type="button" class="toggle apikey visibility btn , square icon-only" title="显示/隐藏">
+							<svg><use href="icons.svg#icon-eye"></use></svg>
+						</button>
+					</span>
+				</span>
+			</label>
+			<label class="full flex items-go-x items-y-near-center">
+				<span class="label-text">模型名（选填）:</span>
+				<span class="input-block"><input name="model-id" placeholder="如 gpt-4o"></span>
+			</label>
+			<label class="full flex items-go-x items-y-near-center">
+				<span class="label-text">备注（选填）:</span>
+				<span class="input-block"><input name="remark" placeholder="仅用于显示"></span>
+			</label>
+			<div class="footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
+		</form>
+		<footer class="flex items-go-x">
+			<button class="cancel btn">✗</button>
+			<button class="save btn primary">✓</button>
+		</footer>
+	</dialog>
 </main>
 
 <div class="js container">
