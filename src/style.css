@@ -6,6 +6,7 @@
 	--icon-max-width: 16px;
 	--icon-max-height: 16px;
 }
+svg.icon { width: var(--icon-width); height: var(--icon-height); }
 html {
 	height: 100%;
 	--bg-elevated: #FFFFFF;
@@ -1345,18 +1346,16 @@ dialog[open] {
 			background: var(--bg-muted);
 			padding: var(--space-3);
 			border-radius: var(--radius-md);
-			& .field {
 			align-items: center;
 			gap: var(--space-3);
-				justify-content: space-between;
-				flex-wrap: wrap;
-			}
+			justify-content: space-between;
+			flex-wrap: wrap;
 			& .warning {
 				color: var(--warning);
 				font-size: 13px;
 				margin-top: var(--space-2);
 			}
-			& .storage-hint {
+			& .hint {
 				font-size: 12px;
 				color: var(--text-muted);
 				margin-top: 6px;

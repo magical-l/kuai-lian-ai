@@ -137,7 +137,7 @@ function addInheritIcon(inputEl) {
 }
 
 function showEditGroupDialog(node, parentId, onSave) {
-	var dialog = $('#edit-group-dialog');
+	var dialog = $('dialog.editing.endpoint');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
 	var nameInput = $("input[name=\"name\"]", dialog);
@@ -380,7 +380,7 @@ async function onRecoverDirectory() {
 	await loadEndpoints();
 	await loadSessionsIndex();
 	const info = storage.getDisplayInfo();
-	const dlg = $('#help-dialog');
+	const dlg = $('dialog.help');
 	$('.cur', dlg).textContent = '当前存储：' + info.text;
 	$('.cur', dlg).title = info.title;
 	updateDirectoryDisplay();
@@ -391,7 +391,7 @@ async function onSelectDirectory() {
 	const success = await selectDirectory();
 	if (!success) return;
 	const info = storage.getDisplayInfo();
-	const dlg = $('#help-dialog');
+	const dlg = $('dialog.help');
 	$('.cur', dlg).textContent = '当前存储：' + info.text;
 	$('.cur', dlg).title = info.title;
 	updateDirectoryDisplay();
@@ -408,7 +408,7 @@ async function onUseBrowserStorage() {
 }
 
 function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
-	const dialog = $('#help-dialog');
+	const dialog = $('dialog.help');
 	// 重置关闭动画产生的内联样式
 	dialog.style.transition = '';
 	dialog.style.transform = '';
@@ -434,7 +434,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 }
 
 function closeHelpDialog(immediate = false) {
-	const dialog = $('#help-dialog');
+	const dialog = $('dialog.help');
 	const helpBtn = $('.help');
 	if (!helpBtn) {
 		dialog.close();
