@@ -41,8 +41,8 @@ async function init() {
 		}
 	});
 	// 分裂式按钮：发送模式切换（Popover API）
-	const btnGroup = $('.split.btn-group');
-	const toggle = $('.send-shotcut-selector');
+	const btnGroup = $('.split-style.btn-group');
+	const toggle = $('.send-shortcut-selector');
 	// 从 localStorage 同步 radio 选中状态
 	if (localStorage.getItem('sendMode') === 'ctrl-enter') {
 		btnGroup.querySelector('.option.btn input[value="ctrl-enter"]').checked = true;

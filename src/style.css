@@ -117,7 +117,7 @@ aside {
 		margin: 0;
 		padding: var(--space-2) var(--space-3);
 		font-weight: 600;
-		font-size: 13px;
+			font-size: 13px;
 		color: var(--text-secondary);
 		background: var(--bg-base);
 		border-bottom: 1px solid var(--border-subtle);
@@ -139,7 +139,7 @@ aside {
 }
 
 /* 分裂式按钮 */
-.split.btn-group {
+.split-style.btn-group {
 	height: 40px;
 
 	& .main.btn, & .secondary.btn {
@@ -174,7 +174,7 @@ aside {
 		--hover-bg: var(--accent-light);
 		--hover-text-color: var(--accent-primary);
 		padding: 8px 12px;
-		font-size: 13px;
+			font-size: 13px;
 		color: var(--text-primary);
 
 		& input[type=radio] { display: none; }
@@ -214,7 +214,7 @@ aside {
 		--hover-bg: var(--accent-light);
 		--hover-text-color: var(--accent-primary);
 		padding: 10px 16px;
-		font-size: 13px;
+			font-size: 13px;
 		color: var(--text-primary);
 		gap: var(--space-2);
 		cursor: pointer;
@@ -676,7 +676,7 @@ button, .btn {
 		padding: 12px;
 		margin: 8px 0;
 		font-family: var(--font-mono, monospace);
-		font-size: 13px;
+			font-size: 13px;
 	}
 }
 /* ============ 主体框架 ============ */
@@ -704,7 +704,7 @@ main {
 				> span {
 					color: var(--text-muted);
 				}
-				& .btn-group.jump {
+				& .btn-group.go-top-bottom {
 					margin-left: auto;
 				}
 				& .new-session.btn {
@@ -752,7 +752,7 @@ main {
 			}
 
 			/* 无消息时隐藏跳转按钮 */
-			&:not(:has(.msg.list > .one.msg)) .toolbar .btn-group.jump {
+			&:not(:has(.msg.list > .one.msg)) .toolbar .go-top-bottom.btn-group {
 				display: none;
 			}
 			& .chat-input-area {
@@ -1222,30 +1222,28 @@ dialog[open] {
 				box-shadow: 0 0 0 3px var(--accent-light);
 			}
 		}
-		& label {
+		> form > .form-row {
+			flex: 0 0 100%;
 			gap: var(--space-2);
+		}
+		.field-label {
 			font-size: 13px;
 			font-weight: 500;
 			color: var(--text-secondary);
-		}
-		.editor-form > label.full {
-			flex: 0 0 100%;
-		}
-		.label-text {
 			width: 120px;
 			text-align: right;
 			flex-shrink: 0;
 		}
-		.input-block {
+		.field-control {
 			display: flex;
 			flex-direction: column;
 			flex: 1;
 			gap: 2px;
 			min-width: 0;
 		}
-		.input-block input,
-		.input-block select,
-		.input-block > .flex {
+		.field-control input,
+		.field-control select,
+		.field-control > .flex {
 			flex: 1;
 			min-width: 0;
 		}

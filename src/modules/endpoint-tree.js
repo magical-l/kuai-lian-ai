@@ -399,7 +399,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 function updateEmptyState() {
 	var aside = document.querySelector('aside.endpoint.list');
 	var emptyState = aside ? aside.querySelector('.empty-state') : null;
-	var emptyHint = emptyState ? emptyState.querySelector('.empty-hint') : null;
+	var emptyHint = emptyState ? emptyState.querySelector('.hint') : null;
 	var resetBtn = emptyState ? emptyState.querySelector('.reset-filter') : null;
 	var addBtn = emptyState ? emptyState.querySelector('.add-endpoint') : null;
 	if (!aside || !emptyState) return;

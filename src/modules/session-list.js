@@ -8,9 +8,9 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 		if (session.id === selectedSessionId) {
 			sessionEl.classList.add('selected');
 		}
-		const titleEl = sessionEl.querySelector('.session.title');
-		const meta = sessionEl.querySelector('.session.meta');
-		const timeEl = sessionEl.querySelector('.session.time');
+		const titleEl = sessionEl.querySelector('.title');
+		const meta = sessionEl.querySelector('.meta');
+		const timeEl = sessionEl.querySelector('.time');
 		const editBtn = sessionEl.querySelector('.edit.title');
 		const deleteBtn = sessionEl.querySelector('.remove');
 		titleEl.textContent = session.title || '新会话';

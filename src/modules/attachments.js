@@ -109,7 +109,7 @@ function clearInput() {
 function setButtonState(sendDisabled, stopEnabled) {
 	const area = $('footer.chat-input-area');
 	$('.send', area).disabled = sendDisabled;
-	$('.split.btn-group', area).style.display = stopEnabled ? 'none' : '';
+	$('.split-style.btn-group', area).style.display = stopEnabled ? 'none' : '';
 	$('.stop.btn', area).disabled = !stopEnabled;
 	$('.stop.btn', area).classList.toggle('hidden', !stopEnabled);
 }
@@ -147,7 +147,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var modelidInput = $('input[name="model-id"]', dialog);
 	var remarkInput = $("input[name=\"remark\"]", dialog);
 	var typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
-	var typeHint = dialog.querySelector('input[name="type"]').closest('.input-block').querySelector('.hint');
+	var typeHint = dialog.querySelector('input[name="type"]').closest('.field-control').querySelector('.hint');
 		function setRadio(name, val, ctx) { ctx.querySelectorAll('input[name="' + name + '"]').forEach(function(r) { r.checked = r.value === val; }); }
 		function getRadio(name, ctx) { var r = ctx.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
 

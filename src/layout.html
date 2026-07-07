@@ -183,31 +183,31 @@
 				</template>
 			</ol>
 			<div class="empty-state hidden">
-				<span class="empty-hint"></span>
+				<span class="hint"></span>
 				<button class="reset-filter btn , hidden">重置筛选</button>
 				<button class="add-endpoint btn , hidden">去创建</button>
 			</div>
 		</aside>
-		<div class="divider col left"></div>
+		<div class="left divider col"></div>
 		<section class="main-content , flex items-go-y">
 			<header class="toolbar , flex items-go-x">
 				<span>会话：</span>
 				<span class="title">新会话</span>
-				<div class="btn-group : jump , flex items-go-x">
-					<button class="go-top btn square" title="到顶部">↑</button>
-					<button class="go-bottom btn square" title="到底部">↓</button>
+				<div class="btn-group : go-top-bottom , flex items-go-x">
+					<button class="go-top btn , square" title="到顶部">↑</button>
+					<button class="go-bottom btn , square" title="到底部">↓</button>
 				</div>
 				<button class="new-session btn" title="新建会话">新建会话</button>
 			</header>
-			<section class="msg list flex items-go-y">
+			<section class="msg list , flex items-go-y">
 			</section>
 			<template id="user-header">
 				<header class="flex items-go-x">
 					<span class="name">我</span>
 					<span class="time"></span>
-					<button class="copy content btn , bare icon-only , square" title="复制">
-						<span class="char-style icon">⧉</span>
-						<span class="char-style icon">✓</span>
+					<button title="复制" class="copy content btn , bare icon-only , square">
+						<span class="char-style icon : ⧉">⧉</span>
+						<span class="char-style icon : ✓">✓</span>
 					</button>
 				</header>
 			</template>
@@ -216,10 +216,10 @@
 					<header class="flex items-go-x">
 						<span class="name"></span>
 						<span class="char-style icon status-icon spin">◐</span>
-						<button class="stop-one btn , square icon-only bare danger" title="停止"></button>
+						<button title="停止" class="stop-one btn , danger , square icon-only bare"></button>
 					</header>
 					<div class="content">
-						<details class="think hidden" open>
+						<details class="think , hidden" open>
 							<summary>
 								<div class="inline flex items-go-x items-y-near-center">
 									<span class="label">思考</span>
@@ -240,26 +240,28 @@
 				</ul>
 				<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
 				<menu class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
-					<div class="attachment list , flex items-go-x flexible scrollable" style="gap:4px"></div>
+					<div class="attachment list , flexible , flex items-go-x scrollable" style="gap:4px"></div>
 					<input type="file" class="file-input" multiple accept="*/*">
 					<button class="add attachment btn , square icon-only" title="添加附件">
 						<span class="fill-style icon"><svg><use href="icons.svg#icon-attach"></use></svg></span>
 					</button>
 					
-					<div class="split btn-group : send , flex items-go-x items-from-left" title="发送">
+					<div title="发送" class="split-style btn-group : send , flex items-go-x items-from-left">
 						<button class="main btn : send , primary , icon-only">
 							<span class="fill-style icon"><svg><use href="icons.svg#icon-send"></use></svg></span>
 						</button>
-						<button class="secondary btn : send-shotcut-selector , icon-only" popovertarget="sendModePop">
+						<button class="secondary btn : send-shortcut-selector , icon-only" popovertarget="sendModePop">
 							<span class="fill-style icon"><svg><use href="icons.svg#icon-chevron-down"></use></svg></span>
 						</button>
 						<div id="sendModePop" popover="auto">
 							<div class="flex items-go-y">
 								<label class="option btn">
-									Enter 发送 <input type="radio" name="sendMode" value="enter" checked>
+									Enter 发送
+									<input type="radio" name="sendMode" value="enter" checked>
 								</label>
 								<label class="option btn">
-									Ctrl+Enter 发送 <input type="radio" name="sendMode" value="ctrl-enter">
+									Ctrl+Enter 发送
+									<input type="radio" name="sendMode" value="ctrl-enter">
 								</label>
 							</div>
 						</div>
@@ -268,19 +270,17 @@
 				</menu>
 			</footer>
 		</section>
-		<div class="divider col right"></div>
+		<div class="right divider col"></div>
 		<aside class="session list , flex items-go-y">
-			<header class="flex items-go-x">
-				<span>会话记录</span>
-			</header>
+			<header>会话记录</header>
 			<ol class="scrollable on-y when-content-long">
 				<template id="one-session">
 					<li class="one session">
-						<div class="session title">新会话</div>
-						<div class="session meta , flex items-go-x">
-							<span class="session time"></span>
-							<div class="btn-group session actions , flex items-go-x">
-								<button class="edit title btn , bare icon-only , square" title="编辑标题"><span class="char-style icon">✎</span></button>
+						<div class="title">新会话</div>
+						<div class="meta , flex items-go-x">
+							<span class="time"></span>
+							<div class="btn-group actions , flex items-go-x">
+								<button title="编辑标题" class="edit title btn , bare icon-only , square"><span class="char-style icon">✎</span></button>
 								<button class="remove btn , danger bare icon-only , square" title="删除会话">
 									<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-trash"></use></svg></span>
 								</button>
@@ -293,21 +293,21 @@
 	</div>
 	<dialog class="editing endpoint">
 		<header><h3></h3></header>
-		<form class="editor-form">
-			<label class="full flex items-go-x items-y-near-center">
-				<span class="label-text">名称:</span>
-				<span class="input-block"><input name="name"></span>
+		<form>
+			<label class="form-row flex items-go-x items-y-near-center">
+				<span class="field-label">名称:</span>
+				<span class="field-control"><input name="name"></span>
 			</label>
-			<label class="full flex items-go-x items-y-near-center">
-				<span class="label-text">Base URL（选填）:</span>
-				<span class="input-block">
+			<label class="form-row flex items-go-x items-y-near-center">
+				<span class="field-label">Base URL（选填）:</span>
+				<span class="field-control">
 					<input name="url" placeholder="https://api.example.com">
 					<span class="hint">若路径以 # 结尾，则直接使用该路径</span>
 				</span>
 			</label>
-			<label class="full flex items-go-x items-y-near-center">
-				<span class="label-text">接口风格:</span>
-				<span class="input-block">
+			<div class="form-row flex items-go-x items-y-near-center">
+				<span class="field-label">接口风格:</span>
+				<span class="field-control">
 					<div class="btn-group , flex items-go-x">
 						<label class="option btn"><input type="radio" name="style" value="" hidden> 继承</label>
 						<label class="option btn"><input type="radio" name="style" value="openai" hidden> ChatGPT式 <span class="hint">OpenAI、国内主流</span></label>
@@ -315,10 +315,10 @@
 						<label class="option btn"><input type="radio" name="style" value="gemini" hidden> Gemini式 <span class="hint">Google</span></label>
 					</div>
 				</span>
-			</label>
-			<label class="full flex items-go-x items-y-near-center">
-				<span class="label-text">类型:</span>
-				<span class="input-block">
+			</div>
+			<div class="form-row flex items-go-x items-y-near-center">
+				<span class="field-label">类型:</span>
+				<span class="field-control">
 					<div class="btn-group , flex items-go-x">
 						<label class="option btn"><input type="radio" name="type" value="" hidden> 继承</label>
 						<label class="option btn"><input type="radio" name="type" value="chat" hidden> 💬 聊天</label>
@@ -328,10 +328,10 @@
 					</div>
 					<span class="hint"></span>
 				</span>
-			</label>
-			<label class="full flex items-go-x items-y-near-center">
-				<span class="label-text">API Key（选填）:</span>
-				<span class="input-block">
+			</div>
+			<label class="form-row flex items-go-x items-y-near-center">
+				<span class="field-label">API Key（选填）:</span>
+				<span class="field-control">
 					<span class="flex items-go-x" style="align-items:center;gap:var(--space-1)">
 						<input name="apikey" type="password">
 						<button type="button" class="toggle apikey visibility btn , square icon-only" title="显示/隐藏">
@@ -340,13 +340,13 @@
 					</span>
 				</span>
 			</label>
-			<label class="full flex items-go-x items-y-near-center">
-				<span class="label-text">模型名（选填）:</span>
-				<span class="input-block"><input name="model-id" placeholder="如 gpt-4o"></span>
+			<label class="form-row flex items-go-x items-y-near-center">
+				<span class="field-label">模型名（选填）:</span>
+				<span class="field-control"><input name="model-id" placeholder="如 gpt-4o"></span>
 			</label>
-			<label class="full flex items-go-x items-y-near-center">
-				<span class="label-text">备注（选填）:</span>
-				<span class="input-block"><input name="remark" placeholder="仅用于显示"></span>
+			<label class="form-row flex items-go-x items-y-near-center">
+				<span class="field-label">备注（选填）:</span>
+				<span class="field-control"><input name="remark" placeholder="仅用于显示"></span>
 			</label>
 			<div class="footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
 		</form>
