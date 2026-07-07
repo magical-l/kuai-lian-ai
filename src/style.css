@@ -7,6 +7,7 @@
 	--icon-max-height: 16px;
 }
 svg.icon { width: var(--icon-width); height: var(--icon-height); }
+svg.icon.outline-style { stroke: currentColor; stroke-width: 2; fill: none; }
 html {
 	height: 100%;
 	--bg-elevated: #FFFFFF;
