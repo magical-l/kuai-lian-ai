@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-03
+last_updated: 2026-07-07
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -179,7 +179,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 文件：`attachments.js:139-278`
 
-从 `<template id="edit-group-dialog">` 克隆 `<dialog class="editing endpoint">`。功能：
+从 `<template id="edit-group-dialog">` 克隆 `<dialog class="editing endpoint">`。用 `show()`（非 `showModal()`）打开，不阻塞页面交互，可在编辑时点击后面端点复制字段值。功能：
 
 - 名称 + URL + 格式 + Key + 模型 ID + 类型 + 备注 7 个字段
 - 名称与模型 ID 自动同步（用户起始编辑名称后停止自动同步）
@@ -193,7 +193,8 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 文件：`attachments.js:289-386`
 
-- `showHelpDialog` 从 `<template id="help-dialog">` 克隆
+- `showHelpDialog` 直接操作 DOM 中的 `<dialog class="help" id="help-dialog">`（非 template 非 clone），用 `showModal()` 打开
+- 按钮 onclick 直接写在 HTML 中，三个具名函数（`onRecoverDirectory`、`onSelectDirectory`、`onUseBrowserStorage`）通过 `dataset` 读取状态
 - 显示当前存储位置、恢复按钮（`restoreDirectory`）、选择目录、使用浏览器存储
 - 首次启动时 `showDirectoryPrompt`（forceSelectDirectory = true，禁止关闭）
 - `closeHelpDialog` 带飞入动画：计算按钮中心到对话框中心的偏移，`translate + scale(0.05)` 缩小消失
@@ -225,3 +226,6 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-01 | 侧边栏切换时 updateSidebarToggleIcon 移入 doToggle 内部 | icon 在 ViewTransition 路径外更新导致暗色下图标颜色不随状态正确切换。版本 6.3.1。 |
 
 | 2026-07-03 | 端点编辑对话框新增类型选择器，移除全局 taskMode radio | 每个端点独立标注类型（chat/embedding/image/rerank），不再用全局切换；类型自动从 modelId 检测，用户可覆盖 |
+| 2026-07-07 | help-dialog 从 template 改为直接 DOM 元素 | 帮助弹窗始终在场，无需 template 克隆 |
+| 2026-07-07 | 端点编辑对话框从 showModal 改为 show() | 编辑时允许点击后面页面操作其他元素 |
+| 2026-07-07 | dialog CSS 用 [open] 属性选择器限定 display:flex | 避免关闭态下 display:flex 覆盖 UA dialog { display:none } 导致 dialog 内容漏出 |

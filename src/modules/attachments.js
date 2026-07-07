@@ -288,7 +288,11 @@ function showEditGroupDialog(node, parentId, onSave) {
 	keyInput.oninput = function() { removeIcon(this); };
 
 	doc.body.addChild(dialog);
-	dialog.showModal();
+	dialog.show();
+	// show() 不自动处理 Escape
+	dialog.addEventListener('keydown', function(e) {
+		if (e.key === 'Escape') dialog.remove();
+	});
 	var toggleBtn = $('button.toggle.apikey.visibility', dialog);
 	if (toggleBtn) {
 		toggleBtn.onclick = function(e) {
@@ -361,82 +365,72 @@ function hideDirectoryPrompt() {
 	if (prompt) prompt.remove();
 }
 
+async function onRecoverDirectory() {
+	const ok = await storage.restoreDirectory();
+	if (!ok) { alert('权限请求失败，请选择新目录'); return; }
+	currentMode = 'directory';
+	await storage._saveModePref();
+	await loadEndpoints();
+	await loadSessionsIndex();
+	const info = storage.getDisplayInfo();
+	const dlg = $('#help-dialog');
+	$('.cur', dlg).textContent = '当前存储：' + info.text;
+	$('.cur', dlg).title = info.title;
+	updateDirectoryDisplay();
+	await refreshUI();
+	closeHelpDialog(true);
+}
+async function onSelectDirectory() {
+	const success = await selectDirectory();
+	if (!success) return;
+	const info = storage.getDisplayInfo();
+	const dlg = $('#help-dialog');
+	$('.cur', dlg).textContent = '当前存储：' + info.text;
+	$('.cur', dlg).title = info.title;
+	updateDirectoryDisplay();
+	await refreshUI();
+	if (dlg.dataset.forceSelect === 'true') closeHelpDialog(true);
+}
+async function onUseBrowserStorage() {
+	await storage.selectMode("browser");
+	await loadEndpoints();
+	await loadSessionsIndex();
+	updateDirectoryDisplay();
+	await refreshUI();
+	closeHelpDialog(true);
+}
+
 function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) {
-	const exist = $('dialog.help');
-	if (exist) exist.remove();
-	const dialog = fromTemplate('help-dialog', '.help');
-	const dirName = storage.getDirectoryName();
+	const dialog = $('#help-dialog');
+	// 重置关闭动画产生的内联样式
+	dialog.style.transition = '';
+	dialog.style.transform = '';
+	dialog.style.transformOrigin = '';
+	// 传递状态给 HTML onclick 中的具名函数
+	dialog.dataset.forceSelect = forceSelectDirectory;
+	dialog.dataset.hasPending = hasPendingHandle;
+	// 动态内容
 	const displayInfo = storage.getDisplayInfo();
 	const hasDir = storage.mode === 'directory';
 	$('.cur', dialog).textContent = '当前存储：' + displayInfo.text + (hasDir ? '' : '（浏览器存储）');
 	$('.cur', dialog).title = displayInfo.title;
-	const changeDirBtn = $('.select-dir', dialog);
-	changeDirBtn.textContent = hasDir ? '更换目录' : '选择目录存储';
-	const restoreBtn = $('.recover', dialog);
-	if (restoreBtn) {
-		restoreBtn.onclick = async () => {
-	const ok = await storage.restoreDirectory();
-			if (ok) {
-				currentMode = 'directory';
-				await storage._saveModePref();
-				await loadEndpoints();
-				await loadSessionsIndex();
-				const dispInfo = storage.getDisplayInfo();
-				$('.cur', dialog).textContent = '当前存储：' + dispInfo.text;
-				$('.cur', dialog).title = dispInfo.title;
-				updateDirectoryDisplay();
-				await refreshUI();
-				closeHelpDialog(dialog, true);
-			} else {
-				alert('权限请求失败，请选择新目录');
-			}
-		};
-		if (!hasPendingHandle) restoreBtn.remove();
-	}
-	const warningEl = $('.workspace-setting .warning', dialog);
-	if (!forceSelectDirectory) warningEl.remove();
-	const closeBtn = $('.close', dialog);
-	if (closeBtn) {
-		closeBtn.onclick = () => closeHelpDialog(dialog, false);
-		dialog.addEventListener('click', function(e) {
-			if (e.target === dialog) closeHelpDialog(dialog, false);
-		});
-		if (forceSelectDirectory) closeBtn.remove();
-	}
-	doc.body.addChild(dialog);
-	dialog.showModal();
-	// 选择/更换目录按钮
-	changeDirBtn.onclick = async () => {
-		const success = await selectDirectory();
-		if (success) {
-			const dispInfo2 = storage.getDisplayInfo();
-			$('.cur', dialog).textContent = '当前存储：' + dispInfo2.text;
-			$('.cur', dialog).title = dispInfo2.title;
-			updateDirectoryDisplay();
-			await refreshUI();
-			if (forceSelectDirectory) {
-				closeHelpDialog(dialog, true);
-			}
-		}
+	$('.select-dir', dialog).textContent = hasDir ? '更换目录' : '选择目录存储';
+	// 条件显隐
+	$('.workspace-setting .warning', dialog).hidden = !forceSelectDirectory;
+	$('.recover', dialog).hidden = !hasPendingHandle;
+	$('.close', dialog).hidden = forceSelectDirectory;
+	// 点击遮罩关闭
+	dialog.onclick = function(e) {
+		if (e.target === this) closeHelpDialog();
 	};
-	// 使用浏览器存储按钮
-	const browserBtn = $(".use-browser-storage", dialog);
-	if (browserBtn) {
-		browserBtn.onclick = async () => {
-			await storage.selectMode("browser");
-			await loadEndpoints();
-			await loadSessionsIndex();
-			updateDirectoryDisplay();
-			await refreshUI();
-			closeHelpDialog(dialog, true);
-		};
-	}
+	dialog.showModal();
 }
 
-function closeHelpDialog(dialog, immediate = false) {
+function closeHelpDialog(immediate = false) {
+	const dialog = $('#help-dialog');
 	const helpBtn = $('.help');
 	if (!helpBtn) {
-		dialog.remove();
+		dialog.close();
 		return;
 	}
 	const btnRect = helpBtn.getBoundingClientRect();
@@ -453,10 +447,16 @@ function closeHelpDialog(dialog, immediate = false) {
 		dialog.offsetHeight;
 		dialog.style.setProperty('transform', `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px)) scale(0.05)`, 'important');
 		setTimeout(() => {
-			dialog.remove();
+			dialog.close();
+			dialog.style.transition = '';
+			dialog.style.transform = '';
+			dialog.style.transformOrigin = '';
 		}, 400);
 	} else {
-		dialog.remove();
+		dialog.close();
+		dialog.style.transition = '';
+		dialog.style.transform = '';
+		dialog.style.transformOrigin = '';
 	}
 }
 const connectionStatus = new Map(); // nodeId -> { status, timestamp }

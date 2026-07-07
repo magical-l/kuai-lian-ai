@@ -1182,9 +1182,14 @@ aside.endpoint.list {
 }
 /* ============ 各种弹窗 ============ */
 dialog {
-	&.editing.endpoint {
+	&.editing.endpoint[open] {
 		display: flex;
 		flex-direction: column;
+		outline: none;
+		position: fixed;
+		z-index: 1000;
+		inset: 0;
+		height: fit-content;
 		max-height: 85vh;
 		overflow: hidden;
 		background: var(--bg-base);
@@ -1300,11 +1305,12 @@ dialog {
 			}
 		}
 	}
-	&.help {
+	&.help[open] {
 		position: relative;
 		color: var(--text-primary);
 		display: flex;
 		flex-direction: column;
+		outline: none;
 		max-height: 80vh;
 		overflow: hidden;
 		background: var(--bg-base);
@@ -1384,7 +1390,6 @@ dialog {
 		}
 	}
 }
-
 /* ============ 媒体查询相关 ============ */
 @media (prefers-reduced-motion: reduce) {
 	/* 若用户设置减少动画，则把动画时间减到0.01ms（据说用0无效） */
