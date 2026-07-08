@@ -314,3 +314,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-05: 清除 style.css 中所有注释掉的外部 CSS 变量副本（共 9 组）。这些是 common.css 剥离后的历史快照，其中 `--radius-*: 0` 与实际值（4/6/8/12px）不符。变量分层不再需要在 style.css 中留注释副本，统一在本文档的变量分层表中说明。
 - 2026-07-05: `--shadow-*` 四值和 `--space-{2..8}` 刻度从 style.css 迁移到 common.css，作为跨项目设计令牌统一管理。style.css :root 仅保留项目专有变量（`--bg-elevated`、`--font-sans`、`--btn-h` 等 11 个变量）。
 - 2026-07-06: 试用 `@import layer(base)` 后因 utility class（`.items-y-near-center`）被降层误伤而放弃。改用 style.css 加 `:root { --btn-h: 24px; --icon-*: 16px }` 块以源顺序覆盖 common.css 同名变量。删除 `main > header .btn .icon` 固定宽高规则，使图标由 `.btn.icon-only` 的 100% 约束。修复 `endpoint-tree.js` 第三处 `collectTestable` 中 `testableIds`→`allTestableIds` 笔误。
+- 2026-07-08: `.one.endpoint .tooltip` max-width 从 300px → 500px，配合 createTooltip 实际尺寸测量，让长地址在 tooltip 中完整显示不换行。

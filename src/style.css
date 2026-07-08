@@ -372,7 +372,7 @@ button, .btn {
 		padding: var(--space-2);
 		box-shadow: var(--shadow-md);
 		min-width: 200px;
-		max-width: 300px;
+		max-width: 500px;
 		display: none;
 		cursor: default;
 		font-size: 12px;

@@ -284,7 +284,71 @@ function onClick(handlers, ctx = doc) {
 }
 // 显示/隐藏元素
 function show(el) {
-	el.style.display = '';
+    if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+    }
+
+    el = $("#" + id);
+
+    if (!el) {
+        el = doc.createElement("div");
+        el.id = id;
+        el.className = "tooltip";
+        el.innerHTML = html;
+        var tipParent = triggerEl.closest(".one.endpoint");
+
+        if (!tipParent)
+            tipParent = doc.body;
+
+        tipParent.appendChild(el);
+
+        $$("button.copy", el).forEach(btn => {
+            btn.onclick = e => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(btn.dataset.copy);
+                btn.classList.add("copied");
+
+                setTimeout(() => {
+                    btn.classList.remove("copied");
+                }, 1500);
+            };
+        });
+
+        el.onmouseenter = () => {
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+                hideTimer = null;
+            }
+        };
+
+        el.onmouseleave = () => hide();
+
+        el.onclick = function(e) {
+            e.stopPropagation();
+        };
+    }
+
+    el.style.visibility = "hidden";
+    el.style.display = "block";
+    const measW = el.offsetWidth, measH = el.offsetHeight || 80;
+    el.style.display = "none";
+    el.style.visibility = "";
+    const rect = triggerEl.getBoundingClientRect();
+    let top = rect.bottom + 4, left = rect.left;
+
+    if (top + measH > window.innerHeight)
+        top = rect.top - measH - 4;
+
+    if (left + measW > window.innerWidth)
+        left = window.innerWidth - measW - 10;
+
+    if (left < 10)
+        left = 10;
+
+    el.style.top = top + "px";
+    el.style.left = left + "px";
+    el.style.display = "block";
 }
 
 function hide(el) {
@@ -325,53 +389,72 @@ function createTooltip(id, html) {
 	let hideTimer = null;
 
 	function show(triggerEl) {
-		if (hideTimer) {
-			clearTimeout(hideTimer);
-			hideTimer = null;
-		}
-		el = $('#' + id);
-		if (!el) {
-			el = doc.createElement('div');
-			el.id = id;
-			el.className = 'tooltip';
-			el.innerHTML = html;
-			// 优先挂到最近的 .one.endpoint 下，减少 DOM 嵌套影响
-			var tipParent = triggerEl.closest('.one.endpoint');
-			// span 标签不能包含 div，fallback 到 body
-			if (!tipParent) tipParent = doc.body;
-			tipParent.appendChild(el);
-			$$('button.copy', el).forEach(btn => {
-				btn.onclick = e => {
-					e.stopPropagation();
-					navigator.clipboard.writeText(btn.dataset.copy);
-					btn.classList.add('copied');
-					setTimeout(() => {
-						btn.classList.remove('copied');
-					}, 1500);
-				};
-			});
-			el.onmouseenter = () => {
-				if (hideTimer) {
-					clearTimeout(hideTimer);
-					hideTimer = null;
-				}
-			};
-			el.onmouseleave = () => hide();
-			el.onclick = function(e) { e.stopPropagation(); };
-		}
-		// 计算位置
-		const rect = triggerEl.getBoundingClientRect();
-		const width = 200,
-			height = el.offsetHeight || 80;
-		let top = rect.bottom + 4,
-			left = rect.left;
-		if (top + height > window.innerHeight) top = rect.top - height - 4;
-		if (left + width > window.innerWidth) left = window.innerWidth - width - 10;
-		if (left < 10) left = 10;
-		el.style.top = top + 'px';
-		el.style.left = left + 'px';
-		el.style.display = 'block';
-	}
+        if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+        }
+
+        el = $("#" + id);
+
+        if (!el) {
+            el = doc.createElement("div");
+            el.id = id;
+            el.className = "tooltip";
+            el.innerHTML = html;
+            var tipParent = triggerEl.closest(".one.endpoint");
+
+            if (!tipParent)
+                tipParent = doc.body;
+
+            tipParent.appendChild(el);
+
+            $$("button.copy", el).forEach(btn => {
+                btn.onclick = e => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(btn.dataset.copy);
+                    btn.classList.add("copied");
+
+                    setTimeout(() => {
+                        btn.classList.remove("copied");
+                    }, 1500);
+                };
+            });
+
+            el.onmouseenter = () => {
+                if (hideTimer) {
+                    clearTimeout(hideTimer);
+                    hideTimer = null;
+                }
+            };
+
+            el.onmouseleave = () => hide();
+
+            el.onclick = function(e) {
+                e.stopPropagation();
+            };
+        }
+
+        el.style.visibility = "hidden";
+        el.style.display = "block";
+        const measW = el.offsetWidth, measH = el.offsetHeight || 80;
+        el.style.display = "none";
+        el.style.visibility = "";
+        const rect = triggerEl.getBoundingClientRect();
+        let top = rect.bottom + 4, left = rect.left;
+
+        if (top + measH > window.innerHeight)
+            top = rect.top - measH - 4;
+
+        if (left + measW > window.innerWidth)
+            left = window.innerWidth - measW - 10;
+
+        if (left < 10)
+            left = 10;
+
+        el.style.top = top + "px";
+        el.style.left = left + "px";
+        el.style.display = "block";
+    }
 
 	function hide() {
 		hideTimer = setTimeout(() => {

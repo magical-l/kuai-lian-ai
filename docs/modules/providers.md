@@ -3,7 +3,7 @@ title: Provider 抽象层 + DOM 工具集
 covers_file: [src/modules/providers.js]
 depends_on: []
 api_signature: providers.openai, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip
-last_updated: 2026-07-04
+last_updated: 2026-07-08
 why_exists: 三种 Provider 格式差异的封装和公共 DOM 辅助函数的复用
 ---
 
@@ -172,3 +172,4 @@ tooltip 内含 copy 按钮（`button.copy`），点击将 `dataset.copy` 值写�
 | 2026-04-23 | H.addChild / H.on 挂在 prototype 上 | 避免在每个组件中重复 `el.appendChild(child)`，`return this` 支持链式 |
 | 2026-04-23 | tooltip 挂到 `.one.endpoint` 而非 body | 避免 `<span>` 嵌套 `<div>` 的 HTML 规范违规，同时减少 DOM 层级 |
 | 2026-07-04 | openai 新增 buildImageRequest 方法 | 支持生图端点，URL 使用 `/v1/images/generations`，body 从 messages 提取 prompt，非流式 |
+| 2026-07-08 | createTooltip show 先测量再定位 | tooltip 初始 `display: none` 导致 `offsetWidth` 为 0，改用 `visibility: hidden` 临时显示测量实际尺寸后再计算位置 |
