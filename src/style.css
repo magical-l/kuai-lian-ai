@@ -939,6 +939,24 @@ aside.endpoint.list {
 				color: var(--text-secondary);
 			}
 		}
+		& .fork.btn {
+			--btn-text-color: var(--text-muted);
+			opacity: 0.58;
+
+			& .outline-style.icon > svg {
+				stroke-width: 1.6;
+			}
+
+			&:hover {
+				--btn-text-color: var(--text-secondary);
+				opacity: 0.85;
+			}
+
+			&:focus-visible {
+				--btn-text-color: var(--text-secondary);
+				opacity: 0.85;
+			}
+		}
 		& .children {
 			gap: var(--space-1);
 			margin-top: var(--space-1);

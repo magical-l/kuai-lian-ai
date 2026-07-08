@@ -89,7 +89,7 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 
 ### 版本管理
 
-- 版本号存在于三处：manifest.json 的 `version` 字段 + layout.html 中 `<span class="version">v6.7.0</span>` + 根目录的 kuai-lian-ai.html（测试用单页面）
+- 版本号存在于三处：manifest.json 的 `version` 字段 + layout.html 中 `<span class="version">v6.7.1</span>` + 根目录的 kuai-lian-ai.html（测试用单页面）
 - 每次改动后三处均需同步更新
 - 版本号递增遵循语义化版本（MAJOR.MINOR.PATCH）
 
