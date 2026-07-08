@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-07
+last_updated: 2026-07-08
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -230,3 +230,5 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-07 | 端点编辑对话框从 showModal 改为 show() | 编辑时允许点击后面页面操作其他元素 |
 | 2026-07-07 | dialog CSS 用 [open] 属性选择器限定 display:flex | 避免关闭态下 display:flex 覆盖 UA dialog { display:none } 导致 dialog 内容漏出 |
 | 2026-07-07 | 编辑弹窗也从 template 改为直接 DOM 元素，移出 `<aside>` 放到 `<main>` 末尾 | 同步 help-dialog 的模式；避免 show() 无 top layer 时被后序 DOM 元素遮盖 |
+| 2026-07-08 | 修复 dialog 复用崩溃：移除 `!hasParent` 时从 DOM 永久删除"继承"按钮的代码 | 删除操作导致 dialog DOM 结构不可逆变化，复用时崩溃 |
+| 2026-07-08 | 修复 style 继承显示名：从内部值（如 openai）改为中文名（如 ChatGPT式） | 与类型字段 type 的中文名显示一致 |

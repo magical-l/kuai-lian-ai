@@ -3,7 +3,7 @@ title: 构建流程
 covers_file: [build.js, src/layout.html, src/extension/manifest.json]
 depends_on: [architecture.md, data-model.md]
 api_signature: node build.js / MODULE_ORDER / DEV_MODE
-last_updated: 2026-07-01
+last_updated: 2026-07-08
 why_exists: 定义从源码到双产物的构建流程，确保构建可复现、产物可预测
 ---
 
@@ -110,3 +110,4 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 ## 决策日志
 
 - 2026-07-01: 初始文档创建
+- 2026-07-08: 接口风格按钮显示默认路径；修复 dialog 复用崩溃；修复继承显示名

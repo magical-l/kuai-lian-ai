@@ -218,9 +218,19 @@ function showEditGroupDialog(node, parentId, onSave) {
 				if (hasParent) {
 				var inheritLabel = dialog.querySelector('input[name="style"][value=""]').parentElement;
 				if (inheritLabel) {
+					var styleOpt = dialog.querySelector('input[name="style"][value="' + rcfg.style + '"]');
+					var styleName = rcfg.style;
+					if (styleOpt) {
+						var label_ = styleOpt.parentElement;
+						for (var _c = 0; _c < label_.childNodes.length; _c++) {
+							if (label_.childNodes[_c].nodeType === 3 && label_.childNodes[_c].textContent.trim()) {
+								styleName = label_.childNodes[_c].textContent.trim(); break;
+							}
+						}
+					}
 					for (var _i = 0; _i < inheritLabel.childNodes.length; _i++) {
 						var _n = inheritLabel.childNodes[_i];
-						if (_n.nodeType === 3) { _n.nodeValue = ' 继承自父级（' + rcfg.style + '）'; break; }
+						if (_n.nodeType === 3) { _n.nodeValue = ' 继承自父级（' + styleName + '）'; break; }
 					}
 				}
 				}
@@ -245,12 +255,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 		}
 	}
 
-		// 最顶级节点：去继承、默认ChatGPT式
+		// 最顶级节点：默认ChatGPT式
 		if (!hasParent) {
-			var inheritRadio = dialog.querySelector('input[name="style"][value=""]');
-			if (inheritRadio) inheritRadio.parentElement.remove();
-			var typeInheritRadio = dialog.querySelector('input[name="type"][value=""]');
-			if (typeInheritRadio) typeInheritRadio.parentElement.remove();
 			setRadio('style', node ? node.style || 'openai' : 'openai', dialog);
 		}
 

@@ -1259,9 +1259,11 @@ dialog[open] {
 			transition: background var(--transition-fast);
 		}
 		.btn-group .option.btn .hint {
-			font-size: 10px;
-			opacity: 0.65;
-			line-height: 1.2;
+			font-size: 12px;
+			opacity: 0.75;
+			line-height: 1.3;
+			text-align: center;
+			width: 100%;
 		}
 		.btn-group .option.btn:has(input:checked) {
 			background: var(--accent-primary);

@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-06
+last_updated: 2026-07-08
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -315,3 +315,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-05: `--shadow-*` 四值和 `--space-{2..8}` 刻度从 style.css 迁移到 common.css，作为跨项目设计令牌统一管理。style.css :root 仅保留项目专有变量（`--bg-elevated`、`--font-sans`、`--btn-h` 等 11 个变量）。
 - 2026-07-06: 试用 `@import layer(base)` 后因 utility class（`.items-y-near-center`）被降层误伤而放弃。改用 style.css 加 `:root { --btn-h: 24px; --icon-*: 16px }` 块以源顺序覆盖 common.css 同名变量。删除 `main > header .btn .icon` 固定宽高规则，使图标由 `.btn.icon-only` 的 100% 约束。修复 `endpoint-tree.js` 第三处 `collectTestable` 中 `testableIds`→`allTestableIds` 笔误。
 - 2026-07-08: `.one.endpoint .tooltip` max-width 从 300px → 500px，配合 createTooltip 实际尺寸测量，让长地址在 tooltip 中完整显示不换行。
+- 2026-07-08: `.hint` 样式增强（font-size 12px, opacity 0.75, text-align:center, width:100%），配合接口风格按钮底部显示默认路径文本。
