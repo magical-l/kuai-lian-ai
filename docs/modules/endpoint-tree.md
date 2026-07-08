@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-04
+last_updated: 2026-07-08
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -18,7 +18,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 - `<details>` 原生三角箭头（展开/收起）
 - 拖拽手柄（`.handle`，`draggable=true`）
 - 名称 + 类型标签 + remark
-- 操作栏：添加子节点、批量测试、加入会话 checkbox、编辑、删除
+- 操作栏：添加子节点、批量测试、加入会话 checkbox、编辑、复刻、删除
 - 节点类型 tooltip（hover 显示继承链配置）
 - 顶部类型筛选栏（全部/嵌入/生图/重排序）
 
@@ -67,7 +67,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
      - 点击触发所有子节点 `onTestConnection(id)`
      - 按钮 title 显示汇总统计："✓ 全部成功" / "✗ N个失败：错误信息"
    - **加入会话**（行 235-257）：checkbox + `applyJoinBtnUI` 同步选中状态，change 事件直接操作 `selectedEndpoints` 数组
-   - **编辑/删除**：委托到 `onNodeEdit` / `onNodeDelete`
+   - **编辑/复刻/删除**：编辑委托到 `onNodeEdit`；复刻调用 `cloneNode(node.id)` 后刷新；删除委托到 `onNodeDelete`
 6. **拖放排序**（行 283-329）：
    - `dragover` 根据鼠标在 summary 区域的位置，在 `nodeEl` 上添加三类 drop zone class：
      - `drag-over-before`（上半区 → 插到该节点前）
@@ -130,6 +130,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | `addNode(parentId, data)` | tree → store | 新增节点 |
 | `updateNode(nodeId, data)` | tree → store | 更新节点 |
 | `deleteNode(nodeId)` | tree → store | 删除节点 |
+| `cloneNode(nodeId)` | tree → store | 深拷贝节点及子树，插入到原节点之后 |
 | `reorderNode(draggedId, targetId, before)` | tree → store | 同级重排 |
 | `moveNodeAsChild(draggedId, parentId)` | tree → store | 跨级降级 |
 | `resolveNodeConfig(nodeId)` | tree → store | 沿祖先链解析完整配置 |
@@ -154,3 +155,4 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-03 | 端点树顶部加类型筛选栏（全部/嵌入/生图/重排序），事件委托避免重绘后丢失 | 筛选需要跨层次（分组节点隐藏前检查子节点匹配），CSS-only 无法处理父子关系；`renderEndpointList` 重绘后自动恢复筛选状态 |
 | 2026-07-03 | 端点树列表为空时显示两种提示：「去创建」（无任何端点）和「重置筛选」（筛选后无结果） | 空列表无提示时用户不知该做什么；区分"没建过"和"被筛掉了"两种场景，各提供对应操作按钮 |
 | 2026-07-04 | summary 内 header 宽度从 inline style 移到 CSS：有 marker 时 `calc(100% - 15px)`，`.compact`（无 marker）时 `calc(100% - 5px)` | 两种场景 marker 宽度不同，分开处理；CSS 控制比内联样式更干净 |
+| 2026-07-08 | 节点操作栏新增复刻按钮 | 用户需要快速复制现有端点/分组配置；复刻在数据层生成新 UUID 子树，避免复制后 ID 冲突 |

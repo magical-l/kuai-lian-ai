@@ -260,6 +260,14 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				onNodeEdit(node.id);
 			});
 
+			var forkBtn = actionsEl.querySelector('.fork');
+
+			forkBtn.on("click", async function(e) {
+				e.stopPropagation();
+				await cloneNode(node.id);
+				refreshUI();
+			});
+
 			var deleteBtn = actionsEl.querySelector('.remove');
 
 			deleteBtn.on("click", function(e) {

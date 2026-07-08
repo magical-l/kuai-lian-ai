@@ -3,7 +3,7 @@ title: 快连AI 项目文档入口
 covers_file: [所有 src/ 下源文件]
 depends_on: []
 api_signature: 无（项目文档索引）
-last_updated: 2026-07-02
+last_updated: 2026-07-08
 why_exists: 浏览器端大模型端点管理+多模型对话工具，纯原生JS单页面及Chrome扩展
 ---
 
@@ -41,4 +41,4 @@ UI Layer（分隔条布局/消息渲染/端点树）→ Store Layer（数据CRUD
 | [CSS 体系](design/css-architecture.md) | 需要改样式时——变量体系、布局系统、类名命名 |
 | [Chrome 扩展架构](extension/overview.md) | 处理扩展相关的问题——环境检测、CORS 代理、权限 |
 
-当前版本: 6.6.1
+当前版本: 6.7.0

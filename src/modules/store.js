@@ -231,6 +231,46 @@ async function deleteNode(nodeId) {
 	return ok;
 }
 
+async function cloneNode(nodeId) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	const result = findNodeWithAncestors(endpointsData.nodes, nodeId);
+	if (!result) return null;
+	const { node, ancestors } = result;
+
+	function deepClone(n) {
+		const c = {
+			id: generateUUID(),
+			name: n.name,
+			baseUrl: n.baseUrl || '',
+			style: n.style || '',
+			key: n.key || '',
+			modelId: n.modelId || '',
+			remark: n.remark || '',
+			type: n.type || '',
+			children: []
+		};
+		if (n.children && n.children.length > 0) {
+			c.children = n.children.map(child => deepClone(child));
+		}
+		return c;
+	}
+
+	const cloned = deepClone(node);
+	cloned.name = node.name + '（副本）';
+
+	const parent = ancestors.length > 0 ? ancestors[ancestors.length - 1] : null;
+	const siblings = parent ? parent.children : endpointsData.nodes;
+	const idx = siblings.findIndex(n => n.id === nodeId);
+	if (idx >= 0) {
+		siblings.splice(idx + 1, 0, cloned);
+	} else {
+		siblings.push(cloned);
+	}
+
+	await saveEndpoints();
+	return cloned;
+}
+
 // 重新排序：将节点插入到目标位置（同级或跨级均可）
 async function reorderNode(draggedId, targetId, insertBefore = true) {
 	if (!endpointsData) endpointsData = { nodes: [] };

@@ -3,7 +3,7 @@ title: 数据模型
 covers_file: [src/modules/store.js, src/modules/storage-core.js, src/extension/storage-core.js]
 depends_on: [architecture.md]
 api_signature: endpointsData / sessionsCache / storage.loadEndpoints / storage.saveEndpoints / storage.loadSession / storage.saveSession
-last_updated: 2026-07-03
+last_updated: 2026-07-08
 why_exists: 定义端点树、会话和消息的数据结构及存储抽象层，确保前后端存储迁移的正确性
 ---
 
@@ -122,6 +122,7 @@ function migrateEndpoints(data) {
 | addNode | src/modules/store.js | 创建节点 | 全局 | 支持指定父节点 |
 | updateNode | src/modules/store.js | 更新节点字段 | 全局 | Object.assign |
 | deleteNode | src/modules/store.js | 递归删除节点及子代 | 全局 | 同步清理 selectedEndpoints |
+| cloneNode | src/modules/store.js | 深拷贝节点及子树 | 全局 | 插入到原节点之后，根副本名加“（副本）” |
 | reorderNode | src/modules/store.js | 跨级拖动排序 | 全局 | 插入到目标前后 |
 | moveNodeAsChild | src/modules/store.js | 节点跨级移动 | 全局 | 变为目标子节点 |
 | createSession | src/modules/store.js | 创建新会话 | 全局 | 自动从首消息生成标题 |
@@ -132,3 +133,4 @@ function migrateEndpoints(data) {
 
 - 2026-07-01: 初始文档创建
 - 2026-07-03: 节点数据结构新增 type 字段（chat/embedding/image/rerank），resolveNodeConfig 继承五个字段 + type 回退 detectModelType
+- 2026-07-08: 新增节点复刻能力，数据层深拷贝整棵子树并为每个节点重新生成 UUID，根副本名称追加“（副本）”
