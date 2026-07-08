@@ -173,3 +173,4 @@ tooltip 内含 copy 按钮（`button.copy`），点击将 `dataset.copy` 值写�
 | 2026-04-23 | tooltip 挂到 `.one.endpoint` 而非 body | 避免 `<span>` 嵌套 `<div>` 的 HTML 规范违规，同时减少 DOM 层级 |
 | 2026-07-04 | openai 新增 buildImageRequest 方法 | 支持生图端点，URL 使用 `/v1/images/generations`，body 从 messages 提取 prompt，非流式 |
 | 2026-07-08 | createTooltip show 先测量再定位 | tooltip 初始 `display: none` 导致 `offsetWidth` 为 0，改用 `visibility: hidden` 临时显示测量实际尺寸后再计算位置 |
+| 2026-07-08 | 所有 provider 函数开头 strip baseUrl 尾部斜杠 | 防止 baseUrl 以 `/` 结尾时拼接出 `//` 双斜杠 URL |

@@ -2,6 +2,7 @@
 const providers = {
 	openai: {
 		buildImageRequest(baseUrl, apiKey, model, messages) {
+            baseUrl = baseUrl.replace(/\/+$/, '');
             let prompt = "";
 
             for (let i = messages.length - 1; i >= 0; i--) {
@@ -41,6 +42,7 @@ const providers = {
             };
         },
 		buildRequest(baseUrl, apiKey, model, messages) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
 				url: baseUrl + '/v1/chat/completions',
 				headers: {
@@ -63,6 +65,7 @@ const providers = {
 			};
 		},
 		testConfig(baseUrl, apiKey, model) {
+            baseUrl = baseUrl.replace(/\/+$/, '');
             return {
                 url: baseUrl + "/v1/chat/completions",
 
@@ -84,6 +87,7 @@ const providers = {
             };
         },
 		testEmbeddingConfig(baseUrl, apiKey, model) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
 				url: baseUrl + '/v1/embeddings',
 				headers: {
@@ -98,6 +102,7 @@ const providers = {
 			};
 		},
 		buildEmbeddingRequest(baseUrl, apiKey, model, input) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
 				url: baseUrl + '/v1/embeddings',
 				headers: {
@@ -120,6 +125,7 @@ const providers = {
 	},
 	claude: {
 		buildRequest(baseUrl, apiKey, model, messages) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
 				url: baseUrl + '/v1/messages',
 				headers: {
@@ -177,6 +183,7 @@ const providers = {
 			return null;
 		},
 		testConfig(baseUrl, apiKey, model) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
 				url: baseUrl + '/v1/messages',
 				headers: {
@@ -200,6 +207,7 @@ const providers = {
 	},
 	gemini: {
 		buildRequest(baseUrl, apiKey, model, messages) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
 				url: baseUrl + '/v1beta/models/' + model + ':streamGenerateContent?key=' + apiKey + '&alt=sse',
 				headers: {
@@ -238,6 +246,7 @@ const providers = {
 			} : null;
 		},
 		testConfig(baseUrl, apiKey, model) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
 				url: baseUrl + '/v1beta/models/' + model + ':generateContent?key=' + apiKey,
 				headers: {

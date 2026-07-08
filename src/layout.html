@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.8.0</span>
+			<span class="version">v6.8.1</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -311,10 +311,37 @@
 				<span class="field-label">接口风格:</span>
 				<span class="field-control">
 					<div class="btn-group , flex items-go-x">
-						<label class="option btn"><input type="radio" name="style" value="" hidden> 继承</label>
-						<label class="option btn"><input type="radio" name="style" value="openai" hidden> ChatGPT式 <span class="hint">OpenAI、国内主流<br>/v1/chat/completions</span></label>
-						<label class="option btn"><input type="radio" name="style" value="claude" hidden> Claude式 <span class="hint">Anthropic<br>/v1/messages</span></label>
-						<label class="option btn"><input type="radio" name="style" value="gemini" hidden> Gemini式 <span class="hint">Google<br>/v1beta/models/……</span></label>
+						<label class="option btn">
+							<input type="radio" name="style" value="" hidden>
+							继承
+						</label>
+						<label class="option btn">
+							<input type="radio" name="style" value="openai" hidden>
+							ChatGPT式
+							<span class="hint">
+								OpenAI、国内主流
+								<br>
+								/v1/chat/completions
+							</span>
+						</label>
+						<label class="option btn">
+							<input type="radio" name="style" value="claude" hidden>
+							Claude式
+							<span class="hint">
+								Anthropic
+								<br>
+								/v1/messages
+							</span>
+						</label>
+						<label class="option btn">
+							<input type="radio" name="style" value="gemini" hidden>
+							Gemini式
+							<span class="hint">
+								Google
+								<br>
+								/v1beta/models/……
+							</span>
+						</label>
 					</div>
 				</span>
 			</div>
@@ -322,11 +349,26 @@
 				<span class="field-label">类型:</span>
 				<span class="field-control">
 					<div class="btn-group , flex items-go-x">
-						<label class="option btn"><input type="radio" name="type" value="" hidden> 继承</label>
-						<label class="option btn"><input type="radio" name="type" value="chat" hidden> 💬 聊天</label>
-						<label class="option btn"><input type="radio" name="type" value="embed" hidden> 🔢 嵌入</label>
-						<label class="option btn"><input type="radio" name="type" value="img-generate" hidden> 🎨 生图</label>
-						<label class="option btn"><input type="radio" name="type" value="rerank" hidden> 📊 重排序</label>
+						<label class="option btn">
+							<input type="radio" name="type" value="" hidden>
+							继承
+						</label>
+						<label class="option btn">
+							<input type="radio" name="type" value="chat" hidden>
+							💬 聊天
+						</label>
+						<label class="option btn">
+							<input type="radio" name="type" value="embed" hidden>
+							🔢 嵌入
+						</label>
+						<label class="option btn">
+							<input type="radio" name="type" value="img-generate" hidden>
+							🎨 生图
+						</label>
+						<label class="option btn">
+							<input type="radio" name="type" value="rerank" hidden>
+							📊 重排序
+						</label>
 					</div>
 					<span class="hint"></span>
 				</span>
