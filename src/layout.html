@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.8.1</span>
+			<span class="version">v6.9.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -164,6 +164,7 @@
 									<span class="drag handle btn , bare icon-only , square" draggable="true" title="拖动排序"><span class="char-style icon">⋮⋮</span></span>
 									<span class="endpoint-type badge char-style icon icon-only"></span>
 									<span class="name"></span>
+									<span class="remark"></span>
 									<div class="btn-group actions , flex items-go-x">
 										<button class="add-child btn , bare icon-only , square" title="添加子节点"><span class="char-style icon">+</span></button>
 										<button class="test-connection btn , bare icon-only , square" title="测试连接"><span class="char-style icon">🔗</span></button>
@@ -207,8 +208,8 @@
 					<span class="name">我</span>
 					<span class="time"></span>
 					<button title="复制" class="copy content btn , bare icon-only , square">
-						<span class="char-style icon : ⧉">⧉</span>
-						<span class="char-style icon : ✓">✓</span>
+						<span class="copy char-style icon : ⧉">⧉</span>
+						<span class="done char-style icon : ✓">✓</span>
 					</button>
 				</header>
 			</template>
@@ -216,7 +217,12 @@
 				<article class="one response msg">
 					<header class="flex items-go-x">
 						<span class="name"></span>
+						<span class="remark"></span>
 						<span class="char-style icon status-icon spin">◐</span>
+						<button title="复制" class="copy content btn , bare icon-only , square">
+							<span class="copy char-style icon : ⧉">⧉</span>
+							<span class="done char-style icon : ✓">✓</span>
+						</button>
 						<button title="停止" class="stop-one btn , danger , square icon-only bare"></button>
 					</header>
 					<div class="content">
@@ -230,6 +236,20 @@
 							<div class="text">等待思考...</div>
 						</details>
 						<div class="say">等待回复...</div>
+						<div class="embedding-result" style="display:none">
+							<div class="mb-1 flex items-go-x" style="align-items:center;gap:8px">
+								<strong>嵌入维度:</strong> <span class="dim"></span>
+								<button class="expand-json btn bare square icon-only" title="展开完整向量">▶</button>
+							</div>
+							<div class="mb-1 flex items-go-x" style="align-items:center;gap:8px">
+								<strong>预览:</strong> <code class="preview"></code>
+								<button class="copy code btn , bare icon-only , square" title="复制完整向量">
+									<span class="copy char-style icon : ⧉">⧉</span>
+									<span class="done char-style icon : ✓">✓</span>
+								</button>
+							</div>
+							<pre class="embedding-full-json" style="display:none;font-size:smaller;max-height:200px;overflow:auto;background:var(--bg-dim);padding:8px;border-radius:4px;white-space:pre-wrap;word-break:break-all"></pre>
+						</div>
 					</div>
 				</article>
 			</template>
@@ -237,7 +257,15 @@
 			<footer class="chat-input-area , flex items-go-y">
 				<div class="divider row"></div>
 				<ul class="selected endpoint list , flex items-go-x">
-					<!-- 已选端点标签 -->
+					<li class="empty hint">请选择端点</li>
+					<template id="template-selected-endpoint">
+						<li class="one endpoint" data-endpoint="">
+							<span class="endpoint-type badge icon icon-only"></span>
+							<span class="full name"></span>
+							<span class="remark"></span>
+							<span class="btn remove bare icon-only" data-endpoint="">✕</span>
+						</li>
+					</template>
 				</ul>
 				<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
 				<menu class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
@@ -379,7 +407,8 @@
 					<span class="flex items-go-x" style="align-items:center;gap:var(--space-1)">
 						<input name="apikey" type="password">
 						<button type="button" class="toggle apikey visibility btn , square icon-only" title="显示/隐藏">
-							<span class="fill-style icon"><svg><use href="icons.svg#icon-eye"></use></svg></span>
+							<span class="fill-style icon"><svg><use href="icons.svg#icon-eye"/></svg></span>
+							<span class="fill-style icon" style="display:none"><svg><use href="icons.svg#icon-eye-off"/></svg></span>
 						</button>
 					</span>
 				</span>
@@ -395,12 +424,23 @@
 			<div class="footer-hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
 		</form>
 		<footer class="flex items-go-x">
-			<button class="cancel btn"><span class="char-style icon">✗</span></button>
-			<button class="save btn primary"><span class="char-style icon">✓</span></button>
+			<button class="cancel btn"><span class="char-style icon : ✗">✗</span></button>
+			<button class="save btn primary"><span class="done char-style icon : ✓">✓</span></button>
 		</footer>
 	</dialog>
 </main>
 
+<!-- shared micro-templates -->
+<template id="tooltip-row">
+	<div class="row flex items-go-x">
+		<span class="label"></span>
+		<span class="value"></span>
+		<button class="copy value btn , bare icon-only , square" data-copy="" title="复制">
+			<span class="copy char-style icon : ⧉">⧉</span>
+			<span class="done char-style icon : ✓">✓</span>
+		</button>
+	</div>
+</template>
 <div class="js container">
 	<script src="../vendor/marked.min.js"></script>
 	<script src="../vendor/highlight.min.js"></script>

@@ -25,8 +25,8 @@ function addCodeCopyButtons(container) {
 		// 语言标识
 		const langSpan = document.createElement('span');
 		langSpan.className = 'code-lang';
-		const text = codeEl.textContent.trim();
-		const isUrl = /^https?:\/\//.test(text);
+		const codeText = codeEl.textContent.trim();
+		const isUrl = /^https?:\/\//.test(codeText);
 		if (isUrl) {
 			langSpan.textContent = 'URL';
 		} else {
@@ -39,7 +39,8 @@ function addCodeCopyButtons(container) {
 		// 复制按钮
 		const copyBtn = document.createElement('button');
 		copyBtn.className = 'copy code btn , bare icon-only , square';
-		copyBtn.innerHTML = '<span class="copy icon">⧉</span><span class="done icon">✓</span>';
+		copyBtn.appendChild(text(mk('span', 'copy icon'), '⧉'));
+		copyBtn.appendChild(text(mk('span', 'done icon'), '✓'));
 		copyBtn.title = '复制';
 		copyBtn.onclick = (e) => {
 			e.stopPropagation();
@@ -164,7 +165,11 @@ function renderResponse(container, msg, groups) {
             const nameEl = $('.name', existing);
             if (nameEl) {
                 const remark = info?.node?.remark || "";
-                nameEl.innerHTML = remark ? `${name}<span class="remark"> ${remark}</span>` : name;
+                nameEl.textContent = name;
+                var remarkSpan = nameEl.parentElement.querySelector('.remark');
+                if (remarkSpan) {
+                    remarkSpan.textContent = ' ' + remark;
+                }
             }
             container.appendChild(existing);
         }
@@ -192,7 +197,11 @@ function renderResponse(container, msg, groups) {
         if (nameEl && info) {
             const remark = info?.node?.remark || "";
             const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
-            nameEl.innerHTML = remark ? `${name}<span class="remark"> ${remark}</span>` : name;
+            nameEl.textContent = name;
+                var remarkSpan = nameEl.parentElement.querySelector('.remark');
+                if (remarkSpan) {
+                    remarkSpan.textContent = ' ' + remark;
+                }
         }
 
         const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
@@ -259,14 +268,8 @@ function renderResponse(container, msg, groups) {
         }
 
         // 复制按钮
-        let copyBtn = $('.copy.content', meta);
-        if (!copyBtn) {
-            copyBtn = mk('button', 'copy content btn , bare icon-only , square');
-            copyBtn.innerHTML = '<span class="copy icon ⧉">⧉</span><span class="done icon">✓</span>';
-            copyBtn.title = '复制';
-            (statusEl || $('.total', meta) || nameEl).insertAdjacentElement('afterend', copyBtn);
-        }
-        copyBtn.onclick = () => {
+                let copyBtn = $('.copy.content', meta);
+copyBtn.onclick = () => {
             navigator.clipboard.writeText(r.content || "").then(() => {
                 copyBtn.classList.add("copied");
                 clearTimeout(copyBtn._copiedTimer);
@@ -313,17 +316,10 @@ function renderResponse(container, msg, groups) {
         // embedding 结果（非流式场景，append 到 card 末尾）
         if (r.embeddingResult) {
             const emb = r.embeddingResult;
-            let embMeta = $('.embedding-result', existing);
-            if (!embMeta) {
-                embMeta = mk('div', 'embedding-result');
-                existing.addChild(embMeta);
-            }
-            embMeta.innerHTML = '<div class="mb-1 flex items-go-x" style="align-items:center;gap:8px">' +
-                '<strong>嵌入维度:</strong> ' + emb.dim +
-                '<button class="expand-json btn bare square icon-only" title="展开完整向量">▶</button>' +
-                '</div>' +
-                '<div class="mb-1"><strong>预览:</strong> <code>' + emb.preview + '</code></div>' +
-                '<pre class="embedding-full-json" style="display:none;font-size:smaller;max-height:200px;overflow:auto;background:var(--bg-dim);padding:8px;border-radius:4px;white-space:pre-wrap;word-break:break-all"></pre>';
+            var embMeta = $('.embedding-result', existing);
+            embMeta.style.display = '';
+            embMeta.querySelector('.dim').textContent = emb.dim;
+            embMeta.querySelector('.preview').textContent = emb.preview;
             const fullJsonPre = embMeta.querySelector('.embedding-full-json');
             fullJsonPre.textContent = emb.fullJson;
             const expandBtn = embMeta.querySelector('.expand-json');
@@ -332,11 +328,8 @@ function renderResponse(container, msg, groups) {
                 fullJsonPre.style.display = isHidden ? '' : 'none';
                 this.textContent = isHidden ? '▼' : '▶';
             };
-            const copyBtn = mk("button", "copy code btn , bare icon-only , square");
-            copyBtn.innerHTML = '<span class="copy icon">⧉</span><span class="done icon">✓</span>';
-            copyBtn.title = "复制完整向量";
+            const copyBtn = embMeta.querySelector('.copy.code');
             const previewRow = embMeta.querySelector('.mb-1:last-child');
-            previewRow.addChild(copyBtn);
             copyBtn.onclick = () => {
                 navigator.clipboard.writeText(emb.fullJson).then(() => {
                     copyBtn.classList.add("copied");

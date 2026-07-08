@@ -772,20 +772,14 @@ function updateCardAsEmbedding(endpointId, result, sessionId) {
 	if (sayEl) sayEl.textContent = '';
 	const contentWrapper = $('.content', card);
 	if (contentWrapper) {
-		const existing = $('.embedding-result', contentWrapper);
-		if (existing) existing.remove();
-		
-		const emb = result.embedding;
-		const dim = emb.length;
-		const preview = '[' + emb.slice(0, 5).map(v => v.toFixed(6)).join(', ') + ', ...]';
-		
-		const embDiv = mk('div', 'embedding-result');
-		embDiv.innerHTML = '<div class="mb-1"><strong>嵌入维度:</strong> ' + dim + '</div><div class="mb-1"><strong>预览:</strong> <code>' + preview + '</code></div>';
-		const copyBtn = mk("button", "copy code btn , bare icon-only , square");
-		copyBtn.innerHTML = '<span class="copy icon">\u29c9</span><span class="done icon">\u2713</span>';
-		copyBtn.title = "复制完整向量";
-		const previewRow = embDiv.querySelector('.mb-1:last-child');
-		previewRow.addChild(copyBtn);
+				var embDiv = $('.embedding-result', contentWrapper);
+		embDiv.style.display = '';
+		embDiv.querySelector('.dim').textContent = dim;
+		embDiv.querySelector('.preview').textContent = preview;
+		embDiv.querySelector('.expand-json').remove();
+		embDiv.querySelector('.embedding-full-json').remove();
+		const copyBtn = embDiv.querySelector('.copy.code');
+	        const previewRow = embDiv.querySelector('.mb-1:last-child');
 		previewRow.style.display = 'flex';
 		previewRow.style.alignItems = 'center';
 		previewRow.style.gap = '8px';
@@ -796,7 +790,6 @@ function updateCardAsEmbedding(endpointId, result, sessionId) {
 				setTimeout(() => copyBtn.classList.remove("copied"), 1500);
 			});
 		};
-		contentWrapper.addChild(embDiv);
 	}
 	updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }

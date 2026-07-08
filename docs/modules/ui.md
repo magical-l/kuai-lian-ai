@@ -234,3 +234,8 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-08 | 修复 dialog 复用崩溃：移除 `!hasParent` 时从 DOM 永久删除"继承"按钮的代码 | 删除操作导致 dialog DOM 结构不可逆变化，复用时崩溃 |
 | 2026-07-08 | 修复 style 继承显示名：从内部值（如 openai）改为中文名（如 ChatGPT式） | 与类型字段 type 的中文名显示一致 |
 | 2026-07-08 | 编辑/新建节点时 dialog 显示"继承自: [父节点名称]" | 让用户明确知道当前配置是从哪个节点继承的，避免混淆 |
+| 2026-07-08 | renderSelectedEndpoints 从字符串拼接改为 `fromTemplate` 克隆 | HTML 结构定义在 `<template>`，JS 只做 DOM 操作 |
+| 2026-07-08 | buildTooltipHTML row() 从模板字符串改为 `tooltip-row` 模板克隆 | 统一 HTML 定义在模板中 |
+| 2026-07-08 | 复制按钮内容从 `copy-btn-content` 模板改为 `mk`+`text` 辅助函数 | 两个 span 过于简单，模板没必要；代码块无父模板可放 |
+| 2026-07-08 | 眼睛图标切换从 `innerHTML` 改为两个 SVG 静态存在按钮中，JS 切显隐 | 按钮在静态 HTML 中，直接放两个图标更简单 |
+| 2026-07-08 | `.remark` 从独立模板改为放在父模板（`response-card-streaming`、`one-endpoint`）中 | 本来就是父结构的一部分，无需独立模板 |

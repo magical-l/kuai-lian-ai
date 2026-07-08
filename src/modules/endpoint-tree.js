@@ -278,11 +278,9 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				});
 			});
 
-			if (node.remark) {
-				var remSpan = document.createElement("span");
-				remSpan.className = "remark";
+			var remSpan = nodeEl.querySelector(".remark");
+			if (remSpan && node.remark) {
 				remSpan.textContent = " " + node.remark;
-				actionsEl.parentElement.insertBefore(remSpan, actionsEl);
 			}
 
 			nodeEl.on("dragover", function(e) {

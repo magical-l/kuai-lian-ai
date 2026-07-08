@@ -1,44 +1,52 @@
 // ========== Selected Endpoint Functions ==========
 function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
     const summaryEl = $(".selected.endpoint.list");
+    if (!summaryEl) return;
 
-    if (!summaryEl)
-        return;
+    // 移除上次渲染的端点标签，保留模板和空态提示
+    $$('.one.endpoint', summaryEl).forEach(el => el.remove());
+
+    const hint = $('.empty.hint', summaryEl);
 
     if (selectedEndpoints.length === 0) {
-        summaryEl.innerHTML = `<span class="empty hint">请选择端点</span>`;
-    } else {
-        summaryEl.innerHTML = selectedEndpoints.map(id => {
-            const info = findModelById(groups, id);
-
-            if (!info)
-                return "";
-
-            const statusClass = getTagStatusClass(id);
-            const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-            const genState = gens ? gens.get(id) : null;
-            const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : "";
-
-            const classes = [
-                "one",
-                "endpoint",
-                statusClass,
-                speedClass ? `speed-${speedClass}` : ""
-            ].filter(Boolean).join(" ");
-
-            const rcfg = resolveNodeConfig(id);
-            const typeIconMap = { chat: 'chat', embedding: 'embed', embed: 'embed', image: 'img-generate', 'img-generate': 'img-generate', rerank: 'rerank' };
-            const typeClass = typeIconMap[rcfg?.type] || 'chat';
-            const remarkHtml = (info.node.remark) ? `<span class="remark"> ${info.node.remark}</span>` : "";
-            const fullPath = [...(info.ancestors || []).map(a => a.name), info.node.name].join("/");
-            return `<li class="${classes}" data-endpoint="${id}">
-						<span class="endpoint-type badge icon icon-only ${typeClass}"></span>
-						<span class="full name">${fullPath}</span>
-						${remarkHtml}
-						<span class="btn remove bare icon-only" data-endpoint="${id}">✕</span>
-					</li>`;
-        }).join("");
+        if (hint) hint.style.display = '';
+        bindSelectorEvents();
+        return;
     }
+
+    if (hint) hint.style.display = 'none';
+
+    const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
+    const typeIconMap = { chat: 'chat', embedding: 'embed', embed: 'embed', image: 'img-generate', 'img-generate': 'img-generate', rerank: 'rerank' };
+
+    selectedEndpoints.forEach(id => {
+        const info = findModelById(groups, id);
+        if (!info) return;
+
+        const li = fromTemplate('template-selected-endpoint', 'li');
+        const rcfg = resolveNodeConfig(id);
+        const genState = gens ? gens.get(id) : null;
+
+        li.dataset.endpoint = id;
+        li.querySelector('.remove.btn').dataset.endpoint = id;
+
+        const statusClass = getTagStatusClass(id);
+        if (statusClass) li.classList.add(statusClass);
+        const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : '';
+        if (speedClass) li.classList.add('speed-' + speedClass);
+
+        li.querySelector('.endpoint-type.badge').classList.add(typeIconMap[rcfg?.type] || 'chat');
+        li.querySelector('.full.name').textContent = [...(info.ancestors || []).map(a => a.name), info.node.name].join('/');
+
+        const remarkEl = li.querySelector('.remark');
+        if (info.node.remark) {
+            remarkEl.textContent = ' ' + info.node.remark;
+        } else {
+            remarkEl.remove();
+        }
+
+        summaryEl.appendChild(li);
+    });
 
     bindSelectorEvents();
 }
@@ -148,15 +156,11 @@ function buildTooltipHTML(node, rcfg, nameOverride) {
 		return val && val !== own ? "↑ " : "";
 	}
 	function row(label, value, copyValue) {
-		var safe = (copyValue || value || "");
-		return `<div class="row flex items-go-x">
-					<span class="label">${label}：</span>
-					<span class="value">${value || ""}</span>
-					<button class="copy value btn , bare icon-only , square" data-copy="${safe}" title="复制">
-						<span class="copy icon ⧉">⧉</span>
-						<span class="done icon">✓</span>
-					</button>
-				</div>`;
+		var el = fromTemplate("tooltip-row", ".row");
+		el.querySelector(".label").textContent = label + "：";
+		el.querySelector(".value").textContent = value || "";
+		el.querySelector(".copy.value.btn").dataset.copy = (copyValue || value || "");
+		return el.outerHTML;
 	}
 	var tipName = nameOverride || node.name;
 	var tipBaseUrl = inherited(rcfg.baseUrl, node.baseUrl) + (rcfg.baseUrl || "");
