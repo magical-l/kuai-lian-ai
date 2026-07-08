@@ -56,7 +56,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `clearInput` | attachments.js | 清空输入框 |
 | `setButtonState` | attachments.js | 切换发送/停止按钮状态 |
 | `addInheritIcon` | attachments.js | 继承值旁添加 ↑ 图标 |
-| `showEditGroupDialog` | attachments.js | 显示端点编辑对话框 |
+| `showEditGroupDialog` | attachments.js | 显示端点编辑对话框，含继承来源提示 |
 | `showDirectoryPrompt` | attachments.js | 显示目录选择提示 |
 | `hideDirectoryPrompt` | attachments.js | 隐藏目录选择提示 |
 | `showHelpDialog` | attachments.js | 显示帮助/存储设置对话框 |
@@ -188,6 +188,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 - Enter 在字段间切换焦点，最后一个字段 Enter 触发保存
 - API Key 显隐切换按钮
 - 保存时区分"节点已有值"和"来自继承"，避免无覆盖继承值
+- 显示继承来源：dialog 标题下方显示"继承自: [父节点名称]"，顶级节点无此提示
 
 ### 9. 帮助/存储对话框 (showHelpDialog / showDirectoryPrompt)
 
@@ -232,3 +233,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-07 | 编辑弹窗也从 template 改为直接 DOM 元素，移出 `<aside>` 放到 `<main>` 末尾 | 同步 help-dialog 的模式；避免 show() 无 top layer 时被后序 DOM 元素遮盖 |
 | 2026-07-08 | 修复 dialog 复用崩溃：移除 `!hasParent` 时从 DOM 永久删除"继承"按钮的代码 | 删除操作导致 dialog DOM 结构不可逆变化，复用时崩溃 |
 | 2026-07-08 | 修复 style 继承显示名：从内部值（如 openai）改为中文名（如 ChatGPT式） | 与类型字段 type 的中文名显示一致 |
+| 2026-07-08 | 编辑/新建节点时 dialog 显示"继承自: [父节点名称]" | 让用户明确知道当前配置是从哪个节点继承的，避免混淆 |

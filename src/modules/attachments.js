@@ -255,6 +255,24 @@ function showEditGroupDialog(node, parentId, onSave) {
 		}
 	}
 
+		// 显示继承来源节点名称
+		var inheritSourceEl = dialog.querySelector('.inherit-source');
+		if (inheritSourceEl) {
+			var parentName = '';
+			if (isEdit && _r && _r.ancestors.length > 0) {
+				parentName = _r.ancestors[0].name;
+			} else if (!isEdit && parentId) {
+				var parentNode = getNode(parentId);
+				parentName = parentNode ? parentNode.name : '';
+			}
+			if (parentName) {
+				inheritSourceEl.textContent = '继承自: ' + parentName;
+				inheritSourceEl.style.display = '';
+			} else {
+				inheritSourceEl.style.display = 'none';
+			}
+		}
+
 		// 最顶级节点：默认ChatGPT式
 		if (!hasParent) {
 			setRadio('style', node ? node.style || 'openai' : 'openai', dialog);
