@@ -940,21 +940,18 @@ aside.endpoint.list {
 			}
 		}
 		& .fork.btn {
-			--btn-text-color: var(--text-muted);
-			opacity: 0.58;
+			--btn-text-color: var(--text-secondary);
+			--btn-border: 1px solid var(--border-subtle);
+			--hover-bg: var(--bg-hover);
+			--hover-text-color: var(--accent-primary);
+			opacity: 1;
 
 			& .outline-style.icon > svg {
 				stroke-width: 1.6;
 			}
 
-			&:hover {
-				--btn-text-color: var(--text-secondary);
-				opacity: 0.85;
-			}
-
 			&:focus-visible {
-				--btn-text-color: var(--text-secondary);
-				opacity: 0.85;
+				--btn-text-color: var(--accent-primary);
 			}
 		}
 		& .children {
