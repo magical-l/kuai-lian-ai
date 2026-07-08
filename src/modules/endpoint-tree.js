@@ -260,9 +260,9 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				onNodeEdit(node.id);
 			});
 
-			var forkBtn = actionsEl.querySelector('.fork');
+			var duplicateBtn = actionsEl.querySelector('.duplicate');
 
-			forkBtn.on("click", async function(e) {
+			duplicateBtn.on("click", async function(e) {
 				e.stopPropagation();
 				await cloneNode(node.id);
 				refreshUI();

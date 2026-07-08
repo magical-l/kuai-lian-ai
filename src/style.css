@@ -287,6 +287,10 @@ main {
 /* ============ 各处按钮 ============ */
 button, .btn {
 
+	&.duplicate {
+		--btn-text-color: var(--accent-primary);
+	}
+
 	&.join-session {
 		--btn-text-color: var(--accent-primary);
 		--btn-font-weight: 600;
@@ -937,21 +941,6 @@ aside.endpoint.list {
 			&:hover {
 				opacity: 1;
 				color: var(--text-secondary);
-			}
-		}
-		& .fork.btn {
-			--btn-text-color: var(--text-secondary);
-			--btn-border: 1px solid var(--border-subtle);
-			--hover-bg: var(--bg-hover);
-			--hover-text-color: var(--accent-primary);
-			opacity: 1;
-
-			& .outline-style.icon > svg {
-				stroke-width: 1.6;
-			}
-
-			&:focus-visible {
-				--btn-text-color: var(--accent-primary);
 			}
 		}
 		& .children {
