@@ -2585,26 +2585,40 @@ function text(el, txt) {
 function createTooltip(id, populate) {
 	let hideTimer = null;
 	var el = null;
+	var anchorName = '--tooltip-trigger-' + id;
+	// 构造时一次性初始化
+	if (!el) {
+		el = $("#tooltip-content").content.cloneNode(true).querySelector(".tooltip");
+		el.style.setProperty('position-anchor', anchorName);
+		// 绑定复制按钮
+		$$("button.copy", el).forEach(btn => {
+			btn.onclick = e => {
+				e.stopPropagation();
+				navigator.clipboard.writeText(btn.dataset.copy);
+				btn.classList.add("copied");
+				setTimeout(() => btn.classList.remove("copied"), 1500);
+			};
+		});
+		// 悬停和点击事件
+		el.onmouseenter = () => {
+			if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+		};
+		el.onmouseleave = () => hide();
+		el.onclick = function(e) { e.stopPropagation(); };
+	}
 	function show(triggerEl) {
 		if (hideTimer) {
 			clearTimeout(hideTimer);
 			hideTimer = null;
 		}
-		if (!el) {
-			el = $("#tooltip-content").content.cloneNode(true).querySelector(".tooltip");
-		}
 		populate(el);
-		var tipParent = triggerEl.closest(".one.endpoint");
-			if (!tipParent) tipParent = doc.body;
-			tipParent.appendChild(el);
-		// 设置唯一锚点名，用于 anchor 定位（每个 tooltip 实例独立，不互相覆盖）
-		var anchorName = '--tooltip-trigger-' + id;
 		triggerEl.style.setProperty('anchor-name', anchorName);
-		el.style.setProperty('position-anchor', anchorName);
-		// 先显示，测量位置，如果超出视口底部则翻转显示在上方
+		var tipParent = triggerEl.closest(".one.endpoint");
+		if (!tipParent) tipParent = doc.body;
+		tipParent.appendChild(el);
+		// 弹出，超出底部则翻转
 		el.showPopover();
-		var tooltipRect = el.getBoundingClientRect();
-		if (tooltipRect.bottom > window.innerHeight) {
+		if (el.getBoundingClientRect().bottom > window.innerHeight) {
 			el.hidePopover();
 			el.style.setProperty('top', 'auto');
 			el.style.setProperty('bottom', 'anchor(top)');
@@ -2612,35 +2626,7 @@ function createTooltip(id, populate) {
 			el.style.setProperty('margin-bottom', '4px');
 			el.showPopover();
 		}
-		$$("button.copy", el).forEach(btn => {
-			btn.onclick = e => {
-				e.stopPropagation();
-				navigator.clipboard.writeText(btn.dataset.copy);
-				btn.classList.add("copied");
-				setTimeout(() => {
-					btn.classList.remove("copied");
-				}, 1500);
-			};
-		});
-		el.onmouseenter = () => {
-			if (hideTimer) {
-				clearTimeout(hideTimer);
-				hideTimer = null;
-			}
-		};
-		el.onmouseleave = () => hide();
-		el.onclick = function(e) {
-			e.stopPropagation();
-		};
-		el.showPopover();
-	}
-	function hide() {
-		hideTimer = setTimeout(() => {
-			if (el) el.hidePopover();
-			hideTimer = null;
-		}, 100);
-	}
-	function remove() {
+	}function remove() {
 		if (el) {
 			el.remove();
 			el = null;
