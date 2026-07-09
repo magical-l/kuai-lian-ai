@@ -133,16 +133,16 @@
 				<span>AI服务端点</span>
 				<div class="btn-group : endpoint-type filter , flex items-go-x">
 					<label title="聊天" class="endpoint-type option btn : chat , icon-only square">
-						<input type="checkbox" value="chat" checked hidden>
+						<input type="checkbox" value="chat" checked>
 					</label>
 					<label title="嵌入" class="endpoint-type option btn : embed , icon-only square">
-						<input type="checkbox" value="embed" checked hidden>
+						<input type="checkbox" value="embed" checked>
 					</label>
 					<label title="生图" class="endpoint-type option btn : img-generate , icon-only square">
-						<input type="checkbox" value="img-generate" checked hidden>
+						<input type="checkbox" value="img-generate" checked>
 					</label>
 					<label title="重排序" class="endpoint-type option btn : rerank , icon-only square">
-						<input type="checkbox" value="rerank" checked hidden>
+						<input type="checkbox" value="rerank" checked>
 					</label>
 				</div>
 				<span class="btn-group : actions , flex items-go-x">
@@ -175,7 +175,7 @@
 											<span class="char-style icon">🔗</span>
 										</button>
 										<label class="join-session btn , bare icon-only , square" title="加入当前会话">
-											<input type="checkbox" hidden>
+											<input name="joined" type="checkbox">
 											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-bubble"></use></svg></span>
 										</label>
 										<button class="edit btn , bare icon-only , square" title="编辑节点">
@@ -413,11 +413,11 @@
 				<span class="field-control">
 					<div class="btn-group , flex items-go-x">
 						<label class="option btn">
-							<input type="radio" name="style" value="" hidden>
+							<input type="radio" name="style" value="">
 							继承<span class="iv"></span>
 						</label>
 						<label class="option btn">
-							<input type="radio" name="style" value="openai" hidden>
+							<input type="radio" name="style" value="openai">
 							ChatGPT式
 							<span class="hint">
 								OpenAI、国内主流
@@ -426,7 +426,7 @@
 							</span>
 						</label>
 						<label class="option btn">
-							<input type="radio" name="style" value="claude" hidden>
+							<input type="radio" name="style" value="claude">
 							Claude式
 							<span class="hint">
 								Anthropic
@@ -435,7 +435,7 @@
 							</span>
 						</label>
 						<label class="option btn">
-							<input type="radio" name="style" value="gemini" hidden>
+							<input type="radio" name="style" value="gemini">
 							Gemini式
 							<span class="hint">
 								Google
@@ -451,23 +451,23 @@
 				<span class="field-control">
 					<div class="btn-group , flex items-go-x">
 						<label class="option btn">
-							<input type="radio" name="type" value="" hidden>
+							<input type="radio" name="type" value="">
 							继承<span class="iv"></span>
 						</label>
 						<label class="option btn">
-							<input type="radio" name="type" value="chat" hidden>
+							<input type="radio" name="type" value="chat">
 							💬 聊天
 						</label>
 						<label class="option btn">
-							<input type="radio" name="type" value="embed" hidden>
+							<input type="radio" name="type" value="embed">
 							🔢 嵌入
 						</label>
 						<label class="option btn">
-							<input type="radio" name="type" value="img-generate" hidden>
+							<input type="radio" name="type" value="img-generate">
 							🎨 生图
 						</label>
 						<label class="option btn">
-							<input type="radio" name="type" value="rerank" hidden>
+							<input type="radio" name="type" value="rerank">
 							📊 重排序
 						</label>
 					</div>
@@ -497,8 +497,8 @@
 			<div class="hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
 		</form>
 		<footer class="flex items-go-x">
-			<button class="cancel btn , char-style icon : ✗">✗</button>
-			<button class="done btn , primary , char-style icon : ✓">✓</button>
+			<button class="cancel , icon btn"></button>
+			<button class="done , primary , icon btn"></button>
 		</footer>
 	</dialog>
 </main>
