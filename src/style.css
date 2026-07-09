@@ -870,9 +870,9 @@ main {
 
 .endpoint-type.icon-only {
 	&.chat::before { content: '💬'; }
-	&.embed::before { content: '🔢'; }
-	&.img-generate::before { content: '🎨'; }
-	&.rerank::before { content: '📊'; }
+	&.embedding::before { content: '🔢'; }
+	&.image-generation::before { content: '🎨'; }
+	&.reranking::before { content: '📊'; }
 }
 
 aside.endpoint.list {

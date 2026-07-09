@@ -419,7 +419,7 @@ async function handleSend() {
 	selectedEndpoints.forEach(id => {
 		const cfg = resolveNodeConfig(id);
 		if (cfg.type === 'embedding' || cfg.type === 'embed') embedIds.push(id);
-		else if (cfg.type === 'img-generate' || cfg.type === 'image') imgGenerateIds.push(id);
+		else if (cfg.type === 'image-generation' || cfg.type === 'img-generate' || cfg.type === 'image') imgGenerateIds.push(id);
 		else chatIds.push(id);
 	});
 

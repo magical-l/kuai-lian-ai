@@ -58,8 +58,8 @@ function findModelById(nodes, nodeId) {
 function detectModelType(name) {
 	if (!name) return 'chat';
 	var lower = name.toLowerCase();
-	if (lower.indexOf('embedding') >= 0 || lower.indexOf('text-embedding') >= 0 || lower === 'embed') return 'embed';
-	if (lower.indexOf('rerank') >= 0 || lower.indexOf('re-rank') >= 0) return 'rerank';
+	if (lower.indexOf('embedding') >= 0 || lower.indexOf('text-embedding') >= 0 || lower === 'embed' || lower === 'embedding') return 'embedding';
+	if (lower.indexOf('reranking') >= 0 || lower.indexOf('rerank') >= 0 || lower.indexOf('re-rank') >= 0) return 'reranking';
 	return 'chat';
 }
 
