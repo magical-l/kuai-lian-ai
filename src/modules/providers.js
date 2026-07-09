@@ -398,77 +398,59 @@ function createTooltip(id, populate) {
 	var el = null;
 
 	function show(triggerEl) {
-        if (hideTimer) {
-            clearTimeout(hideTimer);
-            hideTimer = null;
-        }
+		if (hideTimer) {
+			clearTimeout(hideTimer);
+			hideTimer = null;
+		}
 
-        if (!el) {
-            el = $("#tooltip-content").content.cloneNode(true).querySelector(".tooltip");
-        }
-        populate(el);
+		if (!el) {
+			el = $("#tooltip-content").content.cloneNode(true).querySelector(".tooltip");
+		}
+		populate(el);
 
-        var tipParent = triggerEl.closest(".one.endpoint");
+		var tipParent = triggerEl.closest(".one.endpoint");
+			if (!tipParent) tipParent = doc.body;
+			tipParent.appendChild(el);
 
-        if (!tipParent)
-            tipParent = doc.body;
+		// 设置唯一锚点名，用于 anchor 定位（每个 tooltip 实例独立，不互相覆盖）
+		var anchorName = '--tooltip-trigger-' + id;
+		triggerEl.style.setProperty('anchor-name', anchorName);
+		el.style.setProperty('position-anchor', anchorName);
 
-        tipParent.appendChild(el);
+		$$("button.copy", el).forEach(btn => {
+			btn.onclick = e => {
+				e.stopPropagation();
+				navigator.clipboard.writeText(btn.dataset.copy);
+				btn.classList.add("copied");
 
-        $$("button.copy", el).forEach(btn => {
-            btn.onclick = e => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(btn.dataset.copy);
-                btn.classList.add("copied");
+				setTimeout(() => {
+					btn.classList.remove("copied");
+				}, 1500);
+			};
+		});
 
-                setTimeout(() => {
-                    btn.classList.remove("copied");
-                }, 1500);
-            };
-        });
+		el.onmouseenter = () => {
+			if (hideTimer) {
+				clearTimeout(hideTimer);
+				hideTimer = null;
+			}
+		};
 
-        el.onmouseenter = () => {
-            if (hideTimer) {
-                clearTimeout(hideTimer);
-                hideTimer = null;
-            }
-        };
+		el.onmouseleave = () => hide();
 
-        el.onmouseleave = () => hide();
+		el.onclick = function(e) {
+			e.stopPropagation();
+		};
 
-        el.onclick = function(e) {
-            e.stopPropagation();
-        };
-
-        el.style.visibility = "hidden";
-        el.style.display = "block";
-        const measW = el.offsetWidth, measH = el.offsetHeight || 80;
-        el.style.display = "none";
-        el.style.visibility = "";
-        const rect = triggerEl.getBoundingClientRect();
-        let top = rect.bottom + 4, left = rect.left;
-
-        if (top + measH > window.innerHeight)
-            top = rect.top - measH - 4;
-
-        if (left + measW > window.innerWidth)
-            left = window.innerWidth - measW - 10;
-
-        if (left < 10)
-            left = 10;
-
-        el.style.top = top + "px";
-        el.style.left = left + "px";
-        el.style.display = "block";
-    }
+		el.showPopover();
+	}
 
 	function hide() {
 		hideTimer = setTimeout(() => {
-			if (el) el.style.display = 'none';
+			if (el) el.hidePopover();
 			hideTimer = null;
 		}, 100);
 	}
-
 	function remove() {
 		if (el) {
 			el.remove();

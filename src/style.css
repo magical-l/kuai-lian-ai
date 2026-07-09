@@ -367,9 +367,12 @@ button, .btn {
 		font-size: 0.85em;
 		white-space: nowrap;
 	}
-	& .tooltip {
+	.tooltip[popover] {
 		position: fixed;
-		z-index: 1000;
+		position-anchor: --tooltip-trigger;
+		top: anchor(bottom);
+		left: anchor(left);
+		margin-top: 4px;
 		background: var(--bg-base);
 		border: 1px solid var(--border-default);
 		border-radius: var(--radius-md);
@@ -377,7 +380,6 @@ button, .btn {
 		box-shadow: var(--shadow-md);
 		min-width: 200px;
 		max-width: 500px;
-		display: none;
 		cursor: default;
 		font-size: 12px;
 		& .row {
