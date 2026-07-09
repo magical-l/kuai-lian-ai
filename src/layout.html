@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.9.1</span>
+			<span class="version">v6.9.2</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -236,19 +236,19 @@
 							<div class="text">等待思考...</div>
 						</details>
 						<div class="say">等待回复...</div>
-						<div class="embedding-result" style="display:none">
-							<div class="mb-1 flex items-go-x" style="align-items:center;gap:8px">
+						<div class="embedding-result hidden">
+							<div class="flex items-go-x items-y-near-center" style="gap:8px">
 								<strong>嵌入维度:</strong> <span class="dim"></span>
 								<button class="expand-json btn bare square icon-only" title="展开完整向量">▶</button>
 							</div>
-							<div class="mb-1 flex items-go-x" style="align-items:center;gap:8px">
+							<div class="flex items-go-x items-y-near-center" style="gap:8px">
 								<strong>预览:</strong> <code class="preview"></code>
 								<button class="copy code btn , bare icon-only , square" title="复制完整向量">
 									<span class="copy char-style icon : ⧉">⧉</span>
 									<span class="done char-style icon : ✓">✓</span>
 								</button>
 							</div>
-							<pre class="embedding-full-json" style="display:none;font-size:smaller;max-height:200px;overflow:auto;background:var(--bg-dim);padding:8px;border-radius:4px;white-space:pre-wrap;word-break:break-all"></pre>
+							<pre class="embedding-full-json hidden" style="font-size:smaller;max-height:200px;overflow:auto;background:var(--bg-dim);padding:8px;border-radius:4px;white-space:pre-wrap;word-break:break-all"></pre>
 						</div>
 					</div>
 				</article>
@@ -456,11 +456,11 @@
 			<label class="form-row flex items-go-x items-y-near-center">
 				<span class="field-label">API Key（选填）:</span>
 				<span class="field-control">
-					<span class="flex items-go-x" style="align-items:center;gap:var(--space-1)">
+					<span class="flex items-go-x items-y-near-center" style="gap:var(--space-1)">
 						<input name="apikey" type="password">
 						<button type="button" class="toggle apikey visibility btn , square icon-only" title="显示/隐藏">
 							<span class="fill-style icon"><svg><use href="icons.svg#icon-eye"/></svg></span>
-							<span class="fill-style icon" style="display:none"><svg><use href="icons.svg#icon-eye-off"/></svg></span>
+							<span class="fill-style icon hidden"><svg><use href="icons.svg#icon-eye-off"/></svg></span>
 						</button>
 					</span>
 				</span>

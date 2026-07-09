@@ -317,19 +317,17 @@ copyBtn.onclick = () => {
         if (r.embeddingResult) {
             const emb = r.embeddingResult;
             var embMeta = $('.embedding-result', existing);
-            embMeta.style.display = '';
+            embMeta.classList.remove('hidden');
             embMeta.querySelector('.dim').textContent = emb.dim;
             embMeta.querySelector('.preview').textContent = emb.preview;
             const fullJsonPre = embMeta.querySelector('.embedding-full-json');
             fullJsonPre.textContent = emb.fullJson;
             const expandBtn = embMeta.querySelector('.expand-json');
             expandBtn.onclick = function() {
-                const isHidden = fullJsonPre.style.display === 'none';
-                fullJsonPre.style.display = isHidden ? '' : 'none';
-                this.textContent = isHidden ? '▼' : '▶';
+                fullJsonPre.classList.toggle('hidden');
+                this.textContent = fullJsonPre.classList.contains('hidden') ? '▶' : '▼';
             };
             const copyBtn = embMeta.querySelector('.copy.code');
-            const previewRow = embMeta.querySelector('.mb-1:last-child');
             copyBtn.onclick = () => {
                 navigator.clipboard.writeText(emb.fullJson).then(() => {
                     copyBtn.classList.add("copied");

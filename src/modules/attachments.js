@@ -331,7 +331,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			var isPw = keyInput.type === 'password';
 			keyInput.type = isPw ? 'text' : 'password';
 			toggleBtn.querySelectorAll('.fill-style.icon').forEach(function(el, i) {
-				el.style.display = isPw === (i === 0) ? 'none' : '';
+				el.classList.toggle('hidden', isPw === (i === 0));
 			});
 		};
 	}

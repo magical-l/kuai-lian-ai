@@ -773,18 +773,14 @@ function updateCardAsEmbedding(endpointId, result, sessionId) {
 	const contentWrapper = $('.content', card);
 	if (contentWrapper) {
 				var embDiv = $('.embedding-result', contentWrapper);
-		embDiv.style.display = '';
+		embDiv.classList.remove('hidden');
 		embDiv.querySelector('.dim').textContent = dim;
 		embDiv.querySelector('.preview').textContent = preview;
 		embDiv.querySelector('.expand-json').remove();
 		embDiv.querySelector('.embedding-full-json').remove();
 		const copyBtn = embDiv.querySelector('.copy.code');
-	        const previewRow = embDiv.querySelector('.mb-1:last-child');
-		previewRow.style.display = 'flex';
-		previewRow.style.alignItems = 'center';
-		previewRow.style.gap = '8px';
-		copyBtn.onclick = () => {
-			const codeText = previewRow.querySelector('code').textContent;
+	        copyBtn.onclick = () => {
+			const codeText = embDiv.querySelector('.preview').textContent;
 			navigator.clipboard.writeText(codeText).then(() => {
 				copyBtn.classList.add("copied");
 				setTimeout(() => copyBtn.classList.remove("copied"), 1500);

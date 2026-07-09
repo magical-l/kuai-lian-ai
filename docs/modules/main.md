@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-04
+last_updated: 2026-07-09
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -280,3 +280,4 @@ radio change → setThemePref(mode)
 | 2026-07-02 | 错误信息从 header 移到 .content（跟 .say 同级），有错误时隐藏复制按钮 | 错误信息过长时 header 空间不足，移到 content 更合理；有错误时复制按钮无意义 |
 | 2026-07-03 | 移除全局 inputMode 和 handleEmbeddingSend，handleSend 按端点 type 内部分流 | 端点类型在配置时已知，全局 toggle 是错误抽象；统一入口 + 类型路由使多类型端点并发成为可能 |
 | 2026-07-04 | handleSend 新增 img-generate 分流 + updateCardAsImage | 生图端点走 callImageGeneration 非流式路径，图片下载转 base64 持久化，支持会话记录加载 |
+| 2026-07-09 | 内联样式迁移到 utility class + classList。`style.display` → `classList.remove('hidden')`；移除无定义的 `.mb-1` 查询及冗余 inline 样式设置 | 与 CSS 分离，用 classList 而非 style.display 控制显隐；`.mb-1` 无对应 CSS 定义
