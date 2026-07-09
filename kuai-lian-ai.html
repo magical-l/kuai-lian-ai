@@ -413,18 +413,18 @@
 			<div class="inherit-source hint"></div>
 		</header>
 		<form>
-			<label class="form-row flex items-go-x items-y-near-center">
+			<label class="form-row , flex items-go-x items-y-near-center">
 				<span class="field-label">名称:</span>
 				<span class="field-control"><input name="name"></span>
 			</label>
-			<label class="form-row flex items-go-x items-y-near-center">
+			<label class="form-row , flex items-go-x items-y-near-center">
 				<span class="field-label">Base URL（选填）:</span>
 				<span class="field-control">
 					<input name="url" placeholder="https://api.example.com">
 					<span class="hint">若路径以 # 结尾，则直接使用该路径</span>
 				</span>
 			</label>
-			<div class="form-row flex items-go-x items-y-near-center">
+			<div class="form-row , flex items-go-x items-y-near-center">
 				<span class="field-label">接口风格:</span>
 				<span class="field-control">
 					<div class="btn-group , flex items-go-x">
@@ -462,7 +462,7 @@
 					</div>
 				</span>
 			</div>
-			<div class="form-row flex items-go-x items-y-near-center">
+			<div class="form-row , flex items-go-x items-y-near-center">
 				<span class="field-label">类型:</span>
 				<span class="field-control">
 					<div class="btn-group , flex items-go-x">
@@ -490,7 +490,7 @@
 					<span class="hint"></span>
 				</span>
 			</div>
-			<label class="form-row flex items-go-x items-y-near-center">
+			<label class="form-row , flex items-go-x items-y-near-center">
 				<span class="field-label">API Key（选填）:</span>
 				<span class="field-control">
 					<span class="flex items-go-x items-y-near-center" style="gap:var(--space-1)">
@@ -502,11 +502,11 @@
 					</span>
 				</span>
 			</label>
-			<label class="form-row flex items-go-x items-y-near-center">
+			<label class="form-row , flex items-go-x items-y-near-center">
 				<span class="field-label">模型名（选填）:</span>
 				<span class="field-control"><input name="model-id" placeholder="如 gpt-4o"></span>
 			</label>
-			<label class="form-row flex items-go-x items-y-near-center">
+			<label class="form-row , flex items-go-x items-y-near-center">
 				<span class="field-label">备注（选填）:</span>
 				<span class="field-control"><input name="remark" placeholder="仅用于显示"></span>
 			</label>
@@ -3067,9 +3067,9 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			if (badge) {
 				var type = rcfg ? rcfg.type : 'chat';
 				if (type === 'chat') { badge.classList.add('chat'); }
-				else if (type === 'embedding' || type === 'embed') { badge.classList.add('embedding'); }
+				else if (type === 'embedding') { badge.classList.add('embedding'); }
 				else if (type === 'image' || type === 'image-generation') { badge.classList.add('image-generation'); }
-				else if (type === 'reranking' || type === 'rerank') { badge.classList.add('reranking'); }
+				else if (type === 'reranking') { badge.classList.add('reranking'); }
 			}
 			var tooltipId = "tooltip-" + node.id;
 			var tooltipHTML = buildTooltipHTML(node, rcfg, node.name);
@@ -6043,7 +6043,7 @@ async function handleSend() {
 	selectedEndpoints.forEach(id => {
 		const cfg = resolveNodeConfig(id);
 		if (cfg.type === 'embedding' || cfg.type === 'embed') embedIds.push(id);
-		else if (cfg.type === 'image-generation' || cfg.type === 'img-generate' || cfg.type === 'image') imgGenerateIds.push(id);
+		else if (cfg.type === 'image-generation' || cfg.type === 'image') imgGenerateIds.push(id);
 		else chatIds.push(id);
 	});
 	showThinkingCards(selectedEndpoints, groups, targetSessionId);

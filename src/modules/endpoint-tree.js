@@ -78,9 +78,9 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			if (badge) {
 				var type = rcfg ? rcfg.type : 'chat';
 				if (type === 'chat') { badge.classList.add('chat'); }
-				else if (type === 'embedding' || type === 'embed') { badge.classList.add('embedding'); }
+				else if (type === 'embedding') { badge.classList.add('embedding'); }
 				else if (type === 'image' || type === 'image-generation') { badge.classList.add('image-generation'); }
-				else if (type === 'reranking' || type === 'rerank') { badge.classList.add('reranking'); }
+				else if (type === 'reranking') { badge.classList.add('reranking'); }
 			}
 
 			var tooltipId = "tooltip-" + node.id;
