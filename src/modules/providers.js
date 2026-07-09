@@ -417,6 +417,18 @@ function createTooltip(id, populate) {
 		triggerEl.style.setProperty('anchor-name', anchorName);
 		el.style.setProperty('position-anchor', anchorName);
 
+		// 先显示，测量位置，如果超出视口底部则翻转显示在上方
+		el.showPopover();
+		var tooltipRect = el.getBoundingClientRect();
+		if (tooltipRect.bottom > window.innerHeight) {
+			el.hidePopover();
+			el.style.setProperty('top', 'auto');
+			el.style.setProperty('bottom', 'anchor(top)');
+			el.style.setProperty('margin-top', '');
+			el.style.setProperty('margin-bottom', '4px');
+			el.showPopover();
+		}
+
 		$$("button.copy", el).forEach(btn => {
 			btn.onclick = e => {
 				e.stopPropagation();
