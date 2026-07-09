@@ -165,7 +165,7 @@ function tryInlineLocalCSS(html) {
 		}
 					if (content) {
 				html = html.replace(
-					new RegExp(`<link\s[^>]*href="https://${url}"[^>]*>`, 'g'),
+					new RegExp(`<link\\s[^>]*href="https://${url}"[^>]*>`, 'g'),
 					() => '<style>' + compressCSS(content) + '</style>'
 				);
 				// 也支持 @import url(...) layer(base) 写法

@@ -40,7 +40,7 @@ function addCodeCopyButtons(container) {
 		const copyBtn = document.createElement('button');
 		copyBtn.className = 'copy code btn , bare icon-only , square';
 		copyBtn.appendChild(text(mk('span', 'copy icon'), '⧉'));
-		copyBtn.appendChild(text(mk('span', 'done icon'), '✓'));
+		copyBtn.appendChild(text(mk('span', 'done status icon'), '✓'));
 		copyBtn.title = '复制';
 		copyBtn.onclick = (e) => {
 			e.stopPropagation();
