@@ -145,11 +145,9 @@ function showEditGroupDialog(node, parentId, onSave) {
 		var emptyRadio = dialog.querySelector('input[name="' + name + '"][value=""]');
 		if (emptyRadio) {
 			emptyRadio.parentElement.classList.remove("hidden");  // 恢复可见（前一次可能隐藏了）
-			if (emptyRadio.parentElement.lastChild?.nodeType === 3) {
-				emptyRadio.parentElement.lastChild.textContent = '继承';
-			}
 		}
 	});
+	dialog.querySelectorAll('.iv').forEach(function(el) { el.textContent = ''; });  // 清空继承值
 	var nameInput = $("input[name=\"name\"]", dialog);
 	var urlInput = $('input[name="url"]', dialog);
 	var styleSel = dialog.querySelector('input[name="style"]:checked') || dialog.querySelector('input[name="style"]');
@@ -238,10 +236,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 							}
 						}
 					}
-					for (var _i = 0; _i < inheritLabel.childNodes.length; _i++) {
-						var _n = inheritLabel.childNodes[_i];
-						if (_n.nodeType === 3) { _n.nodeValue = ' 继承自父级（' + styleName + '）'; break; }
-					}
+					inheritLabel.querySelector('.iv').textContent = '（' + styleName + '）';
 				}
 				}
 			}
@@ -257,8 +252,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 					var _inp2 = dialog.querySelector('input[name="type"][value=""]');
 					if (_inp2) {
 						var _parent2 = _inp2.parentElement;
-						while (_parent2.childNodes.length > 1) _parent2.removeChild(_parent2.lastChild);
-						_parent2.appendChild(document.createTextNode(' 继承自父级（' + typeName + '）'));
+						_parent2.querySelector('.iv').textContent = '（' + typeName + '）';
 					}
 				}
 				}
