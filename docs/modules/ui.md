@@ -241,3 +241,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-08 | `.remark` 从独立模板改为放在父模板（`response-card-streaming`、`one-endpoint`）中 | 本来就是父结构的一部分，无需独立模板 |
 | 2026-07-08 | buildTooltipHTML 从 `fromTemplate` 克隆行改为 `firstElementChild.cloneNode` 获取整个模板，直接填充行 | tooltip 行结构在 `tooltip-content` 模板中静态定义，`createTooltip` 懒克隆，`buildTooltipHTML` 只填充值 |
 | 2026-07-09 | 内联样式迁移到 utility class + classList。`style.display` → `classList.toggle('hidden')`（fullJson 显隐、眼睛图标切换）；移除无定义的 `.mb-1` 查询 | 与 CSS 分离，用 classList 而非 style.display 控制显隐
+| 2026-07-09 | 修复 dialog 编辑弹窗二次打开崩溃：重置空值 radio 标签 + null 安全 | 前一次调用修改了 radio 标签 DOM，第二次打开时 `querySelector` 返回 null |

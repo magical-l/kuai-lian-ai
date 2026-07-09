@@ -140,6 +140,13 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var dialog = $('dialog.editing.endpoint');
 	var isEdit = !!node;
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
+	// 重置空值 radio 标签，消除前一次调用留下的继承标注
+	['style', 'type'].forEach(function(name) {
+		var emptyRadio = dialog.querySelector('input[name="' + name + '"][value=""]');
+		if (emptyRadio && emptyRadio.parentElement.lastChild?.nodeType === 3) {
+			emptyRadio.parentElement.lastChild.textContent = '继承';
+		}
+	});
 	var nameInput = $("input[name=\"name\"]", dialog);
 	var urlInput = $('input[name="url"]', dialog);
 	var styleSel = dialog.querySelector('input[name="style"]:checked') || dialog.querySelector('input[name="style"]');
@@ -239,7 +246,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 			if (!(node ? node.type : '') && rcfg.type) {
 				setRadio('type', '', dialog);
 				if (hasParent) {
-				var typeInheritLabel = dialog.querySelector('input[name="type"][value=""]').parentElement;
+				var typeInheritInput = dialog.querySelector('input[name="type"][value=""]');
+				var typeInheritLabel = typeInheritInput ? typeInheritInput.parentElement : null;
 				var typeOpt = dialog.querySelector('input[name="type"][value="' + rcfg.type + '"]');
 				var typeName = typeOpt ? typeOpt.parentElement.textContent.trim() : rcfg.type;
 				if (typeInheritLabel) {
