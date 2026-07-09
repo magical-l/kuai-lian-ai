@@ -239,3 +239,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-08 | 复制按钮内容从 `copy-btn-content` 模板改为 `mk`+`text` 辅助函数 | 两个 span 过于简单，模板没必要；代码块无父模板可放 |
 | 2026-07-08 | 眼睛图标切换从 `innerHTML` 改为两个 SVG 静态存在按钮中，JS 切显隐 | 按钮在静态 HTML 中，直接放两个图标更简单 |
 | 2026-07-08 | `.remark` 从独立模板改为放在父模板（`response-card-streaming`、`one-endpoint`）中 | 本来就是父结构的一部分，无需独立模板 |
+| 2026-07-08 | buildTooltipHTML 从 `fromTemplate` 克隆行改为 `firstElementChild.cloneNode` 获取整个模板，直接填充行 | tooltip 行结构在 `tooltip-content` 模板中静态定义，`createTooltip` 懒克隆，`buildTooltipHTML` 只填充值 |

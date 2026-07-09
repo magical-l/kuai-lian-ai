@@ -147,30 +147,33 @@ function applyJoinBtnUI(btn, nid) {
 
 // === 共享 tooltip HTML 构建函数（端点树和已选列表复用）===
 function buildTooltipHTML(node, rcfg, nameOverride) {
-	var styleLabels = {
-		"openai": "OpenAI",
-		"claude": "Claude",
-		"gemini": "Gemini"
+	return function(el) {
+		var styleLabels = {
+			"openai": "OpenAI",
+			"claude": "Claude",
+			"gemini": "Gemini"
+		};
+		function inherited(val, own) {
+			return val && val !== own ? "↑ " : "";
+		}
+		function setRow(rowName, value, copyValue) {
+			var row = el.querySelector('[data-row="' + rowName + '"]');
+			row.querySelector(".value").textContent = value || "";
+			row.querySelector(".copy.value.btn").dataset.copy = (copyValue || value || "");
+			return row;
+		}
+		var tipName = nameOverride || node.name;
+		var tipBaseUrl = inherited(rcfg.baseUrl, node.baseUrl) + (rcfg.baseUrl || "");
+		var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? "(已设置)" : "");
+		var tipStyle = inherited(rcfg.style, node.style) ? "↑ " + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || "");
+		var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || "");
+		setRow("name", tipName, tipName);
+		setRow("baseUrl", tipBaseUrl, rcfg.baseUrl || "");
+		setRow("style", tipStyle, rcfg.style || "");
+		var keyRow = setRow("key", tipKey, rcfg.key || "");
+		keyRow.style.display = rcfg.key ? "" : "none";
+		setRow("model", tipModel || "-", rcfg.modelId || "");
+		var remarkRow = setRow("remark", node.remark || "", node.remark || "");
+		remarkRow.style.display = node.remark ? "" : "none";
 	};
-	function inherited(val, own) {
-		return val && val !== own ? "↑ " : "";
-	}
-	function row(label, value, copyValue) {
-		var el = fromTemplate("tooltip-row", ".row");
-		el.querySelector(".label").textContent = label + "：";
-		el.querySelector(".value").textContent = value || "";
-		el.querySelector(".copy.value.btn").dataset.copy = (copyValue || value || "");
-		return el.outerHTML;
-	}
-	var tipName = nameOverride || node.name;
-	var tipBaseUrl = inherited(rcfg.baseUrl, node.baseUrl) + (rcfg.baseUrl || "");
-	var tipKey = inherited(rcfg.key, node.key) + (rcfg.key ? "(已设置)" : "");
-	var tipStyle = inherited(rcfg.style, node.style) ? "↑ " + (styleLabels[rcfg.style] || rcfg.style) : (styleLabels[rcfg.style] || rcfg.style || "");
-	var tipModel = inherited(rcfg.modelId, node.modelId) + (rcfg.modelId || "");
-	return row("名称", tipName, tipName) +
-		row("地址", tipBaseUrl, rcfg.baseUrl || "") +
-		row("格式", tipStyle, rcfg.style || "") +
-		(rcfg.key ? row("Key", tipKey, rcfg.key || "") : "") +
-		row("模型", tipModel || "-", rcfg.modelId || "") +
-		(node.remark ? row("备注", node.remark, node.remark) : "");
 }

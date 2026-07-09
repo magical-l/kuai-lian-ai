@@ -174,3 +174,4 @@ tooltip 内含 copy 按钮（`button.copy`），点击将 `dataset.copy` 值写�
 | 2026-07-04 | openai 新增 buildImageRequest 方法 | 支持生图端点，URL 使用 `/v1/images/generations`，body 从 messages 提取 prompt，非流式 |
 | 2026-07-08 | createTooltip show 先测量再定位 | tooltip 初始 `display: none` 导致 `offsetWidth` 为 0，改用 `visibility: hidden` 临时显示测量实际尺寸后再计算位置 |
 | 2026-07-08 | 所有 provider 函数开头 strip baseUrl 尾部斜杠 | 防止 baseUrl 以 `/` 结尾时拼接出 `//` 双斜杠 URL |
+| 2026-07-08 | createTooltip 从 `createElement` + `innerHTML` 改为克隆 `tooltip-content` 模板 + `appendChild` | tooltip 容器和行结构直接定义在 HTML 模板中，JS 不构造 HTML |

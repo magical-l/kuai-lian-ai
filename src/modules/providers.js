@@ -393,9 +393,9 @@ function text(el, txt) {
 	return el;
 }
 // Tooltip通用组件
-function createTooltip(id, html) {
-	let el = null;
+function createTooltip(id, populate) {
 	let hideTimer = null;
+	var el = null;
 
 	function show(triggerEl) {
         if (hideTimer) {
@@ -403,45 +403,42 @@ function createTooltip(id, html) {
             hideTimer = null;
         }
 
-        el = $("#" + id);
-
         if (!el) {
-            el = doc.createElement("div");
-            el.id = id;
-            el.className = "tooltip";
-            el.innerHTML = html;
-            var tipParent = triggerEl.closest(".one.endpoint");
-
-            if (!tipParent)
-                tipParent = doc.body;
-
-            tipParent.appendChild(el);
-
-            $$("button.copy", el).forEach(btn => {
-                btn.onclick = e => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(btn.dataset.copy);
-                    btn.classList.add("copied");
-
-                    setTimeout(() => {
-                        btn.classList.remove("copied");
-                    }, 1500);
-                };
-            });
-
-            el.onmouseenter = () => {
-                if (hideTimer) {
-                    clearTimeout(hideTimer);
-                    hideTimer = null;
-                }
-            };
-
-            el.onmouseleave = () => hide();
-
-            el.onclick = function(e) {
-                e.stopPropagation();
-            };
+            el = $("#tooltip-content").content.cloneNode(true).querySelector(".tooltip");
         }
+        populate(el);
+
+        var tipParent = triggerEl.closest(".one.endpoint");
+
+        if (!tipParent)
+            tipParent = doc.body;
+
+        tipParent.appendChild(el);
+
+        $$("button.copy", el).forEach(btn => {
+            btn.onclick = e => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(btn.dataset.copy);
+                btn.classList.add("copied");
+
+                setTimeout(() => {
+                    btn.classList.remove("copied");
+                }, 1500);
+            };
+        });
+
+        el.onmouseenter = () => {
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+                hideTimer = null;
+            }
+        };
+
+        el.onmouseleave = () => hide();
+
+        el.onclick = function(e) {
+            e.stopPropagation();
+        };
 
         el.style.visibility = "hidden";
         el.style.display = "block";

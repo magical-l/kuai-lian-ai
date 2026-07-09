@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.9.0</span>
+			<span class="version">v6.9.1</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -298,6 +298,58 @@
 					<button class="stop btn square hidden" disabled aria-label="停止生成"><span class="stop-icon"></span></button>
 				</menu>
 			</footer>
+			<template id="tooltip-content">
+				<div class="tooltip">
+					<div class="row flex items-go-x" data-row="name">
+						<span class="label">名称：</span>
+						<span class="value"></span>
+						<button class="copy value btn , bare icon-only , square" data-copy="" title="复制">
+							<span class="copy icon ⧉">⧉</span>
+							<span class="done icon">✓</span>
+						</button>
+					</div>
+					<div class="row flex items-go-x" data-row="baseUrl">
+						<span class="label">地址：</span>
+						<span class="value"></span>
+						<button class="copy value btn , bare icon-only , square" data-copy="" title="复制">
+							<span class="copy icon ⧉">⧉</span>
+							<span class="done icon">✓</span>
+						</button>
+					</div>
+					<div class="row flex items-go-x" data-row="style">
+						<span class="label">格式：</span>
+						<span class="value"></span>
+						<button class="copy value btn , bare icon-only , square" data-copy="" title="复制">
+							<span class="copy icon ⧉">⧉</span>
+							<span class="done icon">✓</span>
+						</button>
+					</div>
+					<div class="row flex items-go-x" data-row="key">
+						<span class="label">Key：</span>
+						<span class="value"></span>
+						<button class="copy value btn , bare icon-only , square" data-copy="" title="复制">
+							<span class="copy icon ⧉">⧉</span>
+							<span class="done icon">✓</span>
+						</button>
+					</div>
+					<div class="row flex items-go-x" data-row="model">
+						<span class="label">模型：</span>
+						<span class="value"></span>
+						<button class="copy value btn , bare icon-only , square" data-copy="" title="复制">
+							<span class="copy icon ⧉">⧉</span>
+							<span class="done icon">✓</span>
+						</button>
+					</div>
+					<div class="row flex items-go-x" data-row="remark">
+						<span class="label">备注：</span>
+						<span class="value"></span>
+						<button class="copy value btn , bare icon-only , square" data-copy="" title="复制">
+							<span class="copy icon ⧉">⧉</span>
+							<span class="done icon">✓</span>
+						</button>
+					</div>
+				</div>
+			</template>
 		</section>
 		<div class="right divider col"></div>
 		<aside class="session list , flex items-go-y">
@@ -429,18 +481,6 @@
 		</footer>
 	</dialog>
 </main>
-
-<!-- shared micro-templates -->
-<template id="tooltip-row">
-	<div class="row flex items-go-x">
-		<span class="label"></span>
-		<span class="value"></span>
-		<button class="copy value btn , bare icon-only , square" data-copy="" title="复制">
-			<span class="copy char-style icon : ⧉">⧉</span>
-			<span class="done char-style icon : ✓">✓</span>
-		</button>
-	</div>
-</template>
 <div class="js container">
 	<script src="../vendor/marked.min.js"></script>
 	<script src="../vendor/highlight.min.js"></script>
