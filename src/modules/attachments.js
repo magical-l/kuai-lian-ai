@@ -143,8 +143,11 @@ function showEditGroupDialog(node, parentId, onSave) {
 	// 重置空值 radio 标签，消除前一次调用留下的继承标注
 	['style', 'type'].forEach(function(name) {
 		var emptyRadio = dialog.querySelector('input[name="' + name + '"][value=""]');
-		if (emptyRadio && emptyRadio.parentElement.lastChild?.nodeType === 3) {
-			emptyRadio.parentElement.lastChild.textContent = '继承';
+		if (emptyRadio) {
+			emptyRadio.parentElement.classList.remove("hidden");  // 恢复可见（前一次可能隐藏了）
+			if (emptyRadio.parentElement.lastChild?.nodeType === 3) {
+				emptyRadio.parentElement.lastChild.textContent = '继承';
+			}
 		}
 	});
 	var nameInput = $("input[name=\"name\"]", dialog);
@@ -281,8 +284,12 @@ function showEditGroupDialog(node, parentId, onSave) {
 			}
 		}
 
-		// 最顶级节点：默认ChatGPT式
+		// 最顶级节点：去继承、默认ChatGPT式
 		if (!hasParent) {
+			['style', 'type'].forEach(function(name) {
+				var emptyRadio = dialog.querySelector('input[name="' + name + '"][value=""]');
+				if (emptyRadio) emptyRadio.parentElement.classList.add("hidden");
+			});
 			setRadio('style', node ? node.style || 'openai' : 'openai', dialog);
 		}
 
