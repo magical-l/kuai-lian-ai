@@ -354,7 +354,7 @@ button, .btn {
 		&.copied {
 			pointer-events: none;  /* 禁止再次点击 */
 
-			& .copy.icon, & .duplicate.icon { display: none; }
+			& .copy.icon { display: none; }
 			& .done.icon { display: inline !important; }
 		}
 	}
