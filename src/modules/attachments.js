@@ -358,14 +358,14 @@ function showEditGroupDialog(node, parentId, onSave) {
 			} else if (idx === formFields.length - 1) {
 				// 最后一个输入框 → 保存
 				e.preventDefault();
-				var saveBtn = $('.save', dialog);
+				var saveBtn = $('.done.btn', dialog);
 				if (saveBtn) saveBtn.click();
 			}
 		});
 	}
 	onClick({
 		'.cancel': function() { dialog.close(); },
-		'.save': function() {
+		'.done.btn': function() {
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
 			if (!theName && theModelId) {
