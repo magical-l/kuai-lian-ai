@@ -360,6 +360,14 @@ button, .btn {
 	}
 }
 
+/* ====== 各种切换按钮 ====== */
+/* 侧栏 toggle: checked = 右侧栏隐藏 */
+body:has(.toggle.sidebar.near-right > input:checked) {
+	& aside.near-right, & .right.divider.col {
+		display: none;
+	}
+}
+
 /* ============ 单个端点（通用） ============ */
 .one.endpoint {
 	& .remark {
@@ -1308,7 +1316,7 @@ dialog[open] {
 			padding: var(--space-1) var(--space-6);
 			border-bottom: 1px solid var(--border-subtle);
 		}
-		button.toggle.apikey {
+		& .toggle.apikey {
 			--btn-h: 36px;
 		}
 		> footer {

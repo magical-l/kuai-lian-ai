@@ -148,10 +148,14 @@ function showEditGroupDialog(node, parentId, onSave) {
 		}
 	});
 	dialog.querySelectorAll('.inheriting-val').forEach(function(el) { el.textContent = ''; });  // 清空继承值
+	// 重置 API Key 可见性 toggle
+	var toggleCheckbox = dialog.querySelector('.toggle.apikey input');
+	if (toggleCheckbox) toggleCheckbox.checked = false;
 	var nameInput = $("input[name=\"name\"]", dialog);
 	var urlInput = $('input[name="url"]', dialog);
 	var styleSel = dialog.querySelector('input[name="style"]:checked') || dialog.querySelector('input[name="style"]');
 	var keyInput = $("input[name=\"apikey\"]", dialog);
+	keyInput.type = 'password';  // 重置输入类型（前一次可能被 toggle 改成 text）
 	var modelidInput = $('input[name="model-id"]', dialog);
 	var remarkInput = $("input[name=\"remark\"]", dialog);
 	var typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
@@ -333,16 +337,11 @@ function showEditGroupDialog(node, parentId, onSave) {
 		doc.removeEventListener('keydown', escHandler);
 		origClose();
 	};
-	var toggleBtn = $('button.toggle.apikey.visibility', dialog);
-	if (toggleBtn) {
-		toggleBtn.onclick = function(e) {
-			e.preventDefault();
-			var isPw = keyInput.type === 'password';
-			keyInput.type = isPw ? 'text' : 'password';
-			toggleBtn.querySelectorAll('.fill-style.icon').forEach(function(el, i) {
-				el.classList.toggle('hidden', isPw === (i === 0));
-			});
-		};
+	toggleCheckbox = dialog.querySelector('.toggle.apikey input');
+	if (toggleCheckbox) {
+		toggleCheckbox.addEventListener('change', function() {
+			keyInput.type = this.checked ? 'text' : 'password';
+		});
 	}
 	// Enter → 切到下一个输入框
 	var formFields = [nameInput, urlInput, keyInput, modelidInput, remarkInput];

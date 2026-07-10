@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.9.6</span>
+			<span class="version">v6.9.7</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -48,9 +48,11 @@
 			</div>
 		</div>
 		<nav class="flex items-go-x">
-			<button class="toggle btn : right-sidebar visibility , bare icon-only , square" title="显示/隐藏右侧栏">
-				<span class="fill-style icon"><svg><use href="icons.svg#icon-sidebar-open"></use></svg></span>
-			</button>
+			<label class="toggle btn : sidebar near-right visibility , bare icon-only , square" title="显示/隐藏右侧栏">
+				<input type="checkbox" hidden>
+				<span class="fill-style icon on"><svg><use href="icons.svg#icon-sidebar-open"/></svg></span>
+				<span class="fill-style icon off"><svg><use href="icons.svg#icon-sidebar-closed"/></svg></span>
+			</label>
 			<button class="help btn , bare icon-only , square" title="帮助"><span class="char-style icon">?</span></button>
 			<dialog class="help">
 				<header>
@@ -371,7 +373,7 @@
 
 		<div class="right divider col"></div>
 
-		<aside class="session list , flex items-go-y">
+		<aside class="near-right , session list , flex items-go-y">
 			<header>会话记录</header>
 			<ol class="scrollable on-y when-content-long">
 				<template id="one-session">
@@ -476,18 +478,19 @@
 					<span class="hint"></span>
 				</span>
 			</div>
-			<label class="form-row , flex items-go-x items-y-near-center">
-				<span class="field-label">API Key（选填）:</span>
+			<div class="form-row , flex items-go-x items-y-near-center">
+				<label class="field-label" for="apikey-input">API Key（选填）:</label>
 				<span class="field-control">
 					<span class="flex items-go-x items-y-near-center" style="gap:var(--space-1)">
-						<input name="apikey" type="password">
-						<button type="button" class="toggle btn : apikey visibility , square icon-only" title="显示/隐藏">
-							<span class="fill-style icon"><svg><use href="icons.svg#icon-eye"/></svg></span>
-							<span class="fill-style icon hidden"><svg><use href="icons.svg#icon-eye-off"/></svg></span>
-						</button>
+						<input name="apikey" id="apikey-input" type="password">
+						<label class="toggle btn : apikey visibility , square icon-only" title="显示/隐藏">
+							<input type="checkbox" hidden>
+							<span class="fill-style icon on"><svg><use href="icons.svg#icon-eye"/></svg></span>
+							<span class="fill-style icon off"><svg><use href="icons.svg#icon-eye-off"/></svg></span>
+						</label>
 					</span>
 				</span>
-			</label>
+			</div>
 			<label class="form-row , flex items-go-x items-y-near-center">
 				<span class="field-label">模型名（选填）:</span>
 				<span class="field-control"><input name="model-id" placeholder="如 gpt-4o"></span>

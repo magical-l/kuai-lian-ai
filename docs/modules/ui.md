@@ -243,3 +243,6 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-09 | 内联样式迁移到 utility class + classList。`style.display` → `classList.toggle('hidden')`（fullJson 显隐、眼睛图标切换）；移除无定义的 `.mb-1` 查询 | 与 CSS 分离，用 classList 而非 style.display 控制显隐
 | 2026-07-09 | 修复 dialog 编辑弹窗二次打开崩溃：重置空值 radio 标签 + null 安全 | 前一次调用修改了 radio 标签 DOM，第二次打开时 `querySelector` 返回 null |
 | 2026-07-10 | Toggle 按钮统一命名：`toggle btn : <目标> [visibility]` | `.toggle-sidebar` 违反正交拆分原则，统一为 `toggle btn : right-sidebar visibility`；API key toggle 同步为 `toggle btn : apikey visibility`。`:` 为视觉分隔符，不作为 CSS 选择目标 |
+| 2026-07-10 | 侧栏 toggle 改用 checkbox + `:has()` 模式 | `button` → `label > input[checkbox]`，CSS `:has()` 控制侧栏显隐和图标切换，JS 只做 localStorage 持久化；View Transition 移除；类名 `.right-sidebar` → `.sidebar.near-right` |
+| 2026-07-10 | API Key toggle 也改用 checkbox 模式 | `form-row` 从 `<label>` 改为 `<div>`，`field-label` 改为 `<label for="apikey-input">`；toggle button → label + checkbox，JS 只做 `input.type` 切换 |
+| 2026-07-10 | 图标切换规则 `.on`/`.off` 提升到 common.css | `toggle > input:checked ~ .icon.on { display:none }` + `input:not(:checked) ~ .icon.off { display:none }`，所有 toggle 共享，无需在项目 CSS 中重复 |

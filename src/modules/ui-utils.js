@@ -99,37 +99,12 @@ function initDividers() {
 			doc.body.style.userSelect = '';
 		}
 	}
-	const sidebarRight = $('aside.session.list:not(.divider)');
-	const dividerRight = $('.divider.col.right');
-	const btnToggleSidebar = $('.toggle.right-sidebar');
-
-	function updateSidebarToggleIcon(isHidden) {
-		const useEl = document.querySelector('.toggle.right-sidebar use');
-		if (useEl) {
-			useEl.setAttribute('href', isHidden ? 'icons.svg#icon-sidebar-closed' : 'icons.svg#icon-sidebar-open');
-		}
-	}
-	if (btnToggleSidebar && sidebarRight && dividerRight) {
-		const savedHidden = localStorage.getItem('sidebar-right-hidden') === 'true';
-		if (savedHidden) {
-			sidebarRight.classList.add('hidden');
-			dividerRight.classList.add('hidden');
-		}
-		updateSidebarToggleIcon(savedHidden);
-		btnToggleSidebar.on('click', () => {
-				let isHidden;
-				const doToggle = () => {
-					isHidden = sidebarRight.classList.toggle('hidden');
-					dividerRight.classList.toggle('hidden', isHidden);
-					updateSidebarToggleIcon(isHidden);
-				};
-				if (document.startViewTransition) {
-					document.startViewTransition(doToggle);
-				} else {
-					doToggle();
-				}
-				localStorage.setItem('sidebar-right-hidden', isHidden);
-			});
+	const toggleCheckbox = document.querySelector('.toggle.sidebar.near-right input');
+	if (toggleCheckbox) {
+		toggleCheckbox.checked = localStorage.getItem('sidebar-right-hidden') === 'true';
+		toggleCheckbox.addEventListener('change', function() {
+			localStorage.setItem('sidebar-right-hidden', this.checked);
+		});
 	}
 	$$('.divider.col').forEach(div => {
 		div.on('mousedown', startDragHorizontal);

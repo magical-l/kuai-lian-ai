@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-08
+last_updated: 2026-07-10
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -268,6 +268,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 1. 发送模式选项高亮：`.split.btn-group .option.btn:has(input:checked)` → 切换文字颜色
 2. 加入会话勾选：`.btn.join-session:has(input:checked)` → 切换 `--btn-text-color` 为 success
 3. 勾选图标填充：`.join-session:has(input:checked) svg use` → SVG `fill: currentColor`
+4. 侧栏 toggle：`body:has(.toggle.sidebar.near-right > input:checked) aside.near-right` → 控制侧栏显示/隐藏
 
 ## Transition / Animation 策略
 
@@ -309,6 +310,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 ## 决策日志
 
 - 2026-07-01: 初始文档创建。确认 style.css 实际 ~1200 行（非预估的 3000+）、:has() 共 3 处（非"大量"）
+- 2026-07-10: 新增第 4 处 `:has()` 使用——侧栏 toggle，CSS 变量驱动，JS 仅做 localStorage 持久化
 - 2026-07-01: 暗色模式实现。采用 `html.dark` class 覆写全部 CSS 变量，而非 `prefers-color-scheme` 媒体查询。交互三态（亮→暗→跟随系统），偏好持久化到 settings。html.dark 块约 40 行，新增 4 个 SVG icon 符号。版本 6.3.2。
 - 2026-07-02: 根级 compact 节点间距修复。`.compact` 设 `margin-bottom:0` 对子级节点正确（间距由 `.children` 的 gap 控制），但根级 compact 节点（`<ol>` 的直接子元素）丢失了正常间距。新增 `ol > .one.endpoint.compact` 恢复 `margin-bottom:var(--space-3)` 和底部边框。
 - 2026-07-05: 清除 style.css 中所有注释掉的外部 CSS 变量副本（共 9 组）。这些是 common.css 剥离后的历史快照，其中 `--radius-*: 0` 与实际值（4/6/8/12px）不符。变量分层不再需要在 style.css 中留注释副本，统一在本文档的变量分层表中说明。
