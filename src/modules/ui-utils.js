@@ -101,10 +101,10 @@ function initDividers() {
 	}
 	const sidebarRight = $('aside.session.list:not(.divider)');
 	const dividerRight = $('.divider.col.right');
-	const btnToggleSidebar = $('.toggle-sidebar');
+	const btnToggleSidebar = $('.toggle.right-sidebar');
 
 	function updateSidebarToggleIcon(isHidden) {
-		const useEl = document.querySelector('.toggle-sidebar use');
+		const useEl = document.querySelector('.toggle.right-sidebar use');
 		if (useEl) {
 			useEl.setAttribute('href', isHidden ? 'icons.svg#icon-sidebar-closed' : 'icons.svg#icon-sidebar-open');
 		}

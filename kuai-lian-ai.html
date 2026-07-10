@@ -64,7 +64,7 @@
 			</div>
 		</div>
 		<nav class="flex items-go-x">
-			<button class="toggle-sidebar btn , bare icon-only , square" title="显示/隐藏右侧栏">
+			<button class="toggle btn : right-sidebar visibility , bare icon-only , square" title="显示/隐藏右侧栏">
 				<span class="fill-style icon"><svg><use href="icons.svg#icon-sidebar-open"></use></svg></span>
 			</button>
 			<button class="help btn , bare icon-only , square" title="帮助"><span class="char-style icon">?</span></button>
@@ -497,7 +497,7 @@
 				<span class="field-control">
 					<span class="flex items-go-x items-y-near-center" style="gap:var(--space-1)">
 						<input name="apikey" type="password">
-						<button type="button" class="toggle apikey visibility btn , square icon-only" title="显示/隐藏">
+						<button type="button" class="toggle btn : apikey visibility , square icon-only" title="显示/隐藏">
 							<span class="fill-style icon"><svg><use href="icons.svg#icon-eye"/></svg></span>
 							<span class="fill-style icon hidden"><svg><use href="icons.svg#icon-eye-off"/></svg></span>
 						</button>
@@ -2666,9 +2666,9 @@ function initDividers() {
 	}
 	const sidebarRight = $('aside.session.list:not(.divider)');
 	const dividerRight = $('.divider.col.right');
-	const btnToggleSidebar = $('.toggle-sidebar');
+	const btnToggleSidebar = $('.toggle.right-sidebar');
 	function updateSidebarToggleIcon(isHidden) {
-		const useEl = document.querySelector('.toggle-sidebar use');
+		const useEl = document.querySelector('.toggle.right-sidebar use');
 		if (useEl) {
 			useEl.setAttribute('href', isHidden ? 'icons.svg#icon-sidebar-closed' : 'icons.svg#icon-sidebar-open');
 		}
