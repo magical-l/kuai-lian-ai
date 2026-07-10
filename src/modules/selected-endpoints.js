@@ -106,13 +106,13 @@ function bindSelectorEvents() {
         var selRcfg = resolveNodeConfig(selEndpointId);
         var selDisplayName = [...selAncestors.map(a => a.name), selNode.name].join("/");
         var selTooltipId = "tooltip-sel-" + selEndpointId.replace(/[:\/\\]/g, '-');
-        var selTooltip = createTooltip(selTooltipId, buildTooltipHTML(selNode, selRcfg, selDisplayName));
+        var selTooltip = createTooltip(selTooltipId, tag, buildTooltipHTML(selNode, selRcfg, selDisplayName));
         tag.addEventListener("mouseover", function(e) {
             if (e.target.closest('.remove.btn')) {
                 selTooltip.hide();
                 return;
             }
-            selTooltip.show(tag);
+            selTooltip.show();
         });
         tag.addEventListener("mouseleave", function() {
             selTooltip.hide();

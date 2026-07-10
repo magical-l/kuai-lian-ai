@@ -291,82 +291,6 @@ function onClick(handlers, ctx = doc) {
 		$(sel, ctx).onclick = fn;
 	}
 }
-// 显示/隐藏元素
-function show(el) {
-    if (hideTimer) {
-        clearTimeout(hideTimer);
-        hideTimer = null;
-    }
-
-    el = $("#" + id);
-
-    if (!el) {
-        el = doc.createElement("div");
-        el.id = id;
-        el.className = "tooltip";
-        el.innerHTML = html;
-        var tipParent = triggerEl.closest(".one.endpoint");
-
-        if (!tipParent)
-            tipParent = doc.body;
-
-        tipParent.appendChild(el);
-
-        $$("button.copy", el).forEach(btn => {
-            btn.onclick = e => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(btn.dataset.copy);
-                btn.classList.add("copied");
-
-                setTimeout(() => {
-                    btn.classList.remove("copied");
-                }, 1500);
-            };
-        });
-
-        el.onmouseenter = () => {
-            if (hideTimer) {
-                clearTimeout(hideTimer);
-                hideTimer = null;
-            }
-        };
-
-        el.onmouseleave = () => hide();
-
-        el.onclick = function(e) {
-            e.stopPropagation();
-        };
-    }
-
-    el.style.visibility = "hidden";
-    el.style.display = "block";
-    const measW = el.offsetWidth, measH = el.offsetHeight || 80;
-    el.style.display = "none";
-    el.style.visibility = "";
-    const rect = triggerEl.getBoundingClientRect();
-    let top = rect.bottom + 4, left = rect.left;
-
-    if (top + measH > window.innerHeight)
-        top = rect.top - measH - 4;
-
-    if (left + measW > window.innerWidth)
-        left = window.innerWidth - measW - 10;
-
-    if (left < 10)
-        left = 10;
-
-    el.style.top = top + "px";
-    el.style.left = left + "px";
-    el.style.display = "block";
-}
-
-function hide(el) {
-	el.style.display = 'none';
-}
-
-function toggle(el, visible) {
-	el.style.display = visible ? '' : 'none';
-}
 // 确认后执行
 function confirmAction(msg, action) {
 	if (confirm(msg)) action();
@@ -393,65 +317,54 @@ function text(el, txt) {
 	return el;
 }
 // Tooltip通用组件
-function createTooltip(id, populate) {
-	let hideTimer = null;
-	var el = null;
+function createTooltip(id, triggerEl, populate) {
+	var el = $("#tooltip-content").content.cloneNode(true).querySelector(".tooltip");
+	populate(el);  // 构造时一次性填入数据
+
 	var anchorName = '--tooltip-trigger-' + id;
+	el.style.setProperty('position-anchor', anchorName);
+	triggerEl.style.setProperty('anchor-name', anchorName);
 
-	// 构造时一次性初始化
-	if (!el) {
-		el = $("#tooltip-content").content.cloneNode(true).querySelector(".tooltip");
-		el.style.setProperty('position-anchor', anchorName);
-		// 绑定复制按钮
-		$$("button.copy", el).forEach(btn => {
-			btn.onclick = e => {
-				e.stopPropagation();
-				navigator.clipboard.writeText(btn.dataset.copy);
-				btn.classList.add("copied");
-				setTimeout(() => btn.classList.remove("copied"), 1500);
-			};
-		});
-		// 悬停和点击事件
-		el.onmouseenter = () => {
-			if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+	var parent = triggerEl.closest('.one.endpoint') || doc.body;
+	parent.appendChild(el);
+
+	// 绑定复制按钮
+	$$("button.copy", el).forEach(btn => {
+		btn.onclick = e => {
+			e.stopPropagation();
+			navigator.clipboard.writeText(btn.dataset.copy);
+			btn.classList.add("copied");
+			setTimeout(() => btn.classList.remove("copied"), 1500);
 		};
-		el.onmouseleave = () => hide();
-		el.onclick = function(e) { e.stopPropagation(); };
-	}
+	});
 
-	function show(triggerEl) {
-		if (hideTimer) {
-			clearTimeout(hideTimer);
-			hideTimer = null;
-		}
+	var hideTimer = null;
+	el.onmouseenter = () => { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } };
+	el.onmouseleave = () => { hideTimer = setTimeout(() => { el.hidePopover(); hideTimer = null; }, 100); };
+	el.onclick = (e) => e.stopPropagation();
 
-		populate(el);
-		triggerEl.style.setProperty('anchor-name', anchorName);
-
-		var tipParent = triggerEl.closest(".one.endpoint");
-		if (!tipParent) tipParent = doc.body;
-		tipParent.appendChild(el);
-
-		// 弹出，超出底部则翻转
-		el.showPopover();
-		if (el.getBoundingClientRect().bottom > window.innerHeight) {
-			el.hidePopover();
-			el.style.setProperty('top', 'auto');
-			el.style.setProperty('bottom', 'anchor(top)');
-			el.style.setProperty('margin-top', '');
-			el.style.setProperty('margin-bottom', '4px');
-			el.showPopover();
-		}
-	}function remove() {
-		if (el) {
-			el.remove();
-			el = null;
-		}
-	}
 	return {
-		show,
-		hide,
-		remove,
-		el
+		show: function() {
+			if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+			el.showPopover();
+			if (el.getBoundingClientRect().bottom > window.innerHeight) {
+				el.hidePopover();
+				el.style.setProperty('top', 'auto');
+				el.style.setProperty('bottom', 'anchor(top)');
+				el.style.setProperty('margin-top', '');
+				el.style.setProperty('margin-bottom', '4px');
+				el.showPopover();
+			}
+		},
+		hide: function() {
+			if (hideTimer) clearTimeout(hideTimer);
+			hideTimer = setTimeout(function() {
+				el.hidePopover();
+				hideTimer = null;
+			}, 100);
+		},
+		remove: function() {
+			el.remove();
+		}
 	};
 }

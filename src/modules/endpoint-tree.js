@@ -85,14 +85,14 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 
 			var tooltipId = "tooltip-" + node.id;
 			var tooltipHTML = buildTooltipHTML(node, rcfg, node.name);
-			var tooltip = createTooltip(tooltipId, tooltipHTML);
+			var tooltip = createTooltip(tooltipId, nameSpan, tooltipHTML);
 
 			summaryEl.on("mouseover", function(e) {
 				if (actionsEl.contains(e.target)) {
 					tooltip.hide();
 					return;
 				}
-				tooltip.show(nameSpan);
+				tooltip.show();
 			});
 			summaryEl.on("mouseleave", function() {
 				tooltip.hide();
