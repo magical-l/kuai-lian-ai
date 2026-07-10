@@ -175,7 +175,7 @@ function renderResponse(container, msg, groups) {
         }
 
         // 移除流式加载时的 spinner 图标
-        const spinIcon = $('.status-icon', existing);
+        const spinIcon = $('.status.loading', existing);
         if (spinIcon) spinIcon.remove();
 
         // 升级 .say：textContent → innerHTML (markdown)

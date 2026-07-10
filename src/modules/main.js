@@ -618,7 +618,7 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 		if (stopBtn) stopBtn.classList.remove('visible');
 		const contentEl = $('.say', card);
 		const meta = $('header', card);
-		const icon = meta ? $('.status-icon', meta) : null;
+		const icon = meta ? $('.status.loading', meta) : null;
 		if (icon) {
 			icon.classList.remove('spin');
 			icon.classList.add('status');
@@ -662,7 +662,7 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 				let totalEl = $('.total', meta);
 				if (!totalEl) {
 					totalEl = mk('span', 'response total');
-					const insertAfter = $('.status', meta) || $('.status-icon', meta);
+					const insertAfter = $('.status', meta) || $('.status.loading', meta);
 					if (insertAfter) {
 						insertAfter.insertAdjacentElement('afterend', totalEl);
 					} else {

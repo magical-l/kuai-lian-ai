@@ -541,10 +541,7 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 				&.medium { color: var(--warning); }
 				&.fast { color: var(--success); }
 			}
-			& .status-icon {
-				font-size: 10px;
-			}
-			& .stop-one.btn {
+						& .stop-one.btn {
 				--btn-h: 20px;
 				--btn-w: 20px;
 				margin-left: auto;
@@ -1436,5 +1433,4 @@ dialog[open] {
 
 /* ============ View Transitions ============ */
 aside.endpoint.list { view-transition-name: sidebar-left; }
-aside.session.list { view-transition-name: sidebar-right; }
 .msg.list { view-transition-name: main-chat; }
