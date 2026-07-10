@@ -147,7 +147,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			emptyRadio.parentElement.classList.remove("hidden");  // 恢复可见（前一次可能隐藏了）
 		}
 	});
-	dialog.querySelectorAll('.inherited-val').forEach(function(el) { el.textContent = ''; });  // 清空继承值
+	dialog.querySelectorAll('.inheriting-val').forEach(function(el) { el.textContent = ''; });  // 清空继承值
 	var nameInput = $("input[name=\"name\"]", dialog);
 	var urlInput = $('input[name="url"]', dialog);
 	var styleSel = dialog.querySelector('input[name="style"]:checked') || dialog.querySelector('input[name="style"]');
@@ -236,7 +236,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 							}
 						}
 					}
-					inheritLabel.querySelector('.inherited-val').textContent = '（' + styleName + '）';
+					inheritLabel.querySelector('.inheriting-val').textContent = '（' + styleName + '）';
 				}
 				}
 			}
@@ -252,7 +252,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 					var _inp2 = dialog.querySelector('input[name="type"][value=""]');
 					if (_inp2) {
 						var _parent2 = _inp2.parentElement;
-						_parent2.querySelector('.inherited-val').textContent = '（' + typeName + '）';
+						_parent2.querySelector('.inheriting-val').textContent = '（' + typeName + '）';
 					}
 				}
 				}
