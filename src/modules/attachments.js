@@ -119,8 +119,8 @@ function addInheritIcon(inputEl) {
 	inputEl._inheritIconAdded = true;
 	inputEl.style.flex = '1';
 	var icon = document.createElement('span');
-	icon.className = 'icon inherit-icon';
-	icon.textContent = '↑';
+	icon.className = 'icon inherit-icon inherit';
+	icon.textContent = '';
 	icon.title = '继承自父级';
 	icon.style.cssText = 'cursor:help;font-size:12px;color:var(--text-muted);flex-shrink:0;margin-right:3px;';
 	var parent = inputEl.parentNode;
@@ -638,18 +638,18 @@ function renderPendingAttachments() {
 	if (!row) return;
 	row.innerHTML = '';
 	pendingAttachments.forEach(att => {
-		const thumb = mk('div', `thumb ${att.type === 'image' ? 'image' : 'file'} , flex items-go-x`);
+		const thumb = mk('div', `thumb icon ${att.type === 'image' ? 'image' : 'file'} , flex items-go-x`);
 		thumb.dataset.id = att.id;
 		if (att.type === 'image' && att.previewUrl) {
 			thumb.style.backgroundImage = `url(${att.previewUrl})`;
 		} else {
-			thumb.textContent = '📄';
+			thumb.textContent = '';
 		}
 		// hover显示名字
 		thumb.onmouseenter = () => showAttachmentTooltip(att.name, thumb);
 		thumb.onmouseleave = () => hideAttachmentTooltip();
-		const remove = mk('span', 'remove btn');
-		remove.textContent = '×';
+		const remove = mk('span', 'icon remove btn');
+		remove.textContent = '';
 		remove.onclick = (e) => {
 			e.stopPropagation();
 			removeAttachment(att.id);

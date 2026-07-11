@@ -541,7 +541,7 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 				&.medium { color: var(--warning); }
 				&.fast { color: var(--success); }
 			}
-						& .stop-one.btn {
+			& .stop-one.btn {
 				--btn-h: 20px;
 				--btn-w: 20px;
 				margin-left: auto;
@@ -556,6 +556,9 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 					background: currentColor;
 					border-radius: 1px;
 				}
+			}
+			&:has(.status.loading) .copy.content.btn {
+				display: none;
 			}
 		}
 		& .say {

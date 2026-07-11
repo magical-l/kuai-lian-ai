@@ -148,12 +148,12 @@
 					</label>
 				</div>
 				<span class="btn-group : actions , flex items-go-x">
-					<button class="test-all btn , bare icon-only , square shape" title="测试全部连接"><span class="char-style icon">🔗</span></button>
+					<button class="test-all btn , bare icon-only , square shape" title="测试全部连接"><span class="char-style icon link"></span></button>
 					<button class="collapse-all btn , bare icon-only , square shape" title="收起全部">
 						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-collapse-all"></use></svg></span>
 					</button>
 					<button class="add-group btn , bare icon-only , square shape" title="新增端点">
-						<span class="char-style icon">+</span>
+						<span class="char-style icon add"></span>
 					</button>
 				</span>
 			</header>
@@ -164,17 +164,16 @@
 							<summary>
 								<header class="inline flex items-x-mutex items-y-near-center">
 									<span class="drag handle btn , bare icon-only , square shape" draggable="true" title="拖动排序">
-										<span class="char-style icon">⋮⋮</span>
+										<span class="char-style icon drag"></span>
 									</span>
 									<span class="char-style icon : endpoint-type badge icon-only"></span>
 									<span class="name"></span>
-									<span class="remark"></span>
 									<div class="btn-group actions , flex items-go-x">
 										<button class="add-child btn , bare icon-only , square shape" title="添加子节点">
-											<span class="char-style icon">+</span>
+											<span class="char-style icon add"></span>
 										</button>
 										<button class="test-connection btn , bare icon-only , square shape" title="测试连接">
-											<span class="char-style icon">🔗</span>
+											<span class="char-style icon link"></span>
 										</button>
 										<label class="join-session btn , bare icon-only , square shape" title="加入当前会话">
 											<input name="joined" type="checkbox">
@@ -232,7 +231,6 @@
 				<article class="one response msg">
 					<header class="flex items-go-x">
 						<span class="name"></span>
-						<span class="remark"></span>
 						<span class="status icon : loading , char-style , spin animation"></span>
 						<button title="复制" class="copy content btn , bare icon-only , square shape">
 							<span class="char-style icon : copy"></span>
@@ -254,7 +252,7 @@
 						<div class="embedding-result hidden">
 							<div class="flex items-go-x items-y-near-center" style="gap:8px">
 								<strong>嵌入维度:</strong> <span class="dim"></span>
-								<button class="expand-json btn bare square shape icon-only" title="展开完整向量">▶</button>
+								<button class="expand-json btn bare square shape icon-only" title="展开完整向量"><span class="char-style icon expand"></span></button>
 							</div>
 							<div class="flex items-go-x items-y-near-center" style="gap:8px">
 								<strong>预览:</strong> <code class="preview"></code>
@@ -280,7 +278,7 @@
 							<span class="endpoint-type badge icon icon-only"></span>
 							<span class="full name"></span>
 							<span class="remark"></span>
-							<span class="btn remove bare icon-only" data-endpoint="">✕</span>
+							<span class="remove btn , bare icon-only icon" data-endpoint=""></span>
 						</li>
 					</template>
 				</ul>

@@ -114,8 +114,8 @@ function renderMessages(messages, groups, onCopy) {
 						nameEl.textContent = att.name || '图片';
 						attEl.addChild(nameEl);
 					} else if (att.type === 'file' && att.source) {
-						const fileIcon = mk('span');
-						fileIcon.textContent = '📄';
+						const fileIcon = mk('span', 'icon file');
+						fileIcon.textContent = '';
 						attEl.addChild(fileIcon);
 						const nameEl = mk('span', 'name');
 						nameEl.textContent = att.name || '文件';
@@ -200,8 +200,8 @@ function appendUserMessage(msg) {
 					nameEl.textContent = att.name || '图片';
 					attEl.addChild(nameEl);
 				} else if (att.type === 'file' && att.source) {
-					const fileIcon = mk('span');
-					fileIcon.textContent = '📄';
+					const fileIcon = mk('span', 'icon file');
+					fileIcon.textContent = '';
 					attEl.addChild(fileIcon);
 					const nameEl = mk('span', 'name');
 					nameEl.textContent = att.name || '文件';
@@ -241,12 +241,7 @@ function appendUserMessage(msg) {
             const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
             const nameEl = $('.name', existing);
             if (nameEl) {
-                const remark = info?.node?.remark || "";
                 nameEl.textContent = name;
-                var remarkSpan = nameEl.parentElement.querySelector('.remark');
-                if (remarkSpan) {
-                    remarkSpan.textContent = ' ' + remark;
-                }
             }
             container.appendChild(existing);
         }
@@ -272,13 +267,8 @@ function appendUserMessage(msg) {
 
         const nameEl = $('.name', meta);
         if (nameEl && info) {
-            const remark = info?.node?.remark || "";
             const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
             nameEl.textContent = name;
-                var remarkSpan = nameEl.parentElement.querySelector('.remark');
-                if (remarkSpan) {
-                    remarkSpan.textContent = ' ' + remark;
-                }
         }
 
         const timeStr = r.timestamp ? formatDateTime(r.timestamp) : "";
@@ -294,7 +284,7 @@ function appendUserMessage(msg) {
             let waitEl = $('.wait', meta);
             if (!waitEl) {
                 waitEl = mk('span', 'wait time');
-                if (nameEl) nameEl.insertAdjacentElement('afterend', waitEl);
+                if (timeEl) timeEl.insertAdjacentElement('afterend', waitEl);
             }
             waitEl.textContent = durationStr;
             const speedClass = getSpeedClass(r.firstTokenTime);
@@ -306,7 +296,7 @@ function appendUserMessage(msg) {
             let totalEl = $('.total', meta);
             if (!totalEl) {
                 totalEl = mk('span', 'total time');
-                const insertAfter = $('.status', meta) || $('.wait', meta) || $('.time', meta) || nameEl;
+                const insertAfter = $('.wait', meta) || $('.time', meta) || nameEl;
                 if (insertAfter) insertAfter.insertAdjacentElement('afterend', totalEl);
             }
             totalEl.textContent = totalStr;
@@ -314,14 +304,12 @@ function appendUserMessage(msg) {
 
         let statusEl = $('.status', meta);
         if (!statusEl) {
-            statusEl = mk('span', 'status');
+            statusEl = mk('span', 'status icon');
             const insertAfter = $('.total', meta) || $('.wait', meta) || $('.time', meta) || nameEl;
             if (insertAfter) insertAfter.insertAdjacentElement('afterend', statusEl);
         }
-        statusEl.textContent = getStatusText(r.status);
-        if (r.status === "completed") statusEl.classList.add("completed");
-        else if (r.status === "failed") statusEl.classList.add("failed");
-        else if (r.status === "stopped") statusEl.classList.add("stopped");
+        statusEl.textContent = "";
+        statusEl.classList.add(getStatusText(r.status));
 
         // 错误信息：放到 .content 中（在 .say 后面），有错误时隐藏复制按钮
         let errorEl = $('.error', existing);  // 在整张 card 里找
@@ -402,7 +390,12 @@ copyBtn.onclick = () => {
             const expandBtn = embMeta.querySelector('.expand-json');
             expandBtn.onclick = function() {
                 fullJsonPre.classList.toggle('hidden');
-                this.textContent = fullJsonPre.classList.contains('hidden') ? '▶' : '▼';
+                const iconSpan = this.querySelector(".icon");
+                if (iconSpan) {
+                    iconSpan.classList.toggle("collapsed");
+                    iconSpan.classList.toggle("expanded");
+                    iconSpan.textContent = "";
+                }
             };
             const copyBtn = embMeta.querySelector('.copy.code');
             copyBtn.onclick = () => {
@@ -504,9 +497,9 @@ copyBtn.onclick = () => {
 
 function getStatusText(status) {
 	return {
-		completed: '✓',
-		failed: '✗',
-		stopped: '■'
+		completed: 'completed',
+		failed: 'failed',
+		stopped: 'stop'
 	} [status] || status;
 }
 

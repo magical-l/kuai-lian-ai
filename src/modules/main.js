@@ -626,10 +626,10 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 		const meta = $('header', card);
 		const icon = meta ? $('.status.loading', meta) : null;
 		if (icon) {
-			icon.classList.remove('spin');
+			icon.classList.remove('loading', 'spin');
 			icon.classList.add('status');
-			icon.classList.add(status);
-			icon.textContent = getStatusText(status);
+			icon.classList.add(getStatusText(status));
+			icon.textContent = '';
 		}
 		if (status === 'failed') {
 			if (contentEl) {
