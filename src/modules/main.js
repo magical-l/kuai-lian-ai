@@ -533,7 +533,7 @@ function showThinkingCards(endpoints, groups, sessionId) {
     $$(`[data-session-id="${sessionId}"]`).forEach(el => el.remove());
 
     // 独立的提示栏（"N个模型正在思考..." + 全部停止按钮），不作为包装框
-    const hint = mk('div', 'hint streaming-hint');
+    const hint = mk('div', 'hint streaming-hint sticky near-bottom');
     hint.dataset.sessionId = sessionId;
     const hintText = mk('span', 'hint-text');
     hintText.textContent = `${endpoints.length}个端点思考中`;

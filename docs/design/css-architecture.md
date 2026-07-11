@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-10
+last_updated: 2026-07-11
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -319,3 +319,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-08: `.one.endpoint .tooltip` max-width 从 300px → 500px，配合 createTooltip 实际尺寸测量，让长地址在 tooltip 中完整显示不换行。
 - 2026-07-08: `.hint` 样式增强（font-size 12px, opacity 0.75, text-align:center, width:100%），配合接口风格按钮底部显示默认路径文本。
 - 2026-07-08: 端点树复刻按钮类名改为 `.duplicate`；参照同为 SVG outline 的 `.join-session`，只通过 `--btn-text-color: var(--accent-primary)` 设定图标色，不单独设置边框、背景、opacity、hover 或 stroke。
+- 2026-07-11: sticky 重构：`.sticky` 改用 `--stick-top/bottom/left/right` 变量 + `.near-*` 方向类，替代 `:is(header)` / `:is(footer)` 硬编码。`.streaming-hint` 和 `.chat-input-area` 改用 `.sticky.near-bottom` 类 + `--stick-bottom` 变量。

@@ -706,8 +706,8 @@ main {
 				padding: var(--space-2) var(--space-3);
 				background: var(--bg-base);
 				border-bottom: 1px solid var(--border-subtle);
-			align-items: center;
-			gap: var(--space-2);
+				align-items: center;
+				gap: var(--space-2);
 				height: 40px;
 				--btn-h: 26px;
 				--btn-p: var(--space-1) var(--space-3);
@@ -724,29 +724,27 @@ main {
 			}
 
 			& .msg.list {
-			flex: 1 1 auto;
+				flex: 1 1 auto;
 				overflow-y: auto;
 				padding: var(--space-2);
 				scroll-padding-bottom: 130px;
-			gap: var(--space-5);
+				gap: var(--space-5);
 				background: var(--bg-subtle);
 				min-height: 100px;
 
 				& .streaming-hint {
 					order: 999;
-					margin-top: auto;
-					position: sticky;
-					bottom: var(--space-4);
+					--stick-bottom: var(--space-4);
 					z-index: 2;
 					align-self: center;
-				flex-shrink: 0;
+					flex-shrink: 0;
 					background: var(--bg-elevated);
 					border: 1px solid var(--border-subtle);
 					border-radius: 999px;
 					box-shadow: var(--shadow-md);
-				display: flex;
-				align-items: center;
-				gap: var(--space-2);
+					display: flex;
+					align-items: center;
+					gap: var(--space-2);
 					font-size: 12px;
 					color: var(--text-secondary);
 					padding: var(--space-1) var(--space-3);
@@ -767,12 +765,10 @@ main {
 				display: none;
 			}
 			& .chat-input-area {
-				position: sticky;
-				bottom: 0;
 				z-index: calc(var(--divider-z) + 10);
 				border-top: 1px solid var(--border-subtle);
 				background: var(--bg-base);
-			flex: 1 1 auto;
+				flex: 1 1 auto;
 				min-height: 160px;
 
 				& #chat-input {
