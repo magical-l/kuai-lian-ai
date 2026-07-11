@@ -108,3 +108,4 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 	- 2026-07-08: HTML 结构从 JS 字符串迁移到 `<template>` 或静态 HTML，消除内联 HTML 拼接。涉及：选中端点标签、tooltip、复制按钮、备注文字、嵌入信息、眼睛图标
 - 2026-07-09: 内联样式迁移到 utility class。`align-items:center` → `items-y-near-center`；`display:none` → `.hidden` + `classList`；移除无定义的 `.mb-1` 及关联死代码
 - 2026-07-09: inhert-source hint 移入 dialog header；修复 dialog 编辑弹窗二次打开崩溃（radio 标签重置 + null 安全）
+- 2026-07-11: class 名规范化 `.stop-one` → `.stop-one-response`、`.stop` → `.stop-all-response`；`.stop-icon` 替换为统一 `char-style icon : stop`；`.embedding-full-json` 内联样式提取为 CSS 类；`.stop-all-response` 复用 `.danger` 减少重复样式

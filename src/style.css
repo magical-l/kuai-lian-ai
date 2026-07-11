@@ -331,23 +331,11 @@ button, .btn {
 		}
 	}
 
-	&.stop {
-		--hover-bg: var(--danger);
-		--hover-text-color: white;
-		--btn-bg: var(--danger-light);
-		--btn-text-color: #DC2626;
-		--btn-border: 1px solid var(--danger);
+	&.stop-all-response {
 		--btn-font-weight: 500;
+		--icon-font-size: 1.8em;
 		line-height: 1;
 		overflow: hidden;
-		& .stop-icon {
-			display: block;
-			width: 14px;
-			height: 14px;
-			background: var(--btn-text-color);
-			border-radius: 2px;
-			flex-shrink: 0;
-		}
 	}
 
 	&.copy {
@@ -541,7 +529,7 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 				&.medium { color: var(--warning); }
 				&.fast { color: var(--success); }
 			}
-			& .stop-one.btn {
+			& .stop-one-response.btn {
 				--btn-h: 20px;
 				--btn-w: 20px;
 				margin-left: auto;
@@ -692,6 +680,16 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 		font-family: var(--font-mono, monospace);
 			font-size: 13px;
 	}
+	& .embedding-full-json {
+		font-size: smaller;
+		max-height: 200px;
+		overflow: auto;
+		background: var(--bg-dim);
+		padding: 8px;
+		border-radius: 4px;
+		white-space: pre-wrap;
+		word-break: break-all;
+	}
 }
 /* ============ 主体框架 ============ */
 main {
@@ -753,7 +751,7 @@ main {
 					padding: var(--space-1) var(--space-3);
 					width: auto;
 
-					& .stop.all.btn {
+					& .stop-all-response.btn {
 						--btn-font-size: 11px;
 						--btn-h: 20px;
 						--btn-p: 0 var(--space-1);

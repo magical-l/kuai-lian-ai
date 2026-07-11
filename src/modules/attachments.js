@@ -110,8 +110,8 @@ function setButtonState(sendDisabled, stopEnabled) {
 	const area = $('footer.chat-input-area');
 	$('.send', area).disabled = sendDisabled;
 	$('.split-style.btn-group', area).style.display = stopEnabled ? 'none' : '';
-	$('.stop.btn', area).disabled = !stopEnabled;
-	$('.stop.btn', area).classList.toggle('hidden', !stopEnabled);
+	$('.stop-all-response.btn', area).disabled = !stopEnabled;
+	$('.stop-all-response.btn', area).classList.toggle('hidden', !stopEnabled);
 }
 
 function addInheritIcon(inputEl) {

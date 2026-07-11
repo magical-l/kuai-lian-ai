@@ -113,7 +113,7 @@ async function init() {
 		allIds.forEach(function(id) { testConnection(id); });
 	};
 	$('.send').onclick = () => { handleSend(); };
-	$('.stop.btn').onclick = () => {
+	$('.stop-all-response.btn').onclick = () => {
 		stopAllGenerations();
 		setButtonState(false, false);
 		renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
@@ -538,7 +538,7 @@ function showThinkingCards(endpoints, groups, sessionId) {
     const hintText = mk('span', 'hint-text');
     hintText.textContent = `${endpoints.length}个端点思考中`;
     hint.appendChild(hintText);
-    const stopBtn = mk('button', 'stop all btn');
+    const stopBtn = mk('button', 'stop-all-response btn');
     stopBtn.textContent = '全部停止';
     hint.appendChild(stopBtn);
     stopBtn.onclick = () => {
@@ -557,7 +557,7 @@ function showThinkingCards(endpoints, groups, sessionId) {
         const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
         $(".response .name", card).textContent = name;
         // 单端点停止按钮
-        const stopBtn = $('.stop-one', card);
+        const stopBtn = $('.stop-one-response', card);
         if (stopBtn) {
             stopBtn.classList.add('visible');
             stopBtn.onclick = (e) => {
@@ -620,7 +620,7 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 		const card = $(selector);
 		if (!card) return;
 		// 端点已完成/停止/失败，隐藏停止按钮
-		const stopBtn = $('.stop-one', card);
+		const stopBtn = $('.stop-one-response', card);
 		if (stopBtn) stopBtn.classList.remove('visible');
 		const contentEl = $('.say', card);
 		const meta = $('header', card);

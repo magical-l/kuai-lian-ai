@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.10.0</span>
+			<span class="version">v6.10.1</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -236,7 +236,7 @@
 							<span class="char-style icon : copy"></span>
 							<span class="status icon : done , char-style"></span>
 						</button>
-						<button title="停止" class="btn : stop-one , danger , square shape , bare icon-only"></button>
+						<button title="停止" class="btn : stop-one-response , danger , square shape , bare icon-only"></button>
 					</header>
 					<div class="content">
 						<details class="think , hidden" open>
@@ -261,7 +261,7 @@
 									<span class="status icon : done , char-style"></span>
 								</button>
 							</div>
-							<pre class="embedding-full-json hidden" style="font-size:smaller;max-height:200px;overflow:auto;background:var(--bg-dim);padding:8px;border-radius:4px;white-space:pre-wrap;word-break:break-all"></pre>
+							<pre class="embedding-full-json hidden"></pre>
 						</div>
 					</div>
 				</article>
@@ -310,8 +310,8 @@
 							</div>
 						</div>
 					</div>
-					<button class="btn : stop , square shape , hidden" disabled aria-label="全部停止">
-						<span class="stop-icon"></span>
+					<button class="btn : stop-all-response , danger , square shape , hidden" disabled aria-label="全部停止">
+						<span class="char-style icon : stop"></span>
 					</button>
 				</menu>
 			</footer>
