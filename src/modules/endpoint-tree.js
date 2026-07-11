@@ -175,7 +175,8 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			if (testableIds.length === 0) {
 				batchTestBtn.style.display = 'none';
 			} else {
-				batchTestBtn.className = "test-connection btn , bare icon-only , square" + (batchStatus ? " " + batchStatus : "");
+				batchTestBtn.classList.remove("connected", "failed");
+				if (batchStatus) batchTestBtn.classList.add(batchStatus);
 				if (hasTesting) {
 					batchTestBtn.classList.add("testing");
 					var sp = batchTestBtn.querySelector("span");
@@ -514,8 +515,8 @@ function updateEndpointTestUI(nodeId) {
 	if (nodeEl) {
 		var testBtn = nodeEl.querySelector('.test-connection');
 		if (testBtn) {
-			testBtn.className = "test-connection square";
 			var spanEl = testBtn.querySelector('span');
+			testBtn.classList.remove('testing', 'connected', 'failed');
 			if (spanEl) spanEl.classList.remove('spin', 'testing');
 			var sd = connectionStatus.get(nodeId);
 			if (sd) {

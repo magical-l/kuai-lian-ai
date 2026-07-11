@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-08
+last_updated: 2026-07-11
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -157,3 +157,4 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-04 | summary 内 header 宽度从 inline style 移到 CSS：有 marker 时 `calc(100% - 15px)`，`.compact`（无 marker）时 `calc(100% - 5px)` | 两种场景 marker 宽度不同，分开处理；CSS 控制比内联样式更干净 |
 | 2026-07-08 | 节点操作栏新增复刻按钮 | 用户需要快速复制现有端点/分组配置；复刻在数据层生成新 UUID 子树，避免复制后 ID 冲突 |
 | 2026-07-08 | `.remark` 从动态创建改为模板内静态存在，JS 只设 textContent | `one-endpoint` 模板内已有 `.remark` 空 span，无需 createElement |
+| 2026-07-11 | 测试按钮状态管理从 className 全量重置改为 classList.remove/add | 避免 className 全量覆盖导致 HTML 中 base class（btn, bare, icon-only）丢失；classList 只管理状态类，base class 来自 HTML |

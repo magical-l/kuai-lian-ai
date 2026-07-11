@@ -250,3 +250,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-10 | API Key toggle 也改用 checkbox 模式 | `form-row` 从 `<label>` 改为 `<div>`，`field-label` 改为 `<label for="apikey-input">`；toggle button → label + checkbox，JS 只做 `input.type` 切换 |
 | 2026-07-10 | 图标切换规则 `.on`/`.off` 提升到 common.css | `toggle > input:checked ~ .icon.on { display:none }` + `input:not(:checked) ~ .icon.off { display:none }`，所有 toggle 共享，无需在项目 CSS 中重复 |
 | 2026-07-11 | 新增 `appendUserMessage` 替代 `handleSend` 中的 `renderMessages` 调用 | 发送消息时不清空 `.msg.list`，只追加新用户消息；旧回复卡片保留并清除 `data-endpoint-id`/`data-session-id` 防止冲突 |
+| 2026-07-11 | 代码块复制按钮图标从 `text(mk(…), '⧉')` 改为空 `mk(…)`，利用 CSS `.icon:empty::before` 渲染 | 与 common.css 图标体系对齐，移除手写字符；`done` 状态图标同理 |
