@@ -35,7 +35,7 @@
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
 			<span class="cur">未选择目录</span>
-			<div class="actions , btn-group , flex items-go-x">
+			<div class="op , list , btn-group , flex items-go-x">
 				<button title="更换目录" class="btn : change-dir , square shape , bare icon-only">
 					<span class="fill-style icon"><svg><use href="icons.svg#icon-folder"></use></svg></span>
 				</button>
@@ -71,7 +71,7 @@
 					<section class="workspace-setting , flex items-go-x">
 						<h4>存储目录</h4>
 							<span class="cur"></span>
-							<div class="actions , flex items-go-x">
+							<div class="op , list , flex items-go-x">
 								<button class="btn : recover , primary" onclick="onRecoverDirectory()">恢复目录</button>
 								<button class="btn : select-dir" onclick="onSelectDirectory()"></button>
 								<button class="btn : use-browser-storage" onclick="onUseBrowserStorage()">使用浏览器存储</button>
@@ -147,7 +147,7 @@
 						<input type="checkbox" value="reranking" checked>
 					</label>
 				</div>
-				<span class="btn-group : actions , flex items-go-x">
+				<span class="btn-group : op , list , flex items-go-x">
 					<button class="test-all btn ,  square shape , bare icon-only" title="测试全部连接"><span class="char-style icon link"></span></button>
 					<button class="collapse-all btn , square shape , bare icon-only" title="收起全部">
 						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-collapse-all"></use></svg></span>
@@ -168,7 +168,7 @@
 									</span>
 									<span class="char-style icon : endpoint-type , badge icon-only"></span>
 									<span class="name"></span>
-									<div class="btn-group : actions , flex items-go-x">
+									<div class="btn-group : op , list , flex items-go-x">
 										<button class="btn : add-child , square shape , bare icon-only" title="添加子节点">
 											<span class="char-style icon add"></span>
 										</button>
@@ -379,7 +379,7 @@
 						<header class="title">新会话</header>
 						<footer class="meta , flex items-go-x">
 							<span class="time"></span>
-							<div class="btn-group : actions , flex items-go-x">
+							<div class="btn-group : op , list , flex items-go-x">
 								<button title="编辑标题" class="btn : edit title , square shape , bare icon-only">
 									<span class="char-style icon : edit"></span>
 								</button>

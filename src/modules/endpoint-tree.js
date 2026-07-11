@@ -88,7 +88,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			var tooltip = createTooltip(tooltipId, nameSpan, tooltipHTML);
 
 			summaryEl.on("mouseover", function(e) {
-				if (actionsEl.contains(e.target)) {
+				if (opListEl.contains(e.target)) {
 					tooltip.hide();
 					return;
 				}
@@ -101,8 +101,8 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				tooltip.hide();
 			});
 
-			var actionsEl = nodeEl.querySelector('.actions');
-			var addChildBtn = actionsEl.querySelector('.add-child');
+			var opListEl = nodeEl.querySelector('.op');
+			var addChildBtn = opListEl.querySelector('.add-child');
 
 			addChildBtn.on("click", function(e) {
 				e.stopPropagation();
@@ -171,7 +171,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 					batchStatus = "failed";
 			}
 
-			var batchTestBtn = actionsEl.querySelector('.test-connection');
+			var batchTestBtn = opListEl.querySelector('.test-connection');
 			if (testableIds.length === 0) {
 				batchTestBtn.style.display = 'none';
 			} else {
@@ -234,7 +234,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				});
 			}
 
-			var joinBtn = actionsEl.querySelector('.join-session');
+			var joinBtn = opListEl.querySelector('.join-session');
 			applyJoinBtnUI(joinBtn, node.id);
 			var cb = joinBtn.querySelector("input[type=checkbox]");
 			cb.addEventListener("change", function(e) {
@@ -254,14 +254,14 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				applyJoinBtnUI(joinBtn, node.id);
 			});
 
-			var editBtn = actionsEl.querySelector('.edit');
+			var editBtn = opListEl.querySelector('.edit');
 
 			editBtn.on("click", function(e) {
 				e.stopPropagation();
 				onNodeEdit(node.id);
 			});
 
-			var duplicateBtn = actionsEl.querySelector('.duplicate');
+			var duplicateBtn = opListEl.querySelector('.duplicate');
 
 			duplicateBtn.on("click", async function(e) {
 				e.stopPropagation();
@@ -269,7 +269,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				refreshUI();
 			});
 
-			var deleteBtn = actionsEl.querySelector('.remove');
+			var deleteBtn = opListEl.querySelector('.remove');
 
 			deleteBtn.on("click", function(e) {
 				e.stopPropagation();

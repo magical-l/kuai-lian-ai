@@ -127,7 +127,6 @@ aside {
 	}
 }
 .list {
-	flex: 1;
 	&:is(ul) { margin-block: 0; }
 	& > ol {
 		list-style: none;
@@ -812,8 +811,9 @@ main {
 	}
 }
 
-/* 附件列表：只允许横向滚动，隐藏空容器的纵向滚动条轨 */
+/* 附件列表：占用菜单行空间 + 只允许横向滚动 */
 .attachment.list {
+	flex: 1;
 	overflow-x: auto;
 	overflow-y: hidden;
 }
@@ -1378,11 +1378,11 @@ dialog[open] {
 				color: var(--text-muted);
 				margin-top: 6px;
 			}
-			& .actions {
+			& .op.list {
 				--btn-h: 28px;
 				--btn-font-size: 13px;
 				--btn-p: var(--space-2) var(--space-3);
-			gap: var(--space-2);
+				gap: var(--space-2);
 			}
 		}
 		& section {
