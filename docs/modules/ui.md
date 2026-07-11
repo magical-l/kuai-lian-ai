@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-10
+last_updated: 2026-07-11
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -31,7 +31,8 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `initScrollPaddingObserver` | ui-utils.js | ResizeObserver 监听 sticky 区变化 |
 | `renderMarkdown` | messages.js | MD 渲染（marked.js） |
 | `addCodeCopyButtons` | messages.js | 为 code block 添加复制按钮 |
-| `renderMessages` | messages.js | 渲染用户消息列表 |
+| `renderMessages` | messages.js | 全量渲染用户消息列表（清空后重建） |
+| `appendUserMessage` | messages.js | 追加单条用户消息（不重建） |
 | `renderResponse` | messages.js | 渲染多模型响应卡片 |
 | `getStatusText` | messages.js | 状态 → 图标字符 |
 | `getSpeedClass` | messages.js | firstTokenTime → CSS class |
@@ -102,6 +103,8 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 **renderMarkdown** (行 2)：封装 `marked.parse`，开启 `breaks` 和 `gfm`。
 
 **renderMessages** (行 30)：清空 `.msg.list`，遍历 `messages` 数组。用户消息渲染为 `.msg.request.one` 结构（含头像、meta 时间、复制按钮、文本内容、附件栏）。响应消息委托给 `renderResponse`（调用前清除所有已有响应卡片的 `data-endpoint-id`，确保每条 assistant 消息都创建独立卡片，不互相覆盖）。
+
+**appendUserMessage** (行 63)：从 `renderMessages` 中提取的单条用户消息渲染函数，只追加不重建。发送消息时 `handleSend` 改用此函数替代 `renderMessages`，避免清空已有消息列表。旧回复卡片保留在 DOM 中（仅清除 `data-endpoint-id` / `data-session-id` 防止冲突）。
 
 **renderResponse** (行 120)：按 `firstTokenTime` 排序后端响应。对每个 response：
 - 复用已有的 streaming card（`data-endpoint-id` 匹配），或从 template 新建
@@ -246,3 +249,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-10 | 侧栏 toggle 改用 checkbox + `:has()` 模式 | `button` → `label > input[checkbox]`，CSS `:has()` 控制侧栏显隐和图标切换，JS 只做 localStorage 持久化；View Transition 移除；类名 `.right-sidebar` → `.sidebar.near-right` |
 | 2026-07-10 | API Key toggle 也改用 checkbox 模式 | `form-row` 从 `<label>` 改为 `<div>`，`field-label` 改为 `<label for="apikey-input">`；toggle button → label + checkbox，JS 只做 `input.type` 切换 |
 | 2026-07-10 | 图标切换规则 `.on`/`.off` 提升到 common.css | `toggle > input:checked ~ .icon.on { display:none }` + `input:not(:checked) ~ .icon.off { display:none }`，所有 toggle 共享，无需在项目 CSS 中重复 |
+| 2026-07-11 | 新增 `appendUserMessage` 替代 `handleSend` 中的 `renderMessages` 调用 | 发送消息时不清空 `.msg.list`，只追加新用户消息；旧回复卡片保留并清除 `data-endpoint-id`/`data-session-id` 防止冲突 |

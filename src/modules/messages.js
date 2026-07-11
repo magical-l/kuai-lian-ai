@@ -150,7 +150,84 @@ function renderMessages(messages, groups, onCopy) {
 	container.scrollTop = container.scrollHeight;
 }
 
-function renderResponse(container, msg, groups) {
+function appendUserMessage(msg) {
+		const container = $('.msg.list');
+		const msgEl = mk('article', 'msg request one , flex items-go-y');
+		const meta = fromTemplate('user-header', 'header');
+		const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
+		$('.time', meta).textContent = timeStr;
+		msgEl.addChild(meta);
+		const normalized = normalizeMessageContent(msg);
+		const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
+		const textContent = textItems.map(c => c.text || '').join('\n');
+		const copyBtn = $('.copy.content', meta);
+		copyBtn.onclick = () => {
+			navigator.clipboard.writeText(textContent).then(() => {
+				copyBtn.classList.add("copied");
+				clearTimeout(copyBtn._copiedTimer);
+				copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
+			});
+		};
+		if (textContent) {
+			const userEl = mk('div', 'content');
+			userEl.textContent = textContent;
+			msgEl.addChild(userEl);
+		}
+		const attachmentItems = normalized.filter(c => c.type === 'image' || c.type === 'file');
+		if (attachmentItems.length > 0) {
+			const attContainer = mk('div', 'attachments , flex items-go-x');
+			attachmentItems.forEach(att => {
+				const attEl = mk('div', `one attachment ${att.type} , flex items-go-x`);
+				if (att.type === 'image' && att.source) {
+					let imgSrc;
+					if (att.source.type === 'url') {
+						imgSrc = att.source.url;
+					} else {
+						imgSrc = `data:${att.source.media_type};base64,${att.source.data}`;
+					}
+					const thumb = mk('img', 'thumb');
+					thumb.src = imgSrc;
+					thumb.onclick = () => {
+						const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+						const fullImg = mk('img');
+						fullImg.src = imgSrc;
+						overlay.onclick = () => overlay.remove();
+						overlay.addChild(fullImg);
+						doc.body.addChild(overlay);
+					};
+					attEl.addChild(thumb);
+					const nameEl = mk('span', 'name');
+					nameEl.textContent = att.name || '图片';
+					attEl.addChild(nameEl);
+				} else if (att.type === 'file' && att.source) {
+					const fileIcon = mk('span');
+					fileIcon.textContent = '📄';
+					attEl.addChild(fileIcon);
+					const nameEl = mk('span', 'name');
+					nameEl.textContent = att.name || '文件';
+					attEl.addChild(nameEl);
+					attEl.onclick = () => {
+						const data = att.source.data;
+						const mime = att.source.media_type;
+						const blob = new Blob([Uint8Array.from(atob(data), c => c.charCodeAt(0))], {
+							type: mime
+						});
+						const link = mk('a');
+						link.href = URL.createObjectURL(blob);
+						link.download = att.name || 'file';
+						link.click();
+						URL.revokeObjectURL(link.href);
+					};
+				}
+				attContainer.addChild(attEl);
+			});
+			msgEl.addChild(attContainer);
+		}
+		container.addChild(msgEl);
+		container.scrollTop = container.scrollHeight;
+	}
+
+	function renderResponse(container, msg, groups) {
     const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
     sorted.forEach((r, i) => {
         const info = findModelById(groups, r.endpointId);

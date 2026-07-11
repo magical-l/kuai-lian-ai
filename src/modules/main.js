@@ -409,7 +409,13 @@ async function handleSend() {
 		const normalized = normalizeMessageContent(m);
 		return { role: m.role, content: toOpenAIContent(normalized) };
 	});
-	renderMessages(currentSession.messages, groups, handleCopy);
+	appendUserMessage(currentSession.messages[currentSession.messages.length - 1]);
+	// 清除旧回复卡片的 data-endpoint-id 和 data-session-id，
+	// 防止 showThinkingCards 移除旧卡片，也防止 renderResponse 误更新
+	$$('.one.response.msg').forEach(el => {
+		el.removeAttribute('data-endpoint-id');
+		el.removeAttribute('data-session-id');
+	});
 	const targetSessionId = currentSession.id;
 	
 	// 按端点类型分流
