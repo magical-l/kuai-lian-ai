@@ -22,7 +22,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 - 节点类型 tooltip（hover 显示继承链配置）
 - 顶部类型筛选栏（全部/嵌入/生图/重排序）
 
-树的数据模型由 `store.js` 管理（`getGroups` / `endpointsData`），`endpoint-tree.js` 只负责 DOM 渲染和交互事件绑定。
+树的数据模型由 `store.js` 管理（`getGroups` / `endpointsData`），`endpoint-tree.js` 只负责 DOM 渲染。交互事件绑定已移至 HTML 模板 `#one-endpoint` 的 onclick/onchange/ontoggle/ondragstart/ondragend/onmouseover/onmouseleave 属性，JS 中只保留 `ondragover`/`ondragleave`/`ondrop` 三个拖放事件（动态 DOM 无法用模板属性绑定）。
 
 ---
 
@@ -37,6 +37,24 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | `activeTypeFilters` | Set，多选筛选状态（存放选中的 type 值，空 Set = 全部显示） |
 | `initEndpointFilter` | 初始化筛选栏 change 事件委托（防止 render 后重复绑定），操作 `activeTypeFilters` Set |
 | `applyEndpointFilter` | 遍历端点 li 按 `activeTypeFilters` 显示/隐藏，分组节点检查子节点匹配 |
+| `handleDetailsToggle` | `<details>` toggle 事件同步 `collapsedEndpoints` Set |
+| `handleDragStart` | 拖拽开始，`dataTransfer.setData("text/plain", node.id)` |
+| `handleDragEnd` | 拖拽结束，清理 drag class |
+| `handleSummaryTooltipMouseover` | summary mouseover 显示 tooltip |
+| `handleSummaryTooltipMouseleave` | summary mouseleave 隐藏 tooltip |
+| `handleSummaryTooltipClick` | summary click 切换 tooltip 显隐 |
+| `handleAddChildClick` | 添加子节点按钮，调用 showEditGroupDialog |
+| `handleBatchTestClick` | 批量测试按钮，触发所有子节点 testConnection |
+| `handleJoinSessionChange` | join-session checkbox change，操作 selectedEndpoints 数组 |
+| `handleEditNodeClick` | 编辑节点按钮，委托到 handleNodeEdit |
+| `handleDuplicateNodeClick` | 复刻节点按钮，cloneNode + refreshUI |
+| `handleRemoveNodeClick` | 删除节点按钮，confirmAction 后 handleNodeDelete |
+| `handleNodeDragover` | dragover 根据鼠标位置设置 drop zone class（before/child） |
+| `handleNodeDragleave` | dragleave 清除 drop zone class |
+| `handleNodeDrop` | drop 根据 zone 类型调 reorderNode 或 moveNodeAsChild |
+| `handleResetFilter` | 重置筛选按钮，全选所有 type-filter checkbox |
+| `handleClickAddEndpoint` | 空状态"去创建"按钮，触发 .add-group.btn click |
+| `handleFilterBarChange` | 类型筛选栏 change 事件，操作 activeTypeFilters Set |
 
 ---
 
@@ -53,20 +71,20 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 3. **展开/收起**：
    - `<details>` 原生 `open` 属性 + `<summary>` 原生三角箭头控制显隐
    - 无子节点时（`.compact`）隐藏三角箭头（`list-style: none` + `::marker`）
-   - `<details>` 的 `toggle` 事件同步 `collapsedEndpoints` Set 状态
+   - `<details>` 的 `toggle` 事件通过 HTML `ontoggle="handleDetailsToggle(this)"` 同步 `collapsedEndpoints` Set 状态
 4. **名称 + 类型标签 + Tooltip**（行 65-85）：
    - 名称文本设为 `node.name`
    - 类型标签（`.type-badge`）紧跟在 `.name` 后面，渲染时根据 `rcfg.type` 设置：embedding→🔢、image→🎨、rerank→📊（chat 不显示标签，减少视觉噪音）
    - `createTooltip(tooltipId, buildTooltipHTML(node, rcfg, node.name))` 绑定到 `summaryEl` 的 mouseover/mouseleave/click
    - tooltip 内容由 `selected-endpoints.js` 的 `buildTooltipHTML` 生成
-5. **操作栏**（行 103-281）：
-   - **添加子**：调用 `showEditGroupDialog(null, node.id, ...)` 新增
+5. **操作栏**（行 103-281）：所有按钮事件通过 HTML `onclick` 属性绑定，JS 不绑定事件。
+   - **添加子**：`handleAddChildClick` → `showEditGroupDialog(null, node.id, ...)` 新增
    - **批量测试**（行 116-233）：
      - 判断可测试节点（recursive `collectTestable`）：需有 `baseUrl + key + modelId`，且 `config.type` 为 chat/embedding
      - 按钮 CSS class 切换：`connected`（全部成功）/ `failed`（有失败）/ `testing`（旋转动画）
      - 点击触发所有子节点 `onTestConnection(id)`
      - 按钮 title 显示汇总统计："✓ 全部成功" / "✗ N个失败：错误信息"
-   - **加入会话**（行 235-257）：checkbox + `applyJoinBtnUI` 同步选中状态，change 事件直接操作 `selectedEndpoints` 数组
+   - **加入会话**（行 235-257）：checkbox + `applyJoinBtnUI` 同步选中状态，通过 HTML `onchange="handleJoinSessionChange(this)"` 操作 `selectedEndpoints` 数组
    - **编辑/复刻/删除**：编辑委托到 `onNodeEdit`；复刻调用 `cloneNode(node.id)` 后刷新；删除委托到 `onNodeDelete`
 6. **拖放排序**（行 283-329）：
    - `dragover` 根据鼠标在 summary 区域的位置，在 `nodeEl` 上添加三类 drop zone class：
@@ -159,3 +177,4 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-08 | `.remark` 从动态创建改为模板内静态存在，JS 只设 textContent | `one-endpoint` 模板内已有 `.remark` 空 span，无需 createElement |
 | 2026-07-11 | 测试按钮状态管理从 className 全量重置改为 classList.remove/add | 避免 className 全量覆盖导致 HTML 中 base class（btn, bare, icon-only）丢失；classList 只管理状态类，base class 来自 HTML |
 | 2026-07-12 | `.spin` 旋转动画需同时加 `.animation` class | common.css 中 `.spin` 嵌套在 `.animation` 下，JS 只加 `.spin` 不加 `.animation` 导致旋转动画不生效 |
+| 2026-07-12 | 交互事件绑定从 JS 移到 HTML 模板 #one-endpoint 的内联属性 | renderTreeNode 不再绑定 onclick/onchange/ontoggle/onmouseover/onmouseleave，改为 HTML 属性直接引用全局 handler；ondragover/ondragleave/ondrop 三个事件保留在 JS 中（动态 DOM 节点、事件参数需要 nodeEl 引用） |

@@ -134,24 +134,15 @@ function scrollToBottom() {
 	if (el) el.scrollTop = el.scrollHeight;
 }
 
+function handleScrollTop() {
+	const container = $('.msg.list');
+	if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function handleScrollBottom() {
+	const container = $('.msg.list');
+	if (container) container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+}
 function initScrollNav() {
-	const btnScrollTop = $('.go-top.btn');
-	const btnScrollBottom = $('.go-bottom.btn');
-	const scrollContainer = $('.msg.list');
-	if (!btnScrollTop || !btnScrollBottom || !scrollContainer) return;
-
-	btnScrollTop.onclick = () => {
-		scrollContainer.scrollTo({
-			top: 0,
-			behavior: 'smooth'
-		});
-	};
-	btnScrollBottom.onclick = () => {
-		scrollContainer.scrollTo({
-			top: scrollContainer.scrollHeight,
-			behavior: 'smooth'
-		});
-	};
 }
 // sticky 区高度变化时，同步更新消息区 scroll-padding-bottom，防止最后一条消息被遮挡
 function syncScrollPadding() {

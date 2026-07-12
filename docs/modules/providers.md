@@ -2,8 +2,8 @@
 title: Provider 抽象层 + DOM 工具集
 covers_file: [src/modules/providers.js]
 depends_on: []
-api_signature: providers.openai, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip
-last_updated: 2026-07-08
+api_signature: providers.openai, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip, handleCopyValueClick
+last_updated: 2026-07-12
 why_exists: 三种 Provider 格式差异的封装和公共 DOM 辅助函数的复用
 ---
 
@@ -125,6 +125,7 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 | `fromTemplate` | `(templateId, selector) => Element` | 从 `<template id>` 克隆并 querySelector |
 | `setValues` | `(ctx, vals)` | 批量设置表单值：`{'.input': 'value'}` |
 | `onClick` | `(handlers, ctx?)` | 批量绑定 click：`{'.btn': fn}` |
+| `handleCopyValueClick` | `(btn)` | tooltip 复制按钮点击，读取 `dataset.copy` 写入剪贴板并显示 copied 状态 |
 | `show` | `(el)` | `el.style.display = ''` |
 | `hide` | `(el)` | `el.style.display = 'none'` |
 | `toggle` | `(el, visible)` | `el.style.display = visible ? '' : 'none'` |
@@ -155,7 +156,7 @@ tooltip 是独立的可复用组件，非单例但通常每页只用一个实例
 2. `hide()` — 100ms 延迟隐藏（给鼠标移动到 tooltip 内的时间）
 3. `remove()` — 从 DOM 移除
 
-tooltip 内含 copy 按钮（`button.copy`），点击将 `dataset.copy` 值写入剪贴板并显示临时 `copied` 状态。
+tooltip 内含 copy 按钮（`button.copy`），复制按钮点击已移至模板 `#tooltip-content` 的 `onclick="handleCopyValueClick(this)"` 属性，JS 不再绑定 click 事件。
 
 挂载位置优先选择最近的 `.one.endpoint` 祖先，因为 `<span>` 标签内不允许嵌套 `<div>`（tooltip 是 div），fallback 到 `document.body`。
 
@@ -175,3 +176,4 @@ tooltip 内含 copy 按钮（`button.copy`），点击将 `dataset.copy` 值写�
 | 2026-07-08 | createTooltip show 先测量再定位 | tooltip 初始 `display: none` 导致 `offsetWidth` 为 0，改用 `visibility: hidden` 临时显示测量实际尺寸后再计算位置 |
 | 2026-07-08 | 所有 provider 函数开头 strip baseUrl 尾部斜杠 | 防止 baseUrl 以 `/` 结尾时拼接出 `//` 双斜杠 URL |
 | 2026-07-08 | createTooltip 从 `createElement` + `innerHTML` 改为克隆 `tooltip-content` 模板 + `appendChild` | tooltip 容器和行结构直接定义在 HTML 模板中，JS 不构造 HTML |
+| 2026-07-12 | tooltip 复制按钮事件从 JS 绑定移到 HTML onclick 属性 | 模板 `#tooltip-content` 中 button 的 onclick 设为 `handleCopyValueClick(this)`，移除 createTooltip 中的 click 绑定；`handleCopyValueClick` 提取为全局函数 |

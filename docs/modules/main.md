@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-11
+last_updated: 2026-07-12
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -64,6 +64,15 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `applyThemeClass` | 操作 html 的 `.dark`/`.light` class |
 | `setThemePref` | 三态切换：存 settings → 应用 class → 更新按钮图标 |
 | `updateThemeIcon` | 同步切换按钮的 SVG icon（sun↔moon↔auto） |
+| `handleTestAllConnections` | 测试所有端点的连接 |
+| `handleStopAllResponses` | 停止所有响应生成 |
+| `handleShowHelp` | 显示帮助/存储设置对话框 |
+| `handleChangeDirectory` | 重新选择数据存储目录 |
+| `handleFileInputChange` | 文件输入 change 事件处理（添加附件） |
+| `handleSendModePopBeforetoggle` | 发送模式 Popover 打开前定位 |
+| `handleSendModePopToggle` | 发送模式 Popover 切换时同步按钮 active class |
+| `handleThemeRadioChange` | 主题 radio change 处理（亮色/暗色/跟随系统） |
+| `handleStopOneResponseClick` | 停止单端点响应生成 |
 
 ---
 
@@ -77,20 +86,20 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 2. **输入绑定**：
    - `keydown` 监听：Enter / Ctrl+Enter 切换发送模式，统一调用 `handleSend`（按端点 type 内部分流）
    - `paste` 监听：剪贴板图片提取 → `addAttachment`
-3. **发送模式选择器**（Popover API）：`#sendModePop` 的 `beforetoggle` 事件定位 position，`toggle` 事件同步按钮 active class。radio change 持久化 `sendMode` 到 localStorage。
+3. **发送模式选择器**（Popover API）：radio change 事件持久化 `sendMode` 到 localStorage；`beforetoggle`/`toggle` 事件已移至 HTML `onbeforetoggle`/`ontoggle` 属性，对应 `handleSendModePopBeforetoggle` / `handleSendModePopToggle`
 4. **存储恢复**：`tryRestoreDirectory()` → 成功则 `refreshUI`，失败则 `showDirectoryPrompt`
-5. **按钮绑定**：
+5. **按钮绑定**：不再在 JS 中绑定按钮事件。所有按钮的 onclick/onchange 已移至 HTML 内联属性，对应的 handler 被提取为全局函数：
    - `.add-group` → `handleAddGroup`
    - `.collapse-all` → `collapseAllEndpointNodes`
-   - `.test-all` → 遍历所有节点 `testConnection`
+   - `.test-all` → `handleTestAllConnections`
    - `.send` → `handleSend`
-   - `.stop.btn` → `stopAllGenerations` + `setButtonState(false, false)`
-   - `.help` → `showHelpDialog(false, !!saved)`（saved 为是否有已保存的目录 handle）
+   - `.stop.btn` → `handleStopAllResponses`
+   - `.help` → `handleShowHelp`
    - `.new-session` → `handleNewSession`
-   - `.delete-dir` / `.wipe-dir` → 清除/清空
-   - `.add.attachment.btn` → 触发 `.file-input` 的 click
-   - `.file-input onchange` → 多文件 `addAttachment`
-   - `.change-dir` → 重新选择目录
+   - `.delete-dir` / `.wipe-dir` → `handleDeleteDirectory` / `handleWipeDirectory`
+   - `.add.attachment.btn` → 触发 `.file-input` 的 click（内联 onclick `document.querySelector('.file-input').click()`）
+   - `.file-input onchange` → `handleFileInputChange`
+   - `.change-dir` → `handleChangeDirectory`
 
 ### 2. 发送主逻辑 (handleSend)
 
@@ -205,6 +214,15 @@ showThinkingCards(idList, groups, sessionId)
 | `handleReorderNode` | 拖拽排序 | clearTestResults → reorderNode → refreshUI |
 | `handleMoveNodeAsChild` | 跨级降级 | clearTestResults → moveNodeAsChild → refreshUI |
 | `handleNewSession()` | 新建会话 | 清空 currentSession → 从 defaultSelectedEndpoints 恢复端点 → refreshUI |
+| `handleTestAllConnections()` | test-all 按钮 | 遍历所有节点 testConnection |
+| `handleStopAllResponses()` | stop 按钮 | stopAllGenerations + setButtonState(false, false) |
+| `handleShowHelp()` | help 按钮 | 检测是否有已保存 handle → showHelpDialog |
+| `handleChangeDirectory()` | 更换目录按钮 | selectDirectory → updateDirectoryDisplay → refreshUI |
+| `handleFileInputChange(input)` | file-input change | 多文件 addAttachment |
+| `handleSendModePopBeforetoggle(e)` | sendModePop beforetoggle | Popover 打开前定位（fixed 计算位置） |
+| `handleSendModePopToggle(e)` | sendModePop toggle | 同步按钮 active class |
+| `handleThemeRadioChange(radio)` | 主题 radio change | setThemePref + updateThemeIcon + 关闭 Popover |
+| `handleStopOneResponseClick(btn)` | 单端点停止按钮 | stopSingleGeneration + 禁用按钮 |
 
 ### 8. 主题管理
 
@@ -284,3 +302,4 @@ radio change → setThemePref(mode)
 | 2026-07-04 | handleSend 新增 img-generate 分流 + updateCardAsImage | 生图端点走 callImageGeneration 非流式路径，图片下载转 base64 持久化，支持会话记录加载 |
 | 2026-07-09 | 内联样式迁移到 utility class + classList。`style.display` → `classList.remove('hidden')`；移除无定义的 `.mb-1` 查询及冗余 inline 样式设置 | 与 CSS 分离，用 classList 而非 style.display 控制显隐；`.mb-1` 无对应 CSS 定义
 | 2026-07-11 | handleSend 改用 appendUserMessage 替代 renderMessages | 发送消息时不清空 `.msg.list`，避免全量 DOM 重建；旧回复卡片保留，清除 `data-endpoint-id`/`data-session-id` 防止与新 streaming cards 冲突 |
+| 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性 | 减少 init() 中的事件绑定代码，handler 提取为全局函数由 onclick/onchange/onbeforetoggle/ontoggle 直接引用 |

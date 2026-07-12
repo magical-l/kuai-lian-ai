@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-11
+last_updated: 2026-07-12
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -43,10 +43,19 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `renderSessionList` | session-list.js | 渲染左侧会话列表 |
 | `renderSelectedEndpoints` | selected-endpoints.js | 渲染选中端点标签栏 |
 | `toggleEndpointSelection` | selected-endpoints.js | 勾选/取消勾选端点 |
-| `bindSelectorEvents` | selected-endpoints.js | 绑定标签栏事件 |
 | `syncJoinBtnState` | selected-endpoints.js | 同步树中 checkbox 状态 |
-| `applyJoinBtnUI` | selected-endpoints.js | 更新 checkbox 的选中/未选中状态 |
-| `buildTooltipHTML` | selected-endpoints.js | 构建 tooltip 内容 HTML |
+| `handleSelectedEndpointClick` | selected-endpoints.js | 端点标签点击切换选中 |
+| `handleSelectedEndpointRemoveClick` | selected-endpoints.js | 端点标签叉号强制移除 |
+| `handleSelectedEndpointMouseover` | selected-endpoints.js | 端点标签 hover 显示 tooltip |
+| `handleSelectedEndpointMouseleave` | selected-endpoints.js | 端点标签 mouseleave 隐藏 tooltip |
+| `handleEditSessionTitleClick` | session-list.js | 会话标题编辑按钮，创建 input 替换标题 |
+| `handleRemoveSessionClick` | session-list.js | 会话删除按钮，confirmAction 后删除 |
+| `handleSessionListItemClick` | session-list.js | 会话列表项点击，切换当前会话 |
+| `handleCopyContentClick` | messages.js | 复制内容按钮，clipboard.writeText |
+| `handleExpandJsonClick` | messages.js | 展开完整向量按钮，切换 fullJson 显隐 |
+| `handleCopyCodeClick` | messages.js | 复制代码块按钮 |
+| `handleScrollTop` | ui-utils.js | 滚动导航到消息区顶部 |
+| `handleScrollBottom` | ui-utils.js | 滚动导航到消息区底部 |
 | `isTextFile` | attachments.js | 判断文件扩展名是否为可读取的文本 |
 | `getMediaType` | attachments.js | 根据扩展名返回 MIME 类型 |
 | `fileToBase64` | attachments.js | File → base64 |
@@ -131,9 +140,9 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 从 `<aside.session.list > ol>` 清空并克隆 `<template id="one-session">`。按 `createdAt` 降序排列。每个会话项：
 
-- 点击 → `onSessionSelect(sessionId)`
-- 编辑按钮 → 创建 `<input class="editing title">` 内联替换标题文字，Enter/blur 保存，Escape 恢复
-- 删除按钮 → `confirmAction` 确认后调用 `onSessionDelete`
+- 点击 → `handleSessionListItemClick`（HTML `onclick` 绑定） → `onSessionSelect(sessionId)`
+- 编辑按钮 → `handleEditSessionTitleClick`（HTML `onclick` 绑定） → 创建 `<input class="editing title">` 内联替换标题文字，Enter/blur 保存，Escape 恢复
+- 删除按钮 → `handleRemoveSessionClick`（HTML `onclick` 绑定） → `confirmAction` 确认后调用 `onSessionDelete`
 
 ### 5. 端点标签栏 (renderSelectedEndpoints / toggleEndpointSelection)
 
@@ -143,7 +152,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 **toggleEndpointSelection** (行 55)：在 `selectedEndpoints` 中添加/移除 ID。正在生成时阻止操作。触发 `syncJoinBtnState` 同步树中 checkbox。
 
-**bindSelectorEvents** (行 71)：标签点击切换选中、叉号强制移除。为每个标签创建 tooltip（`createTooltip(buildTooltipHTML(...))`），hover 显示节点配置。
+事件绑定已移至 HTML 模板 `#template-selected-endpoint` 的内联 onclick/onmouseover/onmouseleave 属性，对应的 handler 为 `handleSelectedEndpointClick` / `handleSelectedEndpointRemoveClick` / `handleSelectedEndpointMouseover` / `handleSelectedEndpointMouseleave`。标签内容含 tooltip（`createTooltip`），hover 显示节点配置。
 
 ### 6. 附件系统
 
@@ -251,3 +260,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-10 | 图标切换规则 `.on`/`.off` 提升到 common.css | `toggle > input:checked ~ .icon.on { display:none }` + `input:not(:checked) ~ .icon.off { display:none }`，所有 toggle 共享，无需在项目 CSS 中重复 |
 | 2026-07-11 | 新增 `appendUserMessage` 替代 `handleSend` 中的 `renderMessages` 调用 | 发送消息时不清空 `.msg.list`，只追加新用户消息；旧回复卡片保留并清除 `data-endpoint-id`/`data-session-id` 防止冲突 |
 | 2026-07-11 | 代码块复制按钮图标从 `text(mk(…), '⧉')` 改为空 `mk(…)`，利用 CSS `.icon:empty::before` 渲染 | 与 common.css 图标体系对齐，移除手写字符；`done` 状态图标同理 |
+| 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性 | bindSelectorEvents 移除，tag 事件改为 HTML onclick/onmouseover/onmouseleave 直接引用 handler；会话列表 click/edit/delete 同理；消息区复制/展开/代码块复制/滚动按钮事件同上 |

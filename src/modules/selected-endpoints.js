@@ -1,4 +1,21 @@
 // ========== Selected Endpoint Functions ==========
+function handleSelectedEndpointClick(tag) {
+	toggleEndpointSelection(tag.dataset.endpoint);
+	if (tag._tooltip) tag._tooltip.hide();
+}
+function handleSelectedEndpointRemoveClick(btn) {
+	toggleEndpointSelection(btn.dataset.endpoint, true);
+}
+function handleSelectedEndpointMouseover(e, tag) {
+	if (e.target.closest('.remove.btn')) {
+		if (tag._tooltip) tag._tooltip.hide();
+		return;
+	}
+	if (tag._tooltip) tag._tooltip.show();
+}
+function handleSelectedEndpointMouseleave(tag) {
+	if (tag._tooltip) tag._tooltip.hide();
+}
 function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
     const summaryEl = $(".selected.endpoint.list");
     if (!summaryEl) return;
@@ -10,7 +27,7 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
 
     if (selectedEndpoints.length === 0) {
         if (hint) hint.style.display = '';
-        bindSelectorEvents();
+        
         return;
     }
 
@@ -46,9 +63,10 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
         }
 
         summaryEl.appendChild(li);
+        // 创建 tooltip
+        var selTooltipId = "tooltip-sel-" + id.replace(/[:\/\\]/g, '-');
+        li._tooltip = createTooltip(selTooltipId, li, buildTooltipHTML(info.node, rcfg, [...(info.ancestors || []).map(a => a.name), info.node.name].join("/")));
     });
-
-    bindSelectorEvents();
 }
 
 
@@ -79,48 +97,6 @@ function toggleEndpointSelection(id, forceRemove) {
     saveDefaultSelectedEndpoints(selectedEndpoints);
     renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
     syncJoinBtnState(id.split(':')[0]);
-}
-function bindSelectorEvents() {
-    // Make entire model tag clickable for toggle selection
-    $$('.selected.endpoint.list .one.endpoint').forEach(tag => {
-        tag.onclick = e => {
-            e.stopPropagation();
-            toggleEndpointSelection(tag.dataset.endpoint);
-        };
-    });
-    // 标签上的小叉：移除该端点
-    $$('.selected.endpoint.list .one.endpoint > .remove.btn').forEach(function(btn) {
-        btn.onclick = function(e) {
-            e.stopPropagation();
-            toggleEndpointSelection(btn.dataset.endpoint, true);
-        };
-    });
-
-    // 为每个选中的端点标签添加 tooltip
-    $$('.selected.endpoint.list .one.endpoint').forEach(tag => {
-        var selEndpointId = tag.dataset.endpoint;
-        var selInfo = findModelById(getGroups(), selEndpointId);
-        if (!selInfo) return;
-        var selNode = selInfo.node;
-        var selAncestors = selInfo.ancestors || [];
-        var selRcfg = resolveNodeConfig(selEndpointId);
-        var selDisplayName = [...selAncestors.map(a => a.name), selNode.name].join("/");
-        var selTooltipId = "tooltip-sel-" + selEndpointId.replace(/[:\/\\]/g, '-');
-        var selTooltip = createTooltip(selTooltipId, tag, buildTooltipHTML(selNode, selRcfg, selDisplayName));
-        tag.addEventListener("mouseover", function(e) {
-            if (e.target.closest('.remove.btn')) {
-                selTooltip.hide();
-                return;
-            }
-            selTooltip.show();
-        });
-        tag.addEventListener("mouseleave", function() {
-            selTooltip.hide();
-        });
-        tag.addEventListener("click", function() {
-            selTooltip.hide();
-        });
-    });
 }
 function syncJoinBtnState(nid) {
 	if (!nid) return;

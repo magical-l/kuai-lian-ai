@@ -295,6 +295,13 @@ function onClick(handlers, ctx = doc) {
 function confirmAction(msg, action) {
 	if (confirm(msg)) action();
 }
+function handleCopyValueClick(btn) {
+	const text = btn.dataset.copy || '';
+	navigator.clipboard.writeText(text).then(() => {
+		btn.classList.add("copied");
+		setTimeout(() => btn.classList.remove("copied"), 1500);
+	});
+}
 // DOM操作辅助
 const H = HTMLElement.prototype,
 	D = Document.prototype;
@@ -327,16 +334,6 @@ function createTooltip(id, triggerEl, populate) {
 
 	var parent = triggerEl.closest('.one.endpoint') || doc.body;
 	parent.appendChild(el);
-
-	// 绑定复制按钮
-	$$("button.copy", el).forEach(btn => {
-		btn.onclick = e => {
-			e.stopPropagation();
-			navigator.clipboard.writeText(btn.dataset.copy);
-			btn.classList.add("copied");
-			setTimeout(() => btn.classList.remove("copied"), 1500);
-		};
-	});
 
 	var hideTimer = null;
 	el.onmouseenter = () => { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } };

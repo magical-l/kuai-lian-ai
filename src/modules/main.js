@@ -19,6 +19,87 @@ selectedEndpoints = []; // 当前选中端点ID数组
 let sessionGenerations = new Map(); // 按会话隔离的生成状态：Map<sessionId, Map<endpointId, state>>
 let lastUserMessage = null;
 let pendingAttachments = []; // 待发送的附件列表
+
+// ========== Event Handlers (extracted from init() for HTML onclick) ==========
+function handleTestAllConnections() {
+    var allIds = [];
+    function collectIds(nodes) {
+        nodes.forEach(function(n) {
+            var rcfg = resolveNodeConfig(n.id);
+            if (rcfg && rcfg.baseUrl) allIds.push(n.id);
+            if (n.children) collectIds(n.children);
+        });
+    }
+    collectIds(getGroups());
+    allIds.forEach(function(id) { testConnection(id); });
+}
+
+function handleStopAllResponses() {
+    stopAllGenerations();
+    setButtonState(false, false);
+    renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
+}
+
+async function handleShowHelp() {
+    const saved = await storage.hasSavedHandle();
+    showHelpDialog(false, !!saved);
+}
+
+async function handleChangeDirectory() {
+    const success = await selectDirectory();
+    if (success) {
+        updateDirectoryDisplay();
+        await refreshUI();
+    }
+}
+
+async function handleFileInputChange(input) {
+    const files = input.files;
+    if (files && files.length > 0) {
+        for (const file of files) {
+            await addAttachment(file);
+        }
+    }
+    input.value = '';
+    renderPendingAttachments();
+}
+
+function handleSendModePopBeforetoggle(e) {
+    if (e.newState === 'open') {
+        var toggle = document.querySelector(".send-shortcut-selector");
+        var btnRect = toggle.getBoundingClientRect();
+        var pop = e.target;
+        pop.style.position = "fixed";
+        var popHeight = pop.getBoundingClientRect().height || 88;
+        var popWidth = pop.getBoundingClientRect().width || 140;
+        pop.style.top = (btnRect.top - popHeight - 8) + "px";
+        pop.style.left = (btnRect.right - popWidth) + "px";
+    }
+}
+
+function handleSendModePopToggle(e) {
+    var toggle = document.querySelector(".send-shortcut-selector");
+    toggle.classList.toggle("active", e.newState === "open");
+}
+
+async function handleThemeRadioChange(radio) {
+    if (radio.checked) {
+        var mode = radio.value === "system" ? null : radio.value;
+        await setThemePref(mode);
+        updateThemeIcon(mode);
+        document.getElementById("themePop")?.hidePopover();
+    }
+}
+
+function handleStopOneResponseClick(btn) {
+    var card = btn.closest(".one.response.msg");
+    var sessionId = card.dataset.sessionId;
+    var endpointId = card.dataset.endpointId;
+    stopSingleGeneration(sessionId, endpointId);
+    btn.disabled = true;
+    btn.classList.remove("visible");
+}
+
 async function init() {
 	initDividers();
 	initScrollNav();
@@ -56,20 +137,7 @@ async function init() {
 			sendModePop?.hidePopover();
 		});
 	});
-	// Popover 打开前定位 + 同步按钮高亮
-	sendModePop?.addEventListener('beforetoggle', (e) => {
-		if (e.newState === 'open') {
-			const btnRect = toggle.getBoundingClientRect();
-			sendModePop.style.position = 'fixed';
-			const popHeight = sendModePop.getBoundingClientRect().height || 88;
-			const popWidth = sendModePop.getBoundingClientRect().width || 140;
-			sendModePop.style.top = (btnRect.top - popHeight - 8) + 'px';
-			sendModePop.style.left = (btnRect.right - popWidth) + 'px';
-		}
-	});
-	sendModePop?.addEventListener('toggle', (e) => {
-		toggle.classList.toggle('active', e.newState === 'open');
-	});
+
 	// 粘贴图片处理
 	chatInput.on('paste', async (e) => {
 		const items = e.clipboardData?.items;
@@ -98,68 +166,8 @@ async function init() {
 		updateDirectoryDisplay();
 		await refreshUI();
 	}
-	$('.add-group').onclick = handleAddGroup;
-	$('.collapse-all').onclick = collapseAllEndpointNodes;
-	$('.test-all').onclick = function() {
-		var allIds = [];
-		function collectIds(nodes) {
-			nodes.forEach(function(n) {
-				var rcfg = resolveNodeConfig(n.id);
-				if (rcfg && rcfg.baseUrl) allIds.push(n.id);
-				if (n.children) collectIds(n.children);
-			});
-		}
-		collectIds(getGroups());
-		allIds.forEach(function(id) { testConnection(id); });
-	};
-	$('.send').onclick = () => { handleSend(); };
-	$('.stop-all-response.btn').onclick = () => {
-		stopAllGenerations();
-		setButtonState(false, false);
-		renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
-	};
-	$('.help').onclick = async () => {
-		const saved = await storage.hasSavedHandle();
-		showHelpDialog(false, !!saved);
-	};
-	$('.new-session').onclick = handleNewSession;
-	$('.drop-dir').onclick = handleDeleteDirectory;
-	$('.wipe-dir').onclick = handleWipeDirectory;
-	// 附件按钮
-	$('.add.attachment.btn').onclick = () => {
-		$('.file-input').click();
-	};
-	$('.file-input').onchange = async (e) => {
-		const files = e.target.files;
-		if (files && files.length > 0) {
-			for (const file of files) {
-				await addAttachment(file);
-			}
-		}
-		e.target.value = ''; // 清空以便再次选择相同文件
-		renderPendingAttachments();
-	};
-	// 更换目录按钮
-	$('.change-dir').onclick = async () => {
-		const success = await selectDirectory();
-		if (success) {
-			updateDirectoryDisplay();
-			await refreshUI();
-		}
-	};
 	// 主题初始化
 	initTheme();
-	// 主题选择 radio 切换
-	document.querySelectorAll('#themePop input[type=radio]').forEach(radio => {
-		radio.addEventListener('change', async () => {
-			if (radio.checked) {
-				const mode = radio.value === 'system' ? null : radio.value;
-				await setThemePref(mode);
-				updateThemeIcon(mode);
-				document.getElementById('themePop')?.hidePopover();
-			}
-		});
-	});
 }
 async function handleDeleteDirectory() {
 	const msg = storage.mode === 'browser' ? '确定清除浏览器存储中的所有数据？此操作不可恢复。' : '确定删除当前目录配置？删除后需要重新选择目录。（磁盘上的数据文件不会被删除）';
@@ -560,12 +568,6 @@ function showThinkingCards(endpoints, groups, sessionId) {
         const stopBtn = $('.stop-one-response', card);
         if (stopBtn) {
             stopBtn.classList.add('visible');
-            stopBtn.onclick = (e) => {
-                e.stopPropagation();
-                stopSingleGeneration(sessionId, id);
-                stopBtn.disabled = true;
-                stopBtn.classList.remove('visible');
-            };
         }
         container.addChild(card);
     });
@@ -598,6 +600,8 @@ function updateStreamingCard(endpointId, state, firstTokenTime, groups, sessionI
 	const contentEl = $('.say', card);
 	if (contentEl) {
 		contentEl.textContent = state.content || '';
+		const meta = $('header', card);
+		if (meta) meta.dataset.copyText = state.content || '';
 	}
 	if (firstTokenTime !== null) {
 		const meta = $('header', card);
@@ -780,18 +784,10 @@ function updateCardAsEmbedding(endpointId, result, sessionId) {
 	if (contentWrapper) {
 				var embDiv = $('.embedding-result', contentWrapper);
 		embDiv.classList.remove('hidden');
-		embDiv.querySelector('.dim').textContent = dim;
+		embDiv.querySelector('.dim').textContent = result.embedding.length;
+		var preview = '[' + result.embedding.slice(0, 5).map(function(v) { return v.toFixed(6); }).join(', ') + ', ...]';
 		embDiv.querySelector('.preview').textContent = preview;
-		embDiv.querySelector('.expand-json').remove();
-		embDiv.querySelector('.embedding-full-json').remove();
-		const copyBtn = embDiv.querySelector('.copy.code');
-	        copyBtn.onclick = () => {
-			const codeText = embDiv.querySelector('.preview').textContent;
-			navigator.clipboard.writeText(codeText).then(() => {
-				copyBtn.classList.add("copied");
-				setTimeout(() => copyBtn.classList.remove("copied"), 1500);
-			});
-		};
+						
 	}
 	updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }
