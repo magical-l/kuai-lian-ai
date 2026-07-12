@@ -123,7 +123,7 @@ async function init() {
 		showHelpDialog(false, !!saved);
 	};
 	$('.new-session').onclick = handleNewSession;
-	$('.delete-dir').onclick = handleDeleteDirectory;
+	$('.drop-dir').onclick = handleDeleteDirectory;
 	$('.wipe-dir').onclick = handleWipeDirectory;
 	// 附件按钮
 	$('.add.attachment.btn').onclick = () => {
@@ -737,7 +737,7 @@ function updateThemeIcon(mode) {
 	const icon = $('.theme.btn svg use');
 	if (!icon) return;
 	const iconName = mode === 'dark' ? 'moon' : mode === 'light' ? 'sun' : 'auto';
-	icon.setAttribute('href', `icons.svg#icon-${iconName}`);
+	icon.setAttribute('href', `icons.svg#${iconName}`);
 }
 
 async function initTheme() {

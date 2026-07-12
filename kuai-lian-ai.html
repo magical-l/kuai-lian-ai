@@ -53,21 +53,21 @@
 			<span class="cur">未选择目录</span>
 			<div class="op , list , btn-group , flex items-go-x">
 				<button title="更换目录" class="btn : change-dir , square shape , bare icon-only">
-					<span class="fill-style icon"><svg><use href="icons.svg#icon-folder"></use></svg></span>
+					<span class="fill-style icon"><svg><use href="icons.svg#folder"></use></svg></span>
 				</button>
-				<button title="弃用目录" class="btn : delete-dir , danger , square shape , bare icon-only">
+				<button title="弃用目录" class="btn : drop-dir , danger , square shape , bare icon-only">
 					<span class="char-style icon : delete"></span>
 				</button>
 				<button title="清空数据" class="btn : wipe-dir , danger , square shape , bare icon-only">
-					<span class="fill-style icon"><svg><use href="icons.svg#icon-trash"></use></svg></span>
+					<span class="fill-style icon"><svg><use href="icons.svg#trash"></use></svg></span>
 				</button>
 			</div>
 		</div>
 		<nav class="flex items-go-x">
 			<label title="显示/隐藏右侧栏" class="toggle btn : sidebar near-right visibility , square shape , bare icon-only">
 				<input type="checkbox" hidden>
-				<span class="fill-style icon : on"><svg><use href="icons.svg#icon-sidebar-open"></use></svg></span>
-				<span class="fill-style icon : off"><svg><use href="icons.svg#icon-sidebar-closed"></use></svg></span>
+				<span class="fill-style icon : on"><svg><use href="icons.svg#sidebar-open"></use></svg></span>
+				<span class="fill-style icon : off"><svg><use href="icons.svg#sidebar-closed"></use></svg></span>
 			</label>
 			<button title="帮助" class="btn : help , square shape , bare icon-only"><span class="char-style icon : help"></span></button>
 			<dialog class="help">
@@ -117,22 +117,22 @@
 			</dialog>
 
 			<button title="切换主题" class="btn : theme, square shape , bare icon-only" popovertarget="themePop">
-				<span class="fill-style icon"><svg><use href="icons.svg#icon-sun"></use></svg></span>
+				<span class="fill-style icon"><svg><use href="icons.svg#sun"></use></svg></span>
 			</button>
 			<div id="themePop" popover role="menu">
 				<label class="option btn : light-mode , flex items-go-x">
 					<input type="radio" name="theme" value="light" checked>
-					<span class="fill-style icon"><svg><use href="icons.svg#icon-sun"></use></svg></span>
+					<span class="fill-style icon"><svg><use href="icons.svg#sun"></use></svg></span>
 					亮色模式
 				</label>
 				<label class="option btn : dark-mode, flex items-go-x">
 					<input type="radio" name="theme" value="dark">
-					<span class="fill-style icon"><svg><use href="icons.svg#icon-moon"></use></svg></span>
+					<span class="fill-style icon"><svg><use href="icons.svg#moon"></use></svg></span>
 					暗色模式
 				</label>
 				<label class="option btn : follow-system-mode , flex items-go-x">
 					<input type="radio" name="theme" value="system">
-					<span class="fill-style icon"><svg><use href="icons.svg#icon-auto"></use></svg></span>
+					<span class="fill-style icon"><svg><use href="icons.svg#auto"></use></svg></span>
 					跟随系统
 				</label>
 			</div>
@@ -166,7 +166,7 @@
 				<span class="btn-group : op , list , flex items-go-x">
 					<button class="test-all btn ,  square shape , bare icon-only" title="测试全部连接"><span class="char-style icon link"></span></button>
 					<button class="collapse-all btn , square shape , bare icon-only" title="收起全部">
-						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-collapse-all"></use></svg></span>
+						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#collapse-all"></use></svg></span>
 					</button>
 					<button class="add-group btn , square shape , bare icon-only" title="新增端点">
 						<span class="char-style icon add"></span>
@@ -193,16 +193,16 @@
 										</button>
 										<label class="btn : join-session , square shape , bare icon-only" title="加入当前会话">
 											<input name="joined" type="checkbox">
-											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-bubble"></use></svg></span>
+											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#bubble"></use></svg></span>
 										</label>
 										<button class="btn : edit , square shape , bare icon-only" title="编辑节点">
 											<span class="char-style icon : edit"></span>
 										</button>
 										<button class="btn : duplicate , square shape , bare icon-only" title="复刻节点">
-											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-duplicate"></use></svg></span>
+											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#duplicate"></use></svg></span>
 										</button>
 										<button class="btn : remove , danger bare icon-only , square shape" title="删除节点及其子节点">
-											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-trash"></use></svg></span>
+											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#trash"></use></svg></span>
 										</button>
 									</div>
 								</header>
@@ -303,15 +303,15 @@
 					<div class="attachment list , flexible , flex items-go-x scrollable" style="gap:4px"></div>
 					<input type="file" class="file-input" multiple accept="*/*">
 					<button class="btn : add attachment , square shape icon-only" title="添加附件">
-						<span class="fill-style icon"><svg><use href="icons.svg#icon-attach"></use></svg></span>
+						<span class="fill-style icon"><svg><use href="icons.svg#attach"></use></svg></span>
 					</button>
 					
 					<div title="发送" class="split-style btn-group : send , flex items-go-x items-from-left">
 						<button class="main btn : send , primary , icon-only">
-							<span class="fill-style icon"><svg><use href="icons.svg#icon-send"></use></svg></span>
+							<span class="fill-style icon"><svg><use href="icons.svg#send"></use></svg></span>
 						</button>
 						<button class="secondary btn : send-shortcut-selector , icon-only" popovertarget="sendModePop">
-							<span class="fill-style icon"><svg><use href="icons.svg#icon-chevron-down"></use></svg></span>
+							<span class="fill-style icon"><svg><use href="icons.svg#chevron-down"></use></svg></span>
 						</button>
 						<div id="sendModePop" popover="auto">
 							<div class="flex items-go-y">
@@ -400,7 +400,7 @@
 									<span class="char-style icon : edit"></span>
 								</button>
 								<button class="btn : remove , danger , square shape , bare icon-only" title="删除会话">
-									<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#icon-trash"></use></svg></span>
+									<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#trash"></use></svg></span>
 								</button>
 							</div>
 						</footer>
@@ -499,8 +499,8 @@
 						<input name="apikey" id="apikey-input" type="password">
 						<label class="toggle btn : apikey visibility , square shape icon-only" title="显示/隐藏">
 							<input type="checkbox" hidden>
-							<span class="fill-style icon : on"><svg><use href="icons.svg#icon-eye"></use></svg></span>
-							<span class="fill-style icon : off"><svg><use href="icons.svg#icon-eye-off"></use></svg></span>
+							<span class="fill-style icon : on"><svg><use href="icons.svg#eye"></use></svg></span>
+							<span class="fill-style icon : off"><svg><use href="icons.svg#eye-off"></use></svg></span>
 						</label>
 					</span>
 				</span>
@@ -5723,7 +5723,7 @@ async function init() {
 		showHelpDialog(false, !!saved);
 	};
 	$('.new-session').onclick = handleNewSession;
-	$('.delete-dir').onclick = handleDeleteDirectory;
+	$('.drop-dir').onclick = handleDeleteDirectory;
 	$('.wipe-dir').onclick = handleWipeDirectory;
 	// 附件按钮
 	$('.add.attachment.btn').onclick = () => {
@@ -6303,7 +6303,7 @@ function updateThemeIcon(mode) {
 	const icon = $('.theme.btn svg use');
 	if (!icon) return;
 	const iconName = mode === 'dark' ? 'moon' : mode === 'light' ? 'sun' : 'auto';
-	icon.setAttribute('href', `icons.svg#icon-${iconName}`);
+	icon.setAttribute('href', `icons.svg#${iconName}`);
 }
 async function initTheme() {
 	themeMode = localStorage.getItem('themePref') || null;
