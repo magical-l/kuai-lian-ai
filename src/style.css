@@ -46,8 +46,10 @@ html {
 		--accent-light: rgba(109, 158, 255, 0.15);
 		--accent-muted: rgba(109, 158, 255, 0.25);
 		--success: #34d399;
+		--success-hover: #10b981;
 		--success-light: rgba(52, 211, 153, 0.15);
 		--danger: #f87171;
+		--danger-hover: #ef4444;
 		--danger-light: rgba(248, 113, 113, 0.15);
 		--warning: #fbbf24;
 		--warning-light: rgba(251, 191, 36, 0.15);
