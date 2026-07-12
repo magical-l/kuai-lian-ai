@@ -866,19 +866,22 @@ main {
 	}
 }
 
-/* 类型图标映射 */
-.endpoint-type.badge {
-	font-size: 0.75em;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.endpoint-type.option.btn {
-	&.chat::before { content: '💬'; }
-	&.embedding::before { content: '🔢'; }
-	&.image-generation::before { content: '🎨'; }
-	&.reranking::before { content: '📊'; }
+.endpoint-type {
+	&.icon::before, & .icon::before {
+		font-size: 0.75em;
+	}
+	&.chat {
+		&.icon::before, & .icon::before { content: '💬'; }
+	}
+	&.embedding {
+		&.icon::before, & .icon::before { content: '🔢'; }
+	}
+	&.image-generation {
+		&.icon::before, & .icon::before { content: '🎨'; }
+	}
+	&.reranking {
+		&.icon::before, & .icon::before { content: '📊'; }
+	}
 }
 
 aside.endpoint.list {

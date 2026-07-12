@@ -35,7 +35,7 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
         const speedClass = genState?.firstTokenTime ? getSpeedClass(genState.firstTokenTime) : '';
         if (speedClass) li.classList.add('speed-' + speedClass);
 
-        li.querySelector('.endpoint-type.badge').classList.add(typeIconMap[rcfg?.type] || 'chat');
+        li.querySelector('.endpoint-type').classList.add(typeIconMap[rcfg?.type] || 'chat');
         li.querySelector('.full.name').textContent = [...(info.ancestors || []).map(a => a.name), info.node.name].join('/');
 
         const remarkEl = li.querySelector('.remark');

@@ -74,7 +74,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			nameSpan.textContent = node.name;
 
 			// 设置类型标签
-			var badge = nodeEl.querySelector('.endpoint-type.badge');
+			var badge = nodeEl.querySelector('.endpoint-type');
 			if (badge) {
 				var type = rcfg ? rcfg.type : 'chat';
 				if (type === 'chat') { badge.classList.add('chat'); }
@@ -484,7 +484,7 @@ function applyEndpointFilter() {
 	var items = document.querySelectorAll('aside.endpoint.list li.one.endpoint');
 	for (var i = items.length - 1; i >= 0; i--) {
 		var li = items[i];
-		var badge = li.querySelector('.endpoint-type.badge');
+		var badge = li.querySelector('.endpoint-type');
 		var type = '';
 		if (badge) {
 			if (badge.classList.contains('chat')) type = 'chat';

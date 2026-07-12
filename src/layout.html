@@ -35,7 +35,7 @@
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
 			<span class="cur">未选择目录</span>
-			<div class="op , list , btn-group , flex items-go-x">
+			<div class="op list , btn-group , flex items-go-x">
 				<button title="更换目录" class="btn : change-dir , square shape , bare">
 					<span class="fill-style icon"><svg><use href="icons.svg#folder"></use></svg></span>
 				</button>
@@ -48,16 +48,20 @@
 			</div>
 		</div>
 		<nav class="flex items-go-x">
-			<label title="显示/隐藏右侧栏" class="toggle btn : sidebar near-right visibility , square shape , bare">
+			<label title="显示/隐藏右侧栏" class="toggle btn : visibility of sidebar near-right , square shape , bare">
 				<input type="checkbox" hidden>
 				<span class="fill-style icon : on"><svg><use href="icons.svg#sidebar-open"></use></svg></span>
 				<span class="fill-style icon : off"><svg><use href="icons.svg#sidebar-closed"></use></svg></span>
 			</label>
-			<button title="帮助" class="toggle btn : help , square shape , bare"><span class="char-style icon : help"></span></button>
+			<button title="帮助" class="toggle btn : help , square shape , bare">
+				<span class="char-style icon : help"></span>
+			</button>
 			<dialog class="help">
 				<header>
 					<h3>快<del>恋爱</del>连AI 使用帮助</h3>
-					<button class="btn : close , square shape , bare" onclick="closeHelpDialog()"><span class="char-style icon : cancel"></span></button>
+					<button class="btn : close , square shape , bare" onclick="closeHelpDialog()">
+						<span class="char-style icon : cancel"></span>
+					</button>
 				</header>
 				<article>
 					<section>
@@ -71,7 +75,7 @@
 					<section class="workspace-setting , flex items-go-x">
 						<h4>存储目录</h4>
 							<span class="cur"></span>
-							<div class="op , list , flex items-go-x">
+							<div class="op list , flex items-go-x">
 								<button class="btn : recover , primary" onclick="onRecoverDirectory()">恢复目录</button>
 								<button class="btn : select-dir" onclick="onSelectDirectory()"></button>
 								<button class="btn : use-browser-storage" onclick="onUseBrowserStorage()">使用浏览器存储</button>
@@ -130,30 +134,32 @@
 		</nav>
 	</header>
 	<div class="main-row , flex items-go-x">
-		<aside class="endpoint list , flex items-go-y">
+		<aside class="near-left , endpoint list , flex items-go-y">
 			<header class="flex items-go-x">
 				<span>AI服务端点</span>
 				<div class="btn-group : endpoint-type filter , flex items-go-x">
-					<label title="聊天" class="endpoint-type option btn : chat , square shape ,">
+					<label title="聊天" class="endpoint-type option btn : chat icon , square shape">
 						<input type="checkbox" value="chat" checked>
 					</label>
-					<label title="嵌入" class="endpoint-type option btn : embedding , square shape ,">
+					<label title="嵌入" class="endpoint-type option btn : embedding icon , square shape">
 						<input type="checkbox" value="embedding" checked>
 					</label>
-					<label title="生图" class="endpoint-type option btn : image-generation ,  square shape ,">
+					<label title="生图" class="endpoint-type option btn : image-generation icon , square shape">
 						<input type="checkbox" value="image-generation" checked>
 					</label>
-					<label title="重排序" class="endpoint-type option btn : reranking ,  square shape ,">
+					<label title="重排序" class="endpoint-type option btn : reranking icon , square shape">
 						<input type="checkbox" value="reranking" checked>
 					</label>
 				</div>
-				<span class="btn-group : op , list , flex items-go-x">
-					<button class="test-all btn ,  square shape , bare" title="测试全部连接"><span class="char-style icon link"></span></button>
-					<button class="collapse-all btn , square shape , bare" title="收起全部">
+				<span class="btn-group : op list , flex items-go-x">
+					<button title="测试全部连接" class="btn : test-all , square shape , bare">
+						<span class="char-style icon : link"></span>
+					</button>
+					<button title="收起全部" class="btn : collapse-all , square shape , bare">
 						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#collapse-all"></use></svg></span>
 					</button>
-					<button class="add-group btn , square shape , bare" title="新增端点">
-						<span class="char-style icon add"></span>
+					<button title="新增节点" class="btn : add-group , square shape , bare">
+						<span class="char-style icon : add"></span>
 					</button>
 				</span>
 			</header>
@@ -166,9 +172,9 @@
 									<span class="handle btn : drag , square shape , bare" draggable="true" title="拖动排序">
 										<span class="char-style icon : drag"></span>
 									</span>
-									<span class="char-style icon : endpoint-type , badge"></span>
+									<span class="char-style icon : endpoint-type ,"></span>
 									<span class="name"></span>
-									<div class="btn-group : op , list , flex items-go-x">
+									<div class="btn-group : op list , flex items-go-x">
 										<button class="btn : add-child , square shape , bare" title="添加子节点">
 											<span class="char-style icon add"></span>
 										</button>
@@ -209,10 +215,10 @@
 				<span>会话：</span>
 				<span class="title">新会话</span>
 				<div class="btn-group : go-top-bottom , flex items-go-x">
-					<button class="btn : go-top , square shape ," title="到顶部"><span class="char-style icon : go-top"></span></button>
-					<button class="btn : go-bottom , square shape ," title="到底部"><span class="char-style icon : go-bottom"></span></button>
+					<button class="btn : go-top , square shape" title="到顶部"><span class="char-style icon : go-top"></span></button>
+					<button class="btn : go-bottom , square shape" title="到底部"><span class="char-style icon : go-bottom"></span></button>
 				</div>
-				<button class="new-session btn" title="新建会话">新建会话</button>
+				<button class="btn : new-session" title="新建会话">新建会话</button>
 			</header>
 
 			<section class="msg list , flex items-go-y">
@@ -252,7 +258,9 @@
 						<div class="embedding-result hidden">
 							<div class="flex items-go-x items-y-near-center" style="gap:8px">
 								<strong>嵌入维度:</strong> <span class="dim"></span>
-								<button class="btn : expand-json , square shape , bare" title="展开完整向量"><span class="char-style icon expand"></span></button>
+								<button class="btn : expand-json , square shape , bare" title="展开完整向量">
+									<span class="char-style icon expand"></span>
+								</button>
 							</div>
 							<div class="flex items-go-x items-y-near-center" style="gap:8px">
 								<strong>预览:</strong> <code class="preview"></code>
@@ -261,7 +269,7 @@
 									<span class="status icon : done , char-style"></span>
 								</button>
 							</div>
-							<pre class="embedding-full-json hidden"></pre>
+							<pre class="embedding-full-json , hidden"></pre>
 						</div>
 					</div>
 				</article>
@@ -275,7 +283,7 @@
 					<li class="empty hint">请选择端点</li>
 					<template id="template-selected-endpoint">
 						<li class="one endpoint" data-endpoint="">
-							<span class="endpoint-type badge icon"></span>
+							<span class="endpoint-type icon"></span>
 							<span class="full name"></span>
 							<span class="remark"></span>
 							<span class="remove btn , bare icon" data-endpoint=""></span>
@@ -291,10 +299,10 @@
 					</button>
 					
 					<div title="发送" class="split-style btn-group : send , flex items-go-x items-from-left">
-						<button class="main btn : send , primary ,">
+						<button class="main btn : send , primary">
 							<span class="fill-style icon"><svg><use href="icons.svg#send"></use></svg></span>
 						</button>
-						<button class="secondary btn : send-shortcut-selector ," popovertarget="sendModePop">
+						<button class="secondary btn : send-shortcut-selector" popovertarget="sendModePop">
 							<span class="fill-style icon"><svg><use href="icons.svg#chevron-down"></use></svg></span>
 						</button>
 						<div id="sendModePop" popover="auto">
@@ -379,7 +387,7 @@
 						<header class="title">新会话</header>
 						<footer class="meta , flex items-go-x">
 							<span class="time"></span>
-							<div class="btn-group : op , list , flex items-go-x">
+							<div class="btn-group : op list , flex items-go-x">
 								<button title="编辑标题" class="btn : edit title , square shape , bare">
 									<span class="char-style icon : edit"></span>
 								</button>
