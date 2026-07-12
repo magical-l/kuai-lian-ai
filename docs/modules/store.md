@@ -3,7 +3,7 @@ title: 数据管理层
 covers_file: [src/modules/store.js]
 depends_on: [storage-core.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-07-08
+last_updated: 2026-07-12
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -32,7 +32,7 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
   key: "sk-...",           // API key
   modelId: "gpt-4",       // 叶子节点：实际模型 ID；父节点：空
   remark: "备注文本",
-  type: "chat",           // chat | embedding | image | rerank；空串=自动检测
+  type: "chat",           // chat | embedding | image-generation | reranking；空串=自动检测
   children: [ /* 子节点 */ ]
 }
 ```
@@ -51,7 +51,7 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
 | `findNodeInTree(nodes, nodeId)` | 只查找节点对象，不返回祖先链 | O(n) |
 | `resolveNodeConfig(nodeId)` | 合并节点自身及祖先链的配置字段，返回 `{ baseUrl, style, key, modelId, type }` | O(n + d) |
 | `findModelById(nodes, nodeId)` | 同 `findNodeWithAncestors`，语义别名 | O(n) |
-| `detectModelType(name)` | 从模型名推断 `chat` / `embedding` / `rerank` | 字符串匹配 |
+| `detectModelType(name)` | 从模型名推断 `chat` / `embedding` / `image-generation` / `reranking` | 字符串匹配 |
 
 ### 数据加载与迁移
 
@@ -128,6 +128,7 @@ stripModels(node)
 2. 先从节点自身读取 `{ baseUrl, style, key, modelId, type }`
 3. 从最近祖先向根遍历，对每个空字段尝试从祖先继承
 4. type 继承后仍为空 → 从 modelId 启发式推断（`detectModelType`）
+5. 类型别名规范化：`img-generate`/`image` → `image-generation`，`embed` → `embedding`，`rerank` → `reranking`
 
 **示例**：
 
@@ -163,3 +164,5 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 首条消息自动设为会话标题 | 减少用户操作步骤；取前 20 字符足够在侧边栏展示 |
 | `addMessage` 将 content 统一转为 `[{ type, text }]` 数组格式 | 兼容旧版字符串格式和未来扩展（多模态）；`normalizeMessageContent` 保障向下兼容 |
 | 2026-07-03 | `type` 字段加入节点数据模型和继承链 | 每个端点独立标注用途（chat/embedding/image/rerank），取代全局 inputMode 切换；inherit 后为空时 fallback 到 `detectModelType` 保证向后兼容 |
+| 2026-07-12 | `resolveNodeConfig` 增加类型别名归一 | 旧数据中 `img-generate`/`image`/`embed`/`rerank` 统一转为标准值；修复端点树图标和筛选 |
+| 2026-07-12 | `detectModelType` 增加 image-generation 检测 | 按关键词 `image`/`dall-e`/`diffusion`/`flux` 识别生图模型，自动设为 `image-generation` |

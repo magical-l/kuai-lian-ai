@@ -21,30 +21,53 @@ function findNodeInTree(nodes, nodeId) {
 	return r ? r.node : null;
 }
 
-// 解析节点的有效配置（沿祖先链继承）
 function resolveNodeConfig(nodeId) {
-	if (!endpointsData) endpointsData = { nodes: [] };
-	const result = findNodeWithAncestors(endpointsData.nodes, nodeId);
-	if (!result) return null;
-	const { node, ancestors } = result;
-	const fields = ["baseUrl", "style", "key", "modelId", "type"];
-	const config = {};
-	for (const f of fields) config[f] = node[f] || '';
-	// 从最近祖先往上走，填补缺失字段
-	for (let i = ancestors.length - 1; i >= 0; i--) {
-		for (const f of fields) {
-			if (!config[f] && ancestors[i][f]) config[f] = ancestors[i][f];
-		}
-	}
-	// type 继承后仍为空 → 从 modelId 启发式推断
-	if (!config.type) {
-		config.type = detectModelType(config.modelId);
-	}
-	// style 继承后仍为空 → 默认 OpenAI
-	if (!config.style) {
-		config.style = "openai";
-	}
-	return config;
+    if (!endpointsData) endpointsData = {
+        nodes: []
+    };
+
+    const result = findNodeWithAncestors(endpointsData.nodes, nodeId);
+
+    if (!result)
+        return null;
+
+    const {
+        node,
+        ancestors
+    } = result;
+
+    const fields = ["baseUrl", "style", "key", "modelId", "type"];
+    const config = {};
+
+    for (const f of fields)
+        config[f] = node[f] || "";
+
+    for (let i = ancestors.length - 1; i >= 0; i--) {
+        for (const f of fields) {
+            if (!config[f] && ancestors[i][f])
+                config[f] = ancestors[i][f];
+        }
+    }
+
+    if (!config.type) {
+        config.type = detectModelType(config.modelId);
+    }
+
+    var typeAliases = {
+        "img-generate": "image-generation",
+        "image": "image-generation",
+        "embed": "embedding",
+        "rerank": "reranking"
+    };
+
+    if (typeAliases[config.type])
+        config.type = typeAliases[config.type];
+
+    if (!config.style) {
+        config.style = "openai";
+    }
+
+    return config;
 }
 
 function findModelById(nodes, nodeId) {
@@ -54,13 +77,22 @@ function findModelById(nodes, nodeId) {
 	return { node, ancestors };
 }
 
-// 从模型名自动推断类型
 function detectModelType(name) {
-	if (!name) return 'chat';
-	var lower = name.toLowerCase();
-	if (lower.indexOf('embedding') >= 0 || lower.indexOf('text-embedding') >= 0 || lower === 'embed' || lower === 'embedding') return 'embedding';
-	if (lower.indexOf('reranking') >= 0 || lower.indexOf('rerank') >= 0 || lower.indexOf('re-rank') >= 0) return 'reranking';
-	return 'chat';
+    if (!name)
+        return "chat";
+
+    var lower = name.toLowerCase();
+
+    if (lower.indexOf("embedding") >= 0 || lower.indexOf("text-embedding") >= 0 || lower === "embed" || lower === "embedding")
+        return "embedding";
+
+    if (lower.indexOf("reranking") >= 0 || lower.indexOf("rerank") >= 0 || lower.indexOf("re-rank") >= 0)
+        return "reranking";
+
+    if (lower.indexOf("image") >= 0 || lower.indexOf("dall-e") >= 0 || lower.indexOf("diffusion") >= 0 || lower.indexOf("flux") >= 0)
+        return "image-generation";
+
+    return "chat";
 }
 
 // ========== 旧数据迁移 ==========
