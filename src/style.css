@@ -347,6 +347,15 @@ button, .btn {
 			& .done.icon { display: inline !important; }
 		}
 	}
+
+	&.cancel, &.done {
+		width: auto;
+		height: auto;
+		min-width: 0;
+		min-height: 0;
+		max-width: none;
+		max-height: none;
+	}
 }
 
 /* ====== 各种切换按钮 ====== */
