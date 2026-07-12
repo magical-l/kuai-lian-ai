@@ -1,4 +1,33 @@
 // ========== Message Functions ==========
+function handleCopyContentClick(btn) {
+	const meta = btn.closest('header');
+	const text = meta ? meta.dataset.copyText || '' : '';
+	navigator.clipboard.writeText(text).then(() => {
+		btn.classList.add("copied");
+		clearTimeout(btn._copiedTimer);
+		btn._copiedTimer = setTimeout(() => btn.classList.remove("copied"), 1500);
+	});
+}
+function handleExpandJsonClick(btn) {
+	const embMeta = btn.closest('.embedding-result');
+	const fullJsonPre = embMeta ? embMeta.querySelector('.embedding-full-json') : null;
+	if (fullJsonPre) fullJsonPre.classList.toggle('hidden');
+	const iconSpan = btn.querySelector('.icon');
+	if (iconSpan) {
+		iconSpan.classList.toggle('collapsed');
+		iconSpan.classList.toggle('expanded');
+		iconSpan.textContent = '';
+	}
+}
+function handleCopyCodeClick(btn) {
+	const embMeta = btn.closest('.embedding-result');
+	const fullJsonPre = embMeta ? embMeta.querySelector('.embedding-full-json') : null;
+	const text = fullJsonPre ? fullJsonPre.textContent : '';
+	navigator.clipboard.writeText(text).then(() => {
+		btn.classList.add('copied');
+		setTimeout(() => btn.classList.remove('copied'), 1500);
+	});
+}
 function renderMarkdown(text) {
 	if (!text) return '';
 	marked.setOptions({
@@ -74,14 +103,7 @@ function renderMessages(messages, groups, onCopy) {
 			const normalized = normalizeMessageContent(msg);
 			const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
 			const textContent = textItems.map(c => c.text || '').join('\n');
-			const copyBtn = $('.copy.content', meta);
-			copyBtn.onclick = () => {
-				navigator.clipboard.writeText(textContent).then(() => {
-					copyBtn.classList.add("copied");
-					clearTimeout(copyBtn._copiedTimer);
-					copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
-				});
-			};
+			meta.dataset.copyText = textContent;
 			if (textContent) {
 				const userEl = mk('div', 'content');
 				userEl.textContent = textContent;
@@ -160,14 +182,7 @@ function appendUserMessage(msg) {
 		const normalized = normalizeMessageContent(msg);
 		const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
 		const textContent = textItems.map(c => c.text || '').join('\n');
-		const copyBtn = $('.copy.content', meta);
-		copyBtn.onclick = () => {
-			navigator.clipboard.writeText(textContent).then(() => {
-				copyBtn.classList.add("copied");
-				clearTimeout(copyBtn._copiedTimer);
-				copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
-			});
-		};
+		meta.dataset.copyText = textContent;
 		if (textContent) {
 			const userEl = mk('div', 'content');
 			userEl.textContent = textContent;
@@ -333,20 +348,12 @@ function appendUserMessage(msg) {
         }
 
         // 复制按钮
-                let copyBtn = $('.copy.content', meta);
-copyBtn.onclick = () => {
-            navigator.clipboard.writeText(r.content || "").then(() => {
-                copyBtn.classList.add("copied");
-                clearTimeout(copyBtn._copiedTimer);
-                copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
-            });
-        };
+        meta.dataset.copyText = r.content || "";
 
         // 有错误时隐藏复制按钮
-        if (r.error) {
-            copyBtn.style.display = 'none';
-        } else {
-            copyBtn.style.display = '';
+        var copyContentBtn = $('.copy.content', meta);
+        if (copyContentBtn) {
+            copyContentBtn.classList.toggle('hidden', !!r.error);
         }
 
         // 更新思考块
@@ -387,23 +394,8 @@ copyBtn.onclick = () => {
             embMeta.querySelector('.preview').textContent = emb.preview;
             const fullJsonPre = embMeta.querySelector('.embedding-full-json');
             fullJsonPre.textContent = emb.fullJson;
-            const expandBtn = embMeta.querySelector('.expand-json');
-            expandBtn.onclick = function() {
-                fullJsonPre.classList.toggle('hidden');
-                const iconSpan = this.querySelector(".icon");
-                if (iconSpan) {
-                    iconSpan.classList.toggle("collapsed");
-                    iconSpan.classList.toggle("expanded");
-                    iconSpan.textContent = "";
-                }
-            };
-            const copyBtn = embMeta.querySelector('.copy.code');
-            copyBtn.onclick = () => {
-                navigator.clipboard.writeText(emb.fullJson).then(() => {
-                    copyBtn.classList.add("copied");
-                    setTimeout(() => copyBtn.classList.remove("copied"), 1500);
-                });
-            };
+
+
         }
 
         // image 结果（非流式生图场景）

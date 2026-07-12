@@ -26,6 +26,156 @@ function collapseAllEndpointNodes() {
 	});
 }
 
+// ========== Event Handlers (moved from inline JS to named functions) ==========
+
+function handleDetailsToggle(detailsEl) {
+	var nodeEl = detailsEl.closest('.one.endpoint');
+	var nodeId = nodeEl.dataset.nodeId;
+	if (detailsEl.open)
+		collapsedEndpoints.delete(nodeId);
+	else
+		collapsedEndpoints.add(nodeId);
+}
+
+function handleDragStart(e, handleEl) {
+	var nodeEl = handleEl.closest('.one.endpoint');
+	e.dataTransfer.setData("text/plain", nodeEl.dataset.nodeId);
+	e.dataTransfer.effectAllowed = "move";
+	nodeEl.classList.add("dragging");
+}
+
+function handleDragEnd(handleEl) {
+	var nodeEl = handleEl.closest('.one.endpoint');
+	nodeEl.classList.remove("dragging");
+	document.querySelectorAll(".one.endpoint").forEach(function(el) {
+		el.classList.remove("drag-over", "drag-over-child", "drag-over-before", "drag-over-after");
+	});
+}
+
+function handleSummaryTooltipMouseover(e, summaryEl) {
+	var opListEl = summaryEl.closest('details').querySelector('.op');
+	if (opListEl && opListEl.contains(e.target)) {
+		if (summaryEl._tooltip) summaryEl._tooltip.hide();
+		return;
+	}
+	if (summaryEl._tooltip) summaryEl._tooltip.show();
+}
+
+function handleSummaryTooltipMouseleave(summaryEl) {
+	if (summaryEl._tooltip) summaryEl._tooltip.hide();
+}
+
+function handleSummaryTooltipClick(summaryEl) {
+	if (summaryEl._tooltip) summaryEl._tooltip.hide();
+}
+
+function handleAddChildClick(btn) {
+	var nodeEl = btn.closest('.one.endpoint');
+	var nodeId = nodeEl.dataset.nodeId;
+	showEditGroupDialog(null, nodeId, function(data) {
+		addNode(nodeId, data).then(function() { refreshUI(); });
+	});
+}
+
+function handleBatchTestClick(btn) {
+	var ids = JSON.parse(btn.dataset.testableIds || '[]');
+	ids.forEach(function(id) { testConnection(id); });
+	btn.classList.add("testing");
+	var sp2 = btn.querySelector("span");
+	if (sp2) sp2.classList.add("spin", "animation");
+}
+
+function handleJoinSessionChange(cb) {
+	var nodeEl = cb.closest('.one.endpoint');
+	var nodeId = nodeEl.dataset.nodeId;
+	if (selectedEndpoints.includes(nodeId)) {
+		selectedEndpoints = selectedEndpoints.filter(function(x) { return x !== nodeId; });
+	} else {
+		selectedEndpoints.push(nodeId);
+	}
+	saveDefaultSelectedEndpoints(selectedEndpoints);
+	renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
+	applyJoinBtnUI(cb.closest('.join-session'), nodeId);
+}
+
+function handleEditNodeClick(btn) {
+	var nodeId = btn.closest('.one.endpoint').dataset.nodeId;
+	handleNodeEdit(nodeId);
+}
+
+async function handleDuplicateNodeClick(btn) {
+	var nodeId = btn.closest('.one.endpoint').dataset.nodeId;
+	await cloneNode(nodeId);
+	refreshUI();
+}
+
+function handleRemoveNodeClick(btn) {
+	var nodeEl = btn.closest('.one.endpoint');
+	var nodeId = nodeEl.dataset.nodeId;
+	var nodeName = nodeEl.querySelector('.name').textContent;
+	confirmAction("确定删除节点「" + nodeName + "」及其所有子节点和端点？", function() {
+		handleNodeDelete(nodeId);
+	});
+}
+
+function handleNodeDragover(e, nodeEl) {
+	e.preventDefault(); e.stopPropagation();
+	e.dataTransfer.dropEffect = "move";
+	var draggingEl = document.querySelector(".dragging");
+	if (!draggingEl || draggingEl === nodeEl) return;
+	var summary = nodeEl.querySelector("summary");
+	var summaryRect = summary.getBoundingClientRect();
+	nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
+	if (e.clientY >= summaryRect.top && e.clientY <= summaryRect.bottom) {
+		if (e.clientY < summaryRect.top + summaryRect.height / 2) {
+			nodeEl.classList.add("drag-over-before");
+		} else {
+			nodeEl.classList.add("drag-over-child");
+		}
+	} else {
+		nodeEl.classList.add("drag-over-child");
+	}
+}
+
+function handleNodeDragleave(nodeEl) {
+	nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
+}
+
+function handleNodeDrop(e, nodeEl) {
+	e.preventDefault(); e.stopPropagation();
+	var willMoveAsChild = nodeEl.classList.contains("drag-over-child");
+	nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
+	var draggedId = e.dataTransfer.getData("text/plain");
+	if (!draggedId || draggedId === nodeEl.dataset.nodeId) return;
+	if (willMoveAsChild) {
+		handleMoveNodeAsChild(draggedId, nodeEl.dataset.nodeId);
+	} else {
+		handleReorderNode(draggedId, nodeEl.dataset.nodeId, true);
+	}
+}
+
+function handleResetFilter() {
+	document.querySelectorAll('.endpoint-type.filter input[type="checkbox"]').forEach(function(cb) { cb.checked = true; });
+	activeTypeFilters.clear();
+	document.querySelectorAll('.endpoint-type.filter input[type="checkbox"]:checked').forEach(function(cb) { activeTypeFilters.add(cb.value); });
+	applyEndpointFilter();
+	updateEmptyState();
+}
+
+function handleClickAddEndpoint() {
+	var addGroupBtn = document.querySelector('.add-group.btn');
+	if (addGroupBtn) addGroupBtn.click();
+}
+
+function handleFilterBarChange(e) {
+	var checkbox = e.target.closest('input[type="checkbox"]');
+	if (!checkbox) return;
+	if (checkbox.checked) activeTypeFilters.add(checkbox.value);
+	else activeTypeFilters.delete(checkbox.value);
+	applyEndpointFilter();
+	updateEmptyState();
+}
+
 function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onTestConnection, onMoveNode) {
 	var container = document.querySelector("aside.endpoint.list > ol");
 
@@ -43,31 +193,10 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			var summaryEl = nodeEl.querySelector('details > summary');
 			var dragHandle = nodeEl.querySelector('.handle');
 			dragHandle.title = "拖动排序";
-			dragHandle.draggable = true;
-
-			dragHandle.on("dragstart", function(e) {
-				e.dataTransfer.setData("text/plain", node.id);
-				e.dataTransfer.effectAllowed = "move";
-				nodeEl.classList.add("dragging");
-			});
-
-			dragHandle.on("dragend", function() {
-				nodeEl.classList.remove("dragging");
-
-				$$(".one.endpoint", container).forEach(function(el) {
-					el.classList.remove("drag-over", "drag-over-child", "drag-over-before", "drag-over-after");
-				});
-			});
 
 			var detailsEl = nodeEl.querySelector('details');
 			detailsEl.open = hasContent && !isCollapsed;
 
-			detailsEl.addEventListener('toggle', function() {
-				if (detailsEl.open)
-					collapsedEndpoints["delete"](node.id);
-				else
-					collapsedEndpoints.add(node.id);
-			});
 
 			var nameSpan = nodeEl.querySelector('.name');
 			var rcfg = resolveNodeConfig(node.id);
@@ -85,34 +214,12 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 
 			var tooltipId = "tooltip-" + node.id;
 			var tooltipHTML = buildTooltipHTML(node, rcfg, node.name);
-			var tooltip = createTooltip(tooltipId, nameSpan, tooltipHTML);
+			nameSpan._tooltip = createTooltip(tooltipId, nameSpan, tooltipHTML);
 
-			summaryEl.on("mouseover", function(e) {
-				if (opListEl.contains(e.target)) {
-					tooltip.hide();
-					return;
-				}
-				tooltip.show();
-			});
-			summaryEl.on("mouseleave", function() {
-				tooltip.hide();
-			});
-			summaryEl.on("click", function() {
-				tooltip.hide();
-			});
 
 			var opListEl = nodeEl.querySelector('.op');
 			var addChildBtn = opListEl.querySelector('.add-child');
 
-			addChildBtn.on("click", function(e) {
-				e.stopPropagation();
-
-				showEditGroupDialog(null, node.id, function(data) {
-					addNode(node.id, data).then(function() {
-						refreshUI();
-					});
-				});
-			});
 
 			function isNodeTestable(n) {
 				var cfg = resolveNodeConfig(n.id);
@@ -220,117 +327,31 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 					batchTestBtn.title = "测试中...";
 				}
 
-				batchTestBtn.on("click", function(e) {
-					e.stopPropagation();
-
-					if (onTestConnection) {
-						testableIds.forEach(function(id) {
-							onTestConnection(id);
-						});
-					}
-					batchTestBtn.classList.add("testing");
-					var sp2 = batchTestBtn.querySelector("span");
-					if (sp2) sp2.classList.add("spin", "animation");
-				});
+				batchTestBtn.dataset.testableIds = JSON.stringify(testableIds);
 			}
 
 			var joinBtn = opListEl.querySelector('.join-session');
 			applyJoinBtnUI(joinBtn, node.id);
 			var cb = joinBtn.querySelector("input[type=checkbox]");
-			cb.addEventListener("change", function(e) {
-				e.stopPropagation();
-				var eid = node.id;
-
-				if (selectedEndpoints.includes(eid)) {
-					selectedEndpoints = selectedEndpoints.filter(function(x) {
-						return x !== eid;
-					});
-				} else {
-					selectedEndpoints.push(eid);
-				}
-
-				saveDefaultSelectedEndpoints(selectedEndpoints);
-				renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
-				applyJoinBtnUI(joinBtn, node.id);
-			});
 
 			var editBtn = opListEl.querySelector('.edit');
 
-			editBtn.on("click", function(e) {
-				e.stopPropagation();
-				onNodeEdit(node.id);
-			});
 
 			var duplicateBtn = opListEl.querySelector('.duplicate');
 
-			duplicateBtn.on("click", async function(e) {
-				e.stopPropagation();
-				await cloneNode(node.id);
-				refreshUI();
-			});
 
 			var deleteBtn = opListEl.querySelector('.remove');
 
-			deleteBtn.on("click", function(e) {
-				e.stopPropagation();
-
-				confirmAction("确定删除节点「" + node.name + "」及其所有子节点和端点？", function() {
-					onNodeDelete(node.id);
-				});
-			});
 
 			var remSpan = nodeEl.querySelector(".remark");
 			if (remSpan && node.remark) {
 				remSpan.textContent = " " + node.remark;
 			}
 
-			nodeEl.on("dragover", function(e) {
-				e.preventDefault();
-				e.stopPropagation();
-				e.dataTransfer.dropEffect = "move";
-				var draggingEl = $(".dragging", container);
+			nodeEl.ondragover = function(e) { handleNodeDragover(e, nodeEl); };
+			nodeEl.ondragleave = function() { handleNodeDragleave(nodeEl); };
+			nodeEl.ondrop = function(e) { handleNodeDrop(e, nodeEl); };
 
-				if (!draggingEl || draggingEl === nodeEl)
-					return;
-
-				var summary = $("summary", nodeEl);
-				var summaryRect = summary.getBoundingClientRect();
-				nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
-
-				if (e.clientY >= summaryRect.top && e.clientY <= summaryRect.bottom) {
-					if (e.clientY < summaryRect.top + summaryRect.height / 2) {
-						nodeEl.classList.add("drag-over-before");
-					} else {
-						nodeEl.classList.add("drag-over-child");
-					}
-				} else {
-					nodeEl.classList.add("drag-over-child");
-				}
-			});
-
-			nodeEl.on("dragleave", function() {
-				nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
-			});
-
-			nodeEl.on("drop", function(e) {
-				e.preventDefault();
-				e.stopPropagation();
-				var willMoveAsChild = nodeEl.classList.contains("drag-over-child");
-				nodeEl.classList.remove("drag-over-before", "drag-over-after", "drag-over-child");
-				var rawData = e.dataTransfer.getData("text/plain");
-				var draggedId = rawData;
-
-				if (!draggedId || draggedId === node.id)
-					return;
-
-				if (willMoveAsChild) {
-					if (onMoveNode)
-						onMoveNode(draggedId, node.id);
-				} else {
-					if (onReorderNodes)
-						onReorderNodes(draggedId, node.id, true);
-				}
-			});
 
 			if (hasContent) {
 				var contentEl = mk("ol", "children");
@@ -436,26 +457,6 @@ function updateEmptyState() {
 		emptyState.classList.add('hidden');
 	}
 
-	// 绑定「重置筛选」按钮（只绑一次）
-	if (resetBtn && !resetBtn.dataset.bound) {
-		resetBtn.dataset.bound = 'true';
-		resetBtn.onclick = function() {
-			document.querySelectorAll('.endpoint-type.filter input[type="checkbox"]').forEach(function(cb) { cb.checked = true; });
-			activeTypeFilters.clear();
-			document.querySelectorAll('.endpoint-type.filter input[type="checkbox"]:checked').forEach(function(cb) { activeTypeFilters.add(cb.value); });
-			applyEndpointFilter();
-			updateEmptyState();
-		};
-	}
-
-	// 绑定「去创建」按钮（只绑一次）
-	if (addBtn && !addBtn.dataset.bound) {
-		addBtn.dataset.bound = 'true';
-		addBtn.onclick = function() {
-			var addGroupBtn = document.querySelector('.add-group.btn');
-			if (addGroupBtn) addGroupBtn.click();
-		};
-	}
 }
 
 // 端点类型筛选
@@ -470,14 +471,6 @@ function initEndpointFilter() {
 		if (cb.checked) activeTypeFilters.add(cb.value);
 	});
 
-	filterBar.addEventListener('change', function(e) {
-		var checkbox = e.target.closest('input[type="checkbox"]');
-		if (!checkbox) return;
-		if (checkbox.checked) activeTypeFilters.add(checkbox.value);
-		else activeTypeFilters.delete(checkbox.value);
-		applyEndpointFilter();
-		updateEmptyState();
-	});
 }
 
 function applyEndpointFilter() {
