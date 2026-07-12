@@ -38,7 +38,7 @@ function addCodeCopyButtons(container) {
 
 		// 复制按钮
 		const copyBtn = document.createElement('button');
-		copyBtn.className = 'copy code btn , bare icon-only , shape square';
+		copyBtn.className = 'copy code btn , bare , shape square';
 		copyBtn.appendChild(mk('span', 'copy icon'));
 		copyBtn.appendChild(mk('span', 'done status icon'));
 		copyBtn.title = '复制';

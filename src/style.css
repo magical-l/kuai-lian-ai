@@ -872,7 +872,7 @@ main {
 	justify-content: center;
 }
 
-.endpoint-type.icon-only {
+.endpoint-type.option.btn {
 	&.chat::before { content: '💬'; }
 	&.embedding::before { content: '🔢'; }
 	&.image-generation::before { content: '🎨'; }
