@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-11
+last_updated: 2026-07-12
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -158,3 +158,4 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-08 | 节点操作栏新增复刻按钮 | 用户需要快速复制现有端点/分组配置；复刻在数据层生成新 UUID 子树，避免复制后 ID 冲突 |
 | 2026-07-08 | `.remark` 从动态创建改为模板内静态存在，JS 只设 textContent | `one-endpoint` 模板内已有 `.remark` 空 span，无需 createElement |
 | 2026-07-11 | 测试按钮状态管理从 className 全量重置改为 classList.remove/add | 避免 className 全量覆盖导致 HTML 中 base class（btn, bare, icon-only）丢失；classList 只管理状态类，base class 来自 HTML |
+| 2026-07-12 | `.spin` 旋转动画需同时加 `.animation` class | common.css 中 `.spin` 嵌套在 `.animation` 下，JS 只加 `.spin` 不加 `.animation` 导致旋转动画不生效 |

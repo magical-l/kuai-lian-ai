@@ -180,7 +180,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				if (hasTesting) {
 					batchTestBtn.classList.add("testing");
 					var sp = batchTestBtn.querySelector("span");
-					if (sp) sp.classList.add("spin");
+					if (sp) sp.classList.add("spin", "animation");
 				}
 				if (!hasTesting) {
 					var successCount = 0, failCount = 0, firstError = null;
@@ -230,7 +230,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 					}
 					batchTestBtn.classList.add("testing");
 					var sp2 = batchTestBtn.querySelector("span");
-					if (sp2) sp2.classList.add("spin");
+					if (sp2) sp2.classList.add("spin", "animation");
 				});
 			}
 
@@ -384,10 +384,10 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			testAllBtn.classList.add("testing");
 
 			if (spanEl)
-				spanEl.classList.add("spin");
+				spanEl.classList.add("spin", "animation");
 		} else {
 			if (spanEl)
-				spanEl.classList.remove("spin");
+				spanEl.classList.remove("spin", "animation");
 
 			if (hasFail && !hasSuccess)
 				testAllBtn.classList.add("failed");
@@ -517,12 +517,12 @@ function updateEndpointTestUI(nodeId) {
 		if (testBtn) {
 			var spanEl = testBtn.querySelector('span');
 			testBtn.classList.remove('testing', 'connected', 'failed');
-			if (spanEl) spanEl.classList.remove('spin', 'testing');
+			if (spanEl) spanEl.classList.remove('spin', 'animation', 'testing');
 			var sd = connectionStatus.get(nodeId);
 			if (sd) {
 				if (sd.status === "testing") {
 					testBtn.classList.add("testing");
-					if (spanEl) spanEl.classList.add('spin');
+					if (spanEl) spanEl.classList.add('spin', 'animation');
 					testBtn.title = "测试中...";
 				} else if (sd.status === "connected") {
 					testBtn.classList.add("connected");
@@ -562,10 +562,10 @@ function updateEndpointTestUI(nodeId) {
 		testAllBtn.classList.remove("testing", "connected", "failed");
 		testAllBtn.classList.add("test-connection");
 		var spanEl = testAllBtn.querySelector("span");
-		if (spanEl) spanEl.classList.remove("spin");
+		if (spanEl) spanEl.classList.remove("spin", "animation");
 		if (hasTesting) {
 			testAllBtn.classList.add("testing");
-			if (spanEl) spanEl.classList.add("spin");
+			if (spanEl) spanEl.classList.add("spin", "animation");
 		} else {
 			if (hasFail && !hasSuccess) testAllBtn.classList.add("failed");
 			else if (hasSuccess && !hasFail) testAllBtn.classList.add("connected");
@@ -591,7 +591,7 @@ function updateEndpointTestUI(nodeId) {
 				if (!anyTesting) {
 					parentBtn.classList.remove("testing");
 					var s = parentBtn.querySelector('span');
-					if (s) s.classList.remove("spin");
+					if (s) s.classList.remove("spin", "animation");
 					parentBtn.classList.remove("connected", "failed");
 					if (anyFail && !anySuccess) parentBtn.classList.add("failed");
 					else if (anySuccess && !anyFail) parentBtn.classList.add("connected");
