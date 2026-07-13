@@ -6,11 +6,6 @@
 	--icon-max-width: 16px;
 	--icon-max-height: 16px;
 }
-.icon { width: var(--icon-width); height: var(--icon-height); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; vertical-align: middle; }
-.icon > svg { width: 100%; height: 100%; }
-.icon.outline-style > svg { stroke: currentColor; stroke-width: 2; fill: none; }
-.icon.char-style { font-size: 14px; line-height: 1; }
-.icon.img-style > img { width: 100%; height: 100%; object-fit: contain; }
 html {
 	height: 100%;
 	--bg-elevated: #FFFFFF;
@@ -1423,6 +1418,29 @@ dialog[open] {
 			font-size: 18px;
 			color: var(--text-primary);
 		}
+	}
+}
+/* ============ 图标 ============ */
+.icon {
+	width: var(--icon-width);
+	height: var(--icon-height);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	vertical-align: middle;
+
+	> svg { width: 100%; height: 100%; }
+	&.outline-style > svg {
+		stroke: currentColor;
+		stroke-width: 2;
+		fill: none;
+	}
+	&.char-style { font-size: 14px; line-height: 1; }
+	&.img-style > img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
 	}
 }
 /* ============ 媒体查询相关 ============ */
