@@ -104,6 +104,42 @@ async function init() {
 	initDividers();
 	initScrollNav();
 	initScrollPaddingObserver();
+	// ===== 事件绑定（取代 HTML onxxx，兼容扩展 CSP） =====
+	// 存储目录操作
+	$('.change-dir').on('click', handleChangeDirectory);
+	$('.drop-dir').on('click', handleDeleteDirectory);
+	$('.wipe-dir').on('click', handleWipeDirectory);
+	// 帮助
+	$('.help').on('click', handleShowHelp);
+	$('dialog.help .close').on('click', closeHelpDialog);
+	// 帮助弹窗中的目录选择
+	$('dialog.help .recover')?.on('click', onRecoverDirectory);
+	$('dialog.help .select-dir')?.on('click', onSelectDirectory);
+	$('dialog.help .use-browser-storage')?.on('click', onUseBrowserStorage);
+	// 主题切换 radio
+	$$('#themePop input[type="radio"]').forEach(r => r.on('change', e => handleThemeRadioChange(e.currentTarget)));
+	// 端点类型筛选
+	$('.endpoint-type.filter').on('change', handleFilterBarChange);
+	// 端点树操作按钮（静态）
+	$('.test-all').on('click', handleTestAllConnections);
+	$('.collapse-all').on('click', collapseAllEndpointNodes);
+	$('.add-node').on('click', handleAddGroup);
+	$('.reset-filter').on('click', handleResetFilter);
+	$('.add-endpoint').on('click', handleClickAddEndpoint);
+	// 滚动导航
+	$('.go-top').on('click', handleScrollTop);
+	$('.go-bottom').on('click', handleScrollBottom);
+	// 新建会话
+	$('.new-session').on('click', handleNewSession);
+	// 文件上传
+	$('.file-input').on('change', e => handleFileInputChange(e.currentTarget));
+	$('.add.attachment.btn').on('click', () => document.querySelector('.file-input').click());
+	// 发送 & 全部停止
+	$('.main.btn.send').on('click', handleSend);
+	$('.stop-all-response').on('click', handleStopAllResponses);
+	// 发送模式 Popover
+	$('#sendModePop').on('beforetoggle', handleSendModePopBeforetoggle);
+	$('#sendModePop').on('toggle', handleSendModePopToggle);
 	let sendOnEnter = localStorage.getItem('sendMode') !== 'ctrl-enter';
 	const chatInput = $('#chat-input');
 	chatInput.placeholder = '输入消息...';
@@ -559,6 +595,8 @@ function showThinkingCards(endpoints, groups, sessionId) {
 
     endpoints.forEach(id => {
         const card = fromTemplate("response-card-streaming", ".one.response.msg");
+        card.querySelector(".copy.content").addEventListener("click", e => handleCopyContentClick(e.currentTarget));
+        card.querySelector(".stop-one-response").addEventListener("click", e => { e.stopPropagation(); handleStopOneResponseClick(e.currentTarget); });
         card.dataset.sessionId = sessionId;
         card.dataset.endpointId = id;
         const info = findModelById(groups, id);

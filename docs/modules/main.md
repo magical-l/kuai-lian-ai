@@ -88,18 +88,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
    - `paste` 监听：剪贴板图片提取 → `addAttachment`
 3. **发送模式选择器**（Popover API）：radio change 事件持久化 `sendMode` 到 localStorage；`beforetoggle`/`toggle` 事件已移至 HTML `onbeforetoggle`/`ontoggle` 属性，对应 `handleSendModePopBeforetoggle` / `handleSendModePopToggle`
 4. **存储恢复**：`tryRestoreDirectory()` → 成功则 `refreshUI`，失败则 `showDirectoryPrompt`
-5. **按钮绑定**：不再在 JS 中绑定按钮事件。所有按钮的 onclick/onchange 已移至 HTML 内联属性，对应的 handler 被提取为全局函数：
-   - `.add-node` → `handleAddGroup`
-   - `.collapse-all` → `collapseAllEndpointNodes`
-   - `.test-all` → `handleTestAllConnections`
-   - `.send` → `handleSend`
-   - `.stop.btn` → `handleStopAllResponses`
-   - `.help` → `handleShowHelp`
-   - `.new-session` → `handleNewSession`
-   - `.delete-dir` / `.wipe-dir` → `handleDeleteDirectory` / `handleWipeDirectory`
-   - `.add.attachment.btn` → 触发 `.file-input` 的 click（内联 onclick `document.querySelector('.file-input').click()`）
-   - `.file-input onchange` → `handleFileInputChange`
-   - `.change-dir` → `handleChangeDirectory`
+5. **按钮绑定**：不再在 JS 中绑定按钮事件。所有按钮/表单的 onclick/onchange 已从 HTML 移至 JS：静态按钮在 init() 中用 .on() 绑定，模板内元素在 fromTemplate() 后用 addEventListener 绑定。详见决策日志 2026-07-13 CSP 兼容性变更。
 
 ### 2. 发送主逻辑 (handleSend)
 
@@ -303,4 +292,5 @@ radio change → setThemePref(mode)
 | 2026-07-04 | handleSend 新增 img-generate 分流 + updateCardAsImage | 生图端点走 callImageGeneration 非流式路径，图片下载转 base64 持久化，支持会话记录加载 |
 | 2026-07-09 | 内联样式迁移到 utility class + classList。`style.display` → `classList.remove('hidden')`；移除无定义的 `.mb-1` 查询及冗余 inline 样式设置 | 与 CSS 分离，用 classList 而非 style.display 控制显隐；`.mb-1` 无对应 CSS 定义
 | 2026-07-11 | handleSend 改用 appendUserMessage 替代 renderMessages | 发送消息时不清空 `.msg.list`，避免全量 DOM 重建；旧回复卡片保留，清除 `data-endpoint-id`/`data-session-id` 防止与新 streaming cards 冲突 |
-| 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性 | 减少 init() 中的事件绑定代码，handler 提取为全局函数由 onclick/onchange/onbeforetoggle/ontoggle 直接引用 |
+| 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性（随后因 CSP 限制回退） | 减少 init() 中的事件绑定代码，但 Chrome 扩展 CSP 禁止内联脚本执行 |
+| 2026-07-13 | 事件绑定从 HTML 内联属性回到 JS addEventListener | Chrome 扩展 CSP script-src 'self' 禁止内联 onclick/onchange/ontoggle 等，所有 46 处 onxxx 改为 init() 中的 .on() 或模板克隆后的 addEventListener |

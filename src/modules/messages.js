@@ -97,6 +97,7 @@ function renderMessages(messages, groups, onCopy) {
 			const msgEl = mk('article', 'msg request one , flex items-go-y');
 			// 使用模板创建meta，包含复制按钮
 			const meta = fromTemplate('user-header', 'header');
+			meta.querySelector(".copy.content").addEventListener("click", e => handleCopyContentClick(e.currentTarget));
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 			$('.time', meta).textContent = timeStr;
 			msgEl.addChild(meta);
@@ -176,6 +177,7 @@ function appendUserMessage(msg) {
 		const container = $('.msg.list');
 		const msgEl = mk('article', 'msg request one , flex items-go-y');
 		const meta = fromTemplate('user-header', 'header');
+		meta.querySelector(".copy.content").addEventListener("click", e => handleCopyContentClick(e.currentTarget));
 		const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 		$('.time', meta).textContent = timeStr;
 		msgEl.addChild(meta);
@@ -252,6 +254,10 @@ function appendUserMessage(msg) {
             // 没有 streaming card（切换会话等场景），从 template 建一张
             existing = fromTemplate("response-card-streaming", ".one.response.msg");
             if (!existing) return;
+			existing.querySelector(".copy.content").addEventListener("click", e => handleCopyContentClick(e.currentTarget));
+			existing.querySelector(".stop-one-response").addEventListener("click", e => { e.stopPropagation(); handleStopOneResponseClick(e.currentTarget); });
+			existing.querySelector(".expand-json").addEventListener("click", e => handleExpandJsonClick(e.currentTarget));
+			existing.querySelector(".copy.code").addEventListener("click", e => handleCopyCodeClick(e.currentTarget));
             existing.dataset.endpointId = r.endpointId;
             const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";
             const nameEl = $('.name', existing);

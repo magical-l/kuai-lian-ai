@@ -77,7 +77,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
    - 类型标签（`.type-badge`）紧跟在 `.name` 后面，渲染时根据 `rcfg.type` 设置：embedding→🔢、image→🎨、rerank→📊（chat 不显示标签，减少视觉噪音）
    - `createTooltip(tooltipId, buildTooltipHTML(node, rcfg, node.name))` 绑定到 `summaryEl` 的 mouseover/mouseleave/click
    - tooltip 内容由 `selected-endpoints.js` 的 `buildTooltipHTML` 生成
-5. **操作栏**（行 103-281）：所有按钮事件通过 HTML `onclick` 属性绑定，JS 不绑定事件。
+5. **操作栏**（行 103-281）：所有按钮事件在 renderTreeNode 中通过 addEventListener 绑定（取代 HTML onclick）。
    - **添加子**：`handleAddChildClick` → `showEditGroupDialog(null, node.id, ...)` 新增
    - **批量测试**（行 116-233）：
      - 判断可测试节点（recursive `collectTestable`）：需有 `baseUrl + key + modelId`，且 `config.type` 为 chat/embedding
@@ -178,7 +178,8 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-08 | `.remark` 从动态创建改为模板内静态存在，JS 只设 textContent | `one-endpoint` 模板内已有 `.remark` 空 span，无需 createElement |
 | 2026-07-11 | 测试按钮状态管理从 className 全量重置改为 classList.remove/add | 避免 className 全量覆盖导致 HTML 中 base class（btn, bare, icon-only）丢失；classList 只管理状态类，base class 来自 HTML |
 | 2026-07-12 | `.spin` 旋转动画需同时加 `.animation` class | common.css 中 `.spin` 嵌套在 `.animation` 下，JS 只加 `.spin` 不加 `.animation` 导致旋转动画不生效 |
-| 2026-07-12 | 交互事件绑定从 JS 移到 HTML 模板 #one-endpoint 的内联属性 | renderTreeNode 不再绑定 onclick/onchange/ontoggle/onmouseover/onmouseleave，改为 HTML 属性直接引用全局 handler；ondragover/ondragleave/ondrop 三个事件保留在 JS 中（动态 DOM 节点、事件参数需要 nodeEl 引用） |
+| 2026-07-12 | 交互事件绑定从 JS 移到 HTML 模板 #one-endpoint 的内联属性（随后因 CSP 限制回退） | RenderTreeNode 不再绑定 onclick/onchange/ontoggle/onmouseover/onmouseleave，改为 HTML 属性直接引用全局 handler。因 Chrome 扩展 CSP 禁止内联脚本，该变更于次日回退 |
+| 2026-07-13 | 交互事件绑定从 HTML 内联属性回到 JS addEventListener | Chrome 扩展 CSP script-src 'self' 禁止内联脚本，所有 46 处 onxxx 改回 JS 绑定，详见 main.md 对应条目 |
 | 2026-07-13 | 测试按钮 CSS class 从 .testing（+ 内 span .spin.animation）改为 .connecting（按钮隐藏，由兄弟 .status.icon.wait 沙漏图标站台） | common.css 新增 .btn.busy + .btn:not(.busy) + .status.icon.wait + .btn + .status.icon 组件模式，沙漏翻转动画替代旋转动画；,
 
 | 2026-07-13 | 测试按钮 CSS class 从 （+ 内 span ）改为 （按钮隐藏，由兄弟  沙漏图标站台） | common.css 新增  +  +  组件模式，沙漏翻转动画替代旋转动画 |

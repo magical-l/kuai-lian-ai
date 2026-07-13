@@ -53,6 +53,8 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 		const meta = sessionEl.querySelector('.meta');
 		const timeEl = sessionEl.querySelector('.time');
 		const editBtn = sessionEl.querySelector('.edit.title');
+		sessionEl.querySelector(".edit.title").addEventListener("click", e => { e.stopPropagation(); handleEditSessionTitleClick(e.currentTarget); });
+		sessionEl.querySelector(".remove").addEventListener("click", e => { e.stopPropagation(); handleRemoveSessionClick(e.currentTarget); });
 		const deleteBtn = sessionEl.querySelector('.remove');
 		titleEl.textContent = session.title || '新会话';
 		timeEl.textContent = new Date(session.createdAt).toLocaleString('zh-CN', {

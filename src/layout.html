@@ -30,19 +30,19 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.13.0</span>
+			<span class="version">v6.13.1</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
 			<span class="cur">未选择目录</span>
 			<div class="op list , btn-group , flex items-go-x">
-				<button title="更换目录" class="btn : change-dir , square shape , bare" onclick="handleChangeDirectory()">
+				<button title="更换目录" class="btn : change-dir , square shape , bare" >
 					<span class="fill-style icon"><svg><use href="icons.svg#folder"></use></svg></span>
 				</button>
-				<button title="弃用目录" class="btn : drop-dir , danger , square shape , bare" onclick="handleDeleteDirectory()">
+				<button title="弃用目录" class="btn : drop-dir , danger , square shape , bare" >
 					<span class="char-style icon : delete"></span>
 				</button>
-				<button title="清空数据" class="btn : wipe-dir , danger , square shape , bare" onclick="handleWipeDirectory()">
+				<button title="清空数据" class="btn : wipe-dir , danger , square shape , bare" >
 					<span class="fill-style icon"><svg><use href="icons.svg#trash"></use></svg></span>
 				</button>
 			</div>
@@ -53,13 +53,13 @@
 				<span class="fill-style icon : on"><svg><use href="icons.svg#sidebar-open"></use></svg></span>
 				<span class="fill-style icon : off"><svg><use href="icons.svg#sidebar-closed"></use></svg></span>
 			</label>
-			<button title="帮助" class="toggle btn : help , square shape , bare" onclick="handleShowHelp()">
+			<button title="帮助" class="toggle btn : help , square shape , bare" >
 				<span class="char-style icon : help"></span>
 			</button>
 			<dialog class="help">
 				<header>
 					<h3>快<del>恋爱</del>连AI 使用帮助</h3>
-					<button class="btn : close , square shape , bare" onclick="closeHelpDialog()">
+					<button class="btn : close , square shape , bare" >
 						<span class="char-style icon : cancel"></span>
 					</button>
 				</header>
@@ -76,9 +76,9 @@
 						<h4>存储目录</h4>
 							<span class="cur"></span>
 							<div class="op list , flex items-go-x">
-								<button class="btn : recover , primary" onclick="onRecoverDirectory()">恢复目录</button>
-								<button class="btn : select-dir" onclick="onSelectDirectory()"></button>
-								<button class="btn : use-browser-storage" onclick="onUseBrowserStorage()">使用浏览器存储</button>
+								<button class="btn : recover , primary" >恢复目录</button>
+								<button class="btn : select-dir" ></button>
+								<button class="btn : use-browser-storage" >使用浏览器存储</button>
 							</div>
 						<p class="warning">请选择存储模式：选择本地目录，或使用浏览器内置存储（无需选目录）</p>
 						<p class="hint">浏览器存储：数据保存在浏览器内部（chrome.storage/IndexedDB），无需选择文件夹，随浏览器自动持久化。</p>
@@ -109,17 +109,17 @@
 			</button>
 			<div id="themePop" popover role="menu">
 				<label class="option btn : light-mode , flex items-go-x">
-					<input type="radio" name="theme" value="light" checked onchange="handleThemeRadioChange(this)">
+					<input type="radio" name="theme" value="light" checked >
 					<span class="fill-style icon"><svg><use href="icons.svg#sun"></use></svg></span>
 					亮色模式
 				</label>
 				<label class="option btn : dark-mode , flex items-go-x">
-					<input type="radio" name="theme" value="dark" onchange="handleThemeRadioChange(this)">
+					<input type="radio" name="theme" value="dark" >
 					<span class="fill-style icon"><svg><use href="icons.svg#moon"></use></svg></span>
 					暗色模式
 				</label>
 				<label class="option btn : follow-system-mode , flex items-go-x">
-					<input type="radio" name="theme" value="system" onchange="handleThemeRadioChange(this)">
+					<input type="radio" name="theme" value="system" >
 					<span class="fill-style icon"><svg><use href="icons.svg#auto"></use></svg></span>
 					跟随系统
 				</label>
@@ -137,7 +137,7 @@
 		<aside class="near-left , endpoint list , flex items-go-y">
 			<header class="flex items-go-x">
 				<span>AI服务端点</span>
-				<div class="btn-group : endpoint-type filter , flex items-go-x" onchange="handleFilterBarChange(event)">
+				<div class="btn-group : endpoint-type filter , flex items-go-x" >
 					<label title="聊天" class="endpoint-type option btn : chat icon , square shape">
 						<input type="checkbox" value="chat" checked>
 					</label>
@@ -152,14 +152,14 @@
 					</label>
 				</div>
 				<span class="btn-group : op list , flex items-go-x">
-					<button title="测试全部连接" class="btn : test-all , square shape , bare" onclick="handleTestAllConnections()">
+					<button title="测试全部连接" class="btn : test-all , square shape , bare" >
 						<span class="char-style icon : link"></span>
 					</button>
 					<span class="status icon : hourglass animation , wait , char-style"></span>
-					<button title="收起全部" class="btn : collapse-all , square shape , bare" onclick="collapseAllEndpointNodes()">
+					<button title="收起全部" class="btn : collapse-all , square shape , bare" >
 						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#collapse-all"></use></svg></span>
 					</button>
-					<button title="新增节点" class="btn : add-node , square shape , bare" onclick="handleAddGroup()">
+					<button title="新增节点" class="btn : add-node , square shape , bare" >
 						<span class="char-style icon : add"></span>
 					</button>
 				</span>
@@ -167,33 +167,33 @@
 			<ol class="scrollable on-y when-content-long">
 				<template id="one-endpoint">
 					<li class="one endpoint">
-						<details ontoggle="handleDetailsToggle(this)">
-							<summary onmouseover="handleSummaryTooltipMouseover(event, this)" onmouseleave="handleSummaryTooltipMouseleave(this)" onclick="handleSummaryTooltipClick(this)">
+						<details >
+							<summary >
 								<header class="inline flex items-x-mutex items-y-near-center">
-									<span class="handle btn : drag , square shape , bare" draggable="true" title="拖动排序" ondragstart="handleDragStart(event, this)" ondragend="handleDragEnd(this)">
+									<span class="handle btn : drag , square shape , bare" draggable="true" title="拖动排序" >
 										<span class="char-style icon : drag"></span>
 									</span>
 									<span class="char-style icon : endpoint-type"></span>
 									<span class="name"></span>
 									<div class="btn-group : op list , flex items-go-x items-y-near-center">
-										<button class="btn : add-child , square shape , bare" title="添加子节点" onclick="event.stopPropagation();handleAddChildClick(this)">
+										<button class="btn : add-child , square shape , bare" title="添加子节点" >
 											<span class="char-style icon add"></span>
 										</button>
-										<button class="btn : test-connection , square shape , bare" title="测试连接" onclick="event.stopPropagation();handleBatchTestClick(this)">
+										<button class="btn : test-connection , square shape , bare" title="测试连接" >
 											<span class="char-style icon link"></span>
 										</button>
 										<span class="status icon : hourglass animation , wait , char-style"></span>
 										<label class="btn : join-session , square shape , bare" title="加入当前会话">
-											<input name="joined" type="checkbox" onchange="event.stopPropagation();handleJoinSessionChange(this)">
+											<input name="joined" type="checkbox" >
 											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#bubble"></use></svg></span>
 										</label>
-										<button class="btn : edit , square shape , bare" title="编辑节点" onclick="event.stopPropagation();handleEditNodeClick(this)">
+										<button class="btn : edit , square shape , bare" title="编辑节点" >
 											<span class="char-style icon : edit"></span>
 										</button>
-										<button class="btn : duplicate , square shape , bare" title="复刻节点" onclick="event.stopPropagation();handleDuplicateNodeClick(this)">
+										<button class="btn : duplicate , square shape , bare" title="复刻节点" >
 											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#duplicate"></use></svg></span>
 										</button>
-										<button class="btn : remove , danger bare , square shape" title="删除节点及其子节点" onclick="event.stopPropagation();handleRemoveNodeClick(this)">
+										<button class="btn : remove , danger bare , square shape" title="删除节点及其子节点" >
 											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#trash"></use></svg></span>
 										</button>
 									</div>
@@ -205,8 +205,8 @@
 			</ol>
 			<div class="empty-state hidden">
 				<span class="hint"></span>
-				<button class="btn : reset-filter , hidden" onclick="handleResetFilter()">重置筛选</button>
-				<button class="btn : add-endpoint , hidden" onclick="handleClickAddEndpoint()">去创建</button>
+				<button class="btn : reset-filter , hidden" >重置筛选</button>
+				<button class="btn : add-endpoint , hidden" >去创建</button>
 			</div>
 		</aside>
 
@@ -217,10 +217,10 @@
 				<span>会话：</span>
 				<span class="title">新会话</span>
 				<div class="btn-group : go-top-bottom , flex items-go-x">
-					<button class="btn : go-top , square shape" title="到顶部" onclick="handleScrollTop()"><span class="char-style icon : go-top"></span></button>
-					<button class="btn : go-bottom , square shape" title="到底部" onclick="handleScrollBottom()"><span class="char-style icon : go-bottom"></span></button>
+					<button class="btn : go-top , square shape" title="到顶部" ><span class="char-style icon : go-top"></span></button>
+					<button class="btn : go-bottom , square shape" title="到底部" ><span class="char-style icon : go-bottom"></span></button>
 				</div>
-				<button class="btn : new-session" title="新建会话" onclick="handleNewSession()">新建会话</button>
+				<button class="btn : new-session" title="新建会话" >新建会话</button>
 			</header>
 
 			<section class="msg list , flex items-go-y">
@@ -229,7 +229,7 @@
 				<header class="flex items-go-x">
 					<span class="name">我</span>
 					<span class="time"></span>
-					<button title="复制" class="btn : copy content , square shape , bare" onclick="handleCopyContentClick(this)">
+					<button title="复制" class="btn : copy content , square shape , bare" >
 						<span class="char-style icon : copy"></span>
 					</button>
 					<span class="status icon : done , char-style"></span>
@@ -240,11 +240,11 @@
 					<header class="flex items-go-x">
 						<span class="name"></span>
 						<span class="status icon : loading , char-style , spin animation"></span>
-						<button title="复制" class="btn : copy content , square shape , bare" onclick="handleCopyContentClick(this)">
+						<button title="复制" class="btn : copy content , square shape , bare" >
 							<span class="char-style icon : copy"></span>
 						</button>
 						<span class="status icon : done , char-style"></span>
-						<button title="停止" class="btn : stop-one-response , danger , square shape , bare" onclick="event.stopPropagation(); handleStopOneResponseClick(this)"></button>
+						<button title="停止" class="btn : stop-one-response , danger , square shape , bare" ></button>
 					</header>
 					<div class="content">
 						<details class="think , hidden" open>
@@ -260,13 +260,13 @@
 						<div class="embedding-result hidden">
 							<div class="flex items-go-x items-y-near-center" style="gap:8px">
 								<strong>嵌入维度:</strong> <span class="dim"></span>
-								<button class="btn : expand-json , square shape , bare" title="展开完整向量" onclick="handleExpandJsonClick(this)">
+								<button class="btn : expand-json , square shape , bare" title="展开完整向量" >
 									<span class="char-style icon expand"></span>
 								</button>
 							</div>
 							<div class="flex items-go-x items-y-near-center" style="gap:8px">
 								<strong>预览:</strong> <code class="preview"></code>
-								<button class="btn : copy code , square shape , bare" title="复制完整向量" onclick="handleCopyCodeClick(this)">
+								<button class="btn : copy code , square shape , bare" title="复制完整向量" >
 									<span class="char-style icon : copy"></span>
 								</button>
 								<span class="status icon : done , char-style"></span>
@@ -284,30 +284,30 @@
 				<ul class="selected endpoint list , flex items-go-x">
 					<li class="empty hint">请选择端点</li>
 					<template id="template-selected-endpoint">
-						<li class="one endpoint" data-endpoint="" onclick="handleSelectedEndpointClick(this)" onmouseover="handleSelectedEndpointMouseover(event, this)" onmouseleave="handleSelectedEndpointMouseleave(this)">
+						<li class="one endpoint" data-endpoint="" >
 							<span class="endpoint-type icon"></span>
 							<span class="full name"></span>
 							<span class="remark"></span>
-							<span class="remove btn , bare icon-only" data-endpoint="" onclick="handleSelectedEndpointRemoveClick(this)"></span>
+							<span class="remove btn , bare icon-only" data-endpoint="" ></span>
 						</li>
 					</template>
 				</ul>
 				<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
 				<menu class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
 					<div class="attachment list , flexible , flex items-go-x scrollable" style="gap:4px"></div>
-					<input type="file" class="file-input" multiple accept="*/*" onchange="handleFileInputChange(this)">
-					<button class="btn : add attachment , square shape" title="添加附件" onclick="document.querySelector('.file-input').click()">
+					<input type="file" class="file-input" multiple accept="*/*" >
+					<button class="btn : add attachment , square shape" title="添加附件" >
 						<span class="fill-style icon"><svg><use href="icons.svg#attach"></use></svg></span>
 					</button>
 					
 					<div title="发送" class="split-style btn-group : send , flex items-go-x items-from-left">
-						<button class="main btn : send , primary" onclick="handleSend()">
+						<button class="main btn : send , primary" >
 							<span class="fill-style icon"><svg><use href="icons.svg#send"></use></svg></span>
 						</button>
 						<button class="secondary btn : send-shortcut-selector" popovertarget="sendModePop">
 							<span class="fill-style icon"><svg><use href="icons.svg#chevron-down"></use></svg></span>
 						</button>
-						<div id="sendModePop" popover="auto" onbeforetoggle="handleSendModePopBeforetoggle(event)" ontoggle="handleSendModePopToggle(event)">
+						<div id="sendModePop" popover="auto" >
 							<div class="flex items-go-y">
 								<label class="option btn : use-enter">
 									Enter 发送
@@ -320,7 +320,7 @@
 							</div>
 						</div>
 					</div>
-					<button class="btn : stop-all-response , danger , square shape , hidden" disabled aria-label="全部停止" onclick="handleStopAllResponses()">
+					<button class="btn : stop-all-response , danger , square shape , hidden" disabled aria-label="全部停止" >
 						<span class="char-style icon : stop"></span>
 					</button>
 				</menu>
@@ -330,7 +330,7 @@
 					<div class="row , flex items-go-x" data-row="name">
 						<span class="label">名称：</span>
 						<span class="value"></span>
-						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
+						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" >
 							<span class="char-style icon : copy"></span>
 						</button>
 						<span class="status icon : done , char-style"></span>
@@ -338,7 +338,7 @@
 					<div class="row , flex items-go-x" data-row="baseUrl">
 						<span class="label">地址：</span>
 						<span class="value"></span>
-						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
+						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" >
 							<span class="char-style icon : copy"></span>
 						</button>
 						<span class="status icon : done , char-style"></span>
@@ -346,7 +346,7 @@
 					<div class="row , flex items-go-x" data-row="style">
 						<span class="label">格式：</span>
 						<span class="value"></span>
-						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
+						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" >
 							<span class="char-style icon : copy"></span>
 						</button>
 						<span class="status icon : done , char-style"></span>
@@ -354,7 +354,7 @@
 					<div class="row , flex items-go-x" data-row="key">
 						<span class="label">Key：</span>
 						<span class="value"></span>
-						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
+						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" >
 							<span class="char-style icon : copy"></span>
 						</button>
 						<span class="status icon : done , char-style"></span>
@@ -362,7 +362,7 @@
 					<div class="row , flex items-go-x" data-row="model">
 						<span class="label">模型：</span>
 						<span class="value"></span>
-						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
+						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" >
 							<span class="char-style icon : copy"></span>
 						</button>
 						<span class="status icon : done , char-style"></span>
@@ -370,7 +370,7 @@
 					<div class="row , flex items-go-x" data-row="remark">
 						<span class="label">备注：</span>
 						<span class="value"></span>
-						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
+						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" >
 							<span class="char-style icon : copy"></span>
 						</button>
 						<span class="status icon : done , char-style"></span>
@@ -390,10 +390,10 @@
 						<footer class="meta , flex items-go-x">
 							<span class="time"></span>
 							<div class="btn-group : op list , flex items-go-x">
-								<button title="编辑标题" class="btn : edit title , square shape , bare" onclick="event.stopPropagation(); handleEditSessionTitleClick(this)">
+								<button title="编辑标题" class="btn : edit title , square shape , bare" >
 									<span class="char-style icon : edit"></span>
 								</button>
-								<button class="btn : remove , danger , square shape , bare" title="删除会话" onclick="event.stopPropagation(); handleRemoveSessionClick(this)">
+								<button class="btn : remove , danger , square shape , bare" title="删除会话" >
 									<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#trash"></use></svg></span>
 								</button>
 							</div>

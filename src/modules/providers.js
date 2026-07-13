@@ -327,6 +327,8 @@ function text(el, txt) {
 function createTooltip(id, triggerEl, populate) {
 	var el = $("#tooltip-content").content.cloneNode(true).querySelector(".tooltip");
 	populate(el);  // 构造时一次性填入数据
+	// 绑定 tooltip 内复制按钮（取代 HTML onxxx）
+	el.querySelectorAll('.copy.value').forEach(b => b.addEventListener('click', e => handleCopyValueClick(e.currentTarget)));
 
 	var anchorName = '--tooltip-trigger-' + id;
 	el.style.setProperty('position-anchor', anchorName);

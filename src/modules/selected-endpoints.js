@@ -62,6 +62,11 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
             remarkEl.remove();
         }
 
+        // 模板事件绑定（取代 HTML onxxx）
+        li.addEventListener('click', e => handleSelectedEndpointClick(e.currentTarget));
+        li.addEventListener('mouseover', e => handleSelectedEndpointMouseover(e, e.currentTarget));
+        li.addEventListener('mouseleave', e => handleSelectedEndpointMouseleave(e.currentTarget));
+        li.querySelector('.remove').addEventListener('click', e => { e.stopPropagation(); handleSelectedEndpointRemoveClick(e.currentTarget); });
         summaryEl.appendChild(li);
         // 创建 tooltip
         var selTooltipId = "tooltip-sel-" + id.replace(/[:\/\\]/g, '-');

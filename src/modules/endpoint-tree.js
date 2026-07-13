@@ -217,6 +217,19 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 
 			var opListEl = nodeEl.querySelector('.op');
 			var addChildBtn = opListEl.querySelector('.add-child');
+			// 模板事件绑定（取代 HTML onxxx）
+			detailsEl.addEventListener("toggle", e => handleDetailsToggle(e.currentTarget));
+			summaryEl.addEventListener("mouseover", e => handleSummaryTooltipMouseover(e, e.currentTarget));
+			summaryEl.addEventListener("mouseleave", e => handleSummaryTooltipMouseleave(e.currentTarget));
+			summaryEl.addEventListener("click", e => handleSummaryTooltipClick(e.currentTarget));
+			dragHandle.addEventListener("dragstart", e => handleDragStart(e, e.currentTarget));
+			dragHandle.addEventListener("dragend", e => handleDragEnd(e.currentTarget));
+			addChildBtn.addEventListener("click", e => { e.stopPropagation(); handleAddChildClick(e.currentTarget); });
+			opListEl.querySelector(".test-connection").addEventListener("click", e => { e.stopPropagation(); handleBatchTestClick(e.currentTarget); });
+			opListEl.querySelector(".join-session input").addEventListener("change", e => { e.stopPropagation(); handleJoinSessionChange(e.currentTarget); });
+			opListEl.querySelector(".edit").addEventListener("click", e => { e.stopPropagation(); handleEditNodeClick(e.currentTarget); });
+			opListEl.querySelector(".duplicate").addEventListener("click", e => { e.stopPropagation(); handleDuplicateNodeClick(e.currentTarget); });
+			opListEl.querySelector(".remove").addEventListener("click", e => { e.stopPropagation(); handleRemoveNodeClick(e.currentTarget); });
 
 
 			function isNodeTestable(n) {
