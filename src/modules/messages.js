@@ -3,9 +3,9 @@ function handleCopyContentClick(btn) {
 	const meta = btn.closest('header');
 	const text = meta ? meta.dataset.copyText || '' : '';
 	navigator.clipboard.writeText(text).then(() => {
-		btn.classList.add("copied");
-		clearTimeout(btn._copiedTimer);
-		btn._copiedTimer = setTimeout(() => btn.classList.remove("copied"), 1500);
+		btn.classList.add("done");
+		clearTimeout(btn._doneTimer);
+		btn._doneTimer = setTimeout(() => btn.classList.remove("done"), 1500);
 	});
 }
 function handleExpandJsonClick(btn) {
@@ -24,8 +24,8 @@ function handleCopyCodeClick(btn) {
 	const fullJsonPre = embMeta ? embMeta.querySelector('.embedding-full-json') : null;
 	const text = fullJsonPre ? fullJsonPre.textContent : '';
 	navigator.clipboard.writeText(text).then(() => {
-		btn.classList.add('copied');
-		setTimeout(() => btn.classList.remove('copied'), 1500);
+		btn.classList.add('done');
+		setTimeout(() => btn.classList.remove('done'), 1500);
 	});
 }
 function renderMarkdown(text) {
@@ -69,17 +69,17 @@ function addCodeCopyButtons(container) {
 		const copyBtn = document.createElement('button');
 		copyBtn.className = 'copy code btn , bare , shape square';
 		copyBtn.appendChild(mk('span', 'copy icon'));
-		copyBtn.appendChild(mk('span', 'done status icon'));
 		copyBtn.title = '复制';
 		copyBtn.onclick = (e) => {
 			e.stopPropagation();
 			navigator.clipboard.writeText(codeEl.textContent).then(() => {
-				copyBtn.classList.add("copied");
-				clearTimeout(copyBtn._copiedTimer);
-				copyBtn._copiedTimer = setTimeout(() => copyBtn.classList.remove("copied"), 1500);
+				copyBtn.classList.add("done");
+				clearTimeout(copyBtn._doneTimer);
+				copyBtn._doneTimer = setTimeout(() => copyBtn.classList.remove("done"), 1500);
 			});
 		};
 		summary.appendChild(copyBtn);
+		summary.appendChild(mk('span', 'done status icon char-style'));
 
 		details.appendChild(summary);
 		preEl.parentElement.insertBefore(details, preEl);
@@ -319,7 +319,7 @@ function appendUserMessage(msg) {
 
         let statusEl = $('.status', meta);
         if (!statusEl) {
-            statusEl = mk('span', 'status icon');
+            statusEl = mk('span', 'status icon char-style');
             const insertAfter = $('.total', meta) || $('.wait', meta) || $('.time', meta) || nameEl;
             if (insertAfter) insertAfter.insertAdjacentElement('afterend', statusEl);
         }
@@ -489,7 +489,7 @@ function appendUserMessage(msg) {
 
 function getStatusText(status) {
 	return {
-		completed: 'completed',
+		completed: 'done',
 		failed: 'failed',
 		stopped: 'stop'
 	} [status] || status;

@@ -344,11 +344,8 @@ button, .btn {
 	}
 
 	&.copy {
-		&.copied {
-			pointer-events: none;  /* 禁止再次点击 */
-
+		&.done {
 			& .copy.icon { display: none; }
-			& .done.icon { display: inline !important; }
 		}
 	}
 
@@ -528,6 +525,9 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 			& .copy.content {
 				margin-left: auto;
 			}
+			& .copy.content.done + .status.icon:is(.ok, .done, .success) {
+				margin-left: auto;
+			}
 			& .name {
 				font-weight: 500;
 			}
@@ -595,7 +595,7 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 						line-height: 1;
 
 						&:hover { opacity: 1; border-color: var(--border-default); }
-						&.copied { border-color: var(--success); opacity: 1; }
+						&.done { border-color: var(--success); opacity: 1; }
 					}
 				}
 				& pre {
@@ -629,7 +629,6 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 	& .status {
 		align-items: center;
 		gap: var(--space-1);
-		margin-top: var(--space-1);
 		padding-left: 0;
 		&.stopped { color: var(--text-muted); }
 		&.failed { color: var(--danger); }

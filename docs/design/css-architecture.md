@@ -162,7 +162,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 | 章节 | 内容 |
 |------|------|
 | 基础元素 | html/body 默认值、`<aside>` 面板容器、`<main>` + header、flex/hidden/del 标签重置、.split.btn-group（分裂式发送按钮 + popover 菜单）、.workspace-setting |
-| 按钮 | `button, .btn` 基类、join-session（勾选开关）、test-connection（三态：testing/connected/failed）、stop（危险操作）、copy（两态：常态/copied） |
+| 按钮 | `button, .btn` 基类、join-session（勾选开关）、test-connection（三态：testing/connected/failed）、stop（危险操作）、copy（两态：常态/done） |
 | 端点面板 | .one.endpoint 卡片、拖拽指示器（drag-over-before/child）、.greyed 禁用态 |
 | 消息 | .one.msg 通用结构、.request（用户消息，靠右 / 蓝底 / 白色）、.response（助手消息，靠左）、think 块、嵌入结果、状态行（wait/status-icon/stop-one） |
 | 主框架 | toolbar、.msg.list 滚动容器、streaming-hint、.chat-input-area（textarea + 附件栏 + 发送按钮） |
@@ -245,11 +245,11 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 | `.join-session` | 端点加入会话的勾选开关 |
 | `.test-connection` | 连接测试（三态：`.testing` `.connected` `.failed`） |
 | `.stop` | 红色危险停止按钮 |
-| `.copy` | 复制按钮（两态：`.copied` 禁用） |
+| `.copy` | 复制按钮（两态：`.done` 时隐藏自身，显示兄弟 `.status.icon`） |
 | `.main` / `.secondary` | 分裂按钮组主/次 |
 | `.option` | popover 菜单选项 |
 
-状态类另用独立类叠加：`.testing`, `.connected`, `.failed`, `.dragging`, `.drag-over-before`, `.drag-over-child`, `.selected`, `.streaming`, `.stopped`, `.completed`, `.failed`, `.compact`, `.copied`。
+状态类另用独立类叠加：`.testing`, `.connected`, `.failed`, `.dragging`, `.drag-over-before`, `.drag-over-child`, `.selected`, `.streaming`, `.stopped`, `.completed`, `.failed`, `.compact`, `.done`。
 
 ### 标签限定
 
@@ -321,3 +321,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-08: `.hint` 样式增强（font-size 12px, opacity 0.75, text-align:center, width:100%），配合接口风格按钮底部显示默认路径文本。
 - 2026-07-08: 端点树复刻按钮类名改为 `.duplicate`；参照同为 SVG outline 的 `.join-session`，只通过 `--btn-text-color: var(--accent-primary)` 设定图标色，不单独设置边框、背景、opacity、hover 或 stroke。
 - 2026-07-11: sticky 重构：`.sticky` 改用 `--stick-top/bottom/left/right` 变量 + `.near-*` 方向类，替代 `:is(header)` / `:is(footer)` 硬编码。`.streaming-hint` 和 `.chat-input-area` 改用 `.sticky.near-bottom` 类 + `--stick-bottom` 变量。
+- 2026-07-13: 状态图标重构。`--icon-char` 定义从 `.icon` 块内移到顶层，使状态类（`.done`/`.completed`/`.loading` 等）可放在 `.icon` 的祖先上。`.status` 块改为通过 `--status-icon-text-color` 变量消费颜色，不再写死子类列表。复制按钮从 `.copied` + 内部状态 span 改为 `.done` + 兄弟 `.status.icon` 模式。

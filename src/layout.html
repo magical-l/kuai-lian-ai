@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.12.0</span>
+			<span class="version">v6.13.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -155,7 +155,7 @@
 					<button title="测试全部连接" class="btn : test-all , square shape , bare" onclick="handleTestAllConnections()">
 						<span class="char-style icon : link"></span>
 					</button>
-					<span class="status icon : hourglass animation , wait"></span>
+					<span class="status icon : hourglass animation , wait , char-style"></span>
 					<button title="收起全部" class="btn : collapse-all , square shape , bare" onclick="collapseAllEndpointNodes()">
 						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#collapse-all"></use></svg></span>
 					</button>
@@ -182,7 +182,7 @@
 										<button class="btn : test-connection , square shape , bare" title="测试连接" onclick="event.stopPropagation();handleBatchTestClick(this)">
 											<span class="char-style icon link"></span>
 										</button>
-										<span class="status icon : hourglass animation , wait"></span>
+										<span class="status icon : hourglass animation , wait , char-style"></span>
 										<label class="btn : join-session , square shape , bare" title="加入当前会话">
 											<input name="joined" type="checkbox" onchange="event.stopPropagation();handleJoinSessionChange(this)">
 											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#bubble"></use></svg></span>
@@ -231,8 +231,8 @@
 					<span class="time"></span>
 					<button title="复制" class="btn : copy content , square shape , bare" onclick="handleCopyContentClick(this)">
 						<span class="char-style icon : copy"></span>
-						<span class="status icon : done , char-style"></span>
 					</button>
+					<span class="status icon : done , char-style"></span>
 				</header>
 			</template>
 			<template id="response-card-streaming">
@@ -242,8 +242,8 @@
 						<span class="status icon : loading , char-style , spin animation"></span>
 						<button title="复制" class="btn : copy content , square shape , bare" onclick="handleCopyContentClick(this)">
 							<span class="char-style icon : copy"></span>
-							<span class="status icon : done , char-style"></span>
 						</button>
+						<span class="status icon : done , char-style"></span>
 						<button title="停止" class="btn : stop-one-response , danger , square shape , bare" onclick="event.stopPropagation(); handleStopOneResponseClick(this)"></button>
 					</header>
 					<div class="content">
@@ -268,8 +268,8 @@
 								<strong>预览:</strong> <code class="preview"></code>
 								<button class="btn : copy code , square shape , bare" title="复制完整向量" onclick="handleCopyCodeClick(this)">
 									<span class="char-style icon : copy"></span>
-									<span class="status icon : done , char-style"></span>
 								</button>
+								<span class="status icon : done , char-style"></span>
 							</div>
 							<pre class="embedding-full-json , hidden"></pre>
 						</div>
@@ -332,48 +332,48 @@
 						<span class="value"></span>
 						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
 							<span class="char-style icon : copy"></span>
-							<span class="status icon : done , char-style"></span>
 						</button>
+						<span class="status icon : done , char-style"></span>
 					</div>
 					<div class="row , flex items-go-x" data-row="baseUrl">
 						<span class="label">地址：</span>
 						<span class="value"></span>
 						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
 							<span class="char-style icon : copy"></span>
-							<span class="status icon : done , char-style"></span>
 						</button>
+						<span class="status icon : done , char-style"></span>
 					</div>
 					<div class="row , flex items-go-x" data-row="style">
 						<span class="label">格式：</span>
 						<span class="value"></span>
 						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
 							<span class="char-style icon : copy"></span>
-							<span class="status icon : done , char-style"></span>
 						</button>
+						<span class="status icon : done , char-style"></span>
 					</div>
 					<div class="row , flex items-go-x" data-row="key">
 						<span class="label">Key：</span>
 						<span class="value"></span>
 						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
 							<span class="char-style icon : copy"></span>
-							<span class="status icon : done , char-style"></span>
 						</button>
+						<span class="status icon : done , char-style"></span>
 					</div>
 					<div class="row , flex items-go-x" data-row="model">
 						<span class="label">模型：</span>
 						<span class="value"></span>
 						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
 							<span class="char-style icon : copy"></span>
-							<span class="status icon : done , char-style"></span>
 						</button>
+						<span class="status icon : done , char-style"></span>
 					</div>
 					<div class="row , flex items-go-x" data-row="remark">
 						<span class="label">备注：</span>
 						<span class="value"></span>
 						<button class="btn : copy value , square shape , bare" data-copy="" title="复制" onclick="handleCopyValueClick(this)">
 							<span class="char-style icon : copy"></span>
-							<span class="status icon : done , char-style"></span>
 						</button>
+						<span class="status icon : done , char-style"></span>
 					</div>
 				</div>
 			</template>
