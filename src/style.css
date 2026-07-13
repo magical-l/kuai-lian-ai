@@ -317,9 +317,6 @@ button, .btn {
 	&.test-connection {
 		--btn-text-color: var(--text-muted);
 
-		&.testing {
-			--btn-text-color: var(--accent-primary);
-		}
 
 		&.connected {
 			--btn-text-color: var(--success);
@@ -330,6 +327,13 @@ button, .btn {
 			--btn-text-color: var(--danger);
 			--btn-bg: var(--danger-light);
 		}
+	}
+
+	/* 按钮繁忙时，由等待状态图标占位 */
+	.btn.busy ~ .status.icon.wait {
+		display: inline-flex;
+		width: var(--btn-h);
+		height: var(--btn-h);
 	}
 
 	&.stop-all-response {

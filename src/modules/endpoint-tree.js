@@ -80,9 +80,7 @@ function handleAddChildClick(btn) {
 function handleBatchTestClick(btn) {
 	var ids = JSON.parse(btn.dataset.testableIds || '[]');
 	ids.forEach(function(id) { testConnection(id); });
-	btn.classList.add("testing");
-	var sp2 = btn.querySelector("span");
-	if (sp2) sp2.classList.add("spin", "animation");
+	btn.classList.add("busy");
 }
 
 function handleJoinSessionChange(cb) {
@@ -282,12 +280,10 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			if (testableIds.length === 0) {
 				batchTestBtn.style.display = 'none';
 			} else {
-				batchTestBtn.classList.remove("connected", "failed");
+				batchTestBtn.classList.remove("busy", "connected", "failed");
 				if (batchStatus) batchTestBtn.classList.add(batchStatus);
 				if (hasTesting) {
-					batchTestBtn.classList.add("testing");
-					var sp = batchTestBtn.querySelector("span");
-					if (sp) sp.classList.add("spin", "animation");
+					batchTestBtn.classList.add("busy");
 				}
 				if (!hasTesting) {
 					var successCount = 0, failCount = 0, firstError = null;
@@ -399,17 +395,10 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 		});
 
 		testAllBtn.classList.add("test-connection");
-		var spanEl = $("span", testAllBtn);
 
 		if (hasTesting) {
-			testAllBtn.classList.add("testing");
-
-			if (spanEl)
-				spanEl.classList.add("spin", "animation");
+			testAllBtn.classList.add("busy");
 		} else {
-			if (spanEl)
-				spanEl.classList.remove("spin", "animation");
-
 			if (hasFail && !hasSuccess)
 				testAllBtn.classList.add("failed");
 			else if (hasSuccess && !hasFail)
@@ -501,28 +490,20 @@ function applyEndpointFilter() {
 		}
 	}
 }
-
 function updateEndpointTestUI(nodeId) {
-	// 1. 更新单个节点的测试按钮
 	var nodeEl = document.querySelector('.one.endpoint[data-node-id="' + nodeId + '"]');
 	if (nodeEl) {
 		var testBtn = nodeEl.querySelector('.test-connection');
 		if (testBtn) {
-			var spanEl = testBtn.querySelector('span');
-			testBtn.classList.remove('testing', 'connected', 'failed');
-			if (spanEl) spanEl.classList.remove('spin', 'animation', 'testing');
+			testBtn.classList.remove('busy', 'connected', 'failed');
 			var sd = connectionStatus.get(nodeId);
 			if (sd) {
 				if (sd.status === "testing") {
-					testBtn.classList.add("testing");
-					if (spanEl) spanEl.classList.add('spin', 'animation');
-					testBtn.title = "测试中...";
+					testBtn.classList.add("busy");
 				} else if (sd.status === "connected") {
 					testBtn.classList.add("connected");
-					testBtn.title = getConnectionStatusText ? getConnectionStatusText(nodeId) : "✓ 成功";
 				} else if (sd.status === "failed" || sd.status === "cors_blocked") {
 					testBtn.classList.add("failed");
-					testBtn.title = getConnectionStatusText ? getConnectionStatusText(nodeId) : (sd.error || "✗ 失败");
 				}
 			}
 		}
@@ -552,17 +533,14 @@ function updateEndpointTestUI(nodeId) {
 				else if (sd.status === "failed" || sd.status === "cors_blocked") hasFail = true;
 			}
 		});
-		testAllBtn.classList.remove("testing", "connected", "failed");
-		testAllBtn.classList.add("test-connection");
-		var spanEl = testAllBtn.querySelector("span");
-		if (spanEl) spanEl.classList.remove("spin", "animation");
-		if (hasTesting) {
-			testAllBtn.classList.add("testing");
-			if (spanEl) spanEl.classList.add("spin", "animation");
-		} else {
-			if (hasFail && !hasSuccess) testAllBtn.classList.add("failed");
-			else if (hasSuccess && !hasFail) testAllBtn.classList.add("connected");
-		}
+			testAllBtn.classList.remove("busy", "connected", "failed");
+			testAllBtn.classList.add("test-connection");
+			if (hasTesting) {
+				testAllBtn.classList.add("busy");
+			} else {
+				if (hasFail && !hasSuccess) testAllBtn.classList.add("failed");
+				else if (hasSuccess && !hasFail) testAllBtn.classList.add("connected");
+			}
 	}
 	// 3. 更新父级 batch 测试按钮
 	var container = nodeEl ? nodeEl.parentElement : null;
@@ -582,10 +560,7 @@ function updateEndpointTestUI(nodeId) {
 					}
 				});
 				if (!anyTesting) {
-					parentBtn.classList.remove("testing");
-					var s = parentBtn.querySelector('span');
-					if (s) s.classList.remove("spin", "animation");
-					parentBtn.classList.remove("connected", "failed");
+					parentBtn.classList.remove("busy", "connected", "failed");
 					if (anyFail && !anySuccess) parentBtn.classList.add("failed");
 					else if (anySuccess && !anyFail) parentBtn.classList.add("connected");
 				}

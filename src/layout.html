@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.11.1</span>
+			<span class="version">v6.12.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -155,6 +155,7 @@
 					<button title="测试全部连接" class="btn : test-all , square shape , bare" onclick="handleTestAllConnections()">
 						<span class="char-style icon : link"></span>
 					</button>
+					<span class="status icon : hourglass animation , wait"></span>
 					<button title="收起全部" class="btn : collapse-all , square shape , bare" onclick="collapseAllEndpointNodes()">
 						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#collapse-all"></use></svg></span>
 					</button>
@@ -172,15 +173,16 @@
 									<span class="handle btn : drag , square shape , bare" draggable="true" title="拖动排序" ondragstart="handleDragStart(event, this)" ondragend="handleDragEnd(this)">
 										<span class="char-style icon : drag"></span>
 									</span>
-									<span class="char-style icon : endpoint-type ,"></span>
+									<span class="char-style icon : endpoint-type"></span>
 									<span class="name"></span>
-									<div class="btn-group : op list , flex items-go-x">
+									<div class="btn-group : op list , flex items-go-x items-y-near-center">
 										<button class="btn : add-child , square shape , bare" title="添加子节点" onclick="event.stopPropagation();handleAddChildClick(this)">
 											<span class="char-style icon add"></span>
 										</button>
 										<button class="btn : test-connection , square shape , bare" title="测试连接" onclick="event.stopPropagation();handleBatchTestClick(this)">
 											<span class="char-style icon link"></span>
 										</button>
+										<span class="status icon : hourglass animation , wait"></span>
 										<label class="btn : join-session , square shape , bare" title="加入当前会话">
 											<input name="joined" type="checkbox" onchange="event.stopPropagation();handleJoinSessionChange(this)">
 											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#bubble"></use></svg></span>
