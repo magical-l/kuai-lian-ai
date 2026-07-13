@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-12
+last_updated: 2026-07-13
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -89,7 +89,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 3. **发送模式选择器**（Popover API）：radio change 事件持久化 `sendMode` 到 localStorage；`beforetoggle`/`toggle` 事件已移至 HTML `onbeforetoggle`/`ontoggle` 属性，对应 `handleSendModePopBeforetoggle` / `handleSendModePopToggle`
 4. **存储恢复**：`tryRestoreDirectory()` → 成功则 `refreshUI`，失败则 `showDirectoryPrompt`
 5. **按钮绑定**：不再在 JS 中绑定按钮事件。所有按钮的 onclick/onchange 已移至 HTML 内联属性，对应的 handler 被提取为全局函数：
-   - `.add-group` → `handleAddGroup`
+   - `.add-node` → `handleAddGroup`
    - `.collapse-all` → `collapseAllEndpointNodes`
    - `.test-all` → `handleTestAllConnections`
    - `.send` → `handleSend`
@@ -295,6 +295,7 @@ radio change → setThemePref(mode)
 | 2026-04-26 | refreshUI 中使用 startViewTransition | 平滑 DOM 更新过渡效果，CSS View Transition API |
 | 2026-04-26 | 流式卡片完成后不立即移除，由 refreshUI 统一清理 | 避免中途移除导致闪烁、避免与 reorderCardsBySpeed 竞争 |
 | 2026-04-27 | 嵌入模式独立为一个函数而非 handleSend 的分支 | 嵌入流程差异太大（单端点、无 streaming、特殊 UI），合并只会增加 if-else |
+| 2026-07-13 | CSS class .add-group → .add-node（docs 引用同步更新） | 语义更准确：新增的是端点 node 而非分组 group |
 | 2026-07-08 | updateCardAsEmbedding 改用卡内静态的 `.embedding-result` 元素而非动态创建 | `embedding-meta` 模板已内联到 `response-card-streaming`，直接从卡内查找即可 |
 | 2026-07-01 | 暗色模式：Popover 下拉选择（亮/暗/系统），radio 直选替代三态循环；beforetoggle 动态定位；settings.theme 持久化；html.className 驱动 | 三态循环 + 同图标用户无法区分当前模式，Popover 下拉 + 独立图标（sun/moon/auto）更清晰 |
 | 2026-07-02 | 错误信息从 header 移到 .content（跟 .say 同级），有错误时隐藏复制按钮 | 错误信息过长时 header 空间不足，移到 content 更合理；有错误时复制按钮无意义 |

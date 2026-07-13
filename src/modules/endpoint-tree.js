@@ -163,7 +163,7 @@ function handleResetFilter() {
 }
 
 function handleClickAddEndpoint() {
-	var addGroupBtn = document.querySelector('.add-group.btn');
+	var addGroupBtn = document.querySelector('.add-node.btn');
 	if (addGroupBtn) addGroupBtn.click();
 }
 

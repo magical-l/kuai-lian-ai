@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-12
+last_updated: 2026-07-13
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -53,7 +53,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | `handleNodeDragleave` | dragleave 清除 drop zone class |
 | `handleNodeDrop` | drop 根据 zone 类型调 reorderNode 或 moveNodeAsChild |
 | `handleResetFilter` | 重置筛选按钮，全选所有 type-filter checkbox |
-| `handleClickAddEndpoint` | 空状态"去创建"按钮，触发 .add-group.btn click |
+| `handleClickAddEndpoint` | 空状态"去创建"按钮，触发 .add-node.btn click |
 | `handleFilterBarChange` | 类型筛选栏 change 事件，操作 activeTypeFilters Set |
 
 ---
@@ -95,7 +95,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 8. **类型筛选**：在端点树 header 行（`AI服务端点` 标题右侧）渲染多选 checkbox 组（🔢嵌入/🎨生图/📊重排序）。「全部不选 = 显示所有，选一个或多个 = 只显示匹配类型」。`initEndpointFilter` 用 change 事件委托监听 header 内 `.type-filter` 的 checkbox change，操作 `activeTypeFilters` Set（add/delete），然后调用 `applyEndpointFilter` 遍历所有 `li.one.endpoint`，按 `activeTypeFilters` 匹配显示/隐藏。`renderEndpointList` 末尾自动恢复筛选。分组节点先检查子节点是否有匹配再决定自身显隐。
 
 9. **空状态提示**：`renderEndpointList` 末尾检查 `.endpoint.list .empty-state` 容器，根据情况显示：
-   - 无任何端点时显示「目前还没有创建端点。」+「去创建」按钮（点击触发 `.add-group.btn` 的 click）
+   - 无任何端点时显示「目前还没有创建端点。」+「去创建」按钮（点击触发 `.add-node.btn` 的 click）
    - 筛选后无结果时显示「没有符合筛选的端点。」+「重置筛选」按钮（点击全选所有 type-filter checkbox 并重新应用）
    - 其他情况隐藏空状态
 
@@ -167,6 +167,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-04-26 | 批量测试按钮 title 显示汇总统计 | 测试结果即时反馈，避免用户反复 hover 看每个子节点状态 |
 | 2026-04-27 | 折叠状态不持久化 | 用户对树的折叠习惯变频繁，持久化收益低且增加复杂度 |
 | 2026-07-02 | 端点树结构改为 details/summary/ol，利用原生 open/close 替代手动 display 切换 | 语义化 HTML，减少 JS 手动 DOM 操作，提升可访问性 |
+| 2026-07-13 | CSS class .add-group → .add-node（JS querySelector/docs 同步更新） | 语义更准确：新增的是端点 node 而非分组 group |
 | 2026-07-02 | 去掉自定义 .expand 按钮，复用 `<summary>` 原生三角箭头 | 自定义按钮与原生功能重复；flex 布局需移到 summary 内层 div 以避免 Chrome 隐藏原生 marker |
 | 2026-07-02 | summary 内包 header(95%+inline-flex+items-x-mutex) 实现 handle+name 左、actions 右布局 | 原生 marker 与 flex 互斥（Chrome），改用 95% 宽度避开 marker 占位 + items-x-mutex(space-between) 分布内容 |
 | 2026-07-03 | 端点节点名称旁加类型标签，chat 不显示 | 嵌入/生图端点太多时难以在树中目视定位；chat 为主，标签只对非 chat 类型有意义 |
