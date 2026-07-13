@@ -203,13 +203,13 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			nameSpan.textContent = node.name;
 
 			// 设置类型标签
-			var badge = nodeEl.querySelector('.endpoint-type');
-			if (badge) {
+			var typeEl = nodeEl.querySelector('.endpoint-type');
+			if (typeEl) {
 				var type = rcfg ? rcfg.type : 'chat';
-				if (type === 'chat') { badge.classList.add('chat'); }
-				else if (type === 'embedding') { badge.classList.add('embedding'); }
-				else if (type === 'image' || type === 'image-generation') { badge.classList.add('image-generation'); }
-				else if (type === 'reranking') { badge.classList.add('reranking'); }
+				if (type === 'chat') { typeEl.classList.add('chat'); }
+				else if (type === 'embedding') { typeEl.classList.add('embedding'); }
+				else if (type === 'image' || type === 'image-generation') { typeEl.classList.add('image-generation'); }
+				else if (type === 'reranking') { typeEl.classList.add('reranking'); }
 			}
 
 			var tooltipId = "tooltip-" + node.id;
@@ -477,13 +477,13 @@ function applyEndpointFilter() {
 	var items = document.querySelectorAll('aside.endpoint.list li.one.endpoint');
 	for (var i = items.length - 1; i >= 0; i--) {
 		var li = items[i];
-		var badge = li.querySelector('.endpoint-type');
+		var typeEl = li.querySelector('.endpoint-type');
 		var type = '';
-		if (badge) {
-			if (badge.classList.contains('chat')) type = 'chat';
-			else if (badge.classList.contains('embedding')) type = 'embedding';
-			else if (badge.classList.contains('image-generation')) type = 'image-generation';
-			else if (badge.classList.contains('reranking')) type = 'reranking';
+		if (typeEl) {
+			if (typeEl.classList.contains('chat')) type = 'chat';
+			else if (typeEl.classList.contains('embedding')) type = 'embedding';
+			else if (typeEl.classList.contains('image-generation')) type = 'image-generation';
+			else if (typeEl.classList.contains('reranking')) type = 'reranking';
 		}
 
 		if (activeTypeFilters.has(type)) {
