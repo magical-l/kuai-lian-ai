@@ -223,6 +223,50 @@ async function addNode(parentId, data) {
 	return node;
 }
 
+// 批量创建子树：一次 save 插入所有节点
+async function batchAddNodes(parentId, subtrees) {
+	if (!endpointsData) endpointsData = { nodes: [] };
+	if (storage.mode !== 'browser' && !storage.getDirectoryName()) {
+		alert('请先选择存储位置');
+		return null;
+	}
+	var createdIds = [];
+	function assignIds(nodes, parent) {
+		nodes.forEach(function(n) {
+			var node = {
+				id: generateUUID(),
+				name: n.name || '',
+				baseUrl: n.baseUrl || '',
+				style: n.style || '',
+				key: n.key || '',
+				modelId: n.modelId || '',
+				remark: n.remark || '',
+				type: n.type || '',
+				children: []
+			};
+			createdIds.push(node.id);
+			if (n.children && n.children.length > 0) {
+				assignIds(n.children, node);
+			}
+			if (parent) {
+				parent.children.push(node);
+			} else {
+				// 根级节点
+				if (parentId) {
+					var p = findNodeInTree(endpointsData.nodes, parentId);
+					if (p) { p.children.push(node); }
+					else { endpointsData.nodes.push(node); }
+				} else {
+					endpointsData.nodes.push(node);
+				}
+			}
+		});
+	}
+	assignIds(subtrees, null);
+	await saveEndpoints();
+	return createdIds;
+}
+
 async function updateNode(nodeId, updates) {
 	if (!endpointsData) endpointsData = { nodes: [] };
 	const node = findNodeInTree(endpointsData.nodes, nodeId);

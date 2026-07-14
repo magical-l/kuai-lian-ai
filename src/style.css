@@ -124,7 +124,7 @@ aside {
 }
 .list {
 	&:is(ul) { margin-block: 0; }
-	& > ol {
+	> ol {
 		list-style: none;
 		margin: 0;
 		padding: var(--space-1);
@@ -1186,6 +1186,57 @@ aside.endpoint.list {
 		color: var(--text-muted);
 	}
 }
+/* ============ 标签页容器（通用组件） ============ */
+.tab.container {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	> header {
+		display: flex;
+		flex-shrink: 0;
+		border-bottom: 1px solid;
+
+		& .tab.btn {
+			--btn-bg: transparent;
+			--btn-border: none;
+			--btn-text-color: var(--text-secondary);
+			--tab-accent: var(--accent-primary);
+			border-radius: 0;
+			padding: 6px 16px;
+			border-bottom: 2px solid transparent;
+			margin-bottom: -1px;
+			cursor: pointer;
+			&:hover { --btn-text-color: var(--text-primary); }
+			&:has(input:checked) {
+				--btn-bg: transparent;
+				--btn-text-color: var(--tab-accent);
+				border-bottom-color: var(--tab-accent);
+			}
+		}
+	}
+
+	> .one.tab { display: none; }
+
+	/* 第 N 个 radio 选中 → 第 N+1 个子元素的 .one.tab 显示（第1位是header自己） */
+	/* 预设支持10个tab */
+	> header:has(> :nth-child(1) > input:checked) ~ .one.tab:nth-child(2),
+	> header:has(> :nth-child(2) > input:checked) ~ .one.tab:nth-child(3),
+	> header:has(> :nth-child(3) > input:checked) ~ .one.tab:nth-child(4),
+	> header:has(> :nth-child(4) > input:checked) ~ .one.tab:nth-child(5),
+	> header:has(> :nth-child(5) > input:checked) ~ .one.tab:nth-child(6),
+	> header:has(> :nth-child(6) > input:checked) ~ .one.tab:nth-child(7),
+	> header:has(> :nth-child(7) > input:checked) ~ .one.tab:nth-child(8),
+	> header:has(> :nth-child(8) > input:checked) ~ .one.tab:nth-child(9),
+	> header:has(> :nth-child(9) > input:checked) ~ .one.tab:nth-child(10),
+	> header:has(> :nth-child(10) > input:checked) ~ .one.tab:nth-child(11),
+	&.no-tabs > .one.tab:nth-child(2) {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 0;
+	}
+	&.no-tabs > header { display: none; }
+}
 /* ============ 各种弹窗 ============ */
 dialog[open] {
 	&.editing.endpoint {
@@ -1196,8 +1247,7 @@ dialog[open] {
 		position: fixed;
 		z-index: 1000;
 		inset: 0;
-		height: fit-content;
-		max-height: 85vh;
+		height: 85vh;
 		overflow: hidden;
 		background: var(--bg-base);
 		color: var(--text-primary);
@@ -1223,7 +1273,7 @@ dialog[open] {
 				box-shadow: 0 0 0 3px var(--accent-light);
 			}
 		}
-		> form > .form-row {
+		& form > .form-row {
 			flex: 0 0 100%;
 			gap: var(--space-2);
 		}
@@ -1325,6 +1375,104 @@ dialog[open] {
 		}
 		& .toggle.apikey {
 			--btn-h: 36px;
+		}
+		/* === 标签页容器（项目特有覆盖） === */
+		& .tab.container {
+			flex: 1;
+			> header {
+				justify-content: flex-start;
+				border-bottom-color: var(--border-subtle);
+				padding: 0 var(--space-6);
+			}
+				> .one.tab > form {
+				flex: 1;
+				overflow-y: auto;
+				padding: var(--space-3) var(--space-6) 0;
+			}
+			> .one.tab[data-tab="batch"] > form {
+			flex-direction: column;
+			flex-wrap: nowrap;
+			padding-left: 0;
+			padding-right: 0;
+		}
+		}
+		& .batch-field.name-row {
+			margin-bottom: var(--space-3);
+			border-bottom: 1px solid var(--border-subtle);
+			padding-bottom: var(--space-3);
+		}
+		& .batch-field {
+			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 6px;
+			padding: 8px 10px;
+			margin-bottom: 6px;
+			border: 1px solid var(--border-muted);
+			border-radius: var(--radius-md);
+			background: var(--bg-subtle);
+			transition: border-color var(--transition-fast), opacity var(--transition-fast);
+		}
+		& .batch-field.drag-over {
+			border-color: var(--accent-primary);
+			border-style: dashed;
+		}
+		& .batch-field .field-label {
+			font-size: 13px;
+			font-weight: 500;
+			color: var(--text-secondary);
+			min-width: 70px;
+			flex-shrink: 0;
+		}
+		& .batch-field .input-row {
+			flex: 1;
+			min-width: 140px;
+			gap: 4px;
+		}
+		& .batch-field .input-row input {
+			flex: 1;
+			min-width: 80px;
+		}
+		& .batch-field .add-tag {
+			flex-shrink: 0;
+		}
+		/* === Tag chip === */
+		& .tag-container {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px;
+			flex: 0 0 100%;
+			order: 1;
+			margin-top: 2px;
+		}
+		& .tag-container:empty { display: none; }
+		& .tag {
+			display: inline-flex;
+			align-items: center;
+			gap: 3px;
+			padding: 2px 8px;
+			background: var(--bg-muted);
+			border: 1px solid var(--border-subtle);
+			border-radius: var(--radius-sm);
+			font-size: 12px;
+			color: var(--text-primary);
+			white-space: nowrap;
+		}
+		& .tag .tag-remove {
+			cursor: pointer;
+			border: none;
+			background: none;
+			color: var(--text-muted);
+			font-size: 14px;
+			padding: 0 1px;
+			line-height: 1;
+		}
+		& .tag .tag-remove:hover { color: var(--danger); }
+		& .one.tab[data-tab="batch"] .hint {
+			font-size: 11px;
+			color: var(--text-muted);
+			margin-top: var(--space-2);
+			display: block;
 		}
 		> footer {
 			flex-shrink: 0; padding: var(--space-3) var(--space-6) var(--space-4);

@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.13.4</span>
+			<span class="version">v6.14.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -411,111 +411,149 @@
 			</button>
 			<div class="inherit-source hint"></div>
 		</header>
-		<form>
-			<label class="form-row , flex items-go-x items-y-near-center">
-				<span class="field-label">名称:</span>
-				<span class="field-control"><input name="name"></span>
-			</label>
-			<label class="form-row , flex items-go-x items-y-near-center">
-				<span class="field-label">Base URL（选填）:</span>
-				<span class="field-control">
-					<input name="url" placeholder="https://api.example.com">
-					<span class="hint">若路径以 # 结尾，则直接使用该路径</span>
-				</span>
-			</label>
-			<div class="form-row , flex items-go-x items-y-near-center">
-				<span class="field-label">接口风格:</span>
-				<span class="field-control">
-					<div class="btn-group , flex items-go-x">
-						<label class="option btn">
-							<input type="radio" name="style" value="">
-							继承<span class="inheriting-val"></span>
-						</label>
-						<label class="option btn">
-							<input type="radio" name="style" value="openai">
-							ChatGPT式
-							<span class="hint">
-								OpenAI、国内主流
-								<br>
-								/v1/chat/completions
-							</span>
-						</label>
-						<label class="option btn">
-							<input type="radio" name="style" value="claude">
-							Claude式
-							<span class="hint">
-								Anthropic
-								<br>
-								/v1/messages
-							</span>
-						</label>
-						<label class="option btn">
-							<input type="radio" name="style" value="gemini">
-							Gemini式
-							<span class="hint">
-								Google
-								<br>
-								/v1beta/models/……
-							</span>
-						</label>
-					</div>
-				</span>
-			</div>
-			<div class="form-row , flex items-go-x items-y-near-center">
-				<span class="field-label">类型:</span>
-				<span class="field-control">
-					<div class="btn-group , flex items-go-x">
-						<label class="option btn">
-							<input type="radio" name="type" value="">
-							继承<span class="inheriting-val"></span>
-						</label>
-						<label class="option btn">
-							<input type="radio" name="type" value="chat">
-							💬 聊天
-						</label>
-						<label class="option btn">
-							<input type="radio" name="type" value="embedding">
-							🔢 嵌入
-						</label>
-						<label class="option btn">
-							<input type="radio" name="type" value="image-generation">
-							🎨 生图
-						</label>
-						<label class="option btn">
-							<input type="radio" name="type" value="reranking">
-							📊 重排序
-						</label>
-					</div>
-					<span class="hint"></span>
-				</span>
-			</div>
-			<div class="form-row , flex items-go-x items-y-near-center">
-				<label class="field-label" for="apikey-input">API Key（选填）:</label>
-				<span class="field-control">
-					<span class="flex items-go-x items-y-near-center" style="gap:var(--space-1)">
-						<input name="apikey" id="apikey-input" type="password">
-						<label class="toggle btn : apikey visibility , square shape" title="显示/隐藏">
-							<input type="checkbox" hidden>
-							<span class="fill-style icon : on"><svg><use href="icons.svg#eye"></use></svg></span>
-							<span class="fill-style icon : off"><svg><use href="icons.svg#eye-off"></use></svg></span>
-						</label>
+		<div class="tab container">
+			<header>
+				<label class="btn : tab">
+					<input type="radio" name="dialog-tab" value="single" checked>
+					单节点
+				</label>
+				<label class="btn : tab">
+					<input type="radio" name="dialog-tab" value="batch">
+					批量创建
+				</label>
+			</header>
+			<div class="one tab" data-tab="single">
+				<form>
+				<label class="form-row , flex items-go-x items-y-near-center">
+					<span class="field-label">名称:</span>
+					<span class="field-control"><input name="name"></span>
+				</label>
+				<label class="form-row , flex items-go-x items-y-near-center">
+					<span class="field-label">Base URL（选填）:</span>
+					<span class="field-control">
+						<input name="url" placeholder="https://api.example.com">
+						<span class="hint">若路径以 # 结尾，则直接使用该路径</span>
 					</span>
-				</span>
-			</div>
-			<label class="form-row , flex items-go-x items-y-near-center">
-				<span class="field-label">模型名（选填）:</span>
-				<span class="field-control"><input name="model-id" placeholder="如 gpt-4o"></span>
-			</label>
-			<label class="form-row , flex items-go-x items-y-near-center">
-				<span class="field-label">备注（选填）:</span>
-				<span class="field-control"><input name="remark" placeholder="仅用于显示"></span>
-			</label>
-			<div class="hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
-		</form>
+				</label>
+				<div class="form-row , flex items-go-x items-y-near-center">
+					<span class="field-label">接口风格:</span>
+					<span class="field-control">
+						<div class="btn-group , flex items-go-x">
+							<label class="option btn">
+								<input type="radio" name="style" value="">
+								继承<span class="inheriting-val"></span>
+							</label>
+							<label class="option btn">
+								<input type="radio" name="style" value="openai">
+								ChatGPT式
+								<span class="hint">
+									OpenAI、国内主流
+									<br>
+									/v1/chat/completions
+								</span>
+							</label>
+							<label class="option btn">
+								<input type="radio" name="style" value="claude">
+								Claude式
+								<span class="hint">
+									Anthropic
+									<br>
+									/v1/messages
+								</span>
+							</label>
+							<label class="option btn">
+								<input type="radio" name="style" value="gemini">
+								Gemini式
+								<span class="hint">
+									Google
+									<br>
+									/v1beta/models/……
+								</span>
+							</label>
+						</div>
+					</span>
+				</div>
+				<div class="form-row , flex items-go-x items-y-near-center">
+					<span class="field-label">类型:</span>
+					<span class="field-control">
+						<div class="btn-group , flex items-go-x">
+							<label class="option btn">
+								<input type="radio" name="type" value="">
+								继承<span class="inheriting-val"></span>
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="chat">
+								💬 聊天
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="embedding">
+								🔢 嵌入
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="image-generation">
+								🎨 生图
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="reranking">
+								📊 重排序
+							</label>
+						</div>
+						<span class="hint"></span>
+					</span>
+				</div>
+				<div class="form-row , flex items-go-x items-y-near-center">
+					<label class="field-label" for="apikey-input">API Key（选填）:</label>
+					<span class="field-control">
+						<span class="flex items-go-x items-y-near-center" style="gap:var(--space-1)">
+							<input name="apikey" id="apikey-input" type="password">
+							<label class="toggle btn : apikey visibility , square shape" title="显示/隐藏">
+								<input type="checkbox" hidden>
+								<span class="fill-style icon : on"><svg><use href="icons.svg#eye"></use></svg></span>
+								<span class="fill-style icon : off"><svg><use href="icons.svg#eye-off"></use></svg></span>
+							</label>
+						</span>
+					</span>
+				</div>
+				<label class="form-row , flex items-go-x items-y-near-center">
+					<span class="field-label">模型名（选填）:</span>
+					<span class="field-control"><input name="model-id" placeholder="如 gpt-4o"></span>
+				</label>
+				<label class="form-row , flex items-go-x items-y-near-center">
+					<span class="field-label">备注（选填）:</span>
+					<span class="field-control"><input name="remark" placeholder="仅用于显示"></span>
+				</label>
+				<div class="hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
+			</form>
+		</div>
+		<div class="one tab" data-tab="batch">
+			<form>
+				<label class="batch-field name-row , flex items-go-x items-y-near-center">
+					<span class="field-label">根节点名称:</span>
+					<span class="field-control"><input name="batch-root-name" placeholder="如「我的集群」"></span>
+				</label>
+				<div class="field-list"></div>
+				<div class="hint">拖拽 ≡ 调整字段的层级顺序，从上到下从外到内</div>
+			</form>
+		</div>
+	</div>
 		<footer class="flex items-go-x">
 			<button class="char-style btn : ok , primary , icon-only"></button>
 		</footer>
 	</dialog>
+	<template id="batch-field-block">
+		<div class="batch-field" data-field="">
+			<span class="handle btn : drag , square shape , bare" draggable="true" title="拖动排序">
+				<span class="char-style icon : drag"></span>
+			</span>
+			<span class="field-label"></span>
+			<div class="tag-container"></div>
+			<div class="input-row , flex items-go-x">
+				<input type="text" placeholder="输入后点添加">
+				<button class="btn : add-tag , primary">添加</button>
+			</div>
+			<div class="multi-select btn-group , flex items-go-x , hidden"></div>
+		</div>
+	</template>
 </main>
 <div class="js container">
 	<script src="../vendor/marked.min.js"></script>

@@ -3,7 +3,7 @@ title: 数据模型
 covers_file: [src/modules/store.js, src/modules/storage-core.js, src/extension/storage-core.js]
 depends_on: [architecture.md]
 api_signature: endpointsData / sessionsCache / storage.loadEndpoints / storage.saveEndpoints / storage.loadSession / storage.saveSession
-last_updated: 2026-07-08
+last_updated: 2026-07-14
 why_exists: 定义端点树、会话和消息的数据结构及存储抽象层，确保前后端存储迁移的正确性
 ---
 
@@ -132,5 +132,6 @@ function migrateEndpoints(data) {
 ## 决策日志
 
 - 2026-07-01: 初始文档创建
+- 2026-07-14: 新增 `batchAddNodes` 批量插入子树一次 save
 - 2026-07-03: 节点数据结构新增 type 字段（chat/embedding/image/rerank），resolveNodeConfig 继承五个字段 + type 回退 detectModelType
 - 2026-07-08: 新增节点复刻能力，数据层深拷贝整棵子树并为每个节点重新生成 UUID，根副本名称追加“（副本）”

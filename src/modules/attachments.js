@@ -139,7 +139,20 @@ function addInheritIcon(inputEl) {
 function showEditGroupDialog(node, parentId, onSave) {
 	var dialog = $('dialog.editing.endpoint');
 	var isEdit = !!node;
+	var tabContainer = $('.tab.container', dialog);
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
+	// tab 容器：编辑时隐藏按钮条，新增时显示
+	if (tabContainer) {
+		if (isEdit) {
+			tabContainer.classList.add('no-tabs');
+		} else {
+			tabContainer.classList.remove('no-tabs');
+			var singleRadio = tabContainer.querySelector('input[value="single"]');
+			if (singleRadio) singleRadio.checked = true;
+		}
+	}
+	// tab 栏：编辑时隐藏，新增时显示
+	// 始终重置到单节点面板
 	// 重置空值 radio 标签，消除前一次调用留下的继承标注
 	['style', 'type'].forEach(function(name) {
 		var emptyRadio = dialog.querySelector('input[name="' + name + '"][value=""]');
@@ -365,6 +378,11 @@ function showEditGroupDialog(node, parentId, onSave) {
 	onClick({
 		'.close': function() { dialog.close(); },
 		'.ok': function() {
+			// 批量模式走批量提交
+			if (!isEdit && dialog.querySelector('.tab.container input[value="batch"]:checked')) {
+				if (handleBatchSubmit(dialog, parentId) !== false) dialog.close();
+				return;
+			}
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
 			if (!theName && theModelId) {
@@ -396,6 +414,216 @@ function showEditGroupDialog(node, parentId, onSave) {
 			dialog.close();
 		}
 	}, dialog);
+	// 批量 tab — 惰性构建字段块
+	if (!isEdit && tabContainer) {
+		tabContainer.querySelectorAll('input[name="dialog-tab"]').forEach(function(radio) {
+			radio.addEventListener('change', function() {
+				if (this.value === 'batch' && this.checked) {
+					var list = $('.field-list', dialog);
+					if (list && !list.hasChildNodes()) {
+						buildBatchFields(dialog, parentId);
+					}
+				}
+			});
+		});
+	}
+}
+
+// ========== 批量创建 ==========
+function buildBatchFields(dialog, parentId) {
+	var list = $('.field-list', dialog);
+	if (!list) return;
+	var fields = [
+		{ key: 'baseUrl', label: 'Base URL', placeholder: 'https://api.example.com' },
+		{ key: 'style', label: '接口风格', options: [
+			{ value: 'openai', text: 'ChatGPT式', hint: 'OpenAI、国内主流<br>/v1/chat/completions' },
+			{ value: 'claude', text: 'Claude式', hint: 'Anthropic<br>/v1/messages' },
+			{ value: 'gemini', text: 'Gemini式', hint: 'Google<br>/v1beta/models/……' }
+		]},
+		{ key: 'type', label: '类型', options: [
+			{ value: 'chat', text: '💬 聊天' },
+			{ value: 'embedding', text: '🔢 嵌入' },
+			{ value: 'image-generation', text: '🎨 生图' },
+			{ value: 'reranking', text: '📊 重排序' }
+		]},
+		{ key: 'key', label: 'API Key' },
+		{ key: 'modelId', label: '模型名', placeholder: '如 gpt-4o' }
+	];
+	fields.forEach(function(cfg) {
+		var block = fromTemplate('batch-field-block', '.batch-field');
+		block.dataset.field = cfg.key;
+		block.querySelector('.field-label').textContent = cfg.label;
+		var input = block.querySelector('.input-row input');
+		if (cfg.placeholder) input.placeholder = cfg.placeholder;
+		var addBtn = block.querySelector('.add-tag');
+		var tagContainer = block.querySelector('.tag-container');
+		var inputRow = block.querySelector('.input-row');
+		var multiSelect = block.querySelector('.btn-group.multi-select');
+		// 有预定义选项的字段显示多选按钮组（与单节点 radio 样式一致）
+		if (cfg.options) {
+			tagContainer.style.display = 'none';
+			if (inputRow) inputRow.style.display = 'none';
+			if (multiSelect) {
+				multiSelect.classList.remove('hidden');
+				cfg.options.forEach(function(opt) {
+					var label = mk('label', 'option btn');
+					var cb = mk('input');
+					cb.type = 'checkbox';
+					cb.value = opt.value;
+					label.appendChild(cb);
+					label.appendChild(doc.createTextNode(opt.text));
+					if (opt.hint) {
+						var hint = mk('span', 'hint');
+						hint.innerHTML = opt.hint;
+						label.appendChild(hint);
+					}
+					multiSelect.appendChild(label);
+				});
+			}
+		}
+		// 文本输入 + 添加按钮
+		addBtn.onclick = function() { addTagFromInput(input, tagContainer); };
+		input.onkeydown = function(e) {
+			if (e.key === 'Enter') { e.preventDefault(); addTagFromInput(input, tagContainer); }
+		};
+		list.appendChild(block);
+	});
+	setupBatchDragDrop(list);
+}
+function addTagFromInput(input, tagContainer) {
+	var val = input.value.trim();
+	if (!val) return;
+	addTagToField(tagContainer, val, val);
+	input.value = '';
+	input.focus();
+}
+function addTagToField(tagContainer, value, displayText) {
+	// 去重
+	var existing = tagContainer.querySelector('.tag[data-value="' + value.replace(/"/g, '&quot;') + '"]');
+	if (existing) return;
+	var tag = mk('span', 'tag');
+	tag.dataset.value = value;
+	tag.textContent = displayText || value;
+	var removeBtn = mk('button', 'tag-remove');
+	removeBtn.textContent = '×';
+	removeBtn.onclick = function() { tag.remove(); };
+	tag.appendChild(removeBtn);
+	tagContainer.appendChild(tag);
+}
+function setupBatchDragDrop(list) {
+	var dragSrc = null;
+	list.addEventListener('dragstart', function(e) {
+		var block = e.target.closest('.batch-field');
+		if (!block || !e.target.closest('.handle')) { e.preventDefault(); return; }
+		dragSrc = block;
+		block.classList.add('dragging');
+		e.dataTransfer.effectAllowed = 'move';
+	});
+	list.addEventListener('dragend', function() {
+		list.querySelectorAll('.dragging').forEach(function(el) { el.classList.remove('dragging'); });
+		list.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+	});
+	list.addEventListener('dragover', function(e) {
+		e.preventDefault();
+		e.dataTransfer.dropEffect = 'move';
+		var block = e.target.closest('.batch-field');
+		if (!block || block === dragSrc) return;
+		list.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+		block.classList.add('drag-over');
+	});
+	list.addEventListener('drop', function(e) {
+		e.preventDefault();
+		list.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+		if (!dragSrc) return;
+		var target = e.target.closest('.batch-field');
+		if (!target || target === dragSrc) return;
+		var rect = target.getBoundingClientRect();
+		var midY = rect.top + rect.height / 2;
+		if (e.clientY < midY) {
+			list.insertBefore(dragSrc, target);
+		} else {
+			list.insertBefore(dragSrc, target.nextSibling);
+		}
+		dragSrc = null;
+	});
+}
+function collectBatchFieldValues(dialog) {
+	var result = {};
+	var rootNameInput = $('input[name="batch-root-name"]', dialog);
+	result.rootName = rootNameInput ? rootNameInput.value.trim() : '';
+	result.fields = [];
+	var list = $('.field-list', dialog);
+	if (!list) return result;
+	list.querySelectorAll('.batch-field').forEach(function(block) {
+		var key = block.dataset.field;
+		var values = [];
+		var multiSelect = block.querySelector('.btn-group.multi-select:not(.hidden)');
+		if (multiSelect) {
+			// 多选按钮组模式（style/type）
+			multiSelect.querySelectorAll('input:checked').forEach(function(cb) {
+				values.push(cb.value);
+			});
+		} else {
+			// tag 输入模式（baseUrl/key/modelId）
+			block.querySelectorAll('.tag').forEach(function(tag) {
+				values.push(tag.dataset.value);
+			});
+		}
+		if (values.length > 0) {
+			result.fields.push({ key: key, values: values });
+		}
+	});
+	return result;
+}
+function handleBatchSubmit(dialog, parentId) {
+	var data = collectBatchFieldValues(dialog);
+	if (!data.rootName) {
+		// 用第一个有值的字段的第一个值做根名称
+		for (var i = 0; i < data.fields.length; i++) {
+			if (data.fields[i].values.length > 0) {
+				data.rootName = data.fields[i].values[0];
+				break;
+			}
+		}
+		if (!data.rootName) { alert('请填写根节点名称或至少一个字段值'); return false; }
+	}
+	if (data.fields.length === 0) { alert('请至少填写一个字段的值'); return false; }
+	var subtree = generateBatchSubtree(data.rootName, data.fields);
+	async function doSave() {
+		await batchAddNodes(parentId, subtree);
+		refreshUI();
+	}
+	doSave().catch(function(e) { console.error('batchAddNodes error', e); });
+	return true;
+}
+function generateBatchSubtree(rootName, fields) {
+	var root = { name: rootName, children: [] };
+	var level = [root];
+	var fieldToProp = {
+		baseUrl: 'baseUrl', style: 'style', type: 'type',
+		key: 'key', modelId: 'modelId'
+	};
+	fields.forEach(function(field) {
+		var prop = fieldToProp[field.key] || field.key;
+		var vals = field.values;
+		if (vals.length === 1) {
+			// 单值：设到当前层所有节点，不创建子层
+			level.forEach(function(n) { n[prop] = vals[0]; });
+		} else {
+			// 多值：创建子层
+			var next = [];
+			level.forEach(function(parent) {
+				vals.forEach(function(v) {
+					var child = { name: v, children: [] };
+					child[prop] = v;
+					parent.children.push(child);
+					next.push(child);
+				});
+			});
+			level = next;
+		}
+	});
+	return [root];
 }
 function showDirectoryPrompt(hasPendingHandle = false) {
 	showHelpDialog(true, hasPendingHandle);

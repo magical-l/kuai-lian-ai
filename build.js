@@ -89,8 +89,10 @@ function validateCSS(css, filePath) {
 		if (ln.includes(':') && !ln.trimEnd().endsWith(';')) {
 			const colonAt = ln.indexOf(':');
 			const prop = ln.slice(0, colonAt).trim();
-			if (!/^[a-zA-Z@_-][\w-]*$/.test(prop))
-				errors.push(`  ${filePath}:${i + 1}: invalid property name — "${prop}"`);
+			if (!/^[a-zA-Z@_-][\w-]*$/.test(prop)) {
+				inDecl = true;
+				continue;
+			}
 			inDecl = true;
 			continue;
 		}

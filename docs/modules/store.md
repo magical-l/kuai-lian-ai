@@ -3,7 +3,7 @@ title: 数据管理层
 covers_file: [src/modules/store.js]
 depends_on: [storage-core.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-07-12
+last_updated: 2026-07-14
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -160,7 +160,8 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | `migrateEndpoints` 在 `loadEndpoints` 和 `tryRestoreDirectory` 中各执行一次 | 双重保障确保旧格式数据在首次加载时被迁移；幂等（第二次 `data.groups` 已不存在） |
 | 继承链解析不含 `modelId` 空值检查 | 空 `modelId` 表示分组节点，继承父节点 `modelId` 无意义；调用方在 `api.js` 中会过滤无 `modelId` 的节点 |
 | `deleteNode` 同步清理 `selectedEndpoints` | 避免删除后选中列表中有悬空引用导致 UI 异常 |
-| 2026-07-08 | `cloneNode` 只修改根副本名称为“原名（副本）”，子节点保持原名和配置；全树重生成 UUID，避免与原树 ID 冲突 |
+| 2026-07-08 | `cloneNode` 只修改根副本名称为”原名（副本）”，子节点保持原名和配置；全树重生成 UUID，避免与原树 ID 冲突 |
+| 2026-07-14 | 新增 `batchAddNodes` 批量创建子树，一次 `saveEndpoints` 插入所有节点 |
 | 首条消息自动设为会话标题 | 减少用户操作步骤；取前 20 字符足够在侧边栏展示 |
 | `addMessage` 将 content 统一转为 `[{ type, text }]` 数组格式 | 兼容旧版字符串格式和未来扩展（多模态）；`normalizeMessageContent` 保障向下兼容 |
 | 2026-07-03 | `type` 字段加入节点数据模型和继承链 | 每个端点独立标注用途（chat/embedding/image/rerank），取代全局 inputMode 切换；inherit 后为空时 fallback 到 `detectModelType` 保证向后兼容 |
