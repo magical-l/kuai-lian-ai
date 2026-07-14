@@ -132,8 +132,7 @@ async function init() {
 	// 新建会话
 	$('.new-session').on('click', handleNewSession);
 	// 文件上传
-	$('.file-input').on('change', e => handleFileInputChange(e.currentTarget));
-	$('.add.attachment.btn').on('click', () => document.querySelector('.file-input').click());
+	$('.add.attachment.btn input[type="file"]').on('change', e => handleFileInputChange(e.currentTarget));
 	// 发送 & 全部停止
 	$('.main.btn.send').on('click', handleSend);
 	$('.stop-all-response').on('click', handleStopAllResponses);
@@ -144,7 +143,6 @@ async function init() {
 	const chatInput = $('#chat-input');
 	chatInput.placeholder = '输入消息...';
 	$('.add.attachment.btn').style.display = '';
-	$('.file-input').style.display = '';
 
 	chatInput.on('keydown', e => {
 		if (e.key === 'Enter') {

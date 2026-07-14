@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.13.2</span>
+			<span class="version">v6.13.3</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -295,10 +295,10 @@
 				<textarea id="chat-input" placeholder="输入消息..." rows="3"></textarea>
 				<menu class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
 					<div class="attachment list , flexible , flex items-go-x scrollable" style="gap:4px"></div>
-					<input type="file" class="file-input" multiple accept="*/*" >
-					<button class="btn : add attachment , square shape" title="添加附件" >
+					<label class="btn : add attachment , square shape" title="添加附件">
 						<span class="fill-style icon"><svg><use href="icons.svg#attach"></use></svg></span>
-					</button>
+						<input type="file" multiple accept="*/*" hidden>
+					</label>
 					
 					<div title="发送" class="split-style btn-group : send , flex items-go-x items-from-left">
 						<button class="main btn : send , primary" >
