@@ -1,0 +1,76 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - img "快连AI Logo" [ref=e6]
+        - generic [ref=e7]:
+          - text: 快
+          - deletion [ref=e8]: 恋爱
+          - text: 连AI
+        - generic [ref=e9]: v6.13.4
+      - generic [ref=e10]:
+        - generic [ref=e11]: 当前存储目录：
+        - generic [ref=e12]: 未选择目录
+        - generic [ref=e13]:
+          - button "更换目录" [ref=e14] [cursor=pointer]:
+            - img [ref=e16]
+          - button "✕" [ref=e18] [cursor=pointer]:
+            - generic [ref=e19]: ✕
+          - button "清空数据" [ref=e20] [cursor=pointer]:
+            - img [ref=e22]
+      - navigation [ref=e24]:
+        - generic "显示/隐藏右侧栏" [ref=e25] [cursor=pointer]:
+          - img [ref=e27]
+        - button "?" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]: "?"
+        - text: ✗
+        - button "切换主题" [ref=e31] [cursor=pointer]:
+          - img [ref=e33]
+        - link "GitHub" [ref=e35] [cursor=pointer]:
+          - /url: https://github.com/magical-l/kuai-lian-ai
+          - img "GitHub" [ref=e37]
+        - link "Gitee" [ref=e38] [cursor=pointer]:
+          - /url: https://gitee.com/magicall/kuai-lian-ai
+          - img "Gitee" [ref=e40]
+    - generic [ref=e41]:
+      - complementary [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]: AI服务端点
+          - generic [ref=e45]:
+            - generic "聊天" [ref=e46] [cursor=pointer]: 💬
+            - generic "嵌入" [ref=e47] [cursor=pointer]: 🔢
+            - generic "生图" [ref=e48] [cursor=pointer]: 🎨
+            - generic "重排序" [ref=e49] [cursor=pointer]: 📊
+          - generic [ref=e50]:
+            - button "⛓" [ref=e51] [cursor=pointer]:
+              - generic [ref=e52]: ⛓
+            - text: ⧖
+            - button "收起全部" [ref=e53] [cursor=pointer]:
+              - img [ref=e55]
+            - button "+" [ref=e57] [cursor=pointer]:
+              - generic [ref=e58]: +
+        - list [ref=e59]
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - generic [ref=e63]: 会话：
+          - generic [ref=e64]: 新会话
+          - text: ⤒ ⤓
+          - button "新建会话" [ref=e65] [cursor=pointer]
+        - generic [ref=e67]:
+          - list [ref=e69]:
+            - listitem [ref=e70]: 请选择端点
+          - textbox "输入消息..." [ref=e71]
+          - list [ref=e72]:
+            - generic "添加附件" [ref=e74] [cursor=pointer]:
+              - img [ref=e76]
+            - generic "发送" [ref=e78]:
+              - button [ref=e79] [cursor=pointer]:
+                - img [ref=e81]
+              - button [ref=e83] [cursor=pointer]:
+                - img [ref=e85]
+            - text: ■
+      - complementary [ref=e88]:
+        - generic [ref=e89]: 会话记录
+        - list [ref=e90]
+    - text: ✗ ✓
+  - generic [ref=e91]: 🤖 tab-test

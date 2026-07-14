@@ -1384,12 +1384,12 @@ dialog[open] {
 				border-bottom-color: var(--border-subtle);
 				padding: 0 var(--space-6);
 			}
-				> .one.tab > form {
-				flex: 1;
-				overflow-y: auto;
-				padding: var(--space-3) var(--space-6) 0;
-			}
-			> .one.tab[data-tab="batch"] > form {
+			> .one.tab > form {
+			flex: 1;
+			overflow-y: auto;
+			padding: var(--space-3) var(--space-6) 0;
+		}
+		> .one.tab[data-tab="batch"] > form {
 			flex-direction: column;
 			flex-wrap: nowrap;
 			padding-left: 0;

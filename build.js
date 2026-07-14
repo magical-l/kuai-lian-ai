@@ -90,8 +90,10 @@ function validateCSS(css, filePath) {
 			const colonAt = ln.indexOf(':');
 			const prop = ln.slice(0, colonAt).trim();
 			if (!/^[a-zA-Z@_-][\w-]*$/.test(prop)) {
-				inDecl = true;
-				continue;
+				// 可能是 :has()/:nth-child() 等伪类选择器，不是声明
+				if (ln.indexOf(':', colonAt + 1) > 0 && /^\w+\(/.test(ln.slice(colonAt + 1).trim()))
+					continue;
+				errors.push(`  ${filePath}:${i + 1}: invalid property name — "${prop}"`);
 			}
 			inDecl = true;
 			continue;

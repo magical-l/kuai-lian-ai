@@ -231,6 +231,7 @@ async function batchAddNodes(parentId, subtrees) {
 		return null;
 	}
 	var createdIds = [];
+	var batchParent = parentId ? findNodeInTree(endpointsData.nodes, parentId) : null;
 	function assignIds(nodes, parent) {
 		nodes.forEach(function(n) {
 			var node = {
@@ -252,10 +253,11 @@ async function batchAddNodes(parentId, subtrees) {
 				parent.children.push(node);
 			} else {
 				// 根级节点
-				if (parentId) {
+				if (batchParent) { batchParent.children.push(node); }
+				else if (parentId) {
 					var p = findNodeInTree(endpointsData.nodes, parentId);
-					if (p) { p.children.push(node); }
-					else { endpointsData.nodes.push(node); }
+					if (p) p.children.push(node);
+					else endpointsData.nodes.push(node);
 				} else {
 					endpointsData.nodes.push(node);
 				}

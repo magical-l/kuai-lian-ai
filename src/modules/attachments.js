@@ -151,8 +151,6 @@ function showEditGroupDialog(node, parentId, onSave) {
 			if (singleRadio) singleRadio.checked = true;
 		}
 	}
-	// tab 栏：编辑时隐藏，新增时显示
-	// 始终重置到单节点面板
 	// 重置空值 radio 标签，消除前一次调用留下的继承标注
 	['style', 'type'].forEach(function(name) {
 		var emptyRadio = dialog.querySelector('input[name="' + name + '"][value=""]');
@@ -453,11 +451,11 @@ function buildBatchFields(dialog, parentId) {
 		var block = fromTemplate('batch-field-block', '.batch-field');
 		block.dataset.field = cfg.key;
 		block.querySelector('.field-label').textContent = cfg.label;
-		var input = block.querySelector('.input-row input');
-		if (cfg.placeholder) input.placeholder = cfg.placeholder;
+		var inputRow = block.querySelector('.input-row');
+		var input = inputRow ? inputRow.querySelector('input') : null;
+		if (input && cfg.placeholder) input.placeholder = cfg.placeholder;
 		var addBtn = block.querySelector('.add-tag');
 		var tagContainer = block.querySelector('.tag-container');
-		var inputRow = block.querySelector('.input-row');
 		var multiSelect = block.querySelector('.btn-group.multi-select');
 		// 有预定义选项的字段显示多选按钮组（与单节点 radio 样式一致）
 		if (cfg.options) {
@@ -589,22 +587,16 @@ function handleBatchSubmit(dialog, parentId) {
 	}
 	if (data.fields.length === 0) { alert('请至少填写一个字段的值'); return false; }
 	var subtree = generateBatchSubtree(data.rootName, data.fields);
-	async function doSave() {
-		await batchAddNodes(parentId, subtree);
+	batchAddNodes(parentId, subtree).then(function() {
 		refreshUI();
-	}
-	doSave().catch(function(e) { console.error('batchAddNodes error', e); });
+	}).catch(function(e) { console.error('batchAddNodes error', e); });
 	return true;
 }
 function generateBatchSubtree(rootName, fields) {
 	var root = { name: rootName, children: [] };
 	var level = [root];
-	var fieldToProp = {
-		baseUrl: 'baseUrl', style: 'style', type: 'type',
-		key: 'key', modelId: 'modelId'
-	};
 	fields.forEach(function(field) {
-		var prop = fieldToProp[field.key] || field.key;
+		var prop = field.key;
 		var vals = field.values;
 		if (vals.length === 1) {
 			// 单值：设到当前层所有节点，不创建子层
