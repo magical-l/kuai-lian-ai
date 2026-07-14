@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-11
+last_updated: 2026-07-14
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -322,3 +322,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-08: 端点树复刻按钮类名改为 `.duplicate`；参照同为 SVG outline 的 `.join-session`，只通过 `--btn-text-color: var(--accent-primary)` 设定图标色，不单独设置边框、背景、opacity、hover 或 stroke。
 - 2026-07-11: sticky 重构：`.sticky` 改用 `--stick-top/bottom/left/right` 变量 + `.near-*` 方向类，替代 `:is(header)` / `:is(footer)` 硬编码。`.streaming-hint` 和 `.chat-input-area` 改用 `.sticky.near-bottom` 类 + `--stick-bottom` 变量。
 - 2026-07-13: 状态图标重构。`--icon-char` 定义从 `.icon` 块内移到顶层，使状态类（`.done`/`.completed`/`.loading` 等）可放在 `.icon` 的祖先上。`.status` 块改为通过 `--status-icon-text-color` 变量消费颜色，不再写死子类列表。复制按钮从 `.copied` + 内部状态 span 改为 `.done` + 兄弟 `.status.icon` 模式。
+- 2026-07-14: `:empty::before` 移入 `&.char-style` 后，选中端点删除按钮补上 `char-style` 类。（根因：common.css 重构了 `--icon-char` 的渲染入口，但 `layout.html` 的 `#template-selected-endpoint` 中 `.remove` 按钮未同步更新类名。）
