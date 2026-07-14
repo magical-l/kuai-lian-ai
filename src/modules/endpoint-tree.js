@@ -161,8 +161,7 @@ function handleResetFilter() {
 }
 
 function handleClickAddEndpoint() {
-	var addGroupBtn = document.querySelector('.add-node.btn');
-	if (addGroupBtn) addGroupBtn.click();
+	handleAddGroup();
 }
 
 function handleFilterBarChange(e) {
@@ -291,7 +290,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 
 			var batchTestBtn = opListEl.querySelector('.test-connection');
 			if (testableIds.length === 0) {
-				batchTestBtn.style.display = 'none';
+				batchTestBtn.classList.add('hidden');
 			} else {
 				batchTestBtn.classList.remove("busy", "connected", "failed");
 				if (batchStatus) batchTestBtn.classList.add(batchStatus);
@@ -489,17 +488,17 @@ function applyEndpointFilter() {
 		}
 
 		if (activeTypeFilters.has(type)) {
-			li.style.display = '';
+			li.classList.remove('hidden');
 		} else {
 			// 分组节点：如果有子节点匹配，也显示
 			var hasMatchingChild = false;
 			var sublist = li.querySelector('details > ol');
 			if (sublist) {
 				hasMatchingChild = Array.from(sublist.querySelectorAll('li.one.endpoint')).some(function(child) {
-					return child.style.display !== 'none';
+					return !child.classList.contains('hidden');
 				});
 			}
-			li.style.display = hasMatchingChild ? '' : 'none';
+			li.classList.toggle('hidden', !hasMatchingChild);
 		}
 	}
 }

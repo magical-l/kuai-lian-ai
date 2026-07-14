@@ -109,7 +109,7 @@ function clearInput() {
 function setButtonState(sendDisabled, stopEnabled) {
 	const area = $('footer.chat-input-area');
 	$('.send', area).disabled = sendDisabled;
-	$('.split-style.btn-group', area).style.display = stopEnabled ? 'none' : '';
+	$('.split-style.btn-group', area).classList.toggle('hidden', stopEnabled);
 	$('.stop-all-response.btn', area).disabled = !stopEnabled;
 	$('.stop-all-response.btn', area).classList.toggle('hidden', !stopEnabled);
 }
@@ -276,9 +276,9 @@ function showEditGroupDialog(node, parentId, onSave) {
 			}
 			if (parentName) {
 				inheritSourceEl.textContent = '继承自: ' + parentName;
-				inheritSourceEl.style.display = '';
+				inheritSourceEl.classList.remove('hidden');
 			} else {
-				inheritSourceEl.style.display = 'none';
+				inheritSourceEl.classList.add('hidden');
 			}
 		}
 
@@ -357,14 +357,14 @@ function showEditGroupDialog(node, parentId, onSave) {
 			} else if (idx === formFields.length - 1) {
 				// 最后一个输入框 → 保存
 				e.preventDefault();
-				var saveBtn = $('.done.btn', dialog);
+				var saveBtn = $('.ok', dialog);
 				if (saveBtn) saveBtn.click();
 			}
 		});
 	}
 	onClick({
-		'.cancel': function() { dialog.close(); },
-		'.done.btn': function() {
+		'.close': function() { dialog.close(); },
+		'.ok': function() {
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
 			if (!theName && theModelId) {
@@ -619,7 +619,7 @@ function showAttachmentTooltip(name, targetEl) {
 		doc.body.appendChild(attachmentTooltip);
 	}
 	attachmentTooltip.textContent = name;
-	attachmentTooltip.style.display = 'block';
+	attachmentTooltip.classList.remove('hidden');
 	const rect = targetEl.getBoundingClientRect();
 	// 显示在缩略图上方
 	attachmentTooltip.style.right = (window.innerWidth - rect.right) + 'px';
@@ -629,7 +629,7 @@ function showAttachmentTooltip(name, targetEl) {
 
 function hideAttachmentTooltip() {
 	if (attachmentTooltip) {
-		attachmentTooltip.style.display = 'none';
+		attachmentTooltip.classList.add('hidden');
 	}
 }
 

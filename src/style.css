@@ -172,7 +172,6 @@ aside {
 			font-size: 13px;
 		color: var(--text-primary);
 
-		& input[type=radio] { display: none; }
 
 		&:has(input:checked) {
 			color: var(--accent-primary);
@@ -794,12 +793,8 @@ main {
 				}
 				
 				> menu {
-				gap: 4px;
+					gap: 4px;
 					--btn-h: 40px;
-					/* 隐藏掉原生的文件输入控件，使用“添加附件按钮” */
-					& input[type=file] {
-					display: none;
-					}
 				}
 			}
 		}
@@ -1289,7 +1284,26 @@ dialog[open] {
 		}
 		& header {
 			flex-shrink: 0;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			flex-wrap: wrap;
 			padding: var(--space-4) var(--space-6) 0;
+			> .close {
+				border: none;
+				border-radius: var(--radius-md);
+				background: none;
+				color: var(--text-muted);
+				font-size: 16px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				&:hover {
+					color: var(--text-primary);
+					background: var(--bg-muted);
+				}
+			}
 		}
 		& header h3 {
 			font-weight: 600;
@@ -1307,6 +1321,7 @@ dialog[open] {
 			color: var(--text-secondary);
 			padding: var(--space-1) var(--space-6);
 			border-bottom: 1px solid var(--border-subtle);
+			flex: 0 0 100%;
 		}
 		& .toggle.apikey {
 			--btn-h: 36px;
@@ -1320,6 +1335,11 @@ dialog[open] {
 				--btn-font-size: 13px;
 				--btn-p: var(--space-2) var(--space-4);
 				--btn-h: 32px;
+				--icon-width: var(--btn-h);
+				--icon-height: var(--btn-h);
+				--icon-max-width: var(--btn-h);
+				--icon-max-height: var(--btn-h);
+				--icon-font-size: 18px;
 			}
 		}
 	}

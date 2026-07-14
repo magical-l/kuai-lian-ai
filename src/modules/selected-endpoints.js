@@ -26,12 +26,12 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
     const hint = $('.empty.hint', summaryEl);
 
     if (selectedEndpoints.length === 0) {
-        if (hint) hint.style.display = '';
+        if (hint) hint.classList.remove('hidden');
         
         return;
     }
 
-    if (hint) hint.style.display = 'none';
+    if (hint) hint.classList.add('hidden');
 
     const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
     const typeIconMap = { chat: 'chat', embedding: 'embedding', embed: 'embedding', image: 'image-generation', 'img-generate': 'image-generation', rerank: 'reranking' };
@@ -152,9 +152,9 @@ function buildTooltipHTML(node, rcfg, nameOverride) {
 		setRow("baseUrl", tipBaseUrl, rcfg.baseUrl || "");
 		setRow("style", tipStyle, rcfg.style || "");
 		var keyRow = setRow("key", tipKey, rcfg.key || "");
-		keyRow.style.display = rcfg.key ? "" : "none";
+		keyRow.classList.toggle('hidden', !rcfg.key);
 		setRow("model", tipModel || "-", rcfg.modelId || "");
 		var remarkRow = setRow("remark", node.remark || "", node.remark || "");
-		remarkRow.style.display = node.remark ? "" : "none";
+		remarkRow.classList.toggle('hidden', !node.remark);
 	};
 }

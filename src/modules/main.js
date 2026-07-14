@@ -142,7 +142,6 @@ async function init() {
 	let sendOnEnter = localStorage.getItem('sendMode') !== 'ctrl-enter';
 	const chatInput = $('#chat-input');
 	chatInput.placeholder = '输入消息...';
-	$('.add.attachment.btn').style.display = '';
 
 	chatInput.on('keydown', e => {
 		if (e.key === 'Enter') {
@@ -692,7 +691,7 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 			}
 			// 隐藏复制按钮
 			const copyBtn = $('.copy.content', card);
-			if (copyBtn) copyBtn.style.display = 'none';
+			if (copyBtn) copyBtn.classList.add('hidden');
 		} else if (status === 'stopped') {} else if (status === 'completed') {
 			if (state && state.thinkingDuration) {
 				const thinkingBlock = $('.think', card);

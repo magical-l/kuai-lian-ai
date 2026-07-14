@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.13.3</span>
+			<span class="version">v6.13.4</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -297,9 +297,9 @@
 					<div class="attachment list , flexible , flex items-go-x scrollable" style="gap:4px"></div>
 					<label class="btn : add attachment , square shape" title="添加附件">
 						<span class="fill-style icon"><svg><use href="icons.svg#attach"></use></svg></span>
-						<input type="file" multiple accept="*/*" hidden>
+						<input type="file" multiple accept="*/*">
 					</label>
-					
+
 					<div title="发送" class="split-style btn-group : send , flex items-go-x items-from-left">
 						<button class="main btn : send , primary" >
 							<span class="fill-style icon"><svg><use href="icons.svg#send"></use></svg></span>
@@ -406,6 +406,9 @@
 	<dialog class="editing endpoint">
 		<header>
 			<h3></h3>
+			<button class="btn : close , square shape , bare">
+				<span class="char-style icon : cancel"></span>
+			</button>
 			<div class="inherit-source hint"></div>
 		</header>
 		<form>
@@ -510,8 +513,7 @@
 			<div class="hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
 		</form>
 		<footer class="flex items-go-x">
-			<button class="btn : cancel , icon-only"></button>
-			<button class="btn : done , primary , icon-only"></button>
+			<button class="char-style btn : ok , primary , icon-only"></button>
 		</footer>
 	</dialog>
 </main>

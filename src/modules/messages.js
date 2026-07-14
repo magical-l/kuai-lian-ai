@@ -348,9 +348,9 @@ function appendUserMessage(msg) {
                 }
             }
             errorEl.textContent = r.error;
-            errorEl.style.display = "";
+            errorEl.classList.remove('hidden');
         } else if (errorEl) {
-            errorEl.style.display = "none";
+            errorEl.classList.add('hidden');
         }
 
         // 复制按钮

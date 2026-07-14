@@ -8,14 +8,14 @@ function handleEditSessionTitleClick(btn) {
 	const inputEl = mk('input', 'editing title');
 	inputEl.type = 'text';
 	inputEl.value = currentTitle;
-	titleEl.style.display = 'none';
+	titleEl.classList.add('hidden');
 	sessionEl.insertBefore(inputEl, meta);
 	inputEl.focus();
 	inputEl.select();
 	const finishEdit = () => {
 		const newTitle = inputEl.value.trim();
 		inputEl.remove();
-		titleEl.style.display = '';
+		titleEl.classList.remove('hidden');
 		if (newTitle && newTitle !== currentTitle) {
 			handleSessionEdit(sessionId, newTitle);
 		}
