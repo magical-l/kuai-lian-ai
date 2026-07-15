@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.15.0</span>
+			<span class="version">v6.15.1</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -261,7 +261,7 @@
 							<div class="flex items-go-x items-y-near-center" style="gap:8px">
 								<strong>嵌入维度:</strong> <span class="dim"></span>
 								<button class="btn : expand-json , square shape , bare" title="展开完整向量" >
-									<span class="char-style icon expand"></span>
+									<span class="char-style icon collapsed"></span>
 								</button>
 							</div>
 							<div class="flex items-go-x items-y-near-center" style="gap:8px">
@@ -285,7 +285,7 @@
 					<li class="empty hint">请选择端点</li>
 					<template id="template-selected-endpoint">
 						<li class="one endpoint" data-endpoint="" >
-							<span class="endpoint-type icon"></span>
+							<span class="char-style icon : endpoint-type"></span>
 							<span class="full name"></span>
 							<span class="remark"></span>
 							<span class="char-style remove btn , bare icon-only" data-endpoint="" ></span>
@@ -296,16 +296,16 @@
 				<menu class="flex items-go-x items-near-center" style="padding:8px;min-height:40px">
 					<div class="attachment list , flexible , flex items-go-x scrollable" style="gap:4px"></div>
 					<label class="btn : add attachment , square shape" title="添加附件">
-						<span class="fill-style icon"><svg><use href="icons.svg#attach"></use></svg></span>
+						<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#attach"></use></svg></span>
 						<input type="file" multiple accept="*/*">
 					</label>
 
 					<div title="发送" class="split-style btn-group : send , flex items-go-x items-from-left">
 						<button class="main btn : send , primary" >
-							<span class="fill-style icon"><svg><use href="icons.svg#send"></use></svg></span>
+							<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#send"></use></svg></span>
 						</button>
 						<button class="secondary btn : send-shortcut-selector" popovertarget="sendModePop">
-							<span class="fill-style icon"><svg><use href="icons.svg#chevron-down"></use></svg></span>
+							<span class="fill-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#chevron-down"></use></svg></span>
 						</button>
 						<div id="sendModePop" popover="auto" >
 							<div class="flex items-go-y">
