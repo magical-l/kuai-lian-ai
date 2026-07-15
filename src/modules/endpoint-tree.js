@@ -204,9 +204,9 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 			if (typeEl) {
 				var type = rcfg ? rcfg.type : 'chat';
 				if (type === 'chat') { typeEl.classList.add('chat'); }
-				else if (type === 'embedding') { typeEl.classList.add('embedding'); }
-				else if (type === 'image' || type === 'image-generation') { typeEl.classList.add('image-generation'); }
-				else if (type === 'reranking') { typeEl.classList.add('reranking'); }
+				else if (type === 'embedding') { typeEl.classList.add('digits'); }
+				else if (type === 'image' || type === 'image-generation') { typeEl.classList.add('palette'); }
+				else if (type === 'reranking') { typeEl.classList.add('chart'); }
 			}
 
 			var tooltipId = "tooltip-" + node.id;
@@ -482,9 +482,9 @@ function applyEndpointFilter() {
 		var type = '';
 		if (typeEl) {
 			if (typeEl.classList.contains('chat')) type = 'chat';
-			else if (typeEl.classList.contains('embedding')) type = 'embedding';
-			else if (typeEl.classList.contains('image-generation')) type = 'image-generation';
-			else if (typeEl.classList.contains('reranking')) type = 'reranking';
+			else if (typeEl.classList.contains('digits')) type = 'embedding';
+			else if (typeEl.classList.contains('palette')) type = 'image-generation';
+			else if (typeEl.classList.contains('chart')) type = 'reranking';
 		}
 
 		if (activeTypeFilters.has(type)) {

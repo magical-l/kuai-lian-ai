@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-14
+last_updated: 2026-07-15
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -235,6 +235,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-04-26 | 流式卡片用 `data-session-id` + `data-endpoint-id` 定位 | 多 session 同时生成时需要区分卡片归属 |
 | 2026-04-27 | Tooltip 优先挂到 `.one.endpoint` 下 | 避免大量 tooltip 浮在 body 层导致 z-index 管理困难 |
 | 2026-07-01 | renderMessages 在调用 renderResponse 前清除已有卡片的 data-endpoint-id | 多轮会话加载时同一 endpoint 在多个 assistant 消息中出现，querySelector 会找到上一轮创建的卡片并覆写，导致之前的 assistant 回复全部丢失 |
+| 2026-07-15 | typeIconMap 值从 `embedding`/`image-generation`/`reranking` 改为 `digits`/`palette`/`chart` | .endpoint-type CSS 已删除，改为 common.css 抽象的 `.icon.char-style` 体系 |
 | 2026-07-02 | 错误信息从 header 移至 `.content`（`.say` 之后），有错误时隐藏复制按钮 | 错误信息过长时 header 空间不足，移到 content 更合理；有错误时复制按钮无意义 |
 | 2026-07-14 | 编辑弹窗新增 `.tab.container` 组件；批量创建节点功能 | 单节点/批量创建两种模式，radio 驱动 CSS `:has()` 显隐 |
 | 2026-07-01 | 侧边栏切换时 updateSidebarToggleIcon 移入 doToggle 内部 | icon 在 ViewTransition 路径外更新导致暗色下图标颜色不随状态正确切换。版本 6.3.1。 |

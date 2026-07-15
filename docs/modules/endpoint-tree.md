@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-13
+last_updated: 2026-07-15
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -167,6 +167,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-04-26 | 批量测试按钮 title 显示汇总统计 | 测试结果即时反馈，避免用户反复 hover 看每个子节点状态 |
 | 2026-04-27 | 折叠状态不持久化 | 用户对树的折叠习惯变频繁，持久化收益低且增加复杂度 |
 | 2026-07-02 | 端点树结构改为 details/summary/ol，利用原生 open/close 替代手动 display 切换 | 语义化 HTML，减少 JS 手动 DOM 操作，提升可访问性 |
+| 2026-07-15 | 端点类型 class 名称从 `chat`/`embedding`/`image-generation`/`reranking` 改为 `chat`/`digits`/`palette`/`chart`，对齐 common.css 抽象图标体系 | `.endpoint-type` CSS 定义已删除，图标渲染由 common.css 的 `.icon.char-style` 统一处理 |
 | 2026-07-13 | CSS class .add-group → .add-node（JS querySelector/docs 同步更新） | 语义更准确：新增的是端点 node 而非分组 group |
 | 2026-07-02 | 去掉自定义 .expand 按钮，复用 `<summary>` 原生三角箭头 | 自定义按钮与原生功能重复；flex 布局需移到 summary 内层 div 以避免 Chrome 隐藏原生 marker |
 | 2026-07-02 | summary 内包 header(95%+inline-flex+items-x-mutex) 实现 handle+name 左、actions 右布局 | 原生 marker 与 flex 互斥（Chrome），改用 95% 宽度避开 marker 占位 + items-x-mutex(space-between) 分布内容 |

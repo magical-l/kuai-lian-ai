@@ -3,7 +3,7 @@ title: 技术架构
 covers_file: [src/layout.html, src/style.css, src/modules/storage-core.js, src/modules/providers.js, src/modules/boot.js, src/modules/main.js]
 depends_on: []
 api_signature: window.__STORAGE__ / window.__IS_EXTENSION__ / window.__EXTENSION_FETCH__
-last_updated: 2026-07-14
+last_updated: 2026-07-15
 why_exists: 定义快连AI的技术选型、模块依赖关系和数据流向，作为所有代码改动的架构参照
 ---
 
@@ -108,5 +108,6 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 - 2026-07-08: 所有 provider 函数开头 strip baseUrl 尾部斜杠，避免拼接双斜杠
 	- 2026-07-08: HTML 结构从 JS 字符串迁移到 `<template>` 或静态 HTML，消除内联 HTML 拼接。涉及：选中端点标签、tooltip、复制按钮、备注文字、嵌入信息、眼睛图标
 - 2026-07-09: 内联样式迁移到 utility class。`align-items:center` → `items-y-near-center`；`display:none` → `.hidden` + `classList`；移除无定义的 `.mb-1` 及关联死代码
+- 2026-07-15: 端点类型图标迁移到 common.css。筛选按钮 class 从 `endpoint-type.chat` 改为 `chat`/`digits`/`palette`/`chart`，CSS 图标定义从 style.css 删除
 - 2026-07-09: inhert-source hint 移入 dialog header；修复 dialog 编辑弹窗二次打开崩溃（radio 标签重置 + null 安全）
 - 2026-07-11: class 名规范化 `.stop-one` → `.stop-one-response`、`.stop` → `.stop-all-response`；`.stop-icon` 替换为统一 `char-style icon : stop`；`.embedding-full-json` 内联样式提取为 CSS 类；`.stop-all-response` 复用 `.danger` 减少重复样式

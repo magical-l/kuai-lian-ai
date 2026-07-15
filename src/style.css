@@ -854,31 +854,15 @@ main {
 	}
 }
 
-.endpoint-type {
-	&.icon::before, & .icon::before {
-		font-size: 0.75em;
-	}
-	&.chat {
-		&.icon::before, & .icon::before { content: '💬'; }
-	}
-	&.embedding {
-		&.icon::before, & .icon::before { content: '🔢'; }
-	}
-	&.image-generation {
-		&.icon::before, & .icon::before { content: '🎨'; }
-	}
-	&.reranking {
-		&.icon::before, & .icon::before { content: '📊'; }
-	}
-}
-
 aside.endpoint.list {
 	& .endpoint-type.filter .option.btn {
 		--btn-h: 24px;
+		--icon-font-size: 18px;
 		--icon-max-width: var(--btn-h);
 		--icon-max-height: var(--btn-h);
 		&:has(input:checked) {
-			background: var(--accent-primary);
+			--selector-bg: var(--accent-primary);
+			--selector-color: #FFFFFF;
 		}
 	}
 	/* 根级 compact 节点保持正常间距 */
