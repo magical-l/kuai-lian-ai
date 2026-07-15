@@ -773,10 +773,16 @@ function applyThemeClass(mode) {
 }
 
 function updateThemeIcon(mode) {
-	const icon = $('.theme.btn svg use');
+	const icon = $('.theme.btn .icon');
 	if (!icon) return;
-	const iconName = mode === 'dark' ? 'moon' : mode === 'light' ? 'sun' : 'auto';
-	icon.setAttribute('href', `icons.svg#${iconName}`);
+	icon.classList.remove('sun', 'moon', 'half-light', 'at-left', 'outline-style');
+	if (mode === 'dark') {
+		icon.classList.add('moon');
+	} else if (mode === 'light') {
+		icon.classList.add('sun', 'outline-style');
+	} else {
+		icon.classList.add('half-light', 'at-left');
+	}
 }
 
 async function initTheme() {

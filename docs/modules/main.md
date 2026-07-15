@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-13
+last_updated: 2026-07-15
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -63,7 +63,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `initTheme` | 主题初始化：读 settings → 同步 html.class → 注册 matchMedia 监听 |
 | `applyThemeClass` | 操作 html 的 `.dark`/`.light` class |
 | `setThemePref` | 三态切换：存 settings → 应用 class → 更新按钮图标 |
-| `updateThemeIcon` | 同步切换按钮的 SVG icon（sun↔moon↔auto） |
+| `updateThemeIcon` | 同步切换按钮的 char-style class（sun/outline-style↔moon↔half-light/at-left） |
 | `handleTestAllConnections` | 测试所有端点的连接 |
 | `handleStopAllResponses` | 停止所有响应生成 |
 | `handleShowHelp` | 显示帮助/存储设置对话框 |
@@ -224,7 +224,7 @@ initTheme()  [init() 末尾调用]
   │     ├── mode='dark'  → html.classList.add('dark')
   │     ├── mode='light' → html.classList.add('light')
   │     └── mode=null    → 移除 class（跟随系统）
-  ├── updateThemeIcon(mode)  切换按钮的 SVG icon（sun/moon/auto）
+  ├── updateThemeIcon(mode)  切换按钮的 char-style class（light=sun.outline-style / dark=moon / system=half-light.at-left）
   ├── 同步 radio 选中状态（#themePop input[value="dark|light|system"]）
   └── matchMedia('prefers-color-scheme: dark').addListener
         └── 仅在 themeMode=null 时自动切换
@@ -285,6 +285,7 @@ radio change → setThemePref(mode)
 | 2026-04-26 | 流式卡片完成后不立即移除，由 refreshUI 统一清理 | 避免中途移除导致闪烁、避免与 reorderCardsBySpeed 竞争 |
 | 2026-04-27 | 嵌入模式独立为一个函数而非 handleSend 的分支 | 嵌入流程差异太大（单端点、无 streaming、特殊 UI），合并只会增加 if-else |
 | 2026-07-13 | CSS class .add-group → .add-node（docs 引用同步更新） | 语义更准确：新增的是端点 node 而非分组 group |
+| 2026-07-15 | updateThemeIcon 从 SVG href 切换改为 classList 操作 | 主题按钮图标从 SVG 图标切换为 char-style 语义类（sun/outline-style / moon / half-light.at-left） |
 | 2026-07-08 | updateCardAsEmbedding 改用卡内静态的 `.embedding-result` 元素而非动态创建 | `embedding-meta` 模板已内联到 `response-card-streaming`，直接从卡内查找即可 |
 | 2026-07-01 | 暗色模式：Popover 下拉选择（亮/暗/系统），radio 直选替代三态循环；beforetoggle 动态定位；settings.theme 持久化；html.className 驱动 | 三态循环 + 同图标用户无法区分当前模式，Popover 下拉 + 独立图标（sun/moon/auto）更清晰 |
 | 2026-07-02 | 错误信息从 header 移到 .content（跟 .say 同级），有错误时隐藏复制按钮 | 错误信息过长时 header 空间不足，移到 content 更合理；有错误时复制按钮无意义 |

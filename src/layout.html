@@ -30,14 +30,14 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.15.3</span>
+			<span class="version">v6.16.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
 			<span class="cur">未选择目录</span>
 			<div class="op list , btn-group , flex items-go-x">
 				<button title="更换目录" class="btn : change-dir , square shape , bare">
-					<span class="fill-style icon"><svg><use href="icons.svg#folder"></use></svg></span>
+					<span class="char-style icon , folder-open"></span>
 				</button>
 				<button title="弃用目录" class="btn : drop-dir , danger , square shape , bare">
 					<span class="char-style icon : delete"></span>
@@ -105,22 +105,22 @@
 			</dialog>
 
 			<button title="切换主题" class="btn : theme , square shape , bare" popovertarget="themePop">
-				<span class="fill-style icon"><svg><use href="icons.svg#sun"></use></svg></span>
+				<span class="char-style icon , sun"></span>
 			</button>
 			<div id="themePop" popover="" role="menu">
 				<label class="option btn : light-mode , flex items-go-x">
 					<input type="radio" name="theme" value="light" checked>
-					<span class="fill-style icon"><svg><use href="icons.svg#sun"></use></svg></span>
+					<span class="char-style icon , sun , outline-style"></span>
 					亮色模式
 				</label>
 				<label class="option btn : dark-mode , flex items-go-x">
 					<input type="radio" name="theme" value="dark">
-					<span class="fill-style icon"><svg><use href="icons.svg#moon"></use></svg></span>
+					<span class="char-style icon , moon"></span>
 					暗色模式
 				</label>
 				<label class="option btn : follow-system-mode , flex items-go-x">
 					<input type="radio" name="theme" value="system">
-					<span class="fill-style icon"><svg><use href="icons.svg#auto"></use></svg></span>
+					<span class="char-style icon , half-light , at-left"></span>
 					跟随系统
 				</label>
 			</div>
@@ -185,7 +185,7 @@
 										<span class="status icon : hourglass animation , wait , char-style"></span>
 										<label class="btn : join-session , square shape , bare" title="加入当前会话">
 											<input name="joined" type="checkbox">
-											<span class="outline-style icon"><svg viewBox="0 0 24 24"><use href="icons.svg#bubble"></use></svg></span>
+											<span class="char-style icon , chat , from-left"></span>
 										</label>
 										<button class="btn : edit , square shape , bare" title="编辑节点">
 											<span class="char-style icon : edit"></span>

@@ -279,8 +279,9 @@ button, .btn {
 	}
 
 	&.join-session {
-		--btn-text-color: var(--accent-primary);
 		--btn-font-weight: 600;
+		--icon-text-color: var(--bg-base);
+		--icon-text-shadow: 0 0 1px black;
 
 		& input[type=checkbox] {
 			position: absolute;
@@ -289,14 +290,8 @@ button, .btn {
 			height: 0;
 			pointer-events: none;
 		}
-		& svg use {
-			fill: none;
-		}
 		&:has(input:checked) {
 			--btn-text-color: var(--success);
-			&  svg use {
-				fill: currentColor;
-			}
 		}
 	}
 
@@ -912,6 +907,9 @@ aside.endpoint.list {
 			color: var(--text-primary);
 			word-break: break-all;
 			flex: 1;
+		}
+		& .endpoint-type {
+			color: var(--text-muted);
 		}
 		& .drag.handle {
 			color: var(--text-muted);
