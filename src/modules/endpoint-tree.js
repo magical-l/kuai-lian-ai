@@ -554,29 +554,45 @@ function updateEndpointTestUI(nodeId) {
 				else if (hasSuccess && !hasFail) testAllBtn.classList.add("connected");
 			}
 	}
-	// 3. 更新父级 batch 测试按钮
-	var container = nodeEl ? nodeEl.parentElement : null;
-	if (container && container.classList.contains('children')) {
+	// 3. 级联更新所有祖先节点的 batch 测试按钮（检查全部可测子孙节点）
+	var cur = nodeEl;
+	while (cur) {
+		var container = cur.parentElement;
+		if (!container || !container.classList.contains('children')) break;
 		var parentEl = container.closest('.one.endpoint');
-		if (parentEl) {
+		if (!parentEl) break;
+		var pNode = getNode(parentEl.dataset.nodeId);
+		if (pNode) {
+			var tids = [];
+			(function collect(nds) {
+				nds.forEach(function(n) {
+					var cfg = resolveNodeConfig(n.id);
+					if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed"))
+						tids.push(n.id);
+					if (n.children) collect(n.children);
+				});
+			})([pNode]);
+			var anyTesting = false, anyFail = false, anySuccess = false;
+			tids.forEach(function(id) {
+				var cs = connectionStatus.get(id);
+				if (cs) {
+					if (cs.status === "testing") anyTesting = true;
+					else if (cs.status === "connected") anySuccess = true;
+					else if (cs.status === "failed" || cs.status === "cors_blocked") anyFail = true;
+				}
+			});
 			var parentBtn = parentEl.querySelector('.test-connection');
 			if (parentBtn) {
-				var childNodes = container.querySelectorAll(':scope > .one.endpoint');
-				var anyTesting = false, anyFail = false, anySuccess = false;
-				childNodes.forEach(function(child) {
-					var cs = connectionStatus.get(child.dataset.nodeId);
-					if (cs) {
-						if (cs.status === "testing") anyTesting = true;
-						else if (cs.status === "connected") anySuccess = true;
-						else if (cs.status === "failed" || cs.status === "cors_blocked") anyFail = true;
-					}
-				});
-				if (!anyTesting) {
-					parentBtn.classList.remove("busy", "connected", "failed");
+				parentBtn.classList.remove("busy", "connected", "failed");
+				if (anyTesting) {
+					parentBtn.classList.add("busy");
+				} else {
 					if (anyFail && !anySuccess) parentBtn.classList.add("failed");
 					else if (anySuccess && !anyFail) parentBtn.classList.add("connected");
 				}
 			}
 		}
+		cur = parentEl;
 	}
+
 }

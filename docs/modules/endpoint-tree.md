@@ -119,11 +119,11 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 
 ### 4. 测试状态 UI 更新 (updateEndpointTestUI)
 
-行 400-487。三段式更新：
+行 505-597。三段式更新：
 
-1. **单节点**（行 401-424）：按 `data-node-id` 定位 DOM，根据 `connectionStatus.get(nodeId)` 更新按钮 class（`.testing` / `.connected` / `.failed`）+ title
-2. **全局 test-all 按钮**（行 426-458）：遍历所有可测试节点，汇总状态
-3. **父级 batch 测试按钮**（行 459-486）：从当前节点向父级逐级爬升，对每个父级节点检查其所有子节点的测试结果，同步按钮状态。需要 `nodeEl.parentElement` 满足 `.children` class 才能找到父级。
+1. **单节点**：按 `data-node-id` 定位 DOM，根据 `connectionStatus.get(nodeId)` 更新按钮 class（`.testing` / `.connected` / `.failed`）+ title
+2. **全局 test-all 按钮**：遍历所有可测试节点，汇总状态
+3. **所有祖先 batch 测试按钮**（while 循环爬升 DOM 链）：对每个祖先节点，用 `collectTestableIds` 收集其全部可测子孙节点，从 `connectionStatus` 检查状态（testing/connected/failed），同步祖先按钮。测试中有子孙则设 `.busy`，全部通过则 `.connected`，有失败则 `.failed`。
 
 ### 5. 加入会话勾选 (join-session)
 
@@ -171,7 +171,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-13 | CSS class .add-group → .add-node（JS querySelector/docs 同步更新） | 语义更准确：新增的是端点 node 而非分组 group |
 | 2026-07-02 | 去掉自定义 .expand 按钮，复用 `<summary>` 原生三角箭头 | 自定义按钮与原生功能重复；flex 布局需移到 summary 内层 div 以避免 Chrome 隐藏原生 marker |
 | 2026-07-02 | summary 内包 header(95%+inline-flex+items-x-mutex) 实现 handle+name 左、actions 右布局 | 原生 marker 与 flex 互斥（Chrome），改用 95% 宽度避开 marker 占位 + items-x-mutex(space-between) 分布内容 |
-| 2026-07-03 | 端点节点名称旁加类型标签，chat 不显示 | 嵌入/生图端点太多时难以在树中目视定位；chat 为主，标签只对非 chat 类型有意义 |
+| 2026-07-15 | updateEndpointTestUI 第3段改为 while 循环爬升所有祖先 + 每层检查全部可测子孙 | 修复两个 bug：(1) 根级节点测试完成后不解除 .busy；(2) 重新测试时中间节点不显示沙漏 |
 | 2026-07-03 | 端点树顶部加类型筛选栏（全部/嵌入/生图/重排序），事件委托避免重绘后丢失 | 筛选需要跨层次（分组节点隐藏前检查子节点匹配），CSS-only 无法处理父子关系；`renderEndpointList` 重绘后自动恢复筛选状态 |
 | 2026-07-03 | 端点树列表为空时显示两种提示：「去创建」（无任何端点）和「重置筛选」（筛选后无结果） | 空列表无提示时用户不知该做什么；区分"没建过"和"被筛掉了"两种场景，各提供对应操作按钮 |
 | 2026-07-04 | summary 内 header 宽度从 inline style 移到 CSS：有 marker 时 `calc(100% - 15px)`，`.compact`（无 marker）时 `calc(100% - 5px)` | 两种场景 marker 宽度不同，分开处理；CSS 控制比内联样式更干净 |
