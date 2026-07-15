@@ -325,3 +325,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-13: 状态图标重构。`--icon-char` 定义从 `.icon` 块内移到顶层，使状态类（`.done`/`.completed`/`.loading` 等）可放在 `.icon` 的祖先上。`.status` 块改为通过 `--status-icon-text-color` 变量消费颜色，不再写死子类列表。复制按钮从 `.copied` + 内部状态 span 改为 `.done` + 兄弟 `.status.icon` 模式。
 - 2026-07-14: `:empty::before` 移入 `&.char-style` 后，选中端点删除按钮补上 `char-style` 类。（根因：common.css 重构了 `--icon-char` 的渲染入口，但 `layout.html` 的 `#template-selected-endpoint` 中 `.remove` 按钮未同步更新类名。）
 - 2026-07-15: trash/attach 图标从 SVG 切换为 emoji 字符（🗑/🖇）。common.css 新增 `.icon.trash`/`.attach` 类并设 `--icon-font-size: 1.5em`。修复 `.btn > .icon` 因特异性过高覆盖图标自身 `--icon-font-size` 的 bug（改用 `:where(button, .btn) > .icon` 降特异性至 0,1,0）。对应移除 icons.svg 中不再使用的 `#trash`/`#attach` 符号。
+- 2026-07-15: 图标变量体系重构：状态类默认字符从分散的 `--icon-ok: '✓'` 统一为 `:root` 上的 `--char-check: '✓'`。`.emoji` 改为覆盖 `--char-*` 而非逐个覆盖 `--icon-*`。同义类合并（`.ok`/`.done`/`.completed` 等共享 `--char-check`）。新增 `.sun`（实心/空心）、`.moon` 图标类。
