@@ -8,17 +8,6 @@ function handleCopyContentClick(btn) {
 		btn._doneTimer = setTimeout(() => btn.classList.remove("done"), 1500);
 	});
 }
-function handleExpandJsonClick(btn) {
-	const embMeta = btn.closest('.embedding-result');
-	const fullJsonPre = embMeta ? embMeta.querySelector('.embedding-full-json') : null;
-	if (fullJsonPre) fullJsonPre.classList.toggle('hidden');
-	const iconSpan = btn.querySelector('.icon');
-	if (iconSpan) {
-		iconSpan.classList.toggle('collapsed');
-		iconSpan.classList.toggle('expanded');
-		iconSpan.textContent = '';
-	}
-}
 function handleCopyCodeClick(btn) {
 	const embMeta = btn.closest('.embedding-result');
 	const fullJsonPre = embMeta ? embMeta.querySelector('.embedding-full-json') : null;
@@ -256,7 +245,6 @@ function appendUserMessage(msg) {
             if (!existing) return;
 			existing.querySelector(".copy.content").addEventListener("click", e => handleCopyContentClick(e.currentTarget));
 			existing.querySelector(".stop-one-response").addEventListener("click", e => { e.stopPropagation(); handleStopOneResponseClick(e.currentTarget); });
-			existing.querySelector(".expand-json").addEventListener("click", e => handleExpandJsonClick(e.currentTarget));
 			existing.querySelector(".copy.code").addEventListener("click", e => handleCopyCodeClick(e.currentTarget));
             existing.dataset.endpointId = r.endpointId;
             const name = info ? [...(info.ancestors || []).map(a => a.name), info.node.name].join(" / ") : "未知";

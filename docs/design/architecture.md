@@ -111,4 +111,4 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 - 2026-07-15: 端点类型图标迁移到 common.css。筛选按钮 class 从 `endpoint-type.chat` 改为 `chat`/`digits`/`palette`/`chart`，CSS 图标定义从 style.css 删除
 - 2026-07-09: inhert-source hint 移入 dialog header；修复 dialog 编辑弹窗二次打开崩溃（radio 标签重置 + null 安全）
 - 2026-07-11: class 名规范化 `.stop-one` → `.stop-one-response`、`.stop` → `.stop-all-response`；`.stop-icon` 替换为统一 `char-style icon : stop`；`.embedding-full-json` 内联样式提取为 CSS 类；`.stop-all-response` 复用 `.danger` 减少重复样式
-- 2026-07-15: icon 系统 bug 修复：嵌入结果展开按钮 class `expand`→`collapsed`；选中端点类型图标补 `char-style` 类；3 处 SVG 补 `viewBox`
+- 2026-07-15: icon 系统 bug 修复：选中端点类型图标补 `char-style` 类；3 处 SVG 补 `viewBox`；嵌入结果展开按钮替换为原生 `<details>/<summary>`，删除 `handleExpandJsonClick` 及相关 JS
