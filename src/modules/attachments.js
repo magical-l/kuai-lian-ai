@@ -119,10 +119,9 @@ function addInheritIcon(inputEl) {
 	inputEl._inheritIconAdded = true;
 	inputEl.style.flex = '1';
 	var icon = document.createElement('span');
-	icon.className = 'icon inherit-icon inherit';
+	icon.className = 'icon inherit char-style';
 	icon.textContent = '';
 	icon.title = '继承自父级';
-	icon.style.cssText = 'cursor:help;font-size:12px;color:var(--text-muted);flex-shrink:0;margin-right:3px;';
 	var parent = inputEl.parentNode;
 	if (parent.classList.contains('input-row') || parent.parentElement?.querySelector('input[name="apikey"]')) {
 		parent.insertBefore(icon, inputEl);
@@ -130,7 +129,6 @@ function addInheritIcon(inputEl) {
 	}
 	var row = document.createElement('div');
 	row.className = 'input-row';
-	row.style.cssText = 'display:flex;align-items:center;gap:2px;';
 	parent.insertBefore(row, inputEl);
 	row.appendChild(icon);
 	row.appendChild(inputEl);
@@ -310,7 +308,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 		if (!_syncing) _nameUserEdited = true;
 	};
 	function removeIcon(el) {
-		var ic = el.parentNode.querySelector('.inherit-icon');
+		var ic = el.parentNode.querySelector('.inherit.icon');
 		if (ic) ic.remove();
 	}
 	modelidInput.oninput = function() {

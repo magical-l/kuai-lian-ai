@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-15
+last_updated: 2026-07-16
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -64,7 +64,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `clearAttachments` | attachments.js | 清空附件列表 |
 | `clearInput` | attachments.js | 清空输入框 |
 | `setButtonState` | attachments.js | 切换发送/停止按钮状态 |
-| `addInheritIcon` | attachments.js | 继承值旁添加 ↑ 图标 |
+| `addInheritIcon` | attachments.js | 继承值旁添加 🜍 图标（icon + inherit + char-style 类，CSS 控制样式） |
 | `showEditGroupDialog` | attachments.js | 显示端点编辑对话框，含继承来源提示 |
 | `showDirectoryPrompt` | attachments.js | 显示目录选择提示 |
 | `hideDirectoryPrompt` | attachments.js | 隐藏目录选择提示 |

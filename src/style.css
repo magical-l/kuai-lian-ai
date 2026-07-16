@@ -1565,6 +1565,18 @@ dialog[open] {
 	}
 	&.char-style { font-size: 14px; line-height: 1; }
 }
+/* 从父节点继承配置值的图标 */
+.inherit.icon {
+	flex-shrink: 0;
+	margin-right: 3px;
+	--icon-char: var(--char-inherit, '🜍');
+	font-size: 1.6em;
+	color: var(--text-muted); 
+	cursor: help;
+}
+.emoji { --char-inherit: '⬆'; }
+/* 输入行水平布局 */
+.input-row { display: flex; align-items: center; gap: 2px; }
 /* ============ 媒体查询相关 ============ */
 @media (prefers-reduced-motion: reduce) {
 	/* 若用户设置减少动画，则把动画时间减到0.01ms（据说用0无效） */
