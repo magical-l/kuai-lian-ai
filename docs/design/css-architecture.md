@@ -330,3 +330,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-15: 图标变量体系重构：状态类默认字符从分散的 `--icon-ok: '✓'` 统一为 `:root` 上的 `--char-check: '✓'`。`.emoji` 改为覆盖 `--char-*` 而非逐个覆盖 `--icon-*`。同义类合并（`.ok`/`.done`/`.completed` 等共享 `--char-check`）。新增 `.sun`（实心/空心）、`.moon` 图标类。
 - 2026-07-15: 顶栏图标 SVG → char-style 替换（folder-open/sun/moon/half-light.at-left），主题按钮图标跟随选中模式动态切换。join-session 从 SVG bubble 改为 `.chat.from-left` char-style，checked 态通过 `--btn-text-color` 变色。
 - 2026-07-15: common.css `.btn` 块新增 `text-shadow: var(--btn-text-shadow, none)`；`.char-style:empty::before` 块新增 `color: var(--icon-text-color, currentColor)`、`text-shadow: var(--icon-text-shadow, none)`，使 char-style 图标支持字色和轮廓可配。
+- 2026-07-16: 图标 overlay 机制：`.char-style` 新增 `::after`（`position: absolute; inset: 0`），通过 `--icon-overlay-char` 控制叠加字符，默认颜色/字号/位置与 `::before` 一致。新增 `.eye`（👁）、`.eye.when-closed`（👁+✗）类。文件夹图标类 `.folder-open/closed` 重构为 `.folder.when-open/closed`。layout.html duplicate/eye 图标从 SVG 切换为 char-style。
