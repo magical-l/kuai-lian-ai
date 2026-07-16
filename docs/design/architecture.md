@@ -110,5 +110,6 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 - 2026-07-09: 内联样式迁移到 utility class。`align-items:center` → `items-y-near-center`；`display:none` → `.hidden` + `classList`；移除无定义的 `.mb-1` 及关联死代码
 - 2026-07-15: 端点类型图标迁移到 common.css。筛选按钮 class 从 `endpoint-type.chat` 改为 `chat`/`digits`/`palette`/`chart`，CSS 图标定义从 style.css 删除
 - 2026-07-09: inhert-source hint 移入 dialog header；修复 dialog 编辑弹窗二次打开崩溃（radio 标签重置 + null 安全）
+- 2026-07-16: 端点编辑弹窗 no-tabs 模式修复。根因：`dialog[open].editing.endpoint header` 特异性盖过 `.tab.container.no-tabs > header`，tab 按钮行在编辑模式下未隐藏。修复：`header`→`> header` 限制为 dialog 直属子级。同步对 `dialog.editing.endpoint` 整段 CSS 做 DOM 树嵌套整理，消除 `> .btn-group` 等无效路径和重复选择器。
 - 2026-07-11: class 名规范化 `.stop-one` → `.stop-one-response`、`.stop` → `.stop-all-response`；`.stop-icon` 替换为统一 `char-style icon : stop`；`.embedding-full-json` 内联样式提取为 CSS 类；`.stop-all-response` 复用 `.danger` 减少重复样式
 - 2026-07-15: icon 系统 bug 修复：选中端点类型图标补 `char-style` 类；3 处 SVG 补 `viewBox`；嵌入结果展开按钮替换为原生 `<details>/<summary>`，删除 `handleExpandJsonClick` 及相关 JS
