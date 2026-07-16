@@ -437,10 +437,10 @@ function buildBatchFields(dialog, parentId) {
 			{ value: 'gemini', text: 'Gemini式', hint: 'Google<br>/v1beta/models/……' }
 		]},
 		{ key: 'type', label: '类型', options: [
-			{ value: 'chat', text: '💬 聊天' },
-			{ value: 'embedding', text: '🔢 嵌入' },
-			{ value: 'image-generation', text: '🎨 生图' },
-			{ value: 'reranking', text: '📊 重排序' }
+			{ value: 'chat', icon: 'chat', text: '聊天' },
+			{ value: 'embedding', icon: 'digits', text: '嵌入' },
+			{ value: 'image-generation', icon: 'palette', text: '生图' },
+			{ value: 'reranking', icon: 'chart', text: '重排序' }
 		]},
 		{ key: 'key', label: 'API Key' },
 		{ key: 'modelId', label: '模型名', placeholder: '如 gpt-4o' }
@@ -467,6 +467,10 @@ function buildBatchFields(dialog, parentId) {
 					cb.type = 'checkbox';
 					cb.value = opt.value;
 					label.appendChild(cb);
+					if (opt.icon) {
+						label.appendChild(mk("span", "char-style icon , " + opt.icon));
+						label.appendChild(doc.createTextNode(" "));
+					}
 					label.appendChild(doc.createTextNode(opt.text));
 					if (opt.hint) {
 						var hint = mk('span', 'hint');
