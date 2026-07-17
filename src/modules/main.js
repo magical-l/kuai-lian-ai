@@ -201,6 +201,8 @@ async function init() {
 	}
 	// 主题初始化
 	initTheme();
+	// 保证流式提示栏存在（默认显示免责声明）
+	ensureStreamingHint();
 }
 async function handleDeleteDirectory() {
 	const msg = storage.mode === 'browser' ? '确定清除浏览器存储中的所有数据？此操作不可恢复。' : '确定删除当前目录配置？删除后需要重新选择目录。（磁盘上的数据文件不会被删除）';
@@ -288,16 +290,18 @@ async function refreshUI() {
         if (currentSession) {
             const hasStreamingCards = container.querySelector(`.one.response.msg[data-session-id="${currentSession.id}"]`);
             if (hasStreamingCards) {
-                container.querySelectorAll('.streaming-hint').forEach(el => el.remove());
+                resetStreamingHint();
                 const lastMsg = currentSession.messages[currentSession.messages.length - 1];
                 if (lastMsg && lastMsg.responses) {
                     renderResponse(container, lastMsg, groups);
                 }
             } else {
                 renderMessages(currentSession.messages, groups, handleCopy);
+                ensureStreamingHint();
             }
         } else {
             container.innerHTML = "";
+            ensureStreamingHint();
         }
     };
     if (document.startViewTransition) {
@@ -568,18 +572,35 @@ async function handleSend() {
 
 
 
+function ensureStreamingHint() {
+    let hint = $('.msg.list > .streaming-hint');
+    if (!hint) {
+        hint = mk('div', 'hint streaming-hint sticky near-bottom');
+        const text = mk('span', 'hint-text');
+        text.textContent = '内容由AI生成，请仔细甄别使用';
+        hint.appendChild(text);
+        $('.msg.list').appendChild(hint);
+    }
+    return hint;
+}
+
 function showThinkingCards(endpoints, groups, sessionId) {
     const container = $(".msg.list");
     // 移除该 session 已有的 streaming 元素（防重复触发）
     $$(`[data-session-id="${sessionId}"]`).forEach(el => el.remove());
 
-    // 独立的提示栏（"N个模型正在思考..." + 全部停止按钮），不作为包装框
-    const hint = mk('div', 'hint streaming-hint sticky near-bottom');
+    // 在免责声明后追加思考状态
+    const hint = ensureStreamingHint();
     hint.dataset.sessionId = sessionId;
-    const hintText = mk('span', 'hint-text');
+    // 移除旧的流式信息（保留免责声明）
+    hint.querySelectorAll('.thinking-status').forEach(el => el.remove());
+    const sep = mk('span', 'sep thinking-status');
+    sep.textContent = '|';
+    hint.appendChild(sep);
+    const hintText = mk('span', 'hint-text thinking-status');
     hintText.textContent = `${endpoints.length}个端点思考中`;
     hint.appendChild(hintText);
-    const stopBtn = mk('button', 'stop-all-response btn');
+    const stopBtn = mk('button', 'stop-all-response btn thinking-status');
     stopBtn.textContent = '全部停止';
     hint.appendChild(stopBtn);
     stopBtn.onclick = () => {
@@ -588,7 +609,6 @@ function showThinkingCards(endpoints, groups, sessionId) {
         stopBtn.textContent = "已停止";
         hintText.textContent = `${endpoints.length}个端点（部分已停止）`;
     };
-    container.addChild(hint);
 
     endpoints.forEach(id => {
         const card = fromTemplate("response-card-streaming", ".one.response.msg");
@@ -607,6 +627,15 @@ function showThinkingCards(endpoints, groups, sessionId) {
         container.addChild(card);
     });
     scrollToBottom();
+}
+
+function resetStreamingHint() {
+    const hint = $('.msg.list > .streaming-hint');
+    if (hint) {
+        hint.dataset.sessionId = '';
+        // 移除流式状态信息，保留免责声明
+        hint.querySelectorAll('.thinking-status').forEach(el => el.remove());
+    }
 }
 
 function updateStreamingCard(endpointId, state, firstTokenTime, groups, sessionId) {

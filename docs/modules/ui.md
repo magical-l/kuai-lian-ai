@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-16
+last_updated: 2026-07-17
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -134,7 +134,9 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 文件：`main.js:538-695`
 
-- `showThinkingCards`（行 538）：创建 streaming-hint 提示栏（"N个端点思考中" + 全部停止按钮）+ N 张 `fromTemplate("response-card-streaming")` 卡片。每张卡片有单端点停止按钮。
+- `ensureStreamingHint`：初始化/重建 `.msg.list` 中的静态提示栏（默认显示"内容由AI生成，请仔细甄别使用"），页面初始化及 session 切换后调用。
+- `showThinkingCards`：在静态提示栏的免责声明后追加流式状态（"N个端点思考中" + 全部停止按钮）+ N 张 `fromTemplate("response-card-streaming")` 卡片。每张卡片有单端点停止按钮。
+- `resetStreamingHint`：移除提示栏中的流式状态信息（仅保留免责声明），会话切换时调用。
 - `updateStreamingCard`（行 583）：按 `sessionId + endpointId` 定位卡片，更新 thinking 块（content + duration）、`.say` 内容、header 反应耗时（首次 token 时间）。
 - `updateCardStatus`（行 625）：更新卡片状态 UI：停止按钮隐藏、status-icon 文本切换（spin → status）、失败时显示 error、完成时显示 totalDuration。
 - `reorderCardsBySpeed`（行 682）：按 `firstTokenTime` 对 DOM 中卡片重新排列（最快的在最前）。
@@ -269,6 +271,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-11 | 新增 `appendUserMessage` 替代 `handleSend` 中的 `renderMessages` 调用 | 发送消息时不清空 `.msg.list`，只追加新用户消息；旧回复卡片保留并清除 `data-endpoint-id`/`data-session-id` 防止冲突 |
 | 2026-07-11 | 代码块复制按钮图标从 `text(mk(…), '⧉')` 改为空 `mk(…)`，利用 CSS `.icon:empty::before` 渲染 | 与 common.css 图标体系对齐，移除手写字符；`done` 状态图标同理 |
 | 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性 | bindSelectorEvents 移除，tag 事件改为 HTML onclick/onmouseover/onmouseleave 直接引用 handler；会话列表 click/edit/delete 同理；消息区复制/展开/代码块复制/滚动按钮事件同上 |
+| 2026-07-17 | streaming-hint 从动态创建/移除改为静态常驻 + 内容切换 | 默认显示免责声明"内容由AI生成，请仔细甄别使用"；发起请求后在免责声明后追加流式状态（N个端点思考中 + 全部停止）；会话切换时恢复免责声明。新增 ensureStreamingHint / resetStreamingHint。 |
 | 2026-07-14 | `#template-selected-endpoint` 删除按钮补上 `char-style` 类 | common.css 将 `:empty::before` 移入 `&.char-style`，按钮缺少此类导致 ✕ 图标不显示 |
 | 2026-07-14 | 附件添加按钮从 `<button>` + 独立 `<input class="file-input">` 改为 `<label>` 包裹 `<input type="file" hidden>` | 精简冗余 JS 桥接（click→触发隐藏 input），利用 label 语义原生触发文件选择 |
 | 2026-07-14 | 编辑端点弹窗：取消 ✗ 移入 header 右上角，完成按钮从 `.done` 改为 `.ok` | `.done` 与 common.css 的完成态类名碰撞（`.btn.done { display:none }`），改用 `.ok` 并补 `char-style` 渲染图标。取消按钮遵循 help dialog 模式放 header || 2026-07-15 | 嵌入结果展开按钮替换为原生 `<details>/<summary>`，删除 `handleExpandJsonClick` 函数及事件绑定 | 原生 `<details>` 替代自定义 toggle 按钮 + JS，消除 `expand`/`collapsed`/`expanded` class 依赖 |
