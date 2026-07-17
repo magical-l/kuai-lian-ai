@@ -3,7 +3,7 @@ title: 数据管理层
 covers_file: [src/modules/store.js]
 depends_on: [storage-core.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-07-14
+last_updated: 2026-07-17
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -159,6 +159,7 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 会话用 Map 缓存 + 委托 storage | 频繁读写会话列表时避免每次都全量重查 storage；`addMessage` 高频调用需快速更新 |
 | `migrateEndpoints` 在 `loadEndpoints` 和 `tryRestoreDirectory` 中各执行一次 | 双重保障确保旧格式数据在首次加载时被迁移；幂等（第二次 `data.groups` 已不存在） |
 | 继承链解析不含 `modelId` 空值检查 | 空 `modelId` 表示分组节点，继承父节点 `modelId` 无意义；调用方在 `api.js` 中会过滤无 `modelId` 的节点 |
+| 2026-07-17: assistant 消息改为 flat 格式，每条 response 是独立消息 | 原 `msg.responses` 嵌套冗余，`msg.content` 始终为空；新格式直接 `{role:"assistant", endpointId, content, status, ...}`，无 `responses` 中间层。`migrateSession` 在 `loadSession`/`loadSessionsIndex`/`tryRestoreDirectory` 三入口各执行一次 |
 | `deleteNode` 同步清理 `selectedEndpoints` | 避免删除后选中列表中有悬空引用导致 UI 异常 |
 | 2026-07-08 | `cloneNode` 只修改根副本名称为”原名（副本）”，子节点保持原名和配置；全树重生成 UUID，避免与原树 ID 冲突 |
 | 2026-07-14 | 新增 `batchAddNodes` 批量创建子树，一次 `saveEndpoints` 插入所有节点 |

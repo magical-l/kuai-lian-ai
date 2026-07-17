@@ -288,17 +288,8 @@ async function refreshUI() {
     const container = $('.msg.list');
     const doUpdate = () => {
         if (currentSession) {
-            const hasStreamingCards = container.querySelector(`.one.response.msg[data-session-id="${currentSession.id}"]`);
-            if (hasStreamingCards) {
-                resetStreamingHint();
-                const lastMsg = currentSession.messages[currentSession.messages.length - 1];
-                if (lastMsg && lastMsg.responses) {
-                    renderResponse(container, lastMsg, groups);
-                }
-            } else {
-                renderMessages(currentSession.messages, groups, handleCopy);
-                ensureStreamingHint();
-            }
+            renderMessages(currentSession.messages, groups, handleCopy);
+            ensureStreamingHint();
         } else {
             container.innerHTML = "";
             ensureStreamingHint();
@@ -447,9 +438,8 @@ async function handleSend() {
 	renderSelectedEndpoints(getGroups(), selectedEndpoints, true);
 	const groups = getGroups();
 	const messages = currentSession.messages.map(m => {
-		if (m.role === 'assistant' && m.responses) {
-			const content = m.responses.filter(r => r.status === 'completed' && r.content).map(r => r.content).join('\n\n---\n\n');
-			return { role: m.role, content };
+		if (m.role === 'assistant') {
+			return { role: m.role, content: m.content || '' };
 		}
 		const normalized = normalizeMessageContent(m);
 		return { role: m.role, content: toOpenAIContent(normalized) };
@@ -699,9 +689,16 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 			icon.classList.add(getStatusText(status));
 			icon.textContent = '';
 		}
+		// 更新 .say 占位文本（处理空内容/被中断等）
+		if (status === 'stopped' && contentEl && !contentEl.textContent.trim()) {
+			contentEl.textContent = '(被中断)';
+		} else if (status === 'completed' && contentEl && !contentEl.textContent.trim()) {
+			contentEl.textContent = '(无内容)';
+		}
 		if (status === 'failed') {
 			if (contentEl) {
-				contentEl.textContent = ''; // Empty content for failed
+				contentEl.textContent = '✗';
+				contentEl.classList.add('failed');
 			}
 			// 插入错误到 .content 中（跟在 .say 后面）
 			if (error) {
@@ -721,7 +718,9 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 			// 隐藏复制按钮
 			const copyBtn = $('.copy.content', card);
 			if (copyBtn) copyBtn.classList.add('hidden');
-		} else if (status === 'stopped') {} else if (status === 'completed') {
+		} else if (status === 'stopped') {
+			// 已在上方处理占位文本
+		} else if (status === 'completed') {
 			if (state && state.thinkingDuration) {
 				const thinkingBlock = $('.think', card);
 				if (thinkingBlock) {

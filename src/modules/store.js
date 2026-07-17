@@ -149,7 +149,7 @@ async function tryRestoreDirectory() {
 	endpointsData = migrateEndpoints(await storage.loadEndpoints());
 	stripModels(endpointsData);
 	const sessions = await storage.loadSessions();
-	sessions.forEach(s => sessionsCache.set(s.id, s));
+	sessions.forEach(s => { migrateSession(s); sessionsCache.set(s.id, s); });
 	updateDirectoryDisplay();
 	return { success: true };
 }
@@ -425,6 +425,7 @@ async function loadSessionsIndex() {
 	const sessions = await storage.loadSessions();
 	sessionsCache.clear();
 	for (const s of sessions) {
+		migrateSession(s);
 		sessionsCache.set(s.id, s);
 	}
 	return sessions;
@@ -469,14 +470,75 @@ async function createSession(firstMessage = null, targetModels = null) {
 }
 
 async function loadSession(sessionId) {
-	if (sessionsCache.has(sessionId)) return sessionsCache.get(sessionId);
+	if (sessionsCache.has(sessionId)) {
+		const cached = sessionsCache.get(sessionId);
+		// 缓存中的会话可能未迁移（loadSessionsIndex 在历史版本中未调 migrateSession）
+		migrateSession(cached);
+		return cached;
+	}
 	const session = await storage.loadSession(sessionId);
-	if (session) sessionsCache.set(session.id, session);
+	if (session) {
+		migrateSession(session);
+		sessionsCache.set(session.id, session);
+	}
 	return session;
 }
 
 async function saveSession(session) {
 	return await storage.saveSession(session);
+}
+
+// 会话格式迁移：存量数据归一化——每条 response 是独立 assistant 消息
+function migrateSession(session) {
+	let changed = false;
+	const newMessages = [];
+
+	for (const msg of session.messages) {
+		if (msg.role === 'assistant' && msg.responses) {
+			// 格式 2（当前）：responses 数组 → flat 为 N 条独立消息
+			for (const r of msg.responses) {
+				const m = { role: 'assistant', timestamp: r.timestamp || msg.timestamp || Date.now() };
+				for (const k of Object.keys(r)) {
+					m[k] = r[k];
+				}
+				if (!m.endpointId && m.modelId) {
+					m.endpointId = m.modelId;
+					delete m.modelId;
+				}
+				newMessages.push(m);
+			}
+			changed = true;
+		} else {
+			// 用户消息 / 已 flat 的 assistant 消息
+			const copy = { ...msg };
+			if (copy.role === 'assistant') {
+				if (!copy.endpointId && copy.modelId) {
+					copy.endpointId = copy.modelId;
+					delete copy.modelId;
+					changed = true;
+				}
+				// 旧 assistant 消息残留的空 content[] 删掉
+				if (copy.content && Array.isArray(copy.content)) {
+					delete copy.content;
+					changed = true;
+				}
+				// 确保没有残留的 responses 字段
+				if (copy.responses) {
+					delete copy.responses;
+					changed = true;
+				}
+				// 清理旧单端点格式的残留同级字段
+				if (copy.endpointGroupId) { delete copy.endpointGroupId; changed = true; }
+				if (copy.usage) { delete copy.usage; changed = true; }
+			}
+			newMessages.push(copy);
+		}
+	}
+
+	if (changed) {
+		session.messages = newMessages;
+		saveSession(session).catch(err => console.error('migrate: save failed', err));
+	}
 }
 
 function normalizeMessageContent(msg) {
@@ -489,19 +551,38 @@ function normalizeMessageContent(msg) {
 async function addMessage(sessionId, role, content, options = {}) {
 	const session = sessionsCache.get(sessionId);
 	if (!session) return null;
+
+	// 新格式：每条 response 是独立 assistant 消息
+	if (options.responses) {
+		for (const r of options.responses) {
+			const msg = { role: 'assistant', timestamp: r.timestamp || Date.now() };
+			// 复制 response 所有字段到消息级别
+			for (const k of Object.keys(r)) {
+				msg[k] = r[k];
+			}
+			// 兼容 modelId → endpointId
+			if (!msg.endpointId && msg.modelId) {
+				msg.endpointId = msg.modelId;
+				delete msg.modelId;
+			}
+			session.messages.push(msg);
+		}
+		await saveSession(session);
+		return session.messages[session.messages.length - 1];
+	}
+
 	const message = { role, timestamp: Date.now() };
 	if (typeof content === 'string') {
 		message.content = [{ type: 'text', text: content }];
 	} else if (Array.isArray(content)) {
 		message.content = content;
 	} else {
-		message.content = [{ type: 'text', text: content || '' }];
+		message.content = [{ type: 'text', text: '' }];
 	}
 	if (role === 'user') {
 		if (options.targetEndpoints) message.targetEndpoints = options.targetEndpoints;
 	} else if (role === 'assistant') {
-		if (options.responses) message.responses = options.responses;
-		if (options.endpointId && !options.responses) {
+		if (options.endpointId) {
 			message.endpointId = options.endpointId;
 			message.endpointGroupId = options.endpointGroupId;
 			if (options.usage) message.usage = options.usage;

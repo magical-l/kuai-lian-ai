@@ -3,7 +3,7 @@ title: 数据模型
 covers_file: [src/modules/store.js, src/modules/storage-core.js, src/extension/storage-core.js]
 depends_on: [architecture.md]
 api_signature: endpointsData / sessionsCache / storage.loadEndpoints / storage.saveEndpoints / storage.loadSession / storage.saveSession
-last_updated: 2026-07-14
+last_updated: 2026-07-17
 why_exists: 定义端点树、会话和消息的数据结构及存储抽象层，确保前后端存储迁移的正确性
 ---
 
@@ -134,4 +134,6 @@ function migrateEndpoints(data) {
 - 2026-07-01: 初始文档创建
 - 2026-07-14: 新增 `batchAddNodes` 批量插入子树一次 save
 - 2026-07-03: 节点数据结构新增 type 字段（chat/embedding/image/rerank），resolveNodeConfig 继承五个字段 + type 回退 detectModelType
-- 2026-07-08: 新增节点复刻能力，数据层深拷贝整棵子树并为每个节点重新生成 UUID，根副本名称追加“（副本）”
+- 2026-07-08: 新增节点复刻能力，数据层深拷贝整棵子树并为每个节点重新生成 UUID，根副本名称追加”（副本）”
+- 2026-07-17: 助手消息格式变更——移除 `msg.responses` 嵌套，每条 response 为独立 `{role:”assistant”, endpointId, content, status, ...}` 消息。`msg.content` 不再写入。存量数据在加载时由 `migrateSession` 自动 flat
+- 2026-07-17: 迁移函数 `migrateSession` 处理 3 种存量格式：(1) `responses` 数组→flat, (2) 老单端点 `endpointId` + 字符串 content (保持), (3) 远古无 endpointId 格式 (保留 content 字符串)

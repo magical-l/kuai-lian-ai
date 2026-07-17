@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-15
+last_updated: 2026-07-17
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -291,6 +291,9 @@ radio change → setThemePref(mode)
 | 2026-07-02 | 错误信息从 header 移到 .content（跟 .say 同级），有错误时隐藏复制按钮 | 错误信息过长时 header 空间不足，移到 content 更合理；有错误时复制按钮无意义 |
 | 2026-07-03 | 移除全局 inputMode 和 handleEmbeddingSend，handleSend 按端点 type 内部分流 | 端点类型在配置时已知，全局 toggle 是错误抽象；统一入口 + 类型路由使多类型端点并发成为可能 |
 | 2026-07-04 | handleSend 新增 img-generate 分流 + updateCardAsImage | 生图端点走 callImageGeneration 非流式路径，图片下载转 base64 持久化，支持会话记录加载 |
+| 2026-07-17 | refreshUI doUpdate 统一走 renderMessages 全量渲染 | 移除 hasStreamingCards 分支（该分支只渲染最后一条消息，导致旧轮次丢失）。所有场景均 `renderMessages` + `ensureStreamingHint` |
+| 2026-07-17 | API 上下文构建合并连续 assistant 消息 | flat 格式后每条 assistant 消息独立，连续多条用 `\n\n---\n\n` 合并；兼容不支持多 assistant 的 provider |
+| 2026-07-17 | updateCardStatus failed/stopped 时 `.say` 显示 ✗ 及失败色 | 空 `.say` 让用户困惑；✗ + `--danger-light` 背景比空白或等待回复更清晰 |
 | 2026-07-09 | 内联样式迁移到 utility class + classList。`style.display` → `classList.remove('hidden')`；移除无定义的 `.mb-1` 查询及冗余 inline 样式设置 | 与 CSS 分离，用 classList 而非 style.display 控制显隐；`.mb-1` 无对应 CSS 定义
 | 2026-07-11 | handleSend 改用 appendUserMessage 替代 renderMessages | 发送消息时不清空 `.msg.list`，避免全量 DOM 重建；旧回复卡片保留，清除 `data-endpoint-id`/`data-session-id` 防止与新 streaming cards 冲突 |
 | 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性（随后因 CSP 限制回退） | 减少 init() 中的事件绑定代码，但 Chrome 扩展 CSP 禁止内联脚本执行 |

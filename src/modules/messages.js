@@ -233,11 +233,11 @@ function appendUserMessage(msg) {
 		container.scrollTop = container.scrollHeight;
 	}
 
-	function renderResponse(container, msg, groups) {
-    const sorted = [...msg.responses].sort((a, b) => (a.firstTokenTime ?? Infinity) - (b.firstTokenTime ?? Infinity));
-    sorted.forEach((r, i) => {
-        const info = findModelById(groups, r.endpointId);
-        // 找已有的 streaming card
+	function renderResponse(container, r, groups) {
+    // 新格式：r 就是单条 assistant 消息
+    if (!r.endpointId && r.modelId) r.endpointId = r.modelId;
+    const info = findModelById(groups, r.endpointId);
+    // 找已有的 streaming card
         let existing = container.querySelector(`.one.response.msg[data-endpoint-id="${r.endpointId}"]`);
         if (!existing) {
             // 没有 streaming card（切换会话等场景），从 template 建一张
@@ -259,15 +259,26 @@ function appendUserMessage(msg) {
         const spinIcon = $('.status.loading', existing);
         if (spinIcon) spinIcon.remove();
 
-        // 升级 .say：textContent → innerHTML (markdown)
+        // 更新 .say：有内容则渲染 markdown，无内容则显示占位文本
         const sayEl = $('.say', existing);
-        if (sayEl && r.content) {
-            sayEl.innerHTML = renderMarkdown(r.content);
-            addCodeCopyButtons(sayEl);
-            // 代码块默认展开（图片 URL 代码块默认收起）
-            sayEl.querySelectorAll('details.code-block').forEach(d => {
-                d.open = !r.imageResult;
-            });
+        if (sayEl) {
+            if (r.content) {
+                sayEl.innerHTML = renderMarkdown(r.content);
+                addCodeCopyButtons(sayEl);
+                sayEl.querySelectorAll('details.code-block').forEach(d => {
+                    d.open = !r.imageResult;
+                });
+            } else {
+                // 空/无内容 — 根据状态显示合适的占位
+                if (r.status === 'stopped') {
+                    sayEl.textContent = '(被中断)';
+                } else if (r.status === 'failed') {
+                    sayEl.textContent = '✗';
+                    sayEl.classList.add('failed');
+                } else {
+                    sayEl.textContent = '(无内容)';
+                }
+            }
         }
 
         // 更新 header
@@ -478,7 +489,6 @@ function appendUserMessage(msg) {
                 }
             }
         }
-    });
 }
 
 function getStatusText(status) {

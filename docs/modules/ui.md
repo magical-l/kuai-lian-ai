@@ -274,5 +274,8 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-17 | streaming-hint 从动态创建/移除改为静态常驻 + 内容切换 | 默认显示免责声明"内容由AI生成，请仔细甄别使用"；发起请求后在免责声明后追加流式状态（N个端点思考中 + 全部停止）；会话切换时恢复免责声明。新增 ensureStreamingHint / resetStreamingHint。 |
 | 2026-07-14 | `#template-selected-endpoint` 删除按钮补上 `char-style` 类 | common.css 将 `:empty::before` 移入 `&.char-style`，按钮缺少此类导致 ✕ 图标不显示 |
 | 2026-07-14 | 附件添加按钮从 `<button>` + 独立 `<input class="file-input">` 改为 `<label>` 包裹 `<input type="file" hidden>` | 精简冗余 JS 桥接（click→触发隐藏 input），利用 label 语义原生触发文件选择 |
-| 2026-07-14 | 编辑端点弹窗：取消 ✗ 移入 header 右上角，完成按钮从 `.done` 改为 `.ok` | `.done` 与 common.css 的完成态类名碰撞（`.btn.done { display:none }`），改用 `.ok` 并补 `char-style` 渲染图标。取消按钮遵循 help dialog 模式放 header || 2026-07-15 | 嵌入结果展开按钮替换为原生 `<details>/<summary>`，删除 `handleExpandJsonClick` 函数及事件绑定 | 原生 `<details>` 替代自定义 toggle 按钮 + JS，消除 `expand`/`collapsed`/`expanded` class 依赖 |
+| 2026-07-14 | 编辑端点弹窗：取消 ✗ 移入 header 右上角，完成按钮从 `.done` 改为 `.ok` | `.done` 与 common.css 的完成态类名碰撞（`.btn.done { display:none }`），改用 `.ok` 并补 `char-style` 渲染图标。取消按钮遵循 help dialog 模式放 header |
+| 2026-07-15 | 嵌入结果展开按钮替换为原生 `<details>/<summary>`，删除 `handleExpandJsonClick` 函数及事件绑定 | 原生 `<details>` 替代自定义 toggle 按钮 + JS，消除 `expand`/`collapsed`/`expanded` class 依赖 |
+| 2026-07-17 | `renderResponse` 改为直接处理单条 assistant 消息（flat 格式），不再迭代 `responses` 数组 | 数据格式从 `{responses:[...]}` 改为每条 response 独立消息。去除旧格式兼容代码。`data-endpoint-id` 保留全局清空逻辑防止跨轮次误匹配 |
+| 2026-07-17 | `.say.failed` 新增 CSS：`--danger-light` 背景 + `--danger` 色 ✗ 居中，替代空 `.say` 显示 | 失败端点显示空白 `.say` 让用户困惑；用图标 + 状态色比文字更直觉 |
 | 2026-07-16 | 批量创建 style/type 新增显式"继承"选项 | 与单节点对话框一致，默认选中"继承"且互斥于具体值；有父节点时显示继承值标签；提交时跳过空值标记使节点运行时自然继承 |
