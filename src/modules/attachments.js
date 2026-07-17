@@ -432,11 +432,13 @@ function buildBatchFields(dialog, parentId) {
 	var fields = [
 		{ key: 'baseUrl', label: 'Base URL', placeholder: 'https://api.example.com' },
 		{ key: 'style', label: '接口风格', options: [
+			{ value: '', text: '继承', inherit: true },
 			{ value: 'openai', text: 'ChatGPT式', hint: 'OpenAI、国内主流<br>/v1/chat/completions' },
 			{ value: 'claude', text: 'Claude式', hint: 'Anthropic<br>/v1/messages' },
 			{ value: 'gemini', text: 'Gemini式', hint: 'Google<br>/v1beta/models/……' }
 		]},
 		{ key: 'type', label: '类型', options: [
+			{ value: '', text: '继承', inherit: true },
 			{ value: 'chat', icon: 'chat', text: '聊天' },
 			{ value: 'embedding', icon: 'digits', text: '嵌入' },
 			{ value: 'image-generation', icon: 'palette', text: '生图' },
@@ -467,18 +469,34 @@ function buildBatchFields(dialog, parentId) {
 					cb.type = 'checkbox';
 					cb.value = opt.value;
 					label.appendChild(cb);
-					if (opt.icon) {
+					if (opt.icon && !opt.inherit) {
 						label.appendChild(mk("span", "char-style icon , " + opt.icon));
 						label.appendChild(doc.createTextNode(" "));
 					}
 					label.appendChild(doc.createTextNode(opt.text));
-					if (opt.hint) {
+					if (opt.hint && !opt.inherit) {
 						var hint = mk('span', 'hint');
 						hint.innerHTML = opt.hint;
 						label.appendChild(hint);
 					}
 					multiSelect.appendChild(label);
 				});
+				// 互斥：继承 ↔ 具体值
+				multiSelect.querySelectorAll('input[value=""]').forEach(function(inheritCb) {
+					inheritCb.addEventListener('change', function() {
+						if (this.checked) {
+							multiSelect.querySelectorAll('input:not([value=""])').forEach(function(cb) { cb.checked = false; });
+						}
+					});
+				});
+				multiSelect.querySelectorAll('input:not([value=""])').forEach(function(cb) {
+					cb.addEventListener('change', function() {
+						if (this.checked) {
+							multiSelect.querySelectorAll('input[value=""]').forEach(function(inheritCb) { inheritCb.checked = false; });
+						}
+					});
+				});
+
 			}
 		}
 		// 文本输入 + 添加按钮
@@ -488,6 +506,50 @@ function buildBatchFields(dialog, parentId) {
 		};
 		list.appendChild(block);
 	});
+	// 默认选中"继承"，有父节点时显示继承值
+	if (parentId) {
+		var rcfg = resolveNodeConfig(parentId);
+		if (rcfg) {
+			['style', 'type'].forEach(function(key) {
+				var block = list.querySelector('.batch-field[data-field="' + key + '"]');
+				if (!block) return;
+				var inheritCb = block.querySelector('input[value=""]');
+				if (inheritCb) inheritCb.checked = true;
+				if (rcfg[key]) {
+					var optEl = block.querySelector('input[value="' + rcfg[key] + '"]');
+					var inheritLabel = inheritCb ? inheritCb.parentElement : null;
+					if (inheritLabel) {
+						var optName = rcfg[key];
+						if (optEl) {
+							var optLabel = optEl.parentElement;
+							for (var _c = 0; _c < optLabel.childNodes.length; _c++) {
+								if (optLabel.childNodes[_c].nodeType === 3 && optLabel.childNodes[_c].textContent.trim()) {
+									optName = optLabel.childNodes[_c].textContent.trim();
+									break;
+								}
+							}
+						}
+						var inheritingVal = inheritLabel.querySelector('.inheriting-val');
+						if (!inheritingVal) {
+							inheritingVal = doc.createElement('span');
+							inheritingVal.className = 'inheriting-val';
+							inheritLabel.appendChild(inheritingVal);
+						}
+						inheritingVal.textContent = '（' + optName + '）';
+					}
+				}
+			});
+		}
+	} else {
+		// 最顶级节点：默认选中"继承"
+		['style', 'type'].forEach(function(key) {
+			var block = list.querySelector('.batch-field[data-field="' + key + '"]');
+			if (block) {
+				var inheritCb = block.querySelector('input[value=""]');
+				if (inheritCb) inheritCb.checked = true;
+			}
+		});
+	}
 	setupBatchDragDrop(list);
 }
 function addTagFromInput(input, tagContainer) {
@@ -559,9 +621,9 @@ function collectBatchFieldValues(dialog) {
 		var values = [];
 		var multiSelect = block.querySelector('.btn-group.multi-select:not(.hidden)');
 		if (multiSelect) {
-			// 多选按钮组模式（style/type）
+			// 多选按钮组模式（style/type），跳过空值（"继承"标记）
 			multiSelect.querySelectorAll('input:checked').forEach(function(cb) {
-				values.push(cb.value);
+				if (cb.value) values.push(cb.value);
 			});
 		} else {
 			// tag 输入模式（baseUrl/key/modelId）
