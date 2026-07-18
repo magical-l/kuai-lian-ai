@@ -41,7 +41,7 @@ why_exists: 双产物中 Chrome 扩展的生命周期、权限模型和 CORS 代
 
 ```json
 {
-  "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline' https://css.lwj621.workers.dev; font-src 'self'; img-src 'self' data: blob: https://github.com https://github.githubassets.com https://gitee.com"
+  "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline' http://css.document.cool; font-src 'self'; img-src 'self' data: blob: https://github.com https://github.githubassets.com https://gitee.com"
 }
 ```
 
@@ -166,3 +166,4 @@ cors-proxy.js 使用 `chrome.runtime.connect({ name: 'cors-proxy' })` 建立命�
 | 2025-Q1 | host_permissions 用全通配符而非白名单 | AI 端点 URL 用户自定义，不可预知 |
 | 2025-Q2 | 扩展版跳过 Google Fonts 加载 | 扩展包体积约束，且 Web Store 审核要求无外部字体引用 |
 | 2025-Q3 | extensionFetch 当前未被模块代码消费 | cors-proxy.js 注册的 `window.__EXTENSION_FETCH__` 是预留钩子，模块代码当前使用原生 `fetch()` 通过扩展页面的特权上下文直接跨域访问。此钩子可用于需要 Service Worker 中介的特定场景 |
+| 2026-07-18 | 远程 CSS 域名切换 | 从 `css.lwj621.workers.dev` 切换到 `css.document.cool`，manifest.json 和文档中 CSP 同步更新 |

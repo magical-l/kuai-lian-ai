@@ -28,7 +28,7 @@ layout.html 包含三个占位符系统和外部引用：
 2. **highlight-github.min.css**：同上（vendor 目录）
 3. **common.css / layout.css**（远程CSS）：
    - 开发模式（`--dev` 参数）：优先读取本地 `../css/css/common.css` / `layout.css`
-   - 生产模式：从 `css.lwj621.workers.dev` 构建时 fetch 内联（确保扩展/单页不依赖外网）
+   - 生产模式：从 `css.document.cool` 构建时 fetch 内联（确保扩展/单页不依赖外网）
    - fetch 失败：保留外部 `<link>` 引用（仅单页面模式有 fallback）
 
 #### 第3步：JS 处理
@@ -113,3 +113,5 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 - 2026-07-08: 接口风格按钮显示默认路径；修复 dialog 复用崩溃；修复继承显示名
 - 2026-07-14: CSS 校验器兼容 `:has()` 选择器（selector 中的 `:` 误判为 property name）
 - 2026-07-15: 筛选按钮 class 从 `endpoint-type.chat`/`embedding`/`image-generation`/`reranking` 改为 `chat`/`digits`/`palette`/`chart`，对齐 common.css 抽象图标
+
+- 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`（路径从 `/css/name.css` 简化为 `/name.css`）

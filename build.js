@@ -140,8 +140,8 @@ function syncGetURL(url) {
 
 function tryInlineLocalCSS(html) {
 	const remoteCSSFiles = [
-		{ url: 'css.lwj621.workers.dev/css/common.css', label: 'common.css' },
-		{ url: 'css.lwj621.workers.dev/css/layout.css', label: 'layout.css' },
+		{ url: 'css.document.cool/common.css', label: 'common.css' },
+		{ url: 'css.document.cool/layout.css', label: 'layout.css' },
 	];
 	for (const { url, label } of remoteCSSFiles) {
 		let content = null;

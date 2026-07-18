@@ -18,7 +18,7 @@ layout.css    → Utility class 系统（flex/grid/display/对齐/布局框架�
 src/style.css → 项目所有组件样式 + 补充变量
 ```
 
-common.css 和 layout.css 运行时从 `https://css.lwj621.workers.dev/css/` 加载（构建时 try-inline），style.css 在构建时内联到 HTML。
+common.css 和 layout.css 运行时从 `http://css.document.cool/` 加载（构建时 try-inline），style.css 在构建时内联到 HTML。
 
 ## 变量体系
 
@@ -332,3 +332,5 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-17: `.content.failed` — 失败回复框样式：`--danger-light` 背景、flex 居中、圆角。图标通过 common.css 的 `.icon.error` 类渲染（`--char-cross` ✗ + `--danger` 色），错误文字用已有的 `.error` 类。替代原先 `.say` 上的失败样式。
 - 2026-07-15: common.css `.btn` 块新增 `text-shadow: var(--btn-text-shadow, none)`；`.char-style:empty::before` 块新增 `color: var(--icon-text-color, currentColor)`、`text-shadow: var(--icon-text-shadow, none)`，使 char-style 图标支持字色和轮廓可配。
 - 2026-07-16: 图标 overlay 机制：`.char-style` 新增 `::after`（`position: absolute; inset: 0`），通过 `--icon-overlay-char` 控制叠加字符，默认颜色/字号/位置与 `::before` 一致。新增 `.eye`（👁）、`.eye.when-closed`（👁+✗）类。文件夹图标类 `.folder-open/closed` 重构为 `.folder.when-open/closed`。layout.html duplicate/eye 图标从 SVG 切换为 char-style。
+
+- 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`，路径从 `/css/` 简化为根路径
