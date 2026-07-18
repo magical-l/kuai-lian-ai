@@ -944,6 +944,7 @@ aside.endpoint.list {
 			border-bottom: none;
 			> details > summary {
 				padding: 2px var(--space-2);
+				padding-inline-start: calc(var(--space-2) + 15px);
 				list-style: none;
 				&::marker { content: ""; }
 				&::-webkit-details-marker { display: none; }

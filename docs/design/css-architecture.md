@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-17
+last_updated: 2026-07-18
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -334,3 +334,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-16: 图标 overlay 机制：`.char-style` 新增 `::after`（`position: absolute; inset: 0`），通过 `--icon-overlay-char` 控制叠加字符，默认颜色/字号/位置与 `::before` 一致。新增 `.eye`（👁）、`.eye.when-closed`（👁+✗）类。文件夹图标类 `.folder-open/closed` 重构为 `.folder.when-open/closed`。layout.html duplicate/eye 图标从 SVG 切换为 char-style。
 
 - 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`，路径从 `/css/` 简化为根路径
+- 2026-07-18: 叶子节点（`.compact`）缩进对齐。`.compact summary` 缺少 marker 占位空间（~15px），内容比有子节点的兄弟节点偏左。添加 `padding-inline-start: calc(var(--space-2) + 15px)` 补偿。
