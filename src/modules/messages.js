@@ -273,14 +273,26 @@ function appendUserMessage(msg) {
                 if (r.status === 'stopped') {
                     sayEl.textContent = '(被中断)';
                 } else if (r.status === 'failed') {
-                    sayEl.textContent = '✗';
-                    sayEl.classList.add('failed');
                 } else {
                     sayEl.textContent = '(无内容)';
                 }
             }
         }
 
+        // 无内容且未完成：清空 .content，显示 ✗ + 错误
+        if (!r.content && r.status !== 'completed') {
+            const cw = existing.querySelector(':scope > .content');
+            if (cw) {
+                cw.innerHTML = '';
+                cw.classList.add('failed');
+                cw.addChild(mk('span', 'icon error'));
+                if (r.error) {
+                    const err = mk('span', 'error');
+                    err.textContent = r.error;
+                    cw.addChild(err);
+                }
+            }
+        }
         // 更新 header
         const meta = $('header', existing);
         if (!meta) return;
@@ -332,11 +344,12 @@ function appendUserMessage(msg) {
         statusEl.classList.add(getStatusText(r.status));
 
         // 错误信息：放到 .content 中（在 .say 后面），有错误时隐藏复制按钮
-        let errorEl = $('.error', existing);  // 在整张 card 里找
-        if (r.error) {
+        // 注意：failed handler 已处理过（.content.failed），跳过避免重复
+        let errorEl = $('.error', existing);
+        if (r.error && !existing.querySelector(':scope > .content')?.classList.contains('failed')) {
             if (!errorEl) {
                 errorEl = mk('span', 'error');
-                const contentWrapper = $('.content', existing);
+                const contentWrapper = $(':scope > .content', existing);
                 if (contentWrapper) {
                     const sayEl = $('.say', contentWrapper);
                     if (sayEl) {
@@ -348,7 +361,7 @@ function appendUserMessage(msg) {
             }
             errorEl.textContent = r.error;
             errorEl.classList.remove('hidden');
-        } else if (errorEl) {
+        } else if (errorEl && !existing.querySelector(':scope > .content')?.classList.contains('failed')) {
             errorEl.classList.add('hidden');
         }
 
@@ -378,7 +391,7 @@ function appendUserMessage(msg) {
                 thinkBlock.addChild(thinkSummary);
                 const thinkContent = mk('div', 'text');
                 thinkBlock.addChild(thinkContent);
-                const contentWrapper = $('.content', existing);
+                const contentWrapper = $(':scope > .content', existing);
                 if (contentWrapper) contentWrapper.insertBefore(thinkBlock, $('.say', existing));
             }
             thinkBlock.classList.remove('hidden');

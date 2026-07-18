@@ -696,26 +696,19 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 			contentEl.textContent = '(无内容)';
 		}
 		if (status === 'failed') {
-			if (contentEl) {
-				contentEl.textContent = '✗';
-				contentEl.classList.add('failed');
-			}
-			// 插入错误到 .content 中（跟在 .say 后面）
-			if (error) {
-				const contentWrapper = $('.content', card);
-				if (contentWrapper && !$('.error', contentWrapper)) {
-					const errorEl = mk('span', 'response error');
-					errorEl.textContent = error;
-					// 如果有 .say 则在后面插入，否则追加到末尾
-					const sayEl = $('.say', contentWrapper);
-					if (sayEl) {
-						sayEl.insertAdjacentElement('afterend', errorEl);
-					} else {
-						contentWrapper.appendChild(errorEl);
-					}
+			const cw = $('.content', card);
+			if (cw) {
+				cw.innerHTML = '';
+				cw.classList.add('failed');
+				const icon = mk('span', 'fail-icon');
+				icon.textContent = '✗';
+				cw.addChild(icon);
+				if (error) {
+					const err = mk('span', 'fail-msg');
+					err.textContent = error;
+					cw.addChild(err);
 				}
 			}
-			// 隐藏复制按钮
 			const copyBtn = $('.copy.content', card);
 			if (copyBtn) copyBtn.classList.add('hidden');
 		} else if (status === 'stopped') {

@@ -541,16 +541,18 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 		& .say {
 			background: var(--bg-base);
 			color: var(--text-primary);
-			&.failed {
-				background: var(--danger-light);
-				color: var(--danger);
-				text-align: center;
-				font-size: 24px;
-				line-height: 2;
-				border-radius: 8px;
-			}
-
-			& .code-block {
+		}
+		& .content.failed {
+			background: var(--danger-light);
+			padding: 0;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			min-height: 40px;
+			border-radius: 8px;
+			& .icon { padding-left: 12px; }
+		}
+		& .say .code-block {
 				margin: 8px;
 				border-radius: var(--radius-sm);
 				background: #f6f8fa;
@@ -686,7 +688,6 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 		white-space: pre-wrap;
 		word-break: break-all;
 	}
-}
 /* ============ 主体框架 ============ */
 main {
 	& .main-row {
