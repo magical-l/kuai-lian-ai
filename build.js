@@ -157,7 +157,7 @@ function tryInlineLocalCSS(html) {
 				console.warn(`  [dev] failed to read ${localPath}: ${e.message}`);
 			}
 		}
-		// 2. 从 CDN fetch（构建时内联，确保扩展/单页不依赖外网）
+		// 2. 从 CDN fetch（构建时内联，确保单页不依赖外网）
 		if (!content) {
 			const cdnURL = `https://${url}`;
 			content = syncGetURL(cdnURL);
@@ -169,12 +169,12 @@ function tryInlineLocalCSS(html) {
 		}
 					if (content) {
 				html = html.replace(
-					new RegExp(`<link\\s[^>]*href="https://${url}"[^>]*>`, 'g'),
+					new RegExp(`<link\\s[^>]*href="https?://${url}"[^>]*>`, 'g'),
 					() => '<style>' + compressCSS(content) + '</style>'
 				);
 				// 也支持 @import url(...) layer(base) 写法
 				const escaped = url.replace(/[.*+?^${}()|[\]\\\\]/g, '\\$&');
-				const importRE = new RegExp(`@import\\s+url\\(\\s*['"]https://${escaped}['"]\\s*\\)\\s*layer\\(\\w+\\)\\s*;`, 'g');
+				const importRE = new RegExp(`@import\\s+url\\(\\s*['"]https?://${escaped}['"]\\s*\\)\\s*layer\\(\\w+\\)\\s*;`, 'g');
 				html = html.replace(importRE, () => '@layer base { ' + compressCSS(content) + ' }');
 			}
 	}
@@ -239,7 +239,7 @@ function buildExtension(html) {
 		'<script src="storage-core.js"></script>\n' +
 		'\t<script src="cors-proxy.js"></script>\n' +
 		'\t<script src="app.js"></script>');
-	html = tryInlineLocalCSS(html);
+
 	return html;
 }
 

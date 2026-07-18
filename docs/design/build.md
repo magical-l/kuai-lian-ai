@@ -28,7 +28,8 @@ layout.html 包含三个占位符系统和外部引用：
 2. **highlight-github.min.css**：同上（vendor 目录）
 3. **common.css / layout.css**（远程CSS）：
    - 开发模式（`--dev` 参数）：优先读取本地 `../css/css/common.css` / `layout.css`
-   - 生产模式：从 `css.document.cool` 构建时 fetch 内联（确保扩展/单页不依赖外网）
+   - 单页面构建：从 `css.document.cool` 构建时 fetch 内联（确保单页不依赖外网）
+   - 扩展构建：保留 `<link>` 外链，运行时从 `css.document.cool` 加载
    - fetch 失败：保留外部 `<link>` 引用（仅单页面模式有 fallback）
 
 #### 第3步：JS 处理
@@ -59,7 +60,7 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 | 输出路径 | dist/kuai-lian-ai.html + 根目录副本 | dist/extension/ 目录 + dist/kuai-lian-ai.zip |
 | vendor JS | 全部内联 | 复制为独立文件 |
 | vendor CSS (highlight) | 内联 | 内联 |
-| remote CSS | 构建时 fetch 内联 | 构建时 fetch 内联 |
+| remote CSS | 构建时 fetch 内联 | `<link>` 外链，运行时加载 |
 | boot.js | 头部内联 | extension/boot.js 外部引用 |
 | modules | 全部内联到 HTML | 拼接为 extension/app.js |
 | storage-core.js | 全部内联 | 独立文件 storage-core.js |
