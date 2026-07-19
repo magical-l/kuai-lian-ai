@@ -249,6 +249,20 @@ function blobToBase64(blob) {
 	});
 }
 
+function base64ToBlob(b64, mimeType) {
+	var byteChars = atob(b64);
+	var byteArrays = [];
+	for (var offset = 0; offset < byteChars.length; offset += 512) {
+		var slice = byteChars.slice(offset, offset + 512);
+		var byteNumbers = new Array(slice.length);
+		for (var i = 0; i < slice.length; i++) {
+			byteNumbers[i] = slice.charCodeAt(i);
+		}
+		byteArrays.push(new Uint8Array(byteNumbers));
+	}
+	return new Blob(byteArrays, { type: mimeType || 'audio/mpeg' });
+}
+
 async function callImageGeneration(style, baseUrl, apiKey, model, messages) {
     const provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
@@ -311,6 +325,37 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages) {
         result.imageData = 'data:image/png;base64,' + result.b64_json;
     }
     return result;
+}
+
+async function callTTS(style, baseUrl, apiKey, model, input) {
+    var provider = providers[style];
+    if (!provider) throw new Error('不支持的接口风格: ' + style);
+    if (!provider.buildTTSRequest) throw new Error('该接口不支持语音生成');
+
+    var req = provider.buildTTSRequest(baseUrl, apiKey, model, input);
+    var res = await fetchWithTimeout(req.url, {
+        method: 'POST',
+        headers: req.headers,
+        body: JSON.stringify(req.body)
+    }, 120000);
+
+    if (!res.ok) {
+        var errText = await res.text().catch(function() { return ''; });
+        throw new Error('TTS请求失败: ' + res.status + (errText ? ' - ' + errText : ''));
+    }
+
+    var ct = res.headers.get('content-type') || '';
+    if (ct.includes('text/html')) {
+        var body = await res.text().catch(function() { return ''; });
+        var m = body.match(/<title>([^<]+)<\/title>/i);
+        throw new Error('TTS请求失败: 返回了HTML — ' + (m ? m[1] : body.slice(0, 100)));
+    }
+
+    var blob = await res.blob();
+    var audioData = await blobToBase64(blob);
+    var blobUrl = URL.createObjectURL(blob);
+
+    return { blobUrl: blobUrl, audioData: audioData, contentType: ct, size: blob.size };
 }
 
 async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) {
