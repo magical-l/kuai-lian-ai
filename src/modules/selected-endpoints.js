@@ -34,7 +34,7 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
     if (hint) hint.classList.add('hidden');
 
     const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-    const typeIconMap = { chat: 'chat', embedding: 'digits', embed: 'digits', image: 'palette', 'img-generate': 'palette', rerank: 'chart' };
+    const typeIconMap = { chat: 'chat', embedding: 'digits', embed: 'digits', image: 'palette', 'img-generate': 'palette', rerank: 'chart', tts: 'speaker' };
 
     selectedEndpoints.forEach(id => {
         const info = findModelById(groups, id);

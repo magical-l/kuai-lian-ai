@@ -442,7 +442,8 @@ function buildBatchFields(dialog, parentId) {
 			{ value: 'chat', icon: 'chat', text: '聊天' },
 			{ value: 'embedding', icon: 'digits', text: '嵌入' },
 			{ value: 'image-generation', icon: 'palette', text: '生图' },
-			{ value: 'reranking', icon: 'chart', text: '重排序' }
+			{ value: 'reranking', icon: 'chart', text: '重排序' },
+			{ value: 'tts', icon: 'speaker', text: '语音' }
 		]},
 		{ key: 'key', label: 'API Key' },
 		{ key: 'modelId', label: '模型名', placeholder: '如 gpt-4o' }
@@ -813,7 +814,9 @@ async function testConnection(nodeId) {
 	updateEndpointTestUI(key);
 	try {
 		var modelType = detectModelType(modelName);
-		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig : provider.testConfig;
+		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig :
+		             (modelType === 'tts' && provider.testTTSConfig) ? provider.testTTSConfig :
+		             provider.testConfig;
 		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
 		var res = await fetchWithTimeout(tcfg.url, {
 			method: 'POST',

@@ -171,6 +171,9 @@
 					<label title="重排序" class="option btn : chart icon-only char-style , square shape">
 						<input type="checkbox" value="reranking" checked>
 					</label>
+					<label title="语音" class="option btn : speaker icon-only char-style , square shape">
+						<input type="checkbox" value="tts" checked>
+					</label>
 				</div>
 				<span class="btn-group : op list , flex items-go-x">
 					<button title="测试全部连接" class="btn : test-all , square shape , bare">
@@ -516,6 +519,10 @@
 							<label class="option btn">
 								<input type="radio" name="type" value="reranking">
 								<span class="char-style icon , chart"></span> 重排序
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="tts">
+								<span class="char-style icon , speaker"></span> 语音
 							</label>
 						</div>
 						<span class="hint"></span>
@@ -2386,6 +2393,23 @@ const providers = {
 			}
 			throw new Error('embedding response format error');
 		},
+		buildTTSRequest(baseUrl, apiKey, model, input) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
+			return {
+				url: baseUrl + '/v1/audio/speech',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': 'Bearer ' + apiKey
+				},
+				body: {
+					model,
+					input
+				}
+			};
+		},
+		testTTSConfig(baseUrl, apiKey, model) {
+			return this.buildTTSRequest(baseUrl, apiKey, model, '.');
+		},
 	},
 	claude: {
 		buildRequest(baseUrl, apiKey, model, messages) {
@@ -2807,7 +2831,7 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
     }
     if (hint) hint.classList.add('hidden');
     const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
-    const typeIconMap = { chat: 'chat', embedding: 'digits', embed: 'digits', image: 'palette', 'img-generate': 'palette', rerank: 'chart' };
+    const typeIconMap = { chat: 'chat', embedding: 'digits', embed: 'digits', image: 'palette', 'img-generate': 'palette', rerank: 'chart', tts: 'speaker' };
     selectedEndpoints.forEach(id => {
         const info = findModelById(groups, id);
         if (!info) return;
@@ -3101,6 +3125,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				else if (type === 'embedding') { typeEl.classList.add('digits'); }
 				else if (type === 'image' || type === 'image-generation') { typeEl.classList.add('palette'); }
 				else if (type === 'reranking') { typeEl.classList.add('chart'); }
+				else if (type === 'tts') { typeEl.classList.add('speaker'); }
 			}
 			var tooltipId = "tooltip-" + node.id;
 			var tooltipHTML = buildTooltipHTML(node, rcfg, node.name);
@@ -3236,7 +3261,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 		function collectTestable(ns) {
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
-                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed"))
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed" || rcfg.type === "tts"))
                     testableIds.push(n.id);
                 if (n.children)
                     collectTestable(n.children);
@@ -3324,6 +3349,7 @@ function applyEndpointFilter() {
 			else if (typeEl.classList.contains('digits')) type = 'embedding';
 			else if (typeEl.classList.contains('palette')) type = 'image-generation';
 			else if (typeEl.classList.contains('chart')) type = 'reranking';
+			else if (typeEl.classList.contains('speaker')) type = 'tts';
 		}
 		if (activeTypeFilters.has(type)) {
 			li.classList.remove('hidden');
@@ -3365,7 +3391,7 @@ function updateEndpointTestUI(nodeId) {
 		function collectTestable(ns) {
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
-                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed"))
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed" || rcfg.type === "tts"))
                     allTestableIds.push(n.id);
                 if (n.children)
                     collectTestable(n.children);
@@ -3403,7 +3429,7 @@ function updateEndpointTestUI(nodeId) {
 			(function collect(nds) {
 				nds.forEach(function(n) {
 					var cfg = resolveNodeConfig(n.id);
-					if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed"))
+					if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts"))
 						tids.push(n.id);
 					if (n.children) collect(n.children);
 				});
@@ -3904,6 +3930,25 @@ function appendUserMessage(msg) {
                     revised.style.marginTop = '4px';
                     imgMeta.addChild(revised);
                 }
+            }
+        }
+        // audio 结果（TTS 场景）
+        if (r.audioResult) {
+            var audioMeta = $('.audio-result', existing);
+            if (!audioMeta) {
+                audioMeta = mk('div', 'audio-result');
+                existing.addChild(audioMeta);
+            }
+            var hasPlayer = audioMeta.querySelector('audio');
+            if (!hasPlayer && r.audioResult.audioData) {
+                var blob = base64ToBlob(r.audioResult.audioData, 'audio/mpeg');
+                var blobUrl = URL.createObjectURL(blob);
+                var audio = mk('audio', '');
+                audio.src = blobUrl;
+                audio.controls = true;
+                audio.style.maxWidth = '100%';
+                audio.style.height = '40px';
+                audioMeta.addChild(audio);
             }
         }
 }
@@ -4488,7 +4533,8 @@ function buildBatchFields(dialog, parentId) {
 			{ value: 'chat', icon: 'chat', text: '聊天' },
 			{ value: 'embedding', icon: 'digits', text: '嵌入' },
 			{ value: 'image-generation', icon: 'palette', text: '生图' },
-			{ value: 'reranking', icon: 'chart', text: '重排序' }
+			{ value: 'reranking', icon: 'chart', text: '重排序' },
+			{ value: 'tts', icon: 'speaker', text: '语音' }
 		]},
 		{ key: 'key', label: 'API Key' },
 		{ key: 'modelId', label: '模型名', placeholder: '如 gpt-4o' }
@@ -4854,7 +4900,9 @@ async function testConnection(nodeId) {
 	updateEndpointTestUI(key);
 	try {
 		var modelType = detectModelType(modelName);
-		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig : provider.testConfig;
+		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig :
+		             (modelType === 'tts' && provider.testTTSConfig) ? provider.testTTSConfig :
+		             provider.testConfig;
 		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
 		var res = await fetchWithTimeout(tcfg.url, {
 			method: 'POST',
@@ -5902,6 +5950,19 @@ function blobToBase64(blob) {
 		reader.readAsDataURL(blob);
 	});
 }
+function base64ToBlob(b64, mimeType) {
+	var byteChars = atob(b64);
+	var byteArrays = [];
+	for (var offset = 0; offset < byteChars.length; offset += 512) {
+		var slice = byteChars.slice(offset, offset + 512);
+		var byteNumbers = new Array(slice.length);
+		for (var i = 0; i < slice.length; i++) {
+			byteNumbers[i] = slice.charCodeAt(i);
+		}
+		byteArrays.push(new Uint8Array(byteNumbers));
+	}
+	return new Blob(byteArrays, { type: mimeType || 'audio/mpeg' });
+}
 async function callImageGeneration(style, baseUrl, apiKey, model, messages) {
     const provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
@@ -5959,6 +6020,31 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages) {
         result.imageData = 'data:image/png;base64,' + result.b64_json;
     }
     return result;
+}
+async function callTTS(style, baseUrl, apiKey, model, input) {
+    var provider = providers[style];
+    if (!provider) throw new Error('不支持的接口风格: ' + style);
+    if (!provider.buildTTSRequest) throw new Error('该接口不支持语音生成');
+    var req = provider.buildTTSRequest(baseUrl, apiKey, model, input);
+    var res = await fetchWithTimeout(req.url, {
+        method: 'POST',
+        headers: req.headers,
+        body: JSON.stringify(req.body)
+    }, 120000);
+    if (!res.ok) {
+        var errText = await res.text().catch(function() { return ''; });
+        throw new Error('TTS请求失败: ' + res.status + (errText ? ' - ' + errText : ''));
+    }
+    var ct = res.headers.get('content-type') || '';
+    if (ct.includes('text/html')) {
+        var body = await res.text().catch(function() { return ''; });
+        var m = body.match(/<title>([^<]+)<\/title>/i);
+        throw new Error('TTS请求失败: 返回了HTML — ' + (m ? m[1] : body.slice(0, 100)));
+    }
+    var blob = await res.blob();
+    var audioData = await blobToBase64(blob);
+    var blobUrl = URL.createObjectURL(blob);
+    return { blobUrl: blobUrl, audioData: audioData, contentType: ct, size: blob.size };
 }
 async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) {
 	const startTime = Date.now();
@@ -6495,10 +6581,12 @@ async function handleSend() {
 	const chatIds = [];
 	const embedIds = [];
 	const imgGenerateIds = [];
+	const ttsIds = [];
 	selectedEndpoints.forEach(id => {
 		const cfg = resolveNodeConfig(id);
 		if (cfg.type === 'embedding' || cfg.type === 'embed') embedIds.push(id);
 		else if (cfg.type === 'image-generation' || cfg.type === 'image') imgGenerateIds.push(id);
+		else if (cfg.type === 'tts') ttsIds.push(id);
 		else chatIds.push(id);
 	});
 	showThinkingCards(selectedEndpoints, groups, targetSessionId);
@@ -6559,6 +6647,45 @@ async function handleSend() {
 				return { endpointId: id, status: 'failed', error: err.message, content: '' };
 			}
 		});
+		// 并行处理 TTS 类端点（非流式）
+		const ttsPromises = ttsIds.map(async function(id) {
+			var info = findModelById(groups, id);
+			if (!info) {
+				return { endpointId: id, status: 'failed', error: '端点不存在', content: '' };
+			}
+			try {
+				var cfg = resolveNodeConfig(id);
+				var input = '';
+				for (var i = messages.length - 1; i >= 0; i--) {
+					if (messages[i].role === 'user') {
+						var c = messages[i].content;
+						if (Array.isArray(c) && c.length > 0 && c[0].type === 'text') {
+							input = c[0].text || '';
+						} else if (typeof c === 'string') {
+							input = c;
+						}
+						break;
+					}
+				}
+				var result = await callTTS(cfg.style || 'openai', cfg.baseUrl, cfg.key,
+					(info.node.modelId || info.node.name), input);
+				updateCardAsAudio(id, result, targetSessionId);
+				return {
+					endpointId: id,
+					status: 'completed',
+					content: '',
+					audioResult: {
+						blobUrl: result.blobUrl,
+						audioData: result.audioData,
+						contentType: result.contentType,
+						size: result.size
+					}
+				};
+			} catch (err) {
+				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
+				return { endpointId: id, status: 'failed', error: err.message, content: '' };
+			}
+		});
 		const chatPromise = (async () => {
 			if (chatIds.length === 0) return [];
 			return await callAllModels(groups, chatIds, messages, (endpointId, partialContent, firstTokenTime) => {
@@ -6570,12 +6697,13 @@ async function handleSend() {
 				}
 			}, targetSessionId);
 		})();
-		const [embedResults, imgGenerateResults, chatResults] = await Promise.all([
+		const [embedResults, imgGenerateResults, ttsResults, chatResults] = await Promise.all([
 			Promise.all(embedPromises),
 			Promise.all(imgGeneratePromises),
+			Promise.all(ttsPromises),
 			chatPromise
 		]);
-		allResults.push(...embedResults, ...imgGenerateResults, ...chatResults);
+		allResults.push(...embedResults, ...imgGenerateResults, ...ttsResults, ...chatResults);
 		await addMessage(targetSessionId, 'assistant', null, { responses: allResults });
 	} catch (err) {
 		console.error('Session generation error:', err);
@@ -6898,6 +7026,28 @@ function updateCardAsImage(endpointId, result, sessionId) {
 			imgDiv.addChild(revised);
 		}
 		contentWrapper.addChild(imgDiv);
+	}
+	updateCardStatus(endpointId, 'completed', null, null, sessionId);
+}
+function updateCardAsAudio(endpointId, result, sessionId) {
+	var card = $('.one.response.msg[data-session-id="' + sessionId + '"][data-endpoint-id="' + endpointId + '"]');
+	if (!card) return;
+	var sayEl = $('.say', card);
+	if (sayEl) sayEl.textContent = '';
+	var contentWrapper = $('.content', card);
+	if (contentWrapper) {
+		var existing = $('.audio-result', contentWrapper);
+		if (existing) existing.remove();
+		var audioDiv = mk('div', 'audio-result');
+		if (result.blobUrl) {
+			var audio = mk('audio', '');
+			audio.src = result.blobUrl;
+			audio.controls = true;
+			audio.style.maxWidth = '100%';
+			audio.style.height = '40px';
+			audioDiv.addChild(audio);
+		}
+		contentWrapper.addChild(audioDiv);
 	}
 	updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }</script>

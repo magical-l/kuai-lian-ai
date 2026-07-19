@@ -207,6 +207,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
 				else if (type === 'embedding') { typeEl.classList.add('digits'); }
 				else if (type === 'image' || type === 'image-generation') { typeEl.classList.add('palette'); }
 				else if (type === 'reranking') { typeEl.classList.add('chart'); }
+				else if (type === 'tts') { typeEl.classList.add('speaker'); }
 			}
 
 			var tooltipId = "tooltip-" + node.id;
@@ -382,7 +383,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
 
-                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed"))
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed" || rcfg.type === "tts"))
                     testableIds.push(n.id);
 
                 if (n.children)
@@ -485,6 +486,7 @@ function applyEndpointFilter() {
 			else if (typeEl.classList.contains('digits')) type = 'embedding';
 			else if (typeEl.classList.contains('palette')) type = 'image-generation';
 			else if (typeEl.classList.contains('chart')) type = 'reranking';
+			else if (typeEl.classList.contains('speaker')) type = 'tts';
 		}
 
 		if (activeTypeFilters.has(type)) {
@@ -528,7 +530,7 @@ function updateEndpointTestUI(nodeId) {
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
 
-                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed"))
+                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed" || rcfg.type === "tts"))
                     allTestableIds.push(n.id);
 
                 if (n.children)
@@ -567,7 +569,7 @@ function updateEndpointTestUI(nodeId) {
 			(function collect(nds) {
 				nds.forEach(function(n) {
 					var cfg = resolveNodeConfig(n.id);
-					if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed"))
+					if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts"))
 						tids.push(n.id);
 					if (n.children) collect(n.children);
 				});
