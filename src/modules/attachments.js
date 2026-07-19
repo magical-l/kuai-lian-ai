@@ -169,6 +169,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var remarkInput = $("input[name=\"remark\"]", dialog);
 	var voiceInput = $("input[name=\"voice\"]", dialog);
 	var instructionInput = $("input[name=\"instruction\"]", dialog);
+	var paramSection = $('.param.section', dialog);
+	var paramList = $('.param-control.list', dialog);
 	var typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
 	var typeHint = dialog.querySelector('input[name="type"]').closest('.field-control').querySelector('.hint');
 		function setRadio(name, val, ctx) { ctx.querySelectorAll('input[name="' + name + '"]').forEach(function(r) { r.checked = r.value === val; }); }
@@ -185,6 +187,73 @@ function showEditGroupDialog(node, parentId, onSave) {
 		}
 	}
 
+	function renderParamControls(type, style, existingParams) {
+		var defs = typeof getParamDefs === 'function' ? getParamDefs(type, style) : [];
+		if (!paramSection || !paramList) return;
+		if (defs.length === 0) {
+			paramSection.style.display = 'none';
+			return;
+		}
+		paramSection.style.display = '';
+		paramList.innerHTML = '';
+		defs.forEach(function(def) {
+			var label_ = doc.createElement('label');
+			label_.className = 'form-row , param-row , flex items-go-x items-y-near-center';
+			var nameSpan = doc.createElement('span');
+			nameSpan.className = 'field-label';
+			nameSpan.textContent = def.label + ':';
+			label_.appendChild(nameSpan);
+			var ctrlSpan = doc.createElement('span');
+			ctrlSpan.className = 'field-control';
+			var val = existingParams && existingParams.hasOwnProperty(def.key)
+				? existingParams[def.key]
+				: (def.hasOwnProperty('default') ? def.default : '');
+			if (def.type === 'range') {
+				var input = doc.createElement('input');
+				input.type = 'range';
+				input.name = 'param-' + def.key;
+				if (def.min !== undefined) input.min = def.min;
+				if (def.max !== undefined) input.max = def.max;
+				if (def.step !== undefined) input.step = def.step;
+				input.value = val !== '' ? val : def.default;
+				var valSpan = doc.createElement('span');
+				valSpan.className = 'param , val';
+				valSpan.textContent = input.value;
+				input.addEventListener('input', function() { valSpan.textContent = this.value; });
+				ctrlSpan.appendChild(input);
+				ctrlSpan.appendChild(valSpan);
+			} else if (def.type === 'integer') {
+				var input = doc.createElement('input');
+				input.type = 'number';
+				input.name = 'param-' + def.key;
+				if (def.min !== undefined) input.min = def.min;
+				if (def.max !== undefined) input.max = def.max;
+				if (val !== '') input.value = val;
+				else if (def.hasOwnProperty('default')) input.value = def.default;
+				ctrlSpan.appendChild(input);
+			} else if (def.type === 'text') {
+				var input = doc.createElement('input');
+				input.type = 'text';
+				input.name = 'param-' + def.key;
+				if (def.placeholder) input.placeholder = def.placeholder;
+				if (val !== '' && val !== null && val !== undefined) input.value = val;
+				ctrlSpan.appendChild(input);
+			} else if (def.type === 'select') {
+				var sel = doc.createElement('select');
+				sel.name = 'param-' + def.key;
+				(def.options || []).forEach(function(opt) {
+					var optEl = doc.createElement('option');
+					optEl.value = opt;
+					optEl.textContent = opt;
+					if (opt === val || (val === '' && opt === def.default)) optEl.selected = true;
+					sel.appendChild(optEl);
+				});
+				ctrlSpan.appendChild(sel);
+			}
+			label_.appendChild(ctrlSpan);
+			paramList.appendChild(label_);
+		});
+	}
 	setValues(dialog, {
 		'input[name="name"]': node ? node.name : '',
 		'input[name="model-id"]': node ? node.modelId || '' : '',
@@ -206,6 +275,9 @@ function showEditGroupDialog(node, parentId, onSave) {
 	}
 	typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
 	updateTypeHint(detectedType);
+	var initialType = getRadio('type', dialog) || detectModelType(node ? node.modelId || '' : '');
+	var initialStyle = getRadio('style', dialog);
+	renderParamControls(initialType, initialStyle, node ? node.params : null);
 
 	// 继承值填入
 	// 对编辑：从 node.id 走 resolveNodeConfig（沿祖先链往上找）
@@ -246,7 +318,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 					var styleOpt = dialog.querySelector('input[name="style"][value="' + rcfg.style + '"]');
 					var styleName = rcfg.style;
 					if (styleOpt) {
-						var label_ = styleOpt.parentElement;
+					var label_ = styleOpt.parentElement;
 						for (var _c = 0; _c < label_.childNodes.length; _c++) {
 							if (label_.childNodes[_c].nodeType === 3 && label_.childNodes[_c].textContent.trim()) {
 								styleName = label_.childNodes[_c].textContent.trim(); break;
@@ -331,7 +403,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 		}
 	};
 	typeSel.onchange = function() { _typeUserEdited = true; };
-		dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; }); });
+		dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; renderParamControls(this.value, getRadio('style', dialog), node ? node.params : null); }); });
+		dialog.querySelectorAll('input[name="style"]').forEach(function(r) { r.addEventListener('change', function() { renderParamControls(getRadio('type', dialog), this.value, node ? node.params : null); }); });
 	urlInput.oninput = function() { removeIcon(this); };
 	keyInput.oninput = function() { removeIcon(this); };
 
@@ -381,7 +454,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			// 批量模式走批量提交
 			if (!isEdit && dialog.querySelector('.tab.container input[value="batch"]:checked')) {
 				if (handleBatchSubmit(dialog, parentId) !== false) dialog.close();
-				return;
+			return;
 			}
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
@@ -389,14 +462,14 @@ function showEditGroupDialog(node, parentId, onSave) {
 				theName = theModelId;
 			} else if (!theName) {
 				alert('请填写名称');
-				return;
+			return;
 			}
 			var theType = getRadio('type', dialog);
 			if (!theType) {
 				theType = rcfg && rcfg.type;
 				if (!theType) {
 					alert('请选择类型');
-					return;
+				return;
 				}
 			}
 			var saveData = { name: theName, style: getRadio('style', dialog), type: theType };
@@ -416,6 +489,23 @@ function showEditGroupDialog(node, parentId, onSave) {
 			var theInstruction = instructionInput.value.trim();
 			if (theInstruction) saveData.instruction = theInstruction;
 			else saveData.instruction = '';
+			// 收集 params
+			var params = {};
+			if (paramList) {
+				var inputs = paramList.querySelectorAll('input, select');
+				inputs.forEach(function(el) {
+					var key = el.name.replace(/^param-/, '');
+					if (el.type === 'number') {
+						var numVal = parseFloat(el.value);
+						if (!isNaN(numVal)) params[key] = numVal;
+					} else if (el.type === 'range') {
+						params[key] = parseFloat(el.value);
+					} else {
+						params[key] = el.value;
+					}
+				});
+			}
+			if (Object.keys(params).length > 0) saveData.params = params;
 			onSave(saveData);
 			dialog.close();
 		}
@@ -498,14 +588,14 @@ function buildBatchFields(dialog, parentId) {
 						if (this.checked) {
 							multiSelect.querySelectorAll('input:not([value=""])').forEach(function(cb) { cb.checked = false; });
 						}
-					});
+				});
 				});
 				multiSelect.querySelectorAll('input:not([value=""])').forEach(function(cb) {
 					cb.addEventListener('change', function() {
 						if (this.checked) {
 							multiSelect.querySelectorAll('input[value=""]').forEach(function(inheritCb) { inheritCb.checked = false; });
 						}
-					});
+				});
 				});
 
 			}
