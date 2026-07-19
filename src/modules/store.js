@@ -89,6 +89,10 @@ function detectModelType(name) {
     if (lower.indexOf("reranking") >= 0 || lower.indexOf("rerank") >= 0 || lower.indexOf("re-rank") >= 0)
         return "reranking";
 
+    if (lower.indexOf("tts") >= 0 || lower.indexOf("audio") >= 0 ||
+        lower.indexOf("speech") >= 0 || lower.indexOf("voice") >= 0)
+        return "tts";
+
     if (lower.indexOf("image") >= 0 || lower.indexOf("dall-e") >= 0 || lower.indexOf("diffusion") >= 0 || lower.indexOf("flux") >= 0)
         return "image-generation";
 
