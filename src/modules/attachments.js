@@ -918,6 +918,7 @@ async function testConnection(nodeId) {
 		             (modelType === 'tts' && provider.testTTSConfig) ? provider.testTTSConfig :
 		             provider.testConfig;
 		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
+		mergeParams(tcfg.body, rcfg.params, rcfg.style);
 		var res = await fetchWithTimeout(tcfg.url, {
 			method: 'POST',
 			headers: tcfg.headers,

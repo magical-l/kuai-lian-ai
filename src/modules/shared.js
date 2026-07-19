@@ -127,8 +127,9 @@ function finalizeState(state) {
 		state.thinkingDuration = Date.now() - state.thinkingStartTime;
 	}
 }
-async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal = null) {
+async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal = null, style, params) {
 	const config = provider.buildRequest(baseUrl, apiKey, model, messages);
+	mergeParams(config.body, params, style);
 	const useSignal = signal || (currentAbortController = new AbortController()).signal;
 	const state = createInitialState();
 	const tagParser = provider.needsTagParsing === false ? null : createTagParser();
@@ -181,10 +182,10 @@ async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk,
 		if (!signal) currentAbortController = null;
 	}
 }
-async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal = null) {
+async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal = null, params) {
 	const provider = providers[style];
 	if (!provider) throw new Error('不支持的接口风格: ' + style);
-	return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal);
+	return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params);
 }
 
 	async function callEmbedding(style, baseUrl, apiKey, model, input) {
@@ -406,7 +407,7 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 				}
 				const firstTokenTime = genState?.firstTokenTime;
 				onChunk(endpointId, chunkState, firstTokenTime);
-			}, state.abortController.signal);
+			}, state.abortController.signal, config.params);
 			state.status = 'completed';
 			state.content = resultState.content;
 			state.thinking = resultState.thinking;
@@ -461,4 +462,21 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 		}
 	});
 	return Promise.all(promises);
+}
+function mergeParams(body, params, style) {
+	if (!params || Object.keys(params).length === 0) return;
+	var target = body;
+	if (style === 'gemini') {
+		body.generationConfig = body.generationConfig || {};
+		target = body.generationConfig;
+	}
+	for (var pk in params) {
+		if (params.hasOwnProperty(pk)) {
+			if (pk === 'stop_sequences' && typeof params[pk] === 'string') {
+				target[pk] = params[pk].split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+			} else if (params[pk] !== null && params[pk] !== '') {
+				target[pk] = params[pk];
+			}
+		}
+	}
 }
