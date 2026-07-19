@@ -49,6 +49,23 @@ function resolveNodeConfig(nodeId) {
         }
     }
 
+    config.params = {};
+    if (node.params) {
+        for (var k in node.params) {
+            if (node.params.hasOwnProperty(k)) config.params[k] = node.params[k];
+        }
+    }
+    for (var i = ancestors.length - 1; i >= 0; i--) {
+        var ap = ancestors[i].params;
+        if (ap) {
+            for (var k in ap) {
+                if (ap.hasOwnProperty(k) && !config.params.hasOwnProperty(k)) {
+                    config.params[k] = ap[k];
+                }
+            }
+        }
+    }
+
     if (!config.type) {
         config.type = detectModelType(config.modelId);
     }
