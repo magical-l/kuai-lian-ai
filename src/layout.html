@@ -541,6 +541,10 @@
 					<span class="field-label">指令（选填）:</span>
 					<span class="field-control"><input name="instruction" placeholder="如 语气温柔、活泼俏皮"></span>
 				</label>
+				<details class="param , section">
+					<summary>参数设置</summary>
+					<div class="param-control , list" data-type-bound></div>
+				</details>
 				<div class="hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
 			</form>
 		</div>
@@ -580,6 +584,7 @@
 	<!-- app-modules -->
 	<script src="modules/storage-core.js"></script>
 	<script src="modules/providers.js"></script>
+	<script src="modules/params-registry.js"></script>
 	<script src="modules/ui-utils.js"></script>
 	<script src="modules/selected-endpoints.js"></script>
 	<script src="modules/endpoint-tree.js"></script>
