@@ -21,6 +21,28 @@ why_exists: 三种 Provider 格式差异的封装和公共 DOM 辅助函数的�
 
 DOM 工具集（文件后半部分）提供类 jQuery 简写、模板克隆、批量绑定、tooltip 组件等，保持 UI 代码简洁。
 
+## TTS 支持
+
+仅 openai provider 实现了 `buildTTSRequest` / `testTTSConfig` 方法，用于语音合成（`/v1/audio/speech`）。与 `buildRequest` 的区别：
+
+- URL 路径：`{baseUrl}/v1/audio/speech`
+- Body：`{ model, input, response_format: 'mp3' }`，可选补 `voice` / `instruction`
+- 非流式调用，由 `callTTS`（shared.js）处理
+- 响应为二进制 audio/mpeg，而非 JSON
+
+claude 和 gemini provider 不实现此方法。
+
+## TTS 支持
+
+仅 openai provider 实现了 `buildTTSRequest` / `testTTSConfig` 方法，用于语音合成（`/v1/audio/speech`）。与 `buildRequest` 的区别：
+
+- URL 路径：`{baseUrl}/v1/audio/speech`
+- Body：`{ model, input, response_format: "mp3" }`，可选补 `voice` / `instruction`
+- 非流式调用，由 `callTTS`（shared.js）处理
+- 响应为二进制 audio/mpeg，而非 JSON
+
+claude 和 gemini provider 不实现此方法。
+
 ## 生图支持
 
 仅 openai provider 实现了 `buildImageRequest` 方法，用于图片生成（`/v1/images/generations`）。与 `buildRequest` 的区别：
@@ -96,8 +118,10 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 |---|---|---|
 | `buildRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `buildImageRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
+| `buildTTSRequest` | openai | `(baseUrl, apiKey, model, input, voice?, instruction?) => {url, headers, body}` |
 | `parseChunk` | openai | `(json) => {content?, reasoning?} | null` |
 | `testConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
+| `testTTSConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `buildRequest` | claude | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `transformMessages` | claude | `(messages) => Array` |
 | `parseChunk` | claude | `(json) => {content?, reasoning?, event?} | null` |

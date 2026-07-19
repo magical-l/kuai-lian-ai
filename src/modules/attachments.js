@@ -167,6 +167,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 	keyInput.type = 'password';  // 重置输入类型（前一次可能被 toggle 改成 text）
 	var modelidInput = $('input[name="model-id"]', dialog);
 	var remarkInput = $("input[name=\"remark\"]", dialog);
+	var voiceInput = $("input[name=\"voice\"]", dialog);
+	var instructionInput = $("input[name=\"instruction\"]", dialog);
 	var typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
 	var typeHint = dialog.querySelector('input[name="type"]').closest('.field-control').querySelector('.hint');
 		function setRadio(name, val, ctx) { ctx.querySelectorAll('input[name="' + name + '"]').forEach(function(r) { r.checked = r.value === val; }); }
@@ -189,7 +191,9 @@ function showEditGroupDialog(node, parentId, onSave) {
 		'input[name="url"]': node ? node.baseUrl || '' : '',
 			// style set via setRadio below
 		'input[name="apikey"]': node ? node.key || '' : '',
-		'input[name="remark"]': node ? node.remark || '' : ''
+		'input[name="remark"]': node ? node.remark || '' : '',
+		'input[name="voice"]': node ? node.voice || '' : '',
+		'input[name="instruction"]': node ? node.instruction || '' : ''
 	});
 		setRadio('style', node ? node.style || '' : '', dialog);
 
@@ -353,7 +357,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 		});
 	}
 	// Enter → 切到下一个输入框
-	var formFields = [nameInput, urlInput, keyInput, modelidInput, remarkInput];
+	var formFields = [nameInput, urlInput, keyInput, modelidInput, remarkInput, voiceInput, instructionInput];
 	var form = dialog.querySelector('form');
 	if (form) {
 		form.addEventListener('keydown', function(e) {
@@ -406,6 +410,12 @@ function showEditGroupDialog(node, parentId, onSave) {
 			var theRemark = remarkInput.value.trim();
 			if (theRemark) saveData.remark = theRemark;
 			else saveData.remark = '';
+			var theVoice = voiceInput.value.trim();
+			if (theVoice) saveData.voice = theVoice;
+			else saveData.voice = '';
+			var theInstruction = instructionInput.value.trim();
+			if (theInstruction) saveData.instruction = theInstruction;
+			else saveData.instruction = '';
 			onSave(saveData);
 			dialog.close();
 		}

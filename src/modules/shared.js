@@ -250,7 +250,8 @@ function blobToBase64(blob) {
 }
 
 function base64ToBlob(b64, mimeType) {
-	var byteChars = atob(b64);
+	var raw = b64.indexOf(',') >= 0 ? b64.split(',')[1] : b64;
+	var byteChars = atob(raw);
 	var byteArrays = [];
 	for (var offset = 0; offset < byteChars.length; offset += 512) {
 		var slice = byteChars.slice(offset, offset + 512);
@@ -327,12 +328,12 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages) {
     return result;
 }
 
-async function callTTS(style, baseUrl, apiKey, model, input) {
+async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction) {
     var provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
     if (!provider.buildTTSRequest) throw new Error('该接口不支持语音生成');
 
-    var req = provider.buildTTSRequest(baseUrl, apiKey, model, input);
+    var req = provider.buildTTSRequest(baseUrl, apiKey, model, input, voice, instruction);
     var res = await fetchWithTimeout(req.url, {
         method: 'POST',
         headers: req.headers,
@@ -352,7 +353,7 @@ async function callTTS(style, baseUrl, apiKey, model, input) {
     }
 
     var blob = await res.blob();
-    var audioData = await blobToBase64(blob);
+    var audioData = (await blobToBase64(blob)).split(',')[1] || '';
     var blobUrl = URL.createObjectURL(blob);
 
     return { blobUrl: blobUrl, audioData: audioData, contentType: ct, size: blob.size };

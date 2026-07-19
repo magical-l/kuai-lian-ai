@@ -548,7 +548,7 @@ async function handleSend() {
 					}
 				}
 				var result = await callTTS(cfg.style || 'openai', cfg.baseUrl, cfg.key,
-					(info.node.modelId || info.node.name), input);
+					(info.node.modelId || info.node.name), input, info.node.voice || '', info.node.instruction || '');
 				updateCardAsAudio(id, result, targetSessionId);
 				return {
 					endpointId: id,

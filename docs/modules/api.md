@@ -169,6 +169,30 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 5. 验证 JSON 无 `error` 字段
 6. `provider.parseEmbeddingResponse` 提取 embedding 向量
 
+### TTS 语音合成请求
+
+| 函数 | 所在文件 | 签名 |
+|---|---|---|
+| `callTTS` | shared.js | `(style, baseUrl, apiKey, model, input, voice?, instruction?) => Promise<{blobUrl, audioData, contentType, size}>` |
+| `base64ToBlob` | shared.js | `(b64, mimeType?) => Blob` |
+
+非流式请求路径，类似 `callImageGeneration`：
+1. 按 style 查 provider，检查 `buildTTSRequest` 方法存在
+2. `provider.buildTTSRequest` 构造请求
+3. `fetchWithTimeout` 发送（120s 超时）
+4. 验证非 200 → 抛错
+5. 验证非 text/html → 抛错
+6. `res.blob()` 获取二进制音频 → `blobToBase64` 转 base64（去 data URL 前缀后存储）→ `URL.createObjectURL` 创建 blobUrl
+7. 返回 `{ blobUrl, audioData, contentType, size }`
+
+`base64ToBlob` 是 `blobToBase64` 的逆操作，兼容带 `data:...` 前缀和不带前缀两种 base64 格式。由 `messages.js` 在渲染已持久化的音频时调用。
+1. 按 style 查 provider，检查 `buildEmbeddingRequest` 方法存在
+2. `provider.buildEmbeddingRequest` 构造请求
+3. `fetchWithTimeout` 发送（60s 超时）
+4. 验证 content-type 非 HTML、是 JSON
+5. 验证 JSON 无 `error` 字段
+6. `provider.parseEmbeddingResponse` 提取 embedding 向量
+
 ## 错误处理策略
 
 | 错误场景 | 处理方式 |
@@ -181,6 +205,11 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 | 响应体为空 | 抛出 `'Response body is empty'` |
 
 ## 决策日志
+
+| 日期 | 决策 | 理由 |
+|---|---|---|
+| 2026-07-19 | 新增 `callTTS` / `base64ToBlob` | 支持 TTS 语音合成模型类型，非流式请求，二进制响应 |
+| 2026-07-19 | callTTS 使用 `blobToBase64` 后 `split(',')[1]` 去前缀 | `FileReader.readAsDataURL` 返回带 `data:` 前缀的 data URL，持久化时需纯 base64 |
 
 | 日期 | 决策 | 理由 |
 |---|---|---|

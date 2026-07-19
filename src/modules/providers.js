@@ -122,18 +122,18 @@ const providers = {
 			}
 			throw new Error('embedding response format error');
 		},
-		buildTTSRequest(baseUrl, apiKey, model, input) {
+		buildTTSRequest(baseUrl, apiKey, model, input, voice, instruction) {
 			baseUrl = baseUrl.replace(/\/+$/, '');
+			var body = { model, input, response_format: 'mp3' };
+			if (voice) body.voice = voice;
+			if (instruction) body.instruction = instruction;
 			return {
 				url: baseUrl + '/v1/audio/speech',
 				headers: {
 					'Content-Type': 'application/json',
 					'Authorization': 'Bearer ' + apiKey
 				},
-				body: {
-					model,
-					input
-				}
+				body: body
 			};
 		},
 		testTTSConfig(baseUrl, apiKey, model) {

@@ -180,9 +180,14 @@ var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provi
 | 音频 base64 较大 | 同 imageResult，不设体积限制。后续可引入压缩或分离存储 |
 | TTS 端点 testConnection | provider.testTTSConfig 走短文本探测 |
 
+## 实现修正
+
+- 2026-07-19: `buildTTSRequest` 请求体补 `response_format: "mp3"`（部分中转/兼容 API 需显式指定）
+- 2026-07-19: 节点数据模型新增 `voice` 和 `instruction` 可选字段，编辑弹窗新增对应输入框，全链路透传到 API 请求体
+- 2026-07-19: 修复 base64 存储 bug：`blobToBase64` 返回 `data:...` data URL，存储时未去前缀，导致 `base64ToBlob` 中 `atob` 解析为空。修复：存储时 `split(',')[1]` 去前缀，`base64ToBlob` 同时兼容带/不带前缀两种格式
+
 ## 不包含（后续考虑）
 
-- voice/speed 等参数控制
 - 非 OpenAI 格式的 TTS 支持（如火山引擎、Azure）
 - 音频持久化分离存储
 - 音频可视化（波形）
