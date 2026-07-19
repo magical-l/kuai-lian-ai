@@ -318,7 +318,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 					var styleOpt = dialog.querySelector('input[name="style"][value="' + rcfg.style + '"]');
 					var styleName = rcfg.style;
 					if (styleOpt) {
-					var label_ = styleOpt.parentElement;
+						var label_ = styleOpt.parentElement;
 						for (var _c = 0; _c < label_.childNodes.length; _c++) {
 							if (label_.childNodes[_c].nodeType === 3 && label_.childNodes[_c].textContent.trim()) {
 								styleName = label_.childNodes[_c].textContent.trim(); break;
@@ -454,7 +454,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			// 批量模式走批量提交
 			if (!isEdit && dialog.querySelector('.tab.container input[value="batch"]:checked')) {
 				if (handleBatchSubmit(dialog, parentId) !== false) dialog.close();
-			return;
+				return;
 			}
 			var theName = nameInput.value.trim();
 			var theModelId = modelidInput.value.trim();
@@ -462,14 +462,14 @@ function showEditGroupDialog(node, parentId, onSave) {
 				theName = theModelId;
 			} else if (!theName) {
 				alert('请填写名称');
-			return;
+				return;
 			}
 			var theType = getRadio('type', dialog);
 			if (!theType) {
 				theType = rcfg && rcfg.type;
 				if (!theType) {
 					alert('请选择类型');
-				return;
+					return;
 				}
 			}
 			var saveData = { name: theName, style: getRadio('style', dialog), type: theType };
