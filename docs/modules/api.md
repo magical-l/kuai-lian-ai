@@ -3,7 +3,7 @@ title: API 层
 covers_file: [src/modules/api.js, src/modules/shared.js]
 depends_on: [providers.md]
 api_signature: callAllModels, callAPI, callProvider, callEmbedding, stopAllGenerations
-last_updated: 2026-07-01
+last_updated: 2026-07-19
 why_exists: 流式 SSE 处理、多模型并发调度、停止机制和 Provider 格式转换
 ---
 
@@ -16,9 +16,12 @@ API 层将"构建请求 -> 发送 HTTP -> 解析 SSE 流 -> 提取内容"的管�
 核心流水线：
 
 ```
-callAllModels → callAPI → callProvider → fetchWithTimeout → processSSEStream → handleParsedChunk → onChunk
+callAllModels → callAPI → callProvider → mergeParams(config.body, params, style)
+                                       → fetchWithTimeout → processSSEStream → handleParsedChunk → onChunk
                                        └─ createInitialState / createTagParser / processWithTagParser
 ```
+
+参数配置（temperature、max_tokens 等）通过 `mergeParams()` 在 `buildRequest` 之后注入请求 body。Gemini 风格的参数放入 `body.generationConfig`，其他风格直接 merge 到顶层。
 
 所有逻辑集中在这两个文件中，不分散到 UI 层。
 
@@ -56,8 +59,9 @@ callAllModels → callAPI → callProvider → fetchWithTimeout → processSSESt
 | 函数 | 所在文件 | 签名 |
 |---|---|---|
 | `callAllModels` | api.js | `(groups, endpointIds, messages, onChunk, sessionId) => Promise<Result[]>` |
-| `callAPI` | shared.js | `(style, baseUrl, apiKey, model, messages, onChunk, signal) => Promise<ThinkingState>` |
-| `callProvider` | shared.js | `(provider, baseUrl, apiKey, model, messages, onChunk, signal) => Promise<ThinkingState>` |
+| `callAPI` | shared.js | `(style, baseUrl, apiKey, model, messages, onChunk, signal, params) => Promise<ThinkingState>` |
+| `callProvider` | shared.js | `(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params) => Promise<ThinkingState>` |
+| `mergeParams` | shared.js | `(body, params, style) => void` |
 | `getSessionGenerations` | api.js | `(sessionId) => Map<string, GenerationState>` |
 | `clearSessionGenerations` | api.js | `(sessionId) => void` |
 | `deleteSessionGenerations` | api.js | `(sessionId) => void` |
@@ -71,7 +75,8 @@ callAllModels → callAPI → callProvider → fetchWithTimeout → processSSESt
 
 `callProvider` 是单次 API 调用的完整生命周期：
 1. `provider.buildRequest` 构造请求参数
-2. `fetchWithTimeout` 发送（60s 超时）
+2. `mergeParams(config.body, params, style)` 注入用户配置的参数（temperature、max_tokens 等）
+3. `fetchWithTimeout` 发送（60s 超时）
 3. 检测 `text/html` 响应（代理返回错误页面时直接报错，避免解析非 JSON）
 4. 检测 `application/json` 响应（非流式 fallback — 有些代理返回 200 + JSON 错误）
 5. `processSSEStream` 解析流
