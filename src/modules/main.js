@@ -457,10 +457,12 @@ async function handleSend() {
 	const chatIds = [];
 	const embedIds = [];
 	const imgGenerateIds = [];
+	const ttsIds = [];
 	selectedEndpoints.forEach(id => {
 		const cfg = resolveNodeConfig(id);
 		if (cfg.type === 'embedding' || cfg.type === 'embed') embedIds.push(id);
 		else if (cfg.type === 'image-generation' || cfg.type === 'image') imgGenerateIds.push(id);
+		else if (cfg.type === 'tts') ttsIds.push(id);
 		else chatIds.push(id);
 	});
 
@@ -525,6 +527,45 @@ async function handleSend() {
 			}
 		});
 
+		// 并行处理 TTS 类端点（非流式）
+		const ttsPromises = ttsIds.map(async function(id) {
+			var info = findModelById(groups, id);
+			if (!info) {
+				return { endpointId: id, status: 'failed', error: '端点不存在', content: '' };
+			}
+			try {
+				var cfg = resolveNodeConfig(id);
+				var input = '';
+				for (var i = messages.length - 1; i >= 0; i--) {
+					if (messages[i].role === 'user') {
+						var c = messages[i].content;
+						if (Array.isArray(c) && c.length > 0 && c[0].type === 'text') {
+							input = c[0].text || '';
+						} else if (typeof c === 'string') {
+							input = c;
+						}
+						break;
+					}
+				}
+				var result = await callTTS(cfg.style || 'openai', cfg.baseUrl, cfg.key,
+					(info.node.modelId || info.node.name), input);
+				updateCardAsAudio(id, result, targetSessionId);
+				return {
+					endpointId: id,
+					status: 'completed',
+					content: '',
+					audioResult: {
+						blobUrl: result.blobUrl,
+						audioData: result.audioData,
+						contentType: result.contentType,
+						size: result.size
+					}
+				};
+			} catch (err) {
+				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
+				return { endpointId: id, status: 'failed', error: err.message, content: '' };
+			}
+		});
 		const chatPromise = (async () => {
 			if (chatIds.length === 0) return [];
 			return await callAllModels(groups, chatIds, messages, (endpointId, partialContent, firstTokenTime) => {
@@ -537,13 +578,14 @@ async function handleSend() {
 			}, targetSessionId);
 		})();
 
-		const [embedResults, imgGenerateResults, chatResults] = await Promise.all([
+		const [embedResults, imgGenerateResults, ttsResults, chatResults] = await Promise.all([
 			Promise.all(embedPromises),
 			Promise.all(imgGeneratePromises),
+			Promise.all(ttsPromises),
 			chatPromise
 		]);
 
-		allResults.push(...embedResults, ...imgGenerateResults, ...chatResults);
+		allResults.push(...embedResults, ...imgGenerateResults, ...ttsResults, ...chatResults);
 
 		await addMessage(targetSessionId, 'assistant', null, { responses: allResults });
 	} catch (err) {
@@ -890,6 +932,30 @@ function updateCardAsImage(endpointId, result, sessionId) {
 			imgDiv.addChild(revised);
 		}
 		contentWrapper.addChild(imgDiv);
+	}
+	updateCardStatus(endpointId, 'completed', null, null, sessionId);
+}
+
+function updateCardAsAudio(endpointId, result, sessionId) {
+	var card = $('.one.response.msg[data-session-id="' + sessionId + '"][data-endpoint-id="' + endpointId + '"]');
+	if (!card) return;
+	var sayEl = $('.say', card);
+	if (sayEl) sayEl.textContent = '';
+	var contentWrapper = $('.content', card);
+	if (contentWrapper) {
+		var existing = $('.audio-result', contentWrapper);
+		if (existing) existing.remove();
+
+		var audioDiv = mk('div', 'audio-result');
+		if (result.blobUrl) {
+			var audio = mk('audio', '');
+			audio.src = result.blobUrl;
+			audio.controls = true;
+			audio.style.maxWidth = '100%';
+			audio.style.height = '40px';
+			audioDiv.addChild(audio);
+		}
+		contentWrapper.addChild(audioDiv);
 	}
 	updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }
