@@ -8,7 +8,7 @@ function stickyMinHeight() {
 
 function initDividers() {
 	// 水平分隔线
-	const dividerHorizontal = $('.divider.row');
+	const dividerHorizontal = $('.divider.go-x');
 	const chatMsg = $('.msg.list');
 	const mainContent = $('.main-content');
 	const chatHeader = $('.toolbar');
@@ -106,7 +106,7 @@ function initDividers() {
 			localStorage.setItem('sidebar-right-hidden', this.checked);
 		});
 	}
-	$$('.divider.col').forEach(div => {
+	$$('.divider.go-y').forEach(div => {
 		div.on('mousedown', startDragHorizontal);
 	});
 	if (dividerHorizontal) {

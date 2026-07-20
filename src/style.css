@@ -337,7 +337,7 @@ button, .btn {
 /* ====== 各种切换按钮 ====== */
 /* 侧栏 toggle: checked = 右侧栏隐藏 */
 body:has(.toggle.sidebar.near-right > input:checked) {
-	& aside.near-right, & .right.divider.col {
+	& aside.near-right, & .right.divider.go-y {
 		display: none;
 	}
 }
