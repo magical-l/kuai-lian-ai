@@ -23,6 +23,13 @@ var PARAMS_REGISTRY = {
       { key: "max_output_tokens",  label: "Max Output Tokens",  type: "integer", min: 1, default: 2048 },
     ],
   },
+  tts: {
+    common: [
+      { key: "voice",        label: "音色",  type: "text", placeholder: "如 alloy、cixingnansheng" },
+      { key: "instruction",  label: "指令",  type: "text", placeholder: "如 语气温柔、活泼俏皮" },
+      { key: "speed",        label: "Speed", type: "range", min: 0.25, max: 4.0, step: 0.1, default: 1.0 },
+    ],
+  },
   embedding: {
     // 暂无参数注册
   },

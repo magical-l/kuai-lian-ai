@@ -167,8 +167,6 @@ function showEditGroupDialog(node, parentId, onSave) {
 	keyInput.type = 'password';  // 重置输入类型（前一次可能被 toggle 改成 text）
 	var modelidInput = $('input[name="model-id"]', dialog);
 	var remarkInput = $("input[name=\"remark\"]", dialog);
-	var voiceInput = $("input[name=\"voice\"]", dialog);
-	var instructionInput = $("input[name=\"instruction\"]", dialog);
 	var paramSection = $('.param.section', dialog);
 	var paramList = $('.param-control.list', dialog);
 	var typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
@@ -277,7 +275,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 	updateTypeHint(detectedType);
 	var initialType = getRadio('type', dialog) || detectModelType(node ? node.modelId || '' : '');
 	var initialStyle = getRadio('style', dialog);
-	renderParamControls(initialType, initialStyle, node ? node.params : null);
+	renderParamControls(initialType, initialStyle, buildExistingParams(node));
 
 	// 继承值填入
 	// 对编辑：从 node.id 走 resolveNodeConfig（沿祖先链往上找）
@@ -403,8 +401,16 @@ function showEditGroupDialog(node, parentId, onSave) {
 		}
 	};
 	typeSel.onchange = function() { _typeUserEdited = true; };
-		dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; renderParamControls(this.value, getRadio('style', dialog), node ? node.params : null); }); });
-		dialog.querySelectorAll('input[name="style"]').forEach(function(r) { r.addEventListener('change', function() { renderParamControls(getRadio('type', dialog), this.value, node ? node.params : null); }); });
+		function buildExistingParams(n) {
+	if (!n) return null;
+	var p = {};
+	if (n.params) { for (var k in n.params) { if (n.params.hasOwnProperty(k)) p[k] = n.params[k]; } }
+	if (n.voice) p.voice = n.voice;
+	if (n.instruction) p.instruction = n.instruction;
+	return Object.keys(p).length > 0 ? p : null;
+}
+dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; renderParamControls(this.value, getRadio('style', dialog), buildExistingParams(node)); }); });
+		dialog.querySelectorAll('input[name="style"]').forEach(function(r) { r.addEventListener('change', function() { renderParamControls(getRadio('type', dialog), this.value, buildExistingParams(node)); }); });
 	urlInput.oninput = function() { removeIcon(this); };
 	keyInput.oninput = function() { removeIcon(this); };
 
@@ -430,7 +436,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 		});
 	}
 	// Enter → 切到下一个输入框
-	var formFields = [nameInput, urlInput, keyInput, modelidInput, remarkInput, voiceInput, instructionInput];
+	var formFields = [nameInput, urlInput, keyInput, modelidInput, remarkInput];
 	var form = dialog.querySelector('form');
 	if (form) {
 		form.addEventListener('keydown', function(e) {
@@ -483,12 +489,6 @@ function showEditGroupDialog(node, parentId, onSave) {
 			var theRemark = remarkInput.value.trim();
 			if (theRemark) saveData.remark = theRemark;
 			else saveData.remark = '';
-			var theVoice = voiceInput.value.trim();
-			if (theVoice) saveData.voice = theVoice;
-			else saveData.voice = '';
-			var theInstruction = instructionInput.value.trim();
-			if (theInstruction) saveData.instruction = theInstruction;
-			else saveData.instruction = '';
 			// 收集 params
 			var params = {};
 			if (paramList) {
@@ -506,6 +506,9 @@ function showEditGroupDialog(node, parentId, onSave) {
 				});
 			}
 			if (Object.keys(params).length > 0) saveData.params = params;
+			// 向后兼容：voice/instruction 同步到顶层字段
+			saveData.voice = params.voice || '';
+			saveData.instruction = params.instruction || '';
 			onSave(saveData);
 			dialog.close();
 		}
