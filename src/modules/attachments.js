@@ -128,7 +128,7 @@ function addInheritIcon(inputEl) {
 		return;
 	}
 	var row = document.createElement('div');
-	row.className = 'input-row';
+	row.className = 'input-row , flex items-go-x items-y-near-center';
 	parent.insertBefore(row, inputEl);
 	row.appendChild(icon);
 	row.appendChild(inputEl);

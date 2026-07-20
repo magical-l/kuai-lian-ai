@@ -1393,15 +1393,11 @@ dialog[open] {
 					gap: var(--space-2);
 				}
 
-				/* Base URL è¡ï¼è·¯å¾åç¼ä¸åæ¢æé® */
+				/* Base URL 行：路径后缀与切换按钮 */
 				& .url-row > .flex {
 					display: flex;
 					align-items: center;
 					gap: var(--space-1);
-					& .base-url-input {
-						flex: 1;
-						min-width: 0;
-					}
 					& .path-suffix {
 						font-family: var(--font-mono, monospace);
 						font-size: 13px;
@@ -1419,10 +1415,9 @@ dialog[open] {
 						overflow: hidden;
 					}
 				}
-				/* directUrl æï¼éèè·¯å¾åç¼ï¼è¾å¥æ¡åæå¨é¨ç©ºé´ */
+				/* directUrl 态：隐藏路径后缀，输入框吃掉全部空间 */
 				& .url-row.direct > .flex {
 					& .path-suffix { display: none; }
-					& .base-url-input { flex: 1; }
 				}
 				/* 参数设置收叠区 */
 				> .param.section {
@@ -1524,17 +1519,6 @@ dialog[open] {
 				color: var(--text-secondary);
 				min-width: 70px;
 				flex-shrink: 0;
-			}
-
-			& .input-row {
-				flex: 1;
-				min-width: 140px;
-				gap: 4px;
-
-				input {
-					flex: 1;
-					min-width: 80px;
-				}
 			}
 
 			& .add-tag {
@@ -1703,7 +1687,6 @@ dialog[open] {
 }
 .emoji { --char-inherit: '⬆'; }
 /* 输入行水平布局 */
-.input-row { display: flex; align-items: center; gap: 2px; }
 /* ============ 媒体查询相关 ============ */
 @media (prefers-reduced-motion: reduce) {
 	/* 若用户设置减少动画，则把动画时间减到0.01ms（据说用0无效） */
