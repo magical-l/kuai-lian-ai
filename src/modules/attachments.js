@@ -259,8 +259,6 @@ function showEditGroupDialog(node, parentId, onSave) {
 			// style set via setRadio below
 		'input[name="apikey"]': node ? node.key || '' : '',
 		'input[name="remark"]': node ? node.remark || '' : '',
-		'input[name="voice"]': node ? node.voice || '' : '',
-		'input[name="instruction"]': node ? node.instruction || '' : ''
 	});
 		setRadio('style', node ? node.style || '' : '', dialog);
 
