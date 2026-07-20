@@ -16,6 +16,7 @@ const DEV_CSS_DIR = path.resolve(__dirname, '..', 'css', 'css');
 const MODULE_ORDER = [
 	'storage-core.js',
 	'providers.js',
+	'params-registry.js',
 	'ui-utils.js',
 	'selected-endpoints.js',
 	'endpoint-tree.js',
