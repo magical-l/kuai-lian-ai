@@ -228,6 +228,8 @@ async function addNode(parentId, data) {
 		modelId: data.modelId || '',
 		remark: data.remark || '',
 		type: data.type || '',
+		params: data.params || {},
+		customParams: data.customParams || [],
 		children: []
 	};
 	if (parentId) {

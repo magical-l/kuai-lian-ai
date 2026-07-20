@@ -1395,27 +1395,55 @@ dialog[open] {
 				/* 参数设置收叠区 */
 				> .param.section {
 					flex: 0 0 100%;
+					margin-top: var(--space-1);
 
-					& .param-control.list > .param-row .field-control {
-						flex-direction: row;
-						flex-wrap: nowrap;
+					summary {
+						cursor: pointer;
+						font-size: 13px;
+						font-weight: 500;
+						color: var(--text-secondary);
+						padding: var(--space-1) 0;
+					}
+
+					& .param-control.list > .param-row {
+						gap: var(--space-2);
+						margin-bottom: var(--space-1);
+
+						& .field-control {
+							flex-direction: row;
+							flex-wrap: nowrap;
+							align-items: center;
+							gap: var(--space-2);
+
+							input[type="range"] {
+								flex: 1;
+								min-width: 60px;
+							}
+							input[type="number"] {
+								width: 100%;
+							}
+							& .param.val {
+								font-size: 13px;
+								color: var(--text-secondary);
+								min-width: 3em;
+								text-align: right;
+								font-variant-numeric: tabular-nums;
+							}
+						}
+					}
+					/* 自定义参数行 */
+					& .param-row.custom {
 						align-items: center;
 						gap: var(--space-2);
 
-						input[type="range"] {
+						input {
 							flex: 1;
-							min-width: 60px;
+							min-width: 0;
 						}
-						input[type="number"] {
-							width: 100%;
-						}
-						& .param.val {
-							font-size: 13px;
-							color: var(--text-secondary);
-							min-width: 3em;
-							text-align: right;
-							font-variant-numeric: tabular-nums;
-						}
+					}
+					& .add-custom.btn {
+						font-size: 12px;
+						margin-top: var(--space-1);
 					}
 				}
 			}

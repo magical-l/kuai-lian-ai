@@ -185,7 +185,35 @@ function showEditGroupDialog(node, parentId, onSave) {
 		}
 	}
 
-	function renderParamControls(type, style, existingParams) {
+	var _customParamId = 0;
+
+	function addCustomParamRow(key, value) {
+		var div = doc.createElement('div');
+		div.className = 'param-row , custom , flex items-go-x items-y-near-center';
+		div.dataset.id = _customParamId++;
+		var keyIn = doc.createElement('input');
+		keyIn.name = 'custom-key-' + div.dataset.id;
+		keyIn.placeholder = '参数名';
+		keyIn.value = key || '';
+		var valIn = doc.createElement('input');
+		valIn.name = 'custom-val-' + div.dataset.id;
+		valIn.placeholder = '值';
+		valIn.value = value !== undefined && value !== null ? value : '';
+		var rm = doc.createElement('button');
+		rm.className = 'char-style btn : remove-param , danger , square shape , icon-only';
+		rm.title = '移除此参数';
+		rm.tabIndex = -1;
+		rm.onclick = function() { div.remove(); };
+		rm.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+		div.appendChild(keyIn);
+		div.appendChild(valIn);
+		div.appendChild(rm);
+		var addBtn = paramList.querySelector('.add-custom.btn');
+		if (addBtn) paramList.insertBefore(div, addBtn);
+		else paramList.appendChild(div);
+	}
+
+	function renderParamControls(type, style, existingParams, customParams) {
 		var defs = typeof getParamDefs === 'function' ? getParamDefs(type, style) : [];
 		if (!paramSection || !paramList) return;
 		if (defs.length === 0) {
@@ -194,6 +222,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 		}
 		paramSection.style.display = '';
 		paramList.innerHTML = '';
+		_customParamId = 0;
 		defs.forEach(function(def) {
 			var label_ = doc.createElement('label');
 			label_.className = 'form-row , param-row , flex items-go-x items-y-near-center';
@@ -251,6 +280,16 @@ function showEditGroupDialog(node, parentId, onSave) {
 			label_.appendChild(ctrlSpan);
 			paramList.appendChild(label_);
 		});
+		// 自定义参数按钮 + 已存的自定义参数
+		var addBtn = doc.createElement('button');
+		addBtn.type = 'button';
+		addBtn.className = 'add-custom btn , bare';
+		addBtn.textContent = '+ 自定义参数';
+		addBtn.onclick = function() { addCustomParamRow('', ''); };
+		paramList.appendChild(addBtn);
+		if (customParams && customParams.length) {
+			customParams.forEach(function(cp) { addCustomParamRow(cp.key, cp.value); });
+		}
 	}
 	setValues(dialog, {
 		'input[name="name"]': node ? node.name : '',
@@ -273,7 +312,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 	updateTypeHint(detectedType);
 	var initialType = getRadio('type', dialog) || detectModelType(node ? node.modelId || '' : '');
 	var initialStyle = getRadio('style', dialog);
-	renderParamControls(initialType, initialStyle, buildExistingParams(node));
+	renderParamControls(initialType, initialStyle, buildExistingParams(node), node ? node.customParams : null);
 
 	// 继承值填入
 	// 对编辑：从 node.id 走 resolveNodeConfig（沿祖先链往上找）
@@ -407,8 +446,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 	if (n.instruction) p.instruction = n.instruction;
 	return Object.keys(p).length > 0 ? p : null;
 }
-dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; renderParamControls(this.value, getRadio('style', dialog), buildExistingParams(node)); }); });
-		dialog.querySelectorAll('input[name="style"]').forEach(function(r) { r.addEventListener('change', function() { renderParamControls(getRadio('type', dialog), this.value, buildExistingParams(node)); }); });
+dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; renderParamControls(this.value, getRadio('style', dialog), buildExistingParams(node), node ? node.customParams : null); }); });
+		dialog.querySelectorAll('input[name="style"]').forEach(function(r) { r.addEventListener('change', function() { renderParamControls(getRadio('type', dialog), this.value, buildExistingParams(node), node ? node.customParams : null); }); });
 	urlInput.oninput = function() { removeIcon(this); };
 	keyInput.oninput = function() { removeIcon(this); };
 
@@ -507,6 +546,17 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 			// 向后兼容：voice/instruction 同步到顶层字段
 			saveData.voice = params.voice || '';
 			saveData.instruction = params.instruction || '';
+				// 收集自定义参数
+				var customRows = paramList ? paramList.querySelectorAll('.param-row.custom') : [];
+				if (customRows.length > 0) {
+					var customArr = [];
+					customRows.forEach(function(row) {
+						var ki = row.querySelector('input');
+						var vi = row.querySelectorAll('input')[1];
+						if (ki && vi && ki.value.trim()) customArr.push({ key: ki.value.trim(), value: vi.value });
+					});
+					if (customArr.length > 0) saveData.customParams = customArr;
+				}
 			onSave(saveData);
 			dialog.close();
 		}

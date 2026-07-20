@@ -391,6 +391,15 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 		}
 		try {
 			const config = resolveNodeConfig(info.node.id);
+				// 自定义参数合并到 params
+				var customParams = info.node.customParams;
+				if (customParams && customParams.length) {
+					config.params = config.params || {};
+					for (var ci = 0; ci < customParams.length; ci++) {
+						var cp = customParams[ci];
+						if (cp && cp.key && cp.key.trim()) config.params[cp.key.trim()] = cp.value;
+					}
+				}
 			const resultState = await callAPI(config.style || 'openai', config.baseUrl, config.key, (info.node.modelId || info.node.name), messages, chunkState => {
 				const genState = gens.get(endpointId);
 				if (genState) {
