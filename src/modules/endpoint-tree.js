@@ -5,7 +5,7 @@ var activeTypeFilters = new Set();
 function setEmptyStateVisibility(show) {
 	var aside = document.querySelector('aside.endpoint.list');
 	if (!aside) return;
-	aside.classList.toggle('show-empty-state', show);
+	// 由 CSS :has() 自动控制显隐
 }
 
 function collapseAllEndpointNodes() {
@@ -441,21 +441,18 @@ function updateEmptyState() {
 
 	if (groups.length === 0) {
 		// 没有建过任何端点：隐藏 ol，显示 empty-state
-		aside.classList.add('show-empty-state');
 		emptyState.classList.remove('hidden');
 		emptyHint.textContent = '目前还没有创建端点。';
 		resetBtn.classList.add('hidden');
 		addBtn.classList.remove('hidden');
 	} else if (groups.length > 0 && hasVisible === 0 && activeTypeFilters.size > 0 && activeTypeFilters.size < 4) {
 		// 筛选后无结果：隐藏 ol，显示 empty-state
-		aside.classList.add('show-empty-state');
 		emptyState.classList.remove('hidden');
 		emptyHint.textContent = '没有符合筛选的端点。';
 		resetBtn.classList.remove('hidden');
 		addBtn.classList.add('hidden');
 	} else {
 		// 有可见端点：恢复 ol，隐藏 empty-state
-		aside.classList.remove('show-empty-state');
 		emptyState.classList.add('hidden');
 	}
 

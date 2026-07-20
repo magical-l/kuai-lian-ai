@@ -3,7 +3,7 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-07-21
+last_updated: 2026-07-22
 why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
@@ -336,3 +336,4 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`，路径从 `/css/` 简化为根路径
 - 2026-07-18: 叶子节点（`.compact`）缩进对齐。`.compact summary` 缺少 marker 占位空间（~15px），内容比有子节点的兄弟节点偏左。添加 `padding-inline-start: calc(var(--space-2) + 15px)` 补偿。
 - 2026-07-21: 修复 style.css 花括号嵌套缺陷。`.one.msg` 块的 `& .status/.usage/.think/.embedding-*` 因多了一个 `}` 跳出作用域成为顶层 `:scope` 选择器。`& .error` 逃出 `&.response`。修复：删除多余 `}`（原 606 行），在 `.embedding-full-json` 后补 `}` 闭合 `.one.msg`。同时删除 `#themePop` 中被立即覆盖的 `border: none`。版本 v6.25.2。
+- 2026-07-22: `aside.endpoint.list` 空状态改为 CSS `:has()` 驱动。移除 JS 维护的 `show-empty-state` class，用 `&:not(:has(> ol > .one.endpoint))` 自动控制 ol/empty-state 显隐。JS 仅保留文案和按钮显隐控制。`.empty-state` 默认 `display: none`。版本 v6.25.3。

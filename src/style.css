@@ -221,49 +221,6 @@ aside {
 	white-space: nowrap;
 	font-size: 12px;
 }
-main {
-	height: 100%;
-	overflow: hidden;
-	background: var(--bg-subtle);
-
-	& > header {
-		align-items: center;
-		justify-content: space-between;
-		padding: var(--space-2) var(--space-4);
-		border-bottom: 1px solid var(--border-subtle);
-		height: 36px;
-
-		& .branding {
-			align-items: center;
-			gap: var(--space-3);
-			& .logo {
-				width: 24px;
-				height: 24px;
-				align-items: center;
-				justify-content: center;
-			}
-			& .brand {
-				font-weight: 600;
-				font-size: 14px;
-				color: var(--text-primary);
-			}
-			& .version {
-				font-size: 12px;
-				color: var(--text-muted);
-			}
-		}
-		& .workspace-setting {
-			align-items: center;
-			gap: var(--space-2);
-			flex: 1;
-			justify-content: center;
-		}
-		& nav {
-			align-items: center;
-			gap: var(--space-2);
-		}
-	}
-}
 
 /* ============ 各处按钮 ============ */
 button, .btn {
@@ -682,17 +639,59 @@ body:has(.toggle.sidebar.near-right > input:checked) {
 }
 /* ============ 主体框架 ============ */
 main {
-	& .main-row {
+	height: 100%;
+	overflow: hidden;
+	background: var(--bg-subtle);
+
+	& > header {
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--space-2) var(--space-4);
+		border-bottom: 1px solid var(--border-subtle);
+		height: 36px;
+
+		& .branding {
+			align-items: center;
+			gap: var(--space-3);
+			& .logo {
+				width: 24px;
+				height: 24px;
+				align-items: center;
+				justify-content: center;
+			}
+			& .brand {
+				font-weight: 600;
+				font-size: 14px;
+				color: var(--text-primary);
+			}
+			& .version {
+				font-size: 12px;
+				color: var(--text-muted);
+			}
+		}
+		& .workspace-setting {
+			align-items: center;
+			gap: var(--space-2);
+			flex: 1;
+			justify-content: center;
+		}
+		& nav {
+			align-items: center;
+			gap: var(--space-2);
+		}
+	}
+
+	& > .main-row {
 		flex: 1;
 		min-height: 0;
 
-		& .main-content {
+		& > .main-content {
 			flex: 1;
 			min-height: 0;
 			min-width: 400px;
 			background: var(--bg-base);
 
-			& .toolbar {
+			& > header {
 				padding: var(--space-2) var(--space-3);
 				background: var(--bg-base);
 				border-bottom: 1px solid var(--border-subtle);
@@ -705,15 +704,19 @@ main {
 				& > span {
 					color: var(--text-muted);
 				}
-				& .btn-group.go-top-bottom {
+				& > .btn-group.go-top-bottom {
 					margin-left: auto;
 				}
-				& .new-session.btn {
+				& > .new-session.btn {
 					margin-left: auto;
 				}
 			}
+			/* 无消息时隐藏跳转按钮 */
+			&:not(:has(> .msg.list > .one.msg)) > header > .go-top-bottom.btn-group {
+				display: none;
+			}
 
-			& .msg.list {
+			& > .msg.list {
 				flex: 1 1 auto;
 				overflow-y: auto;
 				padding: var(--space-2);
@@ -722,7 +725,7 @@ main {
 				background: var(--bg-subtle);
 				min-height: 100px;
 
-				& .streaming-hint {
+				& > .streaming-hint {
 					order: 999;
 					--stick-bottom: var(--space-4);
 					z-index: 2;
@@ -740,7 +743,7 @@ main {
 					padding: var(--space-1) var(--space-3);
 					width: auto;
 
-					& .stop-all-response.btn {
+					& > .stop-all-response.btn {
 						--btn-font-size: 11px;
 						--btn-h: 20px;
 						--btn-p: 0 var(--space-1);
@@ -750,18 +753,14 @@ main {
 				}
 			}
 
-			/* 无消息时隐藏跳转按钮 */
-			&:not(:has(.msg.list > .one.msg)) .toolbar .go-top-bottom.btn-group {
-				display: none;
-			}
-			& .chat-input-area {
+			& > .chat-input-area {
 				z-index: calc(var(--divider-z) + 10);
 				border-top: 1px solid var(--border-subtle);
 				background: var(--bg-base);
 				flex: 1 1 auto;
 				min-height: 160px;
 
-				& #chat-input {
+				& > #chat-input {
 					width: 100%;
 					height: 100%;
 					min-height: 56px;
@@ -791,17 +790,17 @@ main {
 				& > menu {
 					gap: 4px;
 					--btn-h: 40px;
+
+					/* 附件列表：占用菜单行空间 + 只允许横向滚动 */
+					& > .attachment.list {
+						flex: 1;
+						overflow-x: auto;
+						overflow-y: hidden;
+					}
 				}
 			}
 		}
 	}
-}
-
-/* 附件列表：占用菜单行空间 + 只允许横向滚动 */
-.attachment.list {
-	flex: 1;
-	overflow-x: auto;
-	overflow-y: hidden;
 }
 
 /* ============ 单个附件（通用） ============ */
@@ -888,7 +887,7 @@ aside.endpoint.list {
 				background: var(--bg-subtle);
 			}
 			& > header {
-			gap: var(--space-1);
+				gap: var(--space-1);
 				width: calc(100% - 15px);
 			}
 		}
@@ -958,15 +957,13 @@ aside.endpoint.list {
 			box-shadow: inset 3px 0 0 0 var(--accent-primary);
 		}
 	}
-	&.show-empty-state {
-		& > ol {
-			display: none;
-		}
-		& > .empty-state {
-			display: block;
-		}
+	/* 无端点时隐藏列表，显示 empty-state */
+	&:not(:has(> ol > .one.endpoint)) {
+		& > ol { display: none; }
+		& > .empty-state { display: block; }
 	}
 	& .empty-state {
+		display: none;
 		padding: 24px 16px;
 		text-align: center;
 		color: var(--text-secondary);
@@ -1287,7 +1284,7 @@ dialog[open] {
 					background: var(--bg-muted);
 				}
 			}
-			& h3 {
+			& > h3 {
 				font-weight: 600;
 				font-size: 16px;
 				color: var(--text-primary);
