@@ -301,6 +301,23 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages) {
         const msg = data.error.message || data.error.code || JSON.stringify(data.error);
         throw new Error('生图请求失败: ' + msg);
     }
+
+    // 优先用 provider 自定义解析（Gemini inlineData 等格式）
+    if (typeof provider.parseImageResponse === 'function') {
+        var parsed = provider.parseImageResponse(data);
+        if (parsed) {
+            const result = {
+                url: null,
+                b64_json: null,
+                revised_prompt: parsed.revised_prompt || null
+            };
+            if (parsed.imageData) {
+                result.imageData = parsed.imageData;
+            }
+            return result;
+        }
+    }
+
     if (!data.data || !data.data[0]) {
         throw new Error('生图响应格式错误: 缺少 data[0]');
     }
@@ -479,12 +496,23 @@ function mergeParams(body, params, style) {
 		body.generationConfig = body.generationConfig || {};
 		target = body.generationConfig;
 	}
+	// Gemini generationConfig 字段名是 camelCase，映射 snake_case → camelCase
+	var keyMap = style === 'gemini' ? {
+		max_tokens: 'maxOutputTokens',
+		max_output_tokens: 'maxOutputTokens',
+		top_p: 'topP',
+		top_k: 'topK',
+		stop_sequences: 'stopSequences',
+		presence_penalty: 'presencePenalty',
+		frequency_penalty: 'frequencyPenalty'
+	} : null;
 	for (var pk in params) {
 		if (params.hasOwnProperty(pk)) {
-			if (pk === 'stop_sequences' && typeof params[pk] === 'string') {
-				target[pk] = params[pk].split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+			var mappedKey = keyMap && keyMap[pk] || pk;
+			if ((pk === 'stop_sequences' || mappedKey === 'stopSequences') && typeof params[pk] === 'string') {
+				target[mappedKey] = params[pk].split(',').map(function(s) { return s.trim(); }).filter(Boolean);
 			} else if (params[pk] !== null && params[pk] !== '') {
-				target[pk] = params[pk];
+				target[mappedKey] = params[pk];
 			}
 		}
 	}

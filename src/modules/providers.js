@@ -226,9 +226,10 @@ const providers = {
 		buildRequest(baseUrl, apiKey, model, messages) {
 			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
-				url: baseUrl + '/v1beta/models/' + model + ':streamGenerateContent?key=' + apiKey + '&alt=sse',
+				url: baseUrl + '/v1beta/models/' + model + ':streamGenerateContent?alt=sse',
 				headers: {
-					'Content-Type': 'application/json'
+					'Content-Type': 'application/json',
+					'X-Goog-Api-Key': apiKey
 				},
 				body: {
 					contents: this.transformMessages(messages)
@@ -265,9 +266,10 @@ const providers = {
 		testConfig(baseUrl, apiKey, model) {
 			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
-				url: baseUrl + '/v1beta/models/' + model + ':generateContent?key=' + apiKey,
+				url: baseUrl + '/v1beta/models/' + model + ':generateContent',
 				headers: {
-					'Content-Type': 'application/json'
+					'Content-Type': 'application/json',
+					'X-Goog-Api-Key': apiKey
 				},
 				body: {
 					contents: [{
@@ -278,6 +280,49 @@ const providers = {
 					}]
 				}
 			};
+		},
+		buildImageRequest(baseUrl, apiKey, model, messages) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
+			// Gemini 生图用同一个 generateContent 端点，加 response_modalities: ["IMAGE"]
+			var prompt = '';
+			if (messages && messages.length) {
+				var last = messages[messages.length - 1];
+				if (typeof last.content === 'string') prompt = last.content;
+				else if (Array.isArray(last.content)) {
+					var textParts = last.content.filter(function(p) { return p.type === 'text' || p.type === 'file_text'; });
+					prompt = textParts.map(function(p) { return p.text || ''; }).join('\n');
+				}
+			}
+			return {
+				url: baseUrl + '/v1beta/models/' + model + ':generateContent',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Goog-Api-Key': apiKey
+				},
+				body: {
+					contents: [{
+						parts: [{ text: prompt }]
+					}],
+					generationConfig: {
+						response_modalities: ['IMAGE']
+					}
+				}
+			};
+		},
+		parseImageResponse(data) {
+			// Gemini 响应格式：candidates[0].content.parts[].inlineData
+			if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) return null;
+			var parts = data.candidates[0].content.parts || [];
+			for (var i = 0; i < parts.length; i++) {
+				var p = parts[i];
+				if (p.inlineData && p.inlineData.mimeType && p.inlineData.mimeType.indexOf('image/') === 0) {
+					return {
+						imageData: 'data:' + p.inlineData.mimeType + ';base64,' + p.inlineData.data,
+						revised_prompt: null
+					};
+				}
+			}
+			return null;
 		}
 	}
 };

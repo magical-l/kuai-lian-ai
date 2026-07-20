@@ -3,7 +3,7 @@ title: API 层
 covers_file: [src/modules/api.js, src/modules/shared.js]
 depends_on: [providers.md]
 api_signature: callAllModels, callAPI, callProvider, callEmbedding, stopAllGenerations
-last_updated: 2026-07-19
+last_updated: 2026-07-20
 why_exists: 流式 SSE 处理、多模型并发调度、停止机制和 Provider 格式转换
 ---
 
@@ -160,6 +160,21 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 - thinking 阶段的第一个 token 也算"首 token"
 - 最终 `genState.firstTokenTime` 是相对 `startTime` 的毫秒偏移量，供 UI 排序（快的在上）
 
+### 生图请求
+
+| 函数 | 所在文件 | 签名 |
+|---|---|---|
+| `callImageGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages) => Promise<{url?, b64_json?, imageData?, revised_prompt?}>` |
+
+非流式请求路径，用于图片生成：
+1. 按 style 查 provider，检查 `buildImageRequest` 方法存在
+2. `provider.buildImageRequest` 构造请求
+3. `fetchWithTimeout` 发送（120s 超时）
+4. 验证非 200 / text/html → 抛错
+5. JSON parse 响应，检查 `data.error`
+6. 优先调用 `provider.parseImageResponse(data)`（Gemini 自定义格式解析），fallback 到 OpenAI 标准格式 `data.data[0].url` / `data.data[0].b64_json`
+7. 若返回 URL 则 fetch 下载转 blob URL + base64，若直接返回 base64 则拼接 data URL
+
 ### 嵌入请求
 
 | 函数 | 所在文件 | 签名 |
@@ -226,3 +241,5 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 | 2026-04-23 | 首 token 计时分 thinking/content 两阶段 | thinking 阶段也算"首次响应"的一部分，UI 排序需要在 thinking 阶段就开始 |
 | 2026-04-26 | non-streaming JSON fallback | 部分代理（如某些中转站）不支持 streaming 但返回 200 + JSON，重包装后走同一解析路径 |
 | 2026-04-26 | content-type 检测优先于状态码 | 代理可能返回 200 但内容是 HTML 错误页面，仅靠状态码无法区分 |
+| 2026-07-20 | `mergeParams` 新增 Gemini keyMap | Gemini `generationConfig` 字段名是 camelCase，注册表用 snake_case，需要映射（`max_tokens`→`maxOutputTokens`, `top_p`→`topP` 等） |
+| 2026-07-20 | `callImageGeneration` 新增 `provider.parseImageResponse` 优先路径 | Gemini 生图响应格式不同于 OpenAI（`candidates[0].content.parts[].inlineData` 而非 `data.data[0].url`），由各 provider 自定义解析 |

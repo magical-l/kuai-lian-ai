@@ -3,7 +3,7 @@ title: Provider 抽象层 + DOM 工具集
 covers_file: [src/modules/providers.js]
 depends_on: []
 api_signature: providers.openai, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip, handleCopyValueClick
-last_updated: 2026-07-12
+last_updated: 2026-07-20
 why_exists: 三种 Provider 格式差异的封装和公共 DOM 辅助函数的复用
 ---
 
@@ -45,13 +45,17 @@ claude 和 gemini provider 不实现此方法。
 
 ## 生图支持
 
-仅 openai provider 实现了 `buildImageRequest` 方法，用于图片生成（`/v1/images/generations`）。与 `buildRequest` 的区别：
+### OpenAI
 
-- URL 路径：`{baseUrl}/v1/images/generations`
-- Body：`{ model, prompt, n: 1 }`（从 messages 中提取最后一条 user 文本作为 prompt）
-- 非流式调用，由 `callImageGeneration`（shared.js）处理
+URL 路径 `{baseUrl}/v1/images/generations`，Body：`{ model, prompt, n: 1 }`（从 messages 中提取最后一条 user 文本作为 prompt），响应含 `data[0].url` 或 `data[0].b64_json`。
 
-claude 和 gemini provider 不实现此方法，`callImageGeneration` 通过 `if (!provider.buildImageRequest) throw` 做前置检查。
+### Gemini
+
+使用与聊天相同的 `:generateContent` 端点，Body 中 `generationConfig` 加 `response_modalities: ["IMAGE"]`，响应中图片以 `candidates[0].content.parts[].inlineData`（base64）返回。
+
+Gemini 额外实现了 `parseImageResponse(data)` 方法，供 `callImageGeneration` 解析其独特的响应格式。
+
+claude provider 不实现此方法，`callImageGeneration` 通过 `if (!provider.buildImageRequest) throw` 做前置检查。
 
 ## 三 Provider 对比
 
@@ -59,8 +63,8 @@ claude 和 gemini provider 不实现此方法，`callImageGeneration` 通过 `if
 
 | 维度 | openai | claude | gemini |
 |---|---|---|---|
-| URL 路径 | `{baseUrl}/v1/chat/completions` | `{baseUrl}/v1/messages` | `{baseUrl}/v1beta/models/{model}:streamGenerateContent?key={apiKey}&alt=sse` |
-| 认证方式 | `Authorization: Bearer {key}` | `x-api-key: {key}` + `Authorization: Bearer {key}` | URL query param `?key=` |
+| URL 路径 | `{baseUrl}/v1/chat/completions` | `{baseUrl}/v1/messages` | `{baseUrl}/v1beta/models/{model}:streamGenerateContent?alt=sse` |
+| 认证方式 | `Authorization: Bearer {key}` | `x-api-key: {key}` + `Authorization: Bearer {key}` | `X-Goog-Api-Key` header |
 | 额外头 | 无 | `anthropic-version: 2023-06-01`<br>`anthropic-dangerous-direct-browser-access: true` | 无 |
 | 消息体 | `{model, messages, stream:true}` | `{model, max_tokens:4096, messages: transformMessages(msg), stream:true}` | `{contents: transformMessages(msg)}` |
 | 消息变换 | 直接透传 | `toClaudeContent` 转换 content 数组 | `toGeminiContent` 转换 + 相邻同角色合并 |
@@ -86,7 +90,7 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 
 | 维度 | openai | claude | gemini |
 |---|---|---|---|
-| URL | `{baseUrl}/v1/chat/completions` | `{baseUrl}/v1/messages` | `{baseUrl}/v1beta/models/{model}:generateContent?key={apiKey}` |
+| URL | `{baseUrl}/v1/chat/completions` | `{baseUrl}/v1/messages` | `{baseUrl}/v1beta/models/{model}:generateContent` |
 | body | `{model, messages:[{role:'user', content:'hi'}], max_tokens:3}` | 同 buildRequest 但 `max_tokens:3` | `{contents:[{role:'user', parts:[{text:'hi'}]}]}` |
 | stream | 否（不设 stream） | 否（不设 stream） | 否（用 `generateContent` 而非 `streamGenerateContent`） |
 
@@ -130,6 +134,8 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 | `transformMessages` | gemini | `(messages) => Array` |
 | `parseChunk` | gemini | `(json) => {content?} | null` |
 | `testConfig` | gemini | `(baseUrl, apiKey, model) => {url, headers, body}` |
+| `buildImageRequest` | gemini | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
+| `parseImageResponse` | gemini | `(data) => {imageData, revised_prompt} | null` |
 
 ### 嵌入方法
 
@@ -201,3 +207,5 @@ tooltip 内含 copy 按钮（`button.copy`），复制按钮点击已移至模�
 | 2026-07-08 | 所有 provider 函数开头 strip baseUrl 尾部斜杠 | 防止 baseUrl 以 `/` 结尾时拼接出 `//` 双斜杠 URL |
 | 2026-07-08 | createTooltip 从 `createElement` + `innerHTML` 改为克隆 `tooltip-content` 模板 + `appendChild` | tooltip 容器和行结构直接定义在 HTML 模板中，JS 不构造 HTML |
 | 2026-07-12 | tooltip 复制按钮事件从 JS 绑定移到 HTML onclick 属性 | 模板 `#tooltip-content` 中 button 的 onclick 设为 `handleCopyValueClick(this)`，移除 createTooltip 中的 click 绑定；`handleCopyValueClick` 提取为全局函数 |
+| 2026-07-20 | Gemini apiKey 从 URL query param 改为 `X-Goog-Api-Key` header | URL 中的 API key 可能被日志/历史记录泄露，header 更安全 |
+| 2026-07-20 | Gemini 新增 `buildImageRequest` / `parseImageResponse` | 支持 Gemini 生图模型（如 gemini-3.1-flash-lite-image），使用同 `generateContent` 端点 + `response_modalities: ["IMAGE"]` |

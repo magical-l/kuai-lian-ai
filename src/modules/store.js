@@ -110,7 +110,7 @@ function detectModelType(name) {
         lower.indexOf("speech") >= 0 || lower.indexOf("voice") >= 0)
         return "tts";
 
-    if (lower.indexOf("image") >= 0 || lower.indexOf("dall-e") >= 0 || lower.indexOf("diffusion") >= 0 || lower.indexOf("flux") >= 0)
+    if (lower.indexOf("image") >= 0 || lower.indexOf("dall-e") >= 0 || lower.indexOf("diffusion") >= 0 || lower.indexOf("flux") >= 0 || lower.indexOf("imagen") >= 0)
         return "image-generation";
 
     return "chat";
