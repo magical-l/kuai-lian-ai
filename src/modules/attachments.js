@@ -167,13 +167,43 @@ function showEditGroupDialog(node, parentId, onSave) {
 	keyInput.type = 'password';  // 重置输入类型（前一次可能被 toggle 改成 text）
 	var modelidInput = $('input[name="model-id"]', dialog);
 	var remarkInput = $("input[name=\"remark\"]", dialog);
+	var pathSuffix = $('.path-suffix', dialog);
+	var directUrlBtn = $('.direct-url.toggle', dialog);
+		var directUrlCheckbox = directUrlBtn ? directUrlBtn.querySelector('input[type="checkbox"]') : null;
+	var urlRow = $('.url-row', dialog);
+			function apiPath(style, type, modelId) {
+			var paths = {
+				openai: { chat: '/v1/chat/completions', embedding: '/v1/embeddings', 'image-generation': '/v1/images/generations', tts: '/v1/audio/speech', reranking: '/v1/rerank' },
+				claude: { chat: '/v1/messages' },
+				gemini: { chat: '/v1beta/models/' + (modelId || '{modelId}') + ':streamGenerateContent?alt=sse', embedding: '/v1beta/models/' + (modelId || '{modelId}') + ':embedContent', 'image-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', tts: '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent' }
+			};
+			var map = paths[style];
+			return (map && map[type]) || (map && map.chat) || '';
+		}
 	var paramSection = $('.param.section', dialog);
 	var paramList = $('.param-control.list', dialog);
 	var typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
 	var typeHint = dialog.querySelector('input[name="type"]').closest('.field-control').querySelector('.hint');
 		function setRadio(name, val, ctx) { ctx.querySelectorAll('input[name="' + name + '"]').forEach(function(r) { r.checked = r.value === val; }); }
 		function getRadio(name, ctx) { var r = ctx.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
-
+		function updatePathDisplay(styleVal) {
+			var modelId = modelidInput.value.trim();
+			var typeVal = getRadio('type', dialog) || (typeof rcfg !== 'undefined' && rcfg && rcfg.type) || '';
+			var path = apiPath(styleVal, typeVal, modelId);
+			if (!path) {
+				var inheritHint = dialog.querySelector('input[name="style"][value=""]');
+				if (inheritHint) {
+					var hintParent = inheritHint.parentElement;
+					var inheritVal = hintParent ? hintParent.querySelector('.inheriting-val') : null;
+					if (inheritVal && inheritVal.textContent) {
+						var m = inheritVal.textContent.match(/\(([^)]+)\)/);
+						if (m) { var inheritedType = getRadio('type', dialog) || ''; path = apiPath(m[1].toLowerCase(), inheritedType, modelId); }
+					}
+				}
+			}
+			pathSuffix.textContent = path;
+			pathSuffix.style.display = path ? '' : 'none';
+		}
 	function updateTypeHint(detectedType) {
 		if (!typeHint) return;
 		var opt = typeSel.closest('.btn-group').querySelector('input[value="' + detectedType + '"]');
@@ -301,6 +331,13 @@ function showEditGroupDialog(node, parentId, onSave) {
 	});
 		setRadio('style', node ? node.style || '' : '', dialog);
 
+	// 加载 directUrl 状态
+		
+		if (node && node.directUrl) {
+			urlRow.classList.add('direct');
+			if (directUrlCheckbox) directUrlCheckbox.checked = true;
+		}
+
 	// type：显式值优先，否则从 modelId 检测作为默认
 	var detectedType = detectModelType(node ? node.modelId || '' : '');
 	if (node && node.type) {
@@ -410,6 +447,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 			});
 			setRadio('style', node ? node.style || 'openai' : 'openai', dialog);
 		}
+	// 初始路径显示（等 style 最终确定后）
+	updatePathDisplay(getRadio('style', dialog) || '');
 
 	// 名称 ↔ 模型名连续同步（用 _syncing 防止循环触发）
 	var _nameUserEdited = false;
@@ -436,6 +475,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			updateTypeHint(detected);
 			typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
 		}
+		updatePathDisplay(getRadio('style', dialog));
 	};
 	typeSel.onchange = function() { _typeUserEdited = true; };
 		function buildExistingParams(n) {
@@ -446,8 +486,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 	if (n.instruction) p.instruction = n.instruction;
 	return Object.keys(p).length > 0 ? p : null;
 }
-dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; renderParamControls(this.value, getRadio('style', dialog), buildExistingParams(node), node ? node.customParams : null); }); });
-		dialog.querySelectorAll('input[name="style"]').forEach(function(r) { r.addEventListener('change', function() { renderParamControls(getRadio('type', dialog), this.value, buildExistingParams(node), node ? node.customParams : null); }); });
+dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; renderParamControls(this.value, getRadio('style', dialog), buildExistingParams(node), node ? node.customParams : null); updatePathDisplay(getRadio('style', dialog)); }); });
+		dialog.querySelectorAll('input[name="style"]').forEach(function(r) { r.addEventListener('change', function() { var sv = this.value; renderParamControls(getRadio('type', dialog), sv, buildExistingParams(node), node ? node.customParams : null); updatePathDisplay(sv); }); });
 	urlInput.oninput = function() { removeIcon(this); };
 	keyInput.oninput = function() { removeIcon(this); };
 
@@ -472,6 +512,11 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 			keyInput.type = this.checked ? 'text' : 'password';
 		});
 	}
+	if (directUrlCheckbox) {
+			directUrlCheckbox.addEventListener('change', function() {
+				urlRow.classList.toggle('direct', this.checked);
+			});
+		}
 	// Enter → 切到下一个输入框
 	var formFields = [nameInput, modelidInput, urlInput, keyInput, remarkInput];
 	var form = dialog.querySelector('form');
@@ -515,7 +560,7 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 					return;
 				}
 			}
-			var saveData = { name: theName, style: getRadio('style', dialog), type: theType };
+			var saveData = { name: theName, style: getRadio('style', dialog), type: theType, directUrl: directUrlCheckbox ? directUrlCheckbox.checked : false };
 			// 可继承字段：节点原本有值则直接保存（含清空为""）；
 			// 节点原本无值则仅当用户手动输入了不同于继承值的值时才保存，否则不传以保持继承
 			var theUrl = urlInput.value.trim();
@@ -969,6 +1014,7 @@ async function testConnection(nodeId) {
 		             (modelType === 'tts' && provider.testTTSConfig) ? provider.testTTSConfig :
 		             provider.testConfig;
 		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
+		if (rcfg.directUrl) tcfg.url = rcfg.baseUrl.replace(/\/+$/, '');
 		mergeParams(tcfg.body, rcfg.params, rcfg.style);
 		var res = await fetchWithTimeout(tcfg.url, {
 			method: 'POST',

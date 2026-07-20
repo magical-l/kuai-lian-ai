@@ -1254,8 +1254,8 @@ dialog[open] {
 		box-shadow: var(--shadow-xl);
 		border: 1px solid var(--border-subtle);
 		min-width: 360px;
-		width: 720px;
-		max-width: 90vw;
+		width: 800px;
+		max-width: 95vw;
 
 		&:focus-visible { outline: none; }
 		& input, & select {
@@ -1391,6 +1391,38 @@ dialog[open] {
 				> .form-row {
 					flex: 0 0 100%;
 					gap: var(--space-2);
+				}
+
+				/* Base URL è¡ï¼è·¯å¾åç¼ä¸åæ¢æé® */
+				& .url-row > .flex {
+					display: flex;
+					align-items: center;
+					gap: var(--space-1);
+					& .base-url-input {
+						flex: 1;
+						min-width: 0;
+					}
+					& .path-suffix {
+						font-family: var(--font-mono, monospace);
+						font-size: 13px;
+						color: var(--text-secondary);
+						padding: 0 var(--space-1);
+						line-height: 2;
+						flex-shrink: 0;
+					}
+					& .path-group {
+						display: inline-flex;
+						align-items: center;
+						background: var(--bg-muted);
+						border-radius: var(--radius-sm);
+						flex-shrink: 0;
+						overflow: hidden;
+					}
+				}
+				/* directUrl æï¼éèè·¯å¾åç¼ï¼è¾å¥æ¡åæå¨é¨ç©ºé´ */
+				& .url-row.direct > .flex {
+					& .path-suffix { display: none; }
+					& .base-url-input { flex: 1; }
 				}
 				/* 参数设置收叠区 */
 				> .param.section {

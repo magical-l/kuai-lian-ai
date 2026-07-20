@@ -127,8 +127,9 @@ function finalizeState(state) {
 		state.thinkingDuration = Date.now() - state.thinkingStartTime;
 	}
 }
-async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal = null, style, params) {
+async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal = null, style, params, directUrl) {
 	const config = provider.buildRequest(baseUrl, apiKey, model, messages);
+	if (directUrl) config.url = baseUrl.replace(/\/+$/, '');
 	mergeParams(config.body, params, style);
 	const useSignal = signal || (currentAbortController = new AbortController()).signal;
 	const state = createInitialState();
@@ -182,13 +183,13 @@ async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk,
 		if (!signal) currentAbortController = null;
 	}
 }
-async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal = null, params) {
+async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal = null, params, directUrl) {
 	const provider = providers[style];
 	if (!provider) throw new Error('不支持的接口风格: ' + style);
-	return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params);
+	return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params, directUrl);
 }
 
-	async function callEmbedding(style, baseUrl, apiKey, model, input) {
+	async function callEmbedding(style, baseUrl, apiKey, model, input, directUrl) {
         const provider = providers[style];
 
         if (!provider)
@@ -198,6 +199,7 @@ async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal 
             throw new Error("该接口不支持嵌入");
 
         const req = provider.buildEmbeddingRequest(baseUrl, apiKey, model, input);
+		if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
         console.log("Embed req:", req.url, JSON.stringify(req.headers));
 
         const res = await fetchWithTimeout(req.url, {
@@ -265,12 +267,13 @@ function base64ToBlob(b64, mimeType) {
 	return new Blob(byteArrays, { type: mimeType || 'audio/mpeg' });
 }
 
-async function callImageGeneration(style, baseUrl, apiKey, model, messages) {
+async function callImageGeneration(style, baseUrl, apiKey, model, messages, directUrl) {
     const provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
     if (!provider.buildImageRequest) throw new Error('该接口不支持生图');
 
     const req = provider.buildImageRequest(baseUrl, apiKey, model, messages);
+		if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
     const res = await fetchWithTimeout(req.url, {
         method: 'POST',
         headers: req.headers,
@@ -346,12 +349,13 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages) {
     return result;
 }
 
-async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction) {
+async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction, directUrl) {
     var provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
     if (!provider.buildTTSRequest) throw new Error('该接口不支持语音生成');
 
     var req = provider.buildTTSRequest(baseUrl, apiKey, model, input, voice, instruction);
+	if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
     var res = await fetchWithTimeout(req.url, {
         method: 'POST',
         headers: req.headers,
@@ -433,7 +437,7 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 				}
 				const firstTokenTime = genState?.firstTokenTime;
 				onChunk(endpointId, chunkState, firstTokenTime);
-			}, state.abortController.signal, config.params);
+			}, state.abortController.signal, config.params, config.directUrl);
 			state.status = 'completed';
 			state.content = resultState.content;
 			state.thinking = resultState.thinking;

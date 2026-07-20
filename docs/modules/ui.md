@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-20
+last_updated: 2026-07-23
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -204,6 +204,11 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 - 字段顺序：名称 → 模型名 → 类型 → 接口风格 → Base URL → API Key → 备注
 - 名称输入 placeholder 为"（默认同模型名）"，为空时保存自动 fallback 到模型名
 - 名称与模型 ID 自动同步（用户起始编辑名称后停止自动同步）
+- Base URL 行带路径后缀显示，路径由风格+类型+模型名共同决定：
+  - openai: chat→`/v1/chat/completions`, embedding→`/v1/embeddings`, 生图→`/v1/images/generations`, tts→`/v1/audio/speech`, 重排序→`/v1/rerank`
+  - claude: chat→`/v1/messages`
+  - gemini: chat→`:streamGenerateContent?alt=sse`, embedding→`:embedContent`, 生图/TTS→`:generateContent`（均前缀 `/v1beta/models/{modelId}`）
+- 路径后缀与 ✕/ toggle 按钮包裹在 `.path-group` 容器中，视觉上联为一体。toggle 用 checkbox 驱动（`common.css` `.toggle` 模式），✕（`.remove`）表示追加路径，`/` 表示直连模式。点击仅隐藏路径文本，按钮始终可见，保存时设置 `directUrl` 标志
 - 类型字段自动从 modelId 检测（chat/embedding/rerank），用户可手动覆盖（覆盖后停止自动检测）
 - 继承值图标（↑）：空字段自动填入祖先值，`addInheritIcon` 添加继承标记
 - Enter 在字段间切换焦点，最后一个字段 Enter 触发保存
@@ -281,3 +286,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-17 | `.say.failed` 新增 CSS：`--danger-light` 背景 + `--danger` 色 ✗ 居中，替代空 `.say` 显示 | 失败端点显示空白 `.say` 让用户困惑；用图标 + 状态色比文字更直觉 |
 | 2026-07-16 | 批量创建 style/type 新增显式"继承"选项 | 与单节点对话框一致，默认选中"继承"且互斥于具体值；有父节点时显示继承值标签；提交时跳过空值标记使节点运行时自然继承 |
 | 2026-07-20 | 编辑弹窗字段顺序重排：名称→模型名→类型→接口风格→Base URL→API Key→备注 | 逻辑分组：标识信息放前（名称+模型名+类型），协议信息居中（接口风格+Base URL），认证信息最后；名称加 placeholder 提示默认值 |
+| 2026-07-23 | Base URL 行新增路径后缀显示 + checkbox 驱动的 directUrl 切换 | 路径映射基于实际 API 文档（含 style+type+modelId 三维度）；toggle 改用 common.css `.toggle` 模式，checkbox 驱动 ✕/ 图标切换；视觉上路径与按钮包裹为 `.path-group`；弹窗宽度 720→800px |

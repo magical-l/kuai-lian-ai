@@ -479,7 +479,7 @@ async function handleSend() {
 			}
 			try {
 				const cfg = resolveNodeConfig(id);
-				const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), textContent);
+				const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), textContent, cfg.directUrl);
 				updateCardAsEmbedding(id, result, targetSessionId);
 				return {
 					endpointId: id,
@@ -507,7 +507,7 @@ async function handleSend() {
 			}
 			try {
 				const cfg = resolveNodeConfig(id);
-				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages);
+				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.directUrl);
 				updateCardAsImage(id, result, targetSessionId);
 				return {
 					endpointId: id,
@@ -548,7 +548,7 @@ async function handleSend() {
 					}
 				}
 				var result = await callTTS(cfg.style || 'openai', cfg.baseUrl, cfg.key,
-					(info.node.modelId || info.node.name), input, info.node.voice || '', info.node.instruction || '');
+					(info.node.modelId || info.node.name), input, info.node.voice || '', info.node.instruction || '', cfg.directUrl);
 				updateCardAsAudio(id, result, targetSessionId);
 				return {
 					endpointId: id,

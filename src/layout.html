@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.24.0</span>
+			<span class="version">v6.25.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -509,13 +509,22 @@
 						</div>
 					</span>
 				</div>
-				<label class="form-row , flex items-go-x items-y-near-center">
+				<div class="form-row , flex items-go-x items-y-near-center">
 					<span class="field-label">Base URL（选填）:</span>
-					<span class="field-control">
-						<input name="url" placeholder="https://api.example.com">
-						<span class="hint">若路径以 # 结尾，则直接使用该路径</span>
+					<span class="field-control url-row">
+						<span class="flex items-go-x items-y-near-center" style="gap:var(--space-1)">
+							<input name="url" placeholder="https://api.example.com" class="base-url-input">
+							<span class="path-group">
+								<span class="path-suffix"></span>
+								<label class="btn : direct-url toggle , square shape">
+									<input type="checkbox" hidden>
+									<span class="char-style icon : on , remove"></span>
+									<span class="char-style icon : off" style="--icon-char:'/'"></span>
+								</label>
+							</span>
+						</span>
 					</span>
-				</label>
+				</div>
 				<div class="form-row , flex items-go-x items-y-near-center">
 					<label class="field-label" for="apikey-input">API Key（选填）:</label>
 					<span class="field-control">

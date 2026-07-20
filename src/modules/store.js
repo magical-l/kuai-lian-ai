@@ -36,7 +36,7 @@ function resolveNodeConfig(nodeId) {
         ancestors
     } = result;
 
-    const fields = ["baseUrl", "style", "key", "modelId", "type"];
+    const fields = ["baseUrl", "style", "key", "modelId", "type", "directUrl"];
     const config = {};
 
     for (const f of fields)
