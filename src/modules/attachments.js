@@ -200,15 +200,15 @@ function showEditGroupDialog(node, parentId, onSave) {
 		valIn.placeholder = '值';
 		valIn.value = value !== undefined && value !== null ? value : '';
 		var rm = doc.createElement('button');
-		rm.className = 'char-style btn : remove-param , danger , square shape , icon-only';
+		rm.className = 'char-style icon-only btn : remove custom-param , danger , square shape';
 		rm.title = '移除此参数';
 		rm.tabIndex = -1;
 		rm.onclick = function() { div.remove(); };
-		rm.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+		
 		div.appendChild(keyIn);
 		div.appendChild(valIn);
 		div.appendChild(rm);
-		var addBtn = paramList.querySelector('.add-custom.btn');
+		var addBtn = paramList.querySelector('.add-custom-param.btn');
 		if (addBtn) paramList.insertBefore(div, addBtn);
 		else paramList.appendChild(div);
 	}
@@ -283,7 +283,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 		// 自定义参数按钮 + 已存的自定义参数
 		var addBtn = doc.createElement('button');
 		addBtn.type = 'button';
-		addBtn.className = 'add-custom btn , bare';
+		addBtn.className = 'add-custom-param btn';
 		addBtn.textContent = '+ 自定义参数';
 		addBtn.onclick = function() { addCustomParamRow('', ''); };
 		paramList.appendChild(addBtn);
