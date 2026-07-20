@@ -473,7 +473,7 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 		});
 	}
 	// Enter → 切到下一个输入框
-	var formFields = [nameInput, urlInput, keyInput, modelidInput, remarkInput];
+	var formFields = [nameInput, modelidInput, urlInput, keyInput, remarkInput];
 	var form = dialog.querySelector('form');
 	if (form) {
 		form.addEventListener('keydown', function(e) {

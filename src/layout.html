@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.23.0</span>
+			<span class="version">v6.24.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -433,15 +433,44 @@
 				<form>
 				<label class="form-row , flex items-go-x items-y-near-center">
 					<span class="field-label">名称:</span>
-					<span class="field-control"><input name="name"></span>
+					<span class="field-control"><input name="name" placeholder="（默认同模型名）"></span>
 				</label>
 				<label class="form-row , flex items-go-x items-y-near-center">
-					<span class="field-label">Base URL（选填）:</span>
-					<span class="field-control">
-						<input name="url" placeholder="https://api.example.com">
-						<span class="hint">若路径以 # 结尾，则直接使用该路径</span>
-					</span>
+					<span class="field-label">模型名（选填）:</span>
+					<span class="field-control"><input name="model-id" placeholder="如 gpt-4o"></span>
 				</label>
+				<div class="form-row , flex items-go-x items-y-near-center">
+					<span class="field-label">类型:</span>
+					<span class="field-control">
+						<div class="btn-group , flex items-go-x">
+							<label class="option btn">
+								<input type="radio" name="type" value="">
+								继承<span class="inheriting-val"></span>
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="chat">
+								<span class="char-style icon , chat"></span> 聊天
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="embedding">
+								<span class="char-style icon , digits"></span> 嵌入
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="image-generation">
+								<span class="char-style icon , palette"></span> 生图
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="reranking">
+								<span class="char-style icon , chart"></span> 重排序
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="tts">
+								<span class="char-style icon , speaker"></span> 语音
+							</label>
+						</div>
+						<span class="hint"></span>
+					</span>
+				</div>
 				<div class="form-row , flex items-go-x items-y-near-center">
 					<span class="field-label">接口风格:</span>
 					<span class="field-control">
@@ -480,38 +509,13 @@
 						</div>
 					</span>
 				</div>
-				<div class="form-row , flex items-go-x items-y-near-center">
-					<span class="field-label">类型:</span>
+				<label class="form-row , flex items-go-x items-y-near-center">
+					<span class="field-label">Base URL（选填）:</span>
 					<span class="field-control">
-						<div class="btn-group , flex items-go-x">
-							<label class="option btn">
-								<input type="radio" name="type" value="">
-								继承<span class="inheriting-val"></span>
-							</label>
-							<label class="option btn">
-								<input type="radio" name="type" value="chat">
-								<span class="char-style icon , chat"></span> 聊天
-							</label>
-							<label class="option btn">
-								<input type="radio" name="type" value="embedding">
-								<span class="char-style icon , digits"></span> 嵌入
-							</label>
-							<label class="option btn">
-								<input type="radio" name="type" value="image-generation">
-								<span class="char-style icon , palette"></span> 生图
-							</label>
-							<label class="option btn">
-								<input type="radio" name="type" value="reranking">
-								<span class="char-style icon , chart"></span> 重排序
-							</label>
-							<label class="option btn">
-								<input type="radio" name="type" value="tts">
-								<span class="char-style icon , speaker"></span> 语音
-							</label>
-						</div>
-						<span class="hint"></span>
+						<input name="url" placeholder="https://api.example.com">
+						<span class="hint">若路径以 # 结尾，则直接使用该路径</span>
 					</span>
-				</div>
+				</label>
 				<div class="form-row , flex items-go-x items-y-near-center">
 					<label class="field-label" for="apikey-input">API Key（选填）:</label>
 					<span class="field-control">
@@ -525,10 +529,6 @@
 						</span>
 					</span>
 				</div>
-				<label class="form-row , flex items-go-x items-y-near-center">
-					<span class="field-label">模型名（选填）:</span>
-					<span class="field-control"><input name="model-id" placeholder="如 gpt-4o"></span>
-				</label>
 				<label class="form-row , flex items-go-x items-y-near-center">
 					<span class="field-label">备注（选填）:</span>
 					<span class="field-control"><input name="remark" placeholder="仅用于显示"></span>

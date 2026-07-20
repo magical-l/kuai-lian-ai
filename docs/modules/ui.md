@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-17
+last_updated: 2026-07-20
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -201,7 +201,8 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 直接操作 DOM 中的 `<dialog class="editing endpoint" id="edit-group-dialog">`（非 template 非 clone）。用 `show()`（非 `showModal()`）打开，不阻塞页面交互，可在编辑时点击后面端点复制字段值。功能：
 
-- 名称 + URL + 格式 + Key + 模型 ID + 类型 + 备注 7 个字段
+- 字段顺序：名称 → 模型名 → 类型 → 接口风格 → Base URL → API Key → 备注
+- 名称输入 placeholder 为"（默认同模型名）"，为空时保存自动 fallback 到模型名
 - 名称与模型 ID 自动同步（用户起始编辑名称后停止自动同步）
 - 类型字段自动从 modelId 检测（chat/embedding/rerank），用户可手动覆盖（覆盖后停止自动检测）
 - 继承值图标（↑）：空字段自动填入祖先值，`addInheritIcon` 添加继承标记
@@ -279,3 +280,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-17 | `renderResponse` 改为直接处理单条 assistant 消息（flat 格式），不再迭代 `responses` 数组 | 数据格式从 `{responses:[...]}` 改为每条 response 独立消息。去除旧格式兼容代码。`data-endpoint-id` 保留全局清空逻辑防止跨轮次误匹配 |
 | 2026-07-17 | `.say.failed` 新增 CSS：`--danger-light` 背景 + `--danger` 色 ✗ 居中，替代空 `.say` 显示 | 失败端点显示空白 `.say` 让用户困惑；用图标 + 状态色比文字更直觉 |
 | 2026-07-16 | 批量创建 style/type 新增显式"继承"选项 | 与单节点对话框一致，默认选中"继承"且互斥于具体值；有父节点时显示继承值标签；提交时跳过空值标记使节点运行时自然继承 |
+| 2026-07-20 | 编辑弹窗字段顺序重排：名称→模型名→类型→接口风格→Base URL→API Key→备注 | 逻辑分组：标识信息放前（名称+模型名+类型），协议信息居中（接口风格+Base URL），认证信息最后；名称加 placeholder 提示默认值 |
