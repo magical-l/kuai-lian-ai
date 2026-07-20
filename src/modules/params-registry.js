@@ -4,30 +4,30 @@
 var PARAMS_REGISTRY = {
   chat: {
     common: [
-      { key: "temperature",   label: "Temperature",    type: "range",   min: 0, max: 2,   step: 0.1, default: 1 },
-      { key: "top_p",         label: "Top P",          type: "range",   min: 0, max: 1,   step: 0.1, default: 1 },
-      { key: "max_tokens",    label: "Max Tokens",     type: "integer", min: 1,            default: 4096 },
+      { key: "temperature",   label: "温度",          type: "range",   min: 0, max: 2,   step: 0.1, default: 1 },
+      { key: "top_p",         label: "Top P（核采样）", type: "range",   min: 0, max: 1,   step: 0.1, default: 1 },
+      { key: "max_tokens",    label: "最大 Token 数", type: "integer", min: 1,            default: 4096 },
     ],
     openai: [
-      { key: "presence_penalty",  label: "Presence Penalty",  type: "range",   min: -2, max: 2, step: 0.1, default: 0 },
-      { key: "frequency_penalty", label: "Frequency Penalty", type: "range",   min: -2, max: 2, step: 0.1, default: 0 },
-      { key: "seed",              label: "Seed",              type: "integer", nullable: true },
+      { key: "presence_penalty",  label: "话题新鲜度惩罚", type: "range",   min: -2, max: 2, step: 0.1, default: 0 },
+      { key: "frequency_penalty", label: "频率惩罚",       type: "range",   min: -2, max: 2, step: 0.1, default: 0 },
+      { key: "seed",              label: "随机种子",       type: "integer", nullable: true },
     ],
     claude: [
       { key: "top_k",          label: "Top K",          type: "integer", min: 1, max: 500 },
-      { key: "stop_sequences", label: "Stop Sequences", type: "text",    placeholder: "逗号分隔多个" },
+      { key: "stop_sequences", label: "停止序列",       type: "text",    placeholder: "逗号分隔多个" },
     ],
     gemini: [
       { key: "top_k",              label: "Top K",              type: "integer", min: 1, max: 500 },
-      { key: "stop_sequences",     label: "Stop Sequences",     type: "text",    placeholder: "逗号分隔多个" },
-      { key: "max_output_tokens",  label: "Max Output Tokens",  type: "integer", min: 1, default: 2048 },
+      { key: "stop_sequences",     label: "停止序列",           type: "text",    placeholder: "逗号分隔多个" },
+      { key: "max_output_tokens",  label: "最大输出 Token 数",  type: "integer", min: 1, default: 2048 },
     ],
   },
   tts: {
     common: [
       { key: "voice",        label: "音色",  type: "text", placeholder: "如 alloy、cixingnansheng" },
       { key: "instruction",  label: "指令",  type: "text", placeholder: "如 语气温柔、活泼俏皮" },
-      { key: "speed",        label: "Speed", type: "range", min: 0.25, max: 4.0, step: 0.1, default: 1.0 },
+      { key: "speed",        label: "语速",  type: "range", min: 0.25, max: 4.0, step: 0.1, default: 1.0 },
     ],
   },
   embedding: {
@@ -35,9 +35,9 @@ var PARAMS_REGISTRY = {
   },
   "image-generation": {
     common: [
-      { key: "size",    label: "Size",    type: "select", options: ["1024x1024", "1792x1024", "1024x1792"], default: "1024x1024" },
-      { key: "quality", label: "Quality", type: "select", options: ["standard", "hd"], default: "standard" },
-      { key: "n",       label: "Count",   type: "integer", min: 1, max: 10, default: 1 },
+      { key: "size",    label: "图片尺寸", type: "select", options: ["1024x1024", "1792x1024", "1024x1792"], default: "1024x1024" },
+      { key: "quality", label: "质量",    type: "select", options: ["standard", "hd"], default: "standard" },
+      { key: "n",       label: "生成数量", type: "integer", min: 1, max: 10, default: 1 },
     ],
   },
   reranking: {
