@@ -551,6 +551,17 @@ async function handleSend() {
 			}
 			try {
 				var cfg = resolveNodeConfig(id);
+				// Merge param overrides for TTS
+				var ttsOvr = null;
+				if (currentSession && currentSession.modelParams && currentSession.modelParams[id]) {
+					ttsOvr = currentSession.modelParams[id];
+				} else if (typeof defaultSelectedEndpointParams !== "undefined" && defaultSelectedEndpointParams[id]) {
+					ttsOvr = defaultSelectedEndpointParams[id];
+				}
+				if (ttsOvr) {
+					cfg.params = cfg.params || {};
+					for (var sk in ttsOvr) { if (ttsOvr.hasOwnProperty(sk) && sk !== "_custom") cfg.params[sk] = ttsOvr[sk]; }
+				}
 				var input = '';
 				for (var i = messages.length - 1; i >= 0; i--) {
 					if (messages[i].role === 'user') {
@@ -564,7 +575,7 @@ async function handleSend() {
 					}
 				}
 				var result = await callTTS(cfg.style || 'openai', cfg.baseUrl, cfg.key,
-					(info.node.modelId || info.node.name), input, info.node.voice || '', info.node.instruction || '', cfg.directUrl);
+					(info.node.modelId || info.node.name), input, cfg.params.voice || '', cfg.params.instruction || '', cfg.directUrl);
 				updateCardAsAudio(id, result, targetSessionId);
 				return {
 					endpointId: id,

@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-17
+last_updated: 2026-07-22
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -298,3 +298,4 @@ radio change → setThemePref(mode)
 | 2026-07-11 | handleSend 改用 appendUserMessage 替代 renderMessages | 发送消息时不清空 `.msg.list`，避免全量 DOM 重建；旧回复卡片保留，清除 `data-endpoint-id`/`data-session-id` 防止与新 streaming cards 冲突 |
 | 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性（随后因 CSP 限制回退） | 减少 init() 中的事件绑定代码，但 Chrome 扩展 CSP 禁止内联脚本执行 |
 | 2026-07-13 | 事件绑定从 HTML 内联属性回到 JS addEventListener | Chrome 扩展 CSP script-src 'self' 禁止内联 onclick/onchange/ontoggle 等，所有 46 处 onxxx 改为 init() 中的 .on() 或模板克隆后的 addEventListener |
+| 2026-07-22 | TTS handler 新增会话参数覆盖合并（与 image generation 模式一致） | 修复 TTS 端点绕过会话级 voice/instruction 覆盖的 bug |
