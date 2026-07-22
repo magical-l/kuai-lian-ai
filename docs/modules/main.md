@@ -299,3 +299,4 @@ radio change → setThemePref(mode)
 | 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性（随后因 CSP 限制回退） | 减少 init() 中的事件绑定代码，但 Chrome 扩展 CSP 禁止内联脚本执行 |
 | 2026-07-13 | 事件绑定从 HTML 内联属性回到 JS addEventListener | Chrome 扩展 CSP script-src 'self' 禁止内联 onclick/onchange/ontoggle 等，所有 46 处 onxxx 改为 init() 中的 .on() 或模板克隆后的 addEventListener |
 | 2026-07-22 | TTS handler 新增会话参数覆盖合并（与 image generation 模式一致） | 修复 TTS 端点绕过会话级 voice/instruction 覆盖的 bug |
+| 2026-07-22 | TTS 播放器从 `.content > .audio-result` 移到 `.say` 内部 | `(无内容)` 占位文本被 `<audio controls>` 播放器取代；updateCardAsAudio 和 messages.js 音频渲染同步修改 |

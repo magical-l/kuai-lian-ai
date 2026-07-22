@@ -505,21 +505,20 @@ function appendUserMessage(msg) {
 
         // audio 结果（TTS 场景）
         if (r.audioResult) {
-            var audioMeta = $('.audio-result', existing);
-            if (!audioMeta) {
-                audioMeta = mk('div', 'audio-result');
-                existing.addChild(audioMeta);
-            }
-            var hasPlayer = audioMeta.querySelector('audio');
-            if (!hasPlayer && r.audioResult.audioData) {
-                var blob = base64ToBlob(r.audioResult.audioData, 'audio/mpeg');
-                var blobUrl = URL.createObjectURL(blob);
-                var audio = mk('audio', '');
-                audio.src = blobUrl;
-                audio.controls = true;
-                audio.style.maxWidth = '100%';
-                audio.style.height = '40px';
-                audioMeta.addChild(audio);
+            var audioSayEl = $('.say', existing);
+            if (audioSayEl) {
+                var hasPlayer = audioSayEl.querySelector('audio');
+                if (!hasPlayer && r.audioResult.audioData) {
+                    audioSayEl.textContent = '';
+                    var blob = base64ToBlob(r.audioResult.audioData, 'audio/mpeg');
+                    var blobUrl = URL.createObjectURL(blob);
+                    var audio = mk('audio', '');
+                    audio.src = blobUrl;
+                    audio.controls = true;
+                    audio.style.maxWidth = '100%';
+                    audio.style.height = '40px';
+                    audioSayEl.addChild(audio);
+                }
             }
         }
 }

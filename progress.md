@@ -28,3 +28,13 @@
 **验证**：
 - ✅ `node build.js` 通过
 - ✅ `git diff` 仅 2 处改动（+11/-1）
+
+### 增强：TTS 播放器移到 .say 内部
+
+**问题**：TTS 返回后 `.say` 显示"(无内容)"，播放器在独立 `.audio-result` div 中，二者分离。
+
+**改动**：
+- `main.js:updateCardAsAudio` — 把 `<audio>` 从 `.content > .audio-result` 移到 `.say` 内部
+- `messages.js` — 从 session 恢复时同样把 `<audio>` 放入 `.say`
+
+**效果**：播放器取代 "(无内容)" 占位文本，直接显示在 `.say` 区域。`audio` 的 controls 提供播放/暂停/进度条。

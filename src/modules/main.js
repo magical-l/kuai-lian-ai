@@ -967,22 +967,16 @@ function updateCardAsAudio(endpointId, result, sessionId) {
 	var card = $('.one.response.msg[data-session-id="' + sessionId + '"][data-endpoint-id="' + endpointId + '"]');
 	if (!card) return;
 	var sayEl = $('.say', card);
-	if (sayEl) sayEl.textContent = '';
-	var contentWrapper = $('.content', card);
-	if (contentWrapper) {
-		var existing = $('.audio-result', contentWrapper);
-		if (existing) existing.remove();
-
-		var audioDiv = mk('div', 'audio-result');
+	if (sayEl) {
+		sayEl.textContent = '';
 		if (result.blobUrl) {
 			var audio = mk('audio', '');
 			audio.src = result.blobUrl;
 			audio.controls = true;
 			audio.style.maxWidth = '100%';
 			audio.style.height = '40px';
-			audioDiv.addChild(audio);
+			sayEl.addChild(audio);
 		}
-		contentWrapper.addChild(audioDiv);
 	}
 	updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }
