@@ -423,6 +423,11 @@ async function handleSend() {
 	let isNewSession = false;
 	if (!currentSession) {
 		currentSession = await createSession(content, [...selectedEndpoints]);
+		// Sync workspace params to new session
+		if (typeof defaultSelectedEndpointParams !== 'undefined' && Object.keys(defaultSelectedEndpointParams).length > 0) {
+			currentSession.modelParams = JSON.parse(JSON.stringify(defaultSelectedEndpointParams));
+			await saveSession(currentSession);
+		}
 		isNewSession = true;
 	}
 	if (!isNewSession) {
@@ -507,7 +512,18 @@ async function handleSend() {
 			}
 			try {
 				const cfg = resolveNodeConfig(id);
-				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.directUrl);
+				// Merge param overrides for image generation
+				var imgOvr = null;
+				if (currentSession && currentSession.modelParams && currentSession.modelParams[id]) {
+					imgOvr = currentSession.modelParams[id];
+				} else if (typeof defaultSelectedEndpointParams !== 'undefined' && defaultSelectedEndpointParams[id]) {
+					imgOvr = defaultSelectedEndpointParams[id];
+				}
+				if (imgOvr) {
+					cfg.params = cfg.params || {};
+					for (var sk in imgOvr) { if (imgOvr.hasOwnProperty(sk) && sk !== '_custom') cfg.params[sk] = imgOvr[sk]; }
+				}
+				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.directUrl, cfg.params);
 				updateCardAsImage(id, result, targetSessionId);
 				return {
 					endpointId: id,

@@ -202,7 +202,8 @@ async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal 
 		if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
         console.log("Embed req:", req.url, JSON.stringify(req.headers));
 
-        const res = await fetchWithTimeout(req.url, {
+        	if (params) { mergeParams(req.body, params, style); }
+	const res = await fetchWithTimeout(req.url, {
             method: "POST",
             headers: req.headers,
             body: JSON.stringify(req.body)
@@ -267,14 +268,15 @@ function base64ToBlob(b64, mimeType) {
 	return new Blob(byteArrays, { type: mimeType || 'audio/mpeg' });
 }
 
-async function callImageGeneration(style, baseUrl, apiKey, model, messages, directUrl) {
+async function callImageGeneration(style, baseUrl, apiKey, model, messages, directUrl, params) {
     const provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
     if (!provider.buildImageRequest) throw new Error('该接口不支持生图');
 
     const req = provider.buildImageRequest(baseUrl, apiKey, model, messages);
 		if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
-    const res = await fetchWithTimeout(req.url, {
+    	if (params) { mergeParams(req.body, params, style); }
+	const res = await fetchWithTimeout(req.url, {
         method: 'POST',
         headers: req.headers,
         body: JSON.stringify(req.body)
@@ -419,6 +421,24 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 					for (var ci = 0; ci < customParams.length; ci++) {
 						var cp = customParams[ci];
 						if (cp && cp.key && cp.key.trim()) config.params[cp.key.trim()] = cp.value;
+					}
+				}
+				// Param override: session params > workspace params > endpoint defaults
+				var ovr = null;
+				if (currentSession && currentSession.modelParams && currentSession.modelParams[endpointId]) {
+					ovr = currentSession.modelParams[endpointId];
+				} else if (typeof defaultSelectedEndpointParams !== 'undefined' && defaultSelectedEndpointParams[endpointId]) {
+					ovr = defaultSelectedEndpointParams[endpointId];
+				}
+				if (ovr) {
+					config.params = config.params || {};
+					for (var sk in ovr) {
+						if (ovr.hasOwnProperty(sk) && sk !== '_custom') config.params[sk] = ovr[sk];
+					}
+					if (ovr._custom && ovr._custom.length) {
+						ovr._custom.forEach(function(cp) {
+							if (cp && cp.key && cp.key.trim()) config.params[cp.key.trim()] = cp.value;
+						});
 					}
 				}
 			const resultState = await callAPI(config.style || 'openai', config.baseUrl, config.key, (info.node.modelId || info.node.name), messages, chunkState => {

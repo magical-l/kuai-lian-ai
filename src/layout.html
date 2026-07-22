@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.25.3</span>
+			<span class="version">v6.26.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -562,6 +562,24 @@
 	</div>
 		<footer class="flex items-go-x">
 			<button class="char-style btn : ok , primary , icon-only"></button>
+		</footer>
+	</dialog>
+	<dialog class="session-param-editor">
+		<header class="flex items-go-x">
+			<span class="model-path" style="font-weight:400;font-size:0.85em;color:var(--text-secondary)"></span>
+			<button class="btn : close , square shape , bare" style="margin-left:auto">
+				<span class="char-style icon : cancel"></span>
+			</button>
+		</header>
+		<div class="body">
+			<div class="hint" style="margin-bottom:var(--space-2);font-size:0.85em;color:var(--text-secondary)">以下 API 参数仅在本次会话生效，留空=使用端点默认值</div>
+			<div class="param section">
+				<div class="param-control list" data-type-bound></div>
+			</div>
+		</div>
+		<footer class="flex items-go-x">
+			<button class="char-style btn : reset" title="重置为端点默认值">重置为默认</button>
+			<button type="button" class="char-style btn : ok , primary , icon-only" title="保存参数" style="margin-left:auto"></button>
 		</footer>
 	</dialog>
 	<template id="batch-field-block">

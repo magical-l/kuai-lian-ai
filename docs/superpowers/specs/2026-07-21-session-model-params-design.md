@@ -1,3 +1,12 @@
+---
+title: 会话模型参数覆盖设计
+covers_file: [src/modules/selected-endpoints.js, src/modules/shared.js, src/modules/main.js, src/modules/attachments.js]
+depends_on: [data-model.md]
+api_signature: defaultSelectedEndpointParams / sessionParamOverrides / openSessionParamEditor
+last_updated: 2026-07-22
+why_exists: 定义会话级 API 参数覆盖机制，用户可为每个端点独立设置仅当前会话/工作空间有效的参数
+---
+
 # 会话模型参数覆盖设计
 
 ## 概述

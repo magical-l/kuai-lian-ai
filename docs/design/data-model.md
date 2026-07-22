@@ -3,7 +3,7 @@ title: 数据模型
 covers_file: [src/modules/store.js, src/modules/storage-core.js, src/extension/storage-core.js]
 depends_on: [architecture.md]
 api_signature: endpointsData / sessionsCache / storage.loadEndpoints / storage.saveEndpoints / storage.loadSession / storage.saveSession
-last_updated: 2026-07-17
+last_updated: 2026-07-22
 why_exists: 定义端点树、会话和消息的数据结构及存储抽象层，确保前后端存储迁移的正确性
 ---
 
@@ -56,6 +56,10 @@ why_exists: 定义端点树、会话和消息的数据结构及存储抽象层�
   "id": "uuid",
   "title": "会话标题（自动从首条消息截取20字）",
   "createdAt": 1700000000000,
+  "modelParams": {
+    "endpointId1": { "temperature": 0.7, "max_tokens": 4096 },
+    "endpointId2": { "top_p": 0.9 }
+  },
   "messages": [
     {
       "role": "user | assistant | system",
@@ -73,6 +77,18 @@ why_exists: 定义端点树、会话和消息的数据结构及存储抽象层�
 content 字段统一使用 content blocks 数组格式（[{type, text}]）。字符串和数组的兼容由 normalizeMessageContent 处理。旧格式的 content 字符串在加载时归一化为数组。
 
 多端点对话时，user 消息记录 targetEndpoints 指明发送给哪些端点；assistant 消息通过 responses 数组存储各端点的独立回复。单端点模式则使用 endpointId 字段。
+
+`modelParams` 字段存储该会话的 API 参数覆盖（如 temperature、max_tokens），以 endpointId 为 key。该字段在发首条消息时从工作空间同步，也可在会话参数弹窗中手动修改。API 调用时，会话级参数优先于工作空间级和端点默认值。
+
+### 工作空间参数覆盖
+
+工作空间（localStorage）维护当前选中的端点列表及其 API 参数覆盖，与会话分离：
+
+- 端点 ID 列表：`localStorage key 'defaultSelectedEndpoints'`
+- 参数覆盖：`localStorage key 'defaultSelectedEndpointParams'`，以 endpointId 为 key
+- 无会话时设置的参数仅存于工作空间，刷新不丢失
+- 发首条消息时，工作空间参数自动同步到新会话的 `modelParams`
+- 打开已有会话时，仅使用会话自身的 `modelParams`，不混入工作空间参数
 
 ### 存储后端切换模式
 
@@ -137,3 +153,4 @@ function migrateEndpoints(data) {
 - 2026-07-08: 新增节点复刻能力，数据层深拷贝整棵子树并为每个节点重新生成 UUID，根副本名称追加”（副本）”
 - 2026-07-17: 助手消息格式变更——移除 `msg.responses` 嵌套，每条 response 为独立 `{role:”assistant”, endpointId, content, status, ...}` 消息。`msg.content` 不再写入。存量数据在加载时由 `migrateSession` 自动 flat
 - 2026-07-17: 迁移函数 `migrateSession` 处理 3 种存量格式：(1) `responses` 数组→flat, (2) 老单端点 `endpointId` + 字符串 content (保持), (3) 远古无 endpointId 格式 (保留 content 字符串)
+- 2026-07-22: 会话新增 `modelParams` 字段（API 参数覆盖），新增工作空间参数覆盖系统（localStorage + `defaultSelectedEndpointParams`），用于无会话时/新建会话时的参数持久化

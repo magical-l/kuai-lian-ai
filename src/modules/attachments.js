@@ -1015,6 +1015,15 @@ async function testConnection(nodeId) {
 		             provider.testConfig;
 		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
 		if (rcfg.directUrl) tcfg.url = rcfg.baseUrl.replace(/\/+$/, '');
+		// Workspace param override (test connection)
+		var ovr2 = typeof defaultSelectedEndpointParams !== 'undefined' ? defaultSelectedEndpointParams[nodeId] : null;
+		if (ovr2) {
+			rcfg.params = rcfg.params || {};
+			for (var sk in ovr2) { if (ovr2.hasOwnProperty(sk) && sk !== '_custom') rcfg.params[sk] = ovr2[sk]; }
+			if (ovr2._custom && ovr2._custom.length) {
+				ovr2._custom.forEach(function(cp) { if (cp && cp.key && cp.key.trim()) rcfg.params[cp.key.trim()] = cp.value; });
+			}
+		}
 		mergeParams(tcfg.body, rcfg.params, rcfg.style);
 		var res = await fetchWithTimeout(tcfg.url, {
 			method: 'POST',
