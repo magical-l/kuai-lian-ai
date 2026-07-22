@@ -1382,6 +1382,12 @@ dialog[open] {
 					gap: var(--space-2);
 				}
 
+				/* 继承图标包装行：让 input 在继承态也能填满空间 */
+				& .input-row {
+					flex: 1;
+					min-width: 0;
+				}
+
 				/* Base URL 行：路径后缀与切换按钮 */
 				& .url-row > .flex {
 					display: flex;
