@@ -3,7 +3,7 @@ title: 数据管理层
 covers_file: [src/modules/store.js]
 depends_on: [storage-core.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-07-17
+last_updated: 2026-07-22
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -168,3 +168,4 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 2026-07-03 | `type` 字段加入节点数据模型和继承链 | 每个端点独立标注用途（chat/embedding/image/rerank），取代全局 inputMode 切换；inherit 后为空时 fallback 到 `detectModelType` 保证向后兼容 |
 | 2026-07-12 | `resolveNodeConfig` 增加类型别名归一 | 旧数据中 `img-generate`/`image`/`embed`/`rerank` 统一转为标准值；修复端点树图标和筛选 |
 | 2026-07-12 | `detectModelType` 增加 image-generation 检测 | 按关键词 `image`/`dall-e`/`diffusion`/`flux` 识别生图模型，自动设为 `image-generation` |
+| 2026-07-22 | `resolveNodeConfig` 增加 voice/instruction 向后兼容 | 旧版 TTS 节点将 voice/instruction 存为顶层字段而非 `node.params`，`config.params` 构建时补充读取顶层字段 |

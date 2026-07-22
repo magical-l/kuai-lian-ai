@@ -55,6 +55,13 @@ function renderParamControlsInDialog(dialog, rcfg, existingParams) {
 			if (val !== '') input.value = val;
 			else if (def.hasOwnProperty('default')) input.value = def.default;
 			ctrl.appendChild(input);
+		} else if (def.type === 'text') {
+			var input = document.createElement('input');
+			input.type = 'text'; input.name = 'param-' + def.key;
+			if (def.placeholder) input.placeholder = def.placeholder;
+			if (val !== '') input.value = val;
+			input.style.cssText = 'flex:1;min-width:0';
+			ctrl.appendChild(input);
 		} else if (def.type === 'select') {
 			var sel = document.createElement('select');
 			sel.name = 'param-' + def.key;

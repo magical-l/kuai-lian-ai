@@ -55,6 +55,9 @@ function resolveNodeConfig(nodeId) {
             if (node.params.hasOwnProperty(k)) config.params[k] = node.params[k];
         }
     }
+    // backward compat: old nodes store voice/instruction as top-level fields
+    if (node.voice && !config.params.hasOwnProperty('voice')) config.params.voice = node.voice;
+    if (node.instruction && !config.params.hasOwnProperty('instruction')) config.params.instruction = node.instruction;
     for (var i = ancestors.length - 1; i >= 0; i--) {
         var ap = ancestors[i].params;
         if (ap) {
