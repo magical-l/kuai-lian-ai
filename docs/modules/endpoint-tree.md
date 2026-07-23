@@ -190,3 +190,4 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-23 | 撤销滚动锚点方案，改为 `handleNodeDelete` 直接删 DOM 节点 + 跳过 `renderEndpointList` 重绘 | 滚动锚点无效——DOM 和 data 同时改变，`scrollIntoView` 找不到目标。更根本的方案是不重绘整棵树 |
 | 2026-07-23 | 补回 `renderEndpointList` 末尾被 AST 工具误删的 test-all 按钮状态更新代码 | AST 替换函数体时漏掉了 `renderTreeNode` 之后的 `.test-all` 更新逻辑，导致树重绘后 test-all 按钮状态卡在旧值 |
 | 2026-07-23 | `updateEndpointTestUI` Part 2/3 及 `renderEndpointList` test-all 按钮：混成状态时也显示叉叉（`anyFail` 而非 `anyFail && !anySuccess`） | 父节点兼有成功/失败的子节点时，原逻辑两个条件都不满足，按钮失去状态类 |
+| 2026-07-23 | `buildEndpointNodeEl` 中 tooltip 对象改存到 `summaryEl._tooltip` 而非 `nameSpan._tooltip` | tooltip 事件处理器挂在 `summaryEl` 上、读 `summaryEl._tooltip`，但创建时存到了 `nameSpan`，导致始终 `undefined`，hover 不显示 tooltip |

@@ -238,7 +238,7 @@ function buildEndpointNodeEl(node) {
 
 	var tooltipId = "tooltip-" + node.id;
 	var tooltipHTML = buildTooltipHTML(node, rcfg, node.name);
-	nameSpan._tooltip = createTooltip(tooltipId, nameSpan, tooltipHTML);
+	summaryEl._tooltip = createTooltip(tooltipId, nameSpan, tooltipHTML);
 	var opListEl = nodeEl.querySelector(".op");
 	var addChildBtn = opListEl.querySelector(".add-child");
 	detailsEl.addEventListener("toggle", e => handleDetailsToggle(e.currentTarget));
