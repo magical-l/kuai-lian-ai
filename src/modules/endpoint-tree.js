@@ -502,28 +502,35 @@ function applyEndpointFilter() {
 	}
 }
 function updateEndpointTestUI(nodeId) {
-	var nodeEl = document.querySelector('.one.endpoint[data-node-id="' + nodeId + '"]');
-	if (nodeEl) {
-		var testBtn = nodeEl.querySelector('.test-connection');
-		if (testBtn) {
-			testBtn.classList.remove('busy', 'connected', 'failed');
-			var sd = connectionStatus.get(nodeId);
-			if (sd) {
-				if (sd.status === "testing") {
-					testBtn.classList.add("busy");
-				} else if (sd.status === "connected") {
-					testBtn.classList.add("connected");
-				} else if (sd.status === "failed" || sd.status === "cors_blocked") {
-					testBtn.classList.add("failed");
-				}
-			}
-		}
-	}
-	// 2. 更新全局 test-all 按钮
-	var testAllBtn = document.querySelector(".test-all");
-	if (testAllBtn && typeof getGroups === "function") {
-		var allTestableIds = [];
-		function collectTestable(ns) {
+    var nodeEl = document.querySelector(".one.endpoint[data-node-id=\"" + nodeId + "\"]");
+
+    if (nodeEl) {
+        var testBtn = nodeEl.querySelector(".test-connection");
+
+        if (testBtn) {
+            testBtn.classList.remove("busy", "connected", "failed");
+            var sd = connectionStatus.get(nodeId);
+
+            if (sd) {
+                if (sd.status === "testing") {
+                    testBtn.classList.add("busy");
+                } else if (sd.status === "connected") {
+                    testBtn.classList.add("connected");
+                } else if (sd.status === "failed" || sd.status === "cors_blocked") {
+                    testBtn.classList.add("failed");
+                }
+            }
+
+            testBtn.title = getConnectionStatusText(nodeId);
+        }
+    }
+
+    var testAllBtn = document.querySelector(".test-all");
+
+    if (testAllBtn && typeof getGroups === "function") {
+        var allTestableIds = [];
+
+        function collectTestable(ns) {
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
 
@@ -534,64 +541,129 @@ function updateEndpointTestUI(nodeId) {
                     collectTestable(n.children);
             });
         }
-		collectTestable(getGroups());
-		var hasTesting = false, hasFail = false, hasSuccess = false;
-		allTestableIds.forEach(function(id) {
-			var sd = connectionStatus.get(id);
-			if (sd) {
-				if (sd.status === "testing") hasTesting = true;
-				else if (sd.status === "connected") hasSuccess = true;
-				else if (sd.status === "failed" || sd.status === "cors_blocked") hasFail = true;
-			}
-		});
-			testAllBtn.classList.remove("busy", "connected", "failed");
-			testAllBtn.classList.add("test-connection");
-			if (hasTesting) {
-				testAllBtn.classList.add("busy");
-			} else {
-				if (hasFail && !hasSuccess) testAllBtn.classList.add("failed");
-				else if (hasSuccess && !hasFail) testAllBtn.classList.add("connected");
-			}
-	}
-	// 3. 级联更新所有祖先节点的 batch 测试按钮（检查全部可测子孙节点）
-	var cur = nodeEl;
-	while (cur) {
-		var container = cur.parentElement;
-		if (!container || !container.classList.contains('children')) break;
-		var parentEl = container.closest('.one.endpoint');
-		if (!parentEl) break;
-		var pNode = getNode(parentEl.dataset.nodeId);
-		if (pNode) {
-			var tids = [];
-			(function collect(nds) {
-				nds.forEach(function(n) {
-					var cfg = resolveNodeConfig(n.id);
-					if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts"))
-						tids.push(n.id);
-					if (n.children) collect(n.children);
-				});
-			})([pNode]);
-			var anyTesting = false, anyFail = false, anySuccess = false;
-			tids.forEach(function(id) {
-				var cs = connectionStatus.get(id);
-				if (cs) {
-					if (cs.status === "testing") anyTesting = true;
-					else if (cs.status === "connected") anySuccess = true;
-					else if (cs.status === "failed" || cs.status === "cors_blocked") anyFail = true;
-				}
-			});
-			var parentBtn = parentEl.querySelector('.test-connection');
-			if (parentBtn) {
-				parentBtn.classList.remove("busy", "connected", "failed");
-				if (anyTesting) {
-					parentBtn.classList.add("busy");
-				} else {
-					if (anyFail && !anySuccess) parentBtn.classList.add("failed");
-					else if (anySuccess && !anyFail) parentBtn.classList.add("connected");
-				}
-			}
-		}
-		cur = parentEl;
-	}
 
+        collectTestable(getGroups());
+        var hasTesting = false, hasFail = false, hasSuccess = false;
+        var failCount = 0, successCount = 0;
+
+        allTestableIds.forEach(function(id) {
+            var sd = connectionStatus.get(id);
+
+            if (sd) {
+                if (sd.status === "testing")
+                    hasTesting = true;
+                else if (sd.status === "connected") {
+                    hasSuccess = true;
+                    successCount++;
+                } else if (sd.status === "failed" || sd.status === "cors_blocked") {
+                    hasFail = true;
+                    failCount++;
+                }
+            }
+        });
+
+        testAllBtn.classList.remove("busy", "connected", "failed");
+        testAllBtn.classList.add("test-connection");
+
+        if (hasTesting) {
+            testAllBtn.classList.add("busy");
+        } else {
+            if (hasFail && !hasSuccess)
+                testAllBtn.classList.add("failed");
+            else if (hasSuccess && !hasFail)
+                testAllBtn.classList.add("connected");
+        }
+
+        var testAllSummary = [];
+
+        if (successCount > 0)
+            testAllSummary.push(successCount + "个成功");
+
+        if (failCount > 0)
+            testAllSummary.push(failCount + "个失败");
+
+        testAllBtn.title = hasTesting ? "测试中..." : "全部测试 — " + (testAllSummary.length ? testAllSummary.join("，") : "无结果");
+    }
+
+    var cur = nodeEl;
+
+    while (cur) {
+        var container = cur.parentElement;
+
+        if (!container || !container.classList.contains("children"))
+            break;
+
+        var parentEl = container.closest(".one.endpoint");
+
+        if (!parentEl)
+            break;
+
+        var pNode = getNode(parentEl.dataset.nodeId);
+
+        if (pNode) {
+            var tids = [];
+
+            (function collect(nds) {
+                nds.forEach(function(n) {
+                    var cfg = resolveNodeConfig(n.id);
+
+                    if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts"))
+                        tids.push(n.id);
+
+                    if (n.children)
+                        collect(n.children);
+                });
+            })([pNode]);
+
+            var anyTesting = false, anyFail = false, anySuccess = false;
+            var pFailCount = 0, pSuccessCount = 0;
+
+            tids.forEach(function(id) {
+                var cs = connectionStatus.get(id);
+
+                if (cs) {
+                    if (cs.status === "testing")
+                        anyTesting = true;
+                    else if (cs.status === "connected") {
+                        anySuccess = true;
+                        pSuccessCount++;
+                    } else if (cs.status === "failed" || cs.status === "cors_blocked") {
+                        anyFail = true;
+                        pFailCount++;
+                    }
+                }
+            });
+
+            var parentBtn = parentEl.querySelector(".test-connection");
+
+            if (parentBtn) {
+                parentBtn.classList.remove("busy", "connected", "failed");
+
+                if (anyTesting) {
+                    parentBtn.classList.add("busy");
+                } else {
+                    if (anyFail && !anySuccess)
+                        parentBtn.classList.add("failed");
+                    else if (anySuccess && !anyFail)
+                        parentBtn.classList.add("connected");
+                }
+
+                if (tids.length === 1 && tids[0] === parentEl.dataset.nodeId) {
+                    parentBtn.title = getConnectionStatusText(parentEl.dataset.nodeId);
+                } else {
+                    var pStats = [];
+
+                    if (pSuccessCount > 0)
+                        pStats.push(pSuccessCount + "个成功");
+
+                    if (pFailCount > 0)
+                        pStats.push(pFailCount + "个失败");
+
+                    parentBtn.title = anyTesting ? "测试中..." : "测试连接（含" + tids.length + "个端点） — " + (pStats.length ? pStats.join("，") : "无结果");
+                }
+            }
+        }
+
+        cur = parentEl;
+    }
 }

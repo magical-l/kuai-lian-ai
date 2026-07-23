@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-15
+last_updated: 2026-07-23
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -121,7 +121,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 
 行 505-597。三段式更新：
 
-1. **单节点**：按 `data-node-id` 定位 DOM，根据 `connectionStatus.get(nodeId)` 更新按钮 class（`.testing` / `.connected` / `.failed`）+ title
+1. **单节点**：按 `data-node-id` 定位 DOM，根据 `connectionStatus.get(nodeId)` 更新按钮 class（`.testing` / `.connected` / `.failed`）+ title（`getConnectionStatusText`）
 2. **全局 test-all 按钮**：遍历所有可测试节点，汇总状态
 3. **所有祖先 batch 测试按钮**（while 循环爬升 DOM 链）：对每个祖先节点，用 `collectTestableIds` 收集其全部可测子孙节点，从 `connectionStatus` 检查状态（testing/connected/failed），同步祖先按钮。测试中有子孙则设 `.busy`，全部通过则 `.connected`，有失败则 `.failed`。
 
@@ -183,4 +183,5 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-13 | 交互事件绑定从 HTML 内联属性回到 JS addEventListener | Chrome 扩展 CSP script-src 'self' 禁止内联脚本，所有 46 处 onxxx 改回 JS 绑定，详见 main.md 对应条目 |
 | 2026-07-13 | 测试按钮 CSS class 从 .testing（+ 内 span .spin.animation）改为 .connecting（按钮隐藏，由兄弟 .status.icon.wait 沙漏图标站台） | common.css 新增 .btn.busy + .btn:not(.busy) + .status.icon.wait + .btn + .status.icon 组件模式，沙漏翻转动画替代旋转动画；,
 
-| 2026-07-13 | 测试按钮 CSS class 从 （+ 内 span ）改为 （按钮隐藏，由兄弟  沙漏图标站台） | common.css 新增  +  +  组件模式，沙漏翻转动画替代旋转动画 |
+| 2026-07-13 | 测试按钮 CSS class 从 `.testing`（+ 内 span `.spin.animation`）改为 `.connecting`（按钮隐藏，由兄弟 `.status.icon.wait` 沙漏图标站台） | common.css 新增 `.btn.busy + .btn:not(.busy) + .status.icon.wait + .btn + .status.icon` 组件模式，沙漏翻转动画替代旋转动画 |
+| 2026-07-23 | `updateEndpointTestUI` 除 CSS class 外，同步更新按钮的 `title` 属性（含错误信息和时间戳） | 测试完成后 hover 仍显示"未测试"，因 `title` 从未更新——只改了视觉 class 没改 tooltip 文案 |
