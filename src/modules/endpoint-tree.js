@@ -217,6 +217,8 @@ function buildEndpointNodeEl(node) {
 	var nameSpan = nodeEl.querySelector(".name");
 	var rcfg = resolveNodeConfig(node.id);
 	nameSpan.textContent = node.name;
+	var remEl = nodeEl.querySelector(".remark");
+	if (remEl) remEl.textContent = node.remark ? " " + node.remark : "";
 	var typeEl = nodeEl.querySelector(".endpoint-type");
 
 	if (typeEl) {
