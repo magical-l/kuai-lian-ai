@@ -392,20 +392,53 @@ async function handleSessionDelete(sessionId) {
 }
 
 function handleAddGroup() {
-	showEditGroupDialog(null, null, async (data) => {
-		await addNode(null, data);
-		await refreshUI();
-	});
+    showEditGroupDialog(null, null, async data => {
+        var createdIds = await addNode(null, data);
+        var newId = createdIds && createdIds[0];
+
+        if (newId) {
+            var newNode = getNode(newId);
+
+            if (newNode) {
+                var container = document.querySelector("aside.endpoint.list > ol");
+                container.appendChild(buildEndpointNodeEl(newNode));
+            }
+        }
+
+        await refreshUI({
+            skipEndpointTree: true
+        });
+
+        updateEmptyState();
+    });
 }
 
 function handleNodeEdit(nodeId) {
-	const node = getNode(nodeId);
-	if (!node) return;
-	showEditGroupDialog(node, null, async (data) => {
-		clearTestResults(nodeId);
-		await updateNode(nodeId, data);
-		await refreshUI();
-	});
+    const node = getNode(nodeId);
+
+    if (!node)
+        return;
+
+    showEditGroupDialog(node, null, async data => {
+        clearTestResults(nodeId);
+        await updateNode(nodeId, data);
+        var updatedNode = getNode(nodeId);
+
+        if (updatedNode) {
+            var oldEl = document.querySelector(".one.endpoint[data-node-id=\"" + nodeId + "\"]");
+
+            if (oldEl) {
+                var newEl = buildEndpointNodeEl(updatedNode);
+                oldEl.replaceWith(newEl);
+            }
+        }
+
+        await refreshUI({
+            skipEndpointTree: true
+        });
+
+        updateEmptyState();
+    });
 }
 async function handleNodeDelete(nodeId) {
 	// 清理 selectedEndpoints 中属于该端点的引用

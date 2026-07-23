@@ -186,6 +186,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-13 | 测试按钮 CSS class 从 `.testing`（+ 内 span `.spin.animation`）改为 `.connecting`（按钮隐藏，由兄弟 `.status.icon.wait` 沙漏图标站台） | common.css 新增 `.btn.busy + .btn:not(.busy) + .status.icon.wait + .btn + .status.icon` 组件模式，沙漏翻转动画替代旋转动画 |
 | 2026-07-23 | `updateEndpointTestUI` 除 CSS class 外，同步更新按钮的 `title` 属性（含错误信息和时间戳） | 测试完成后 hover 仍显示"未测试"，因 `title` 从未更新——只改了视觉 class 没改 tooltip 文案 |
 | 2026-07-23 | `renderEndpointList` 新增滚动位置保持：渲染前记住第一个可见节点 ID，渲染后 `scrollIntoView({ block: 'nearest' })` | 删除端点后全量重绘导致滚动位置丢失，"定位不准" |
+| 2026-07-23 | 抽取 `buildEndpointNodeEl(node)` 独立函数，单点增/改/克隆直接插 DOM，不再全量重建 | 全量重建浪费 + 滚动位置丢失。与删除走同一模式：局部 DOM 操作 + `refreshUI({skipEndpointTree: true})` |
 | 2026-07-23 | 撤销滚动锚点方案，改为 `handleNodeDelete` 直接删 DOM 节点 + 跳过 `renderEndpointList` 重绘 | 滚动锚点无效——DOM 和 data 同时改变，`scrollIntoView` 找不到目标。更根本的方案是不重绘整棵树 |
 | 2026-07-23 | 补回 `renderEndpointList` 末尾被 AST 工具误删的 test-all 按钮状态更新代码 | AST 替换函数体时漏掉了 `renderTreeNode` 之后的 `.test-all` 更新逻辑，导致树重绘后 test-all 按钮状态卡在旧值 |
 | 2026-07-23 | `updateEndpointTestUI` Part 2/3 及 `renderEndpointList` test-all 按钮：混成状态时也显示叉叉（`anyFail` 而非 `anyFail && !anySuccess`） | 父节点兼有成功/失败的子节点时，原逻辑两个条件都不满足，按钮失去状态类 |
