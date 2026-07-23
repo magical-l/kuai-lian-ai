@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.29.1</span>
+			<span class="version">v6.30.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -312,9 +312,11 @@
 						<span class="char-style icon , attach"></span>
 						<input type="file" multiple accept="*/*">
 					</label>
-					<button class="btn : record , square shape" title="录制语音" aria-pressed="false">
-						<span class="char-style icon , mic"></span>
-					</button>
+					<label class="btn : toggle , record , square shape" title="录制语音">
+							<input type="checkbox" hidden>
+							<span class="char-style icon : on , mic"></span>
+							<span class="char-style icon : off , stop"></span>
+						</label>
 
 					<div title="发送" class="split-style btn-group : send , flex items-go-x items-from-left">
 						<button class="main btn : send , primary">

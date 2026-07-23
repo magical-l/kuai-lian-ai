@@ -64,20 +64,19 @@ async function handleFileInputChange(input) {
     renderPendingAttachments();
 }
 
-async function handleRecordClick() {
+async function handleRecordToggle() {
+    var cb = document.querySelector('.record.btn input[type="checkbox"]');
     var btn = document.querySelector('.record.btn');
-    if (typeof isRecording === 'function' && isRecording()) {
-        stopRecording();
-        btn.classList.remove('recording');
-        btn.title = '录制语音';
-        btn.setAttribute('aria-pressed', 'false');
-    } else {
+    if (cb.checked) {
         var ok = await startRecording();
         if (ok) {
-            btn.classList.add('recording');
             btn.title = '停止录制';
-            btn.setAttribute('aria-pressed', 'true');
+        } else {
+            cb.checked = false;
         }
+    } else {
+        stopRecording();
+        btn.title = '录制语音';
     }
 }
 
@@ -151,7 +150,7 @@ async function init() {
 	// 文件上传
 	$('.add.attachment.btn input[type="file"]').on('change', e => handleFileInputChange(e.currentTarget));
 	// 音频录制
-	$('.record.btn').on('click', handleRecordClick);
+	$('.record.btn input[type="checkbox"]').on('change', handleRecordToggle);
 	// 发送 & 全部停止
 	$('.main.btn.send').on('click', handleSend);
 	$('.stop-all-response').on('click', handleStopAllResponses);

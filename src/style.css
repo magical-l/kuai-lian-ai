@@ -856,13 +856,14 @@ main {
 }
 .mic { --char-mic: '🎤'; --icon-char: var(--char-mic); }
 
-/* 录音按钮：录音中切换图标+声波可视化 */
-.record.btn.recording {
-	--btn-color: var(--danger);
+/* 录音按钮：label.toggle 内 checkbox :checked 驱动图标切换 + 声波可视化 */
+.record.btn {
 	position: relative;
 	overflow: hidden;
-	& .icon.mic {
-		--icon-char: '⏹';
+	&:has(:checked) {
+		--btn-color: var(--danger);
+	}
+	& .icon {
 		position: relative;
 		z-index: 1;
 	}
