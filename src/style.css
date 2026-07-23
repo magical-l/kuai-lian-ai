@@ -856,17 +856,35 @@ main {
 }
 .mic { --char-mic: '🎤'; --icon-char: var(--char-mic); }
 
-/* 录音按钮：录音中切换图标+脉冲提示 */
+/* 录音按钮：录音中切换图标+声波可视化 */
 .record.btn.recording {
 	--btn-color: var(--danger);
-	animation: recording-pulse 1.2s ease-in-out infinite;
+	position: relative;
+	overflow: hidden;
 	& .icon.mic {
 		--icon-char: '⏹';
+		position: relative;
+		z-index: 1;
 	}
-}
-@keyframes recording-pulse {
-	0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 40%, transparent); }
-	50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 0%, transparent); }
+	& .wave {
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		gap: 1px;
+		position: absolute;
+		inset: 2px;
+		pointer-events: none;
+		z-index: 0;
+		& .bar {
+			flex: 1;
+			max-width: 3px;
+			border-radius: 1px;
+			background: var(--danger);
+			opacity: 0.8;
+			height: calc(var(--h) * 1%);
+			min-height: 0;
+		}
+	}
 }
 
 .image-preview-overlay {

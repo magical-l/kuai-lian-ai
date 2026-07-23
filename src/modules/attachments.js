@@ -12,7 +12,57 @@ var _recordingChunks = [];
 var _recordingMimeType = '';
 var _recordingTimer = null;
 
+// 波形可视化
+var _audioCtx = null;
+var _audioAnalyser = null;
+var _audioDataArray = null;
+var _waveAnimId = null;
+var _waveBars = null;
+var _barCount = 10;
+
 function isRecording() { return _mediaRecorder && _mediaRecorder.state === 'recording'; }
+
+function _cleanupWave() {
+	if (_waveAnimId) { cancelAnimationFrame(_waveAnimId); _waveAnimId = null; }
+	if (_audioCtx) { _audioCtx.close(); _audioCtx = null; }
+	_audioAnalyser = null;
+	_audioDataArray = null;
+	if (_waveBars) {
+		var parent = _waveBars[0] && _waveBars[0].parentNode;
+		if (parent) parent.remove();
+		_waveBars = null;
+	}
+}
+
+function _startWaveLoop(btn) {
+	var waveContainer = document.createElement('div');
+	waveContainer.className = 'wave';
+	for (var i = 0; i < _barCount; i++) {
+		var bar = document.createElement('span');
+		bar.className = 'bar';
+		waveContainer.appendChild(bar);
+	}
+	btn.appendChild(waveContainer);
+	_waveBars = waveContainer.querySelectorAll('.bar');
+
+	var smoothed = new Float32Array(_barCount);
+
+	function tick() {
+		if (!_audioAnalyser) { _waveAnimId = requestAnimationFrame(tick); return; }
+		_audioAnalyser.getByteFrequencyData(_audioDataArray);
+		var len = Math.min(_audioDataArray.length, _barCount);
+		for (var i = 0; i < len; i++) {
+			var raw = _audioDataArray[i] / 255;
+			// 噪声门限 + 指数平滑
+			_audioDataArray[i] < 40 ? (raw = 0) : 0;
+			smoothed[i] = smoothed[i] * 0.6 + raw * 0.4;
+			var pct = Math.max(0, Math.min(1, smoothed[i] * 1.2));
+			_waveBars[i].style.setProperty('--h', Math.round(pct * 100));
+		}
+		_waveAnimId = requestAnimationFrame(tick);
+	}
+	tick();
+}
 
 async function startRecording() {
 	if (isRecording()) return;
@@ -35,6 +85,20 @@ async function startRecording() {
 			_recordingChunks = [];
 		};
 		_mediaRecorder.start(100);
+
+		// 初始化音频分析
+		try {
+			_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+			var source = _audioCtx.createMediaStreamSource(stream);
+			_audioAnalyser = _audioCtx.createAnalyser();
+			_audioAnalyser.fftSize = 32;
+			source.connect(_audioAnalyser);
+			_audioDataArray = new Uint8Array(_audioAnalyser.frequencyBinCount);
+			var btn = document.querySelector('.record.btn');
+			if (btn) _startWaveLoop(btn);
+		} catch (e) {
+			// 音频分析非致命，可视化不可用不影响录音
+		}
 		return true;
 	} catch (err) {
 		if (err.name === 'NotAllowedError') {
@@ -50,6 +114,7 @@ function stopRecording() {
 	if (!isRecording()) return;
 	_mediaRecorder.stop();
 	_mediaRecorder = null;
+	_cleanupWave();
 }
 
 function getMediaType(filename) {
