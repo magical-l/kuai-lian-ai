@@ -851,6 +851,36 @@ async function handleNewSession() {
 	if (inputEl) inputEl.focus();
 }
 
+	async function handleFork(msgIndex) {
+		if (!currentSession) return;
+		const messages = currentSession.messages;
+		if (msgIndex < 0 || msgIndex >= messages.length) return;
+		const msg = messages[msgIndex];
+		if (msg.role !== 'user') return;
+		const normalized = normalizeMessageContent(msg);
+		const textItems = normalized.filter(c => c.type === 'text' || c.type === 'file_text');
+		const forkText = textItems.map(c => c.text || '').join('\n');
+		const contextMessages = messages.slice(0, msgIndex);
+		const newSession = {
+			id: generateUUID(),
+			title: currentSession.title + '（分叉）',
+			createdAt: Date.now(),
+			messages: JSON.parse(JSON.stringify(contextMessages)),
+			modelParams: currentSession.modelParams ? JSON.parse(JSON.stringify(currentSession.modelParams)) : {}
+		};
+		sessionsCache.set(newSession.id, newSession);
+		await saveSession(newSession);
+		selectedEndpoints = [...selectedEndpoints];
+		currentSession = newSession;
+		await refreshUI();
+		const inputEl = $('#chat-input');
+		if (inputEl) {
+			inputEl.value = forkText;
+			inputEl.focus();
+			inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+		}
+	}
+
 // ========== 主题管理 ==========
 let themeMode = null; // 'light' | 'dark' | null(null=系统)
 

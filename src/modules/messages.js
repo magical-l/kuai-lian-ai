@@ -17,6 +17,15 @@ function handleCopyCodeClick(btn) {
 		setTimeout(() => btn.classList.remove('done'), 1500);
 	});
 }
+function handleForkClick(btn) {
+	const msgEl = btn.closest('.msg.request.one');
+	if (!msgEl) return;
+	const idx = parseInt(msgEl.dataset.msgIndex, 10);
+	if (isNaN(idx)) return;
+	if (typeof handleFork === 'function') {
+		handleFork(idx);
+	}
+}
 function renderMarkdown(text) {
 	if (!text) return '';
 	marked.setOptions({
@@ -84,9 +93,11 @@ function renderMessages(messages, groups, onCopy) {
 	messages.forEach((msg, index) => {
 		if (msg.role === 'user') {
 			const msgEl = mk('article', 'msg request one , flex items-go-y');
+			msgEl.dataset.msgIndex = index;
 			// 使用模板创建meta，包含复制按钮
 			const meta = fromTemplate('user-header', 'header');
 			meta.querySelector(".copy.content").addEventListener("click", e => handleCopyContentClick(e.currentTarget));
+			meta.querySelector(".fork").addEventListener("click", e => handleForkClick(e.currentTarget));
 			const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 			$('.time', meta).textContent = timeStr;
 			msgEl.addChild(meta);
@@ -165,8 +176,12 @@ function renderMessages(messages, groups, onCopy) {
 function appendUserMessage(msg) {
 		const container = $('.msg.list');
 		const msgEl = mk('article', 'msg request one , flex items-go-y');
+		const idx = currentSession ? currentSession.messages.indexOf(msg) : -1;
+		if (idx >= 0) msgEl.dataset.msgIndex = idx;
 		const meta = fromTemplate('user-header', 'header');
 		meta.querySelector(".copy.content").addEventListener("click", e => handleCopyContentClick(e.currentTarget));
+		const forkBtn = meta.querySelector(".fork");
+		if (forkBtn) forkBtn.addEventListener("click", e => handleForkClick(e.currentTarget));
 		const timeStr = msg.timestamp ? formatDateTime(msg.timestamp) : '';
 		$('.time', meta).textContent = timeStr;
 		msgEl.addChild(meta);

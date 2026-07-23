@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-22
+last_updated: 2026-07-23
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -60,6 +60,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `reorderCardsBySpeed` | 按首 token 时间重排卡片 |
 | `reorderSelectorTagsBySpeed` | 同步重排选中标签 |
 | `handleNewSession` | 新建会话 |
+| `handleFork` | 分叉会话：从指定消息分叉，复制历史消息到新会话，消息文本填入输入框 |
 | `initTheme` | 主题初始化：读 settings → 同步 html.class → 注册 matchMedia 监听 |
 | `applyThemeClass` | 操作 html 的 `.dark`/`.light` class |
 | `setThemePref` | 三态切换：存 settings → 应用 class → 更新按钮图标 |
@@ -203,6 +204,7 @@ showThinkingCards(idList, groups, sessionId)
 | `handleReorderNode` | 拖拽排序 | clearTestResults → reorderNode → refreshUI |
 | `handleMoveNodeAsChild` | 跨级降级 | clearTestResults → moveNodeAsChild → refreshUI |
 | `handleNewSession()` | 新建会话 | 清空 currentSession → 从 defaultSelectedEndpoints 恢复端点 → refreshUI |
+| `handleFork(msgIndex)` | 分叉按钮 | 复制 msgIndex 之前所有消息到新会话 → 切换到新会话 → 该消息文本填入输入框 |
 | `handleTestAllConnections()` | test-all 按钮 | 遍历所有节点 testConnection |
 | `handleStopAllResponses()` | stop 按钮 | stopAllGenerations + setButtonState(false, false) |
 | `handleShowHelp()` | help 按钮 | 检测是否有已保存 handle → showHelpDialog |
@@ -300,3 +302,4 @@ radio change → setThemePref(mode)
 | 2026-07-13 | 事件绑定从 HTML 内联属性回到 JS addEventListener | Chrome 扩展 CSP script-src 'self' 禁止内联 onclick/onchange/ontoggle 等，所有 46 处 onxxx 改为 init() 中的 .on() 或模板克隆后的 addEventListener |
 | 2026-07-22 | TTS handler 新增会话参数覆盖合并（与 image generation 模式一致） | 修复 TTS 端点绕过会话级 voice/instruction 覆盖的 bug |
 | 2026-07-22 | TTS 播放器从 `.content > .audio-result` 移到 `.say` 内部 | `(无内容)` 占位文本被 `<audio controls>` 播放器取代；updateCardAsAudio 和 messages.js 音频渲染同步修改 |
+| 2026-07-22 | 新增消息分叉功能（handleFork） | 用户消息 header 新增分叉按钮，点击后以该消息为分叉点创建新会话（复制之前的历史消息），消息文本填入输入框，等待编辑/重发 |

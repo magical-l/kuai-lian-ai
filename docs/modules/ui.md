@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -53,6 +53,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `handleSessionListItemClick` | session-list.js | 会话列表项点击，切换当前会话 |
 | `handleCopyContentClick` | messages.js | 复制内容按钮，clipboard.writeText |
 | `handleCopyCodeClick` | messages.js | 复制代码块按钮 |
+| `handleForkClick` | messages.js | 分叉按钮点击处理：从 article data-msg-index 取索引，调用 handleFork |
 | `handleScrollTop` | ui-utils.js | 滚动导航到消息区顶部 |
 | `handleScrollBottom` | ui-utils.js | 滚动导航到消息区底部 |
 | `isTextFile` | attachments.js | 判断文件扩展名是否为可读取的文本 |
@@ -117,9 +118,9 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 **renderMarkdown** (行 2)：封装 `marked.parse`，开启 `breaks` 和 `gfm`。
 
-**renderMessages** (行 30)：清空 `.msg.list`，遍历 `messages` 数组。用户消息渲染为 `.msg.request.one` 结构（含头像、meta 时间、复制按钮、文本内容、附件栏）。响应消息委托给 `renderResponse`（调用前清除所有已有响应卡片的 `data-endpoint-id`，确保每条 assistant 消息都创建独立卡片，不互相覆盖）。
+**renderMessages** (行 30)：清空 `.msg.list`，遍历 `messages` 数组。用户消息渲染为 `.msg.request.one` 结构（含头像、meta 时间、复制按钮、分叉按钮、文本内容、附件栏），article 设 `data-msg-index` 供分叉定位。响应消息委托给 `renderResponse`（调用前清除所有已有响应卡片的 `data-endpoint-id`，确保每条 assistant 消息都创建独立卡片，不互相覆盖）。
 
-**appendUserMessage** (行 63)：从 `renderMessages` 中提取的单条用户消息渲染函数，只追加不重建。发送消息时 `handleSend` 改用此函数替代 `renderMessages`，避免清空已有消息列表。旧回复卡片保留在 DOM 中（仅清除 `data-endpoint-id` / `data-session-id` 防止冲突）。
+**appendUserMessage** (行 63)：从 `renderMessages` 中提取的单条用户消息渲染函数，只追加不重建。发送消息时 `handleSend` 改用此函数替代 `renderMessages`，避免清空已有消息列表。旧回复卡片保留在 DOM 中（仅清除 `data-endpoint-id` / `data-session-id` 防止冲突）。通过 `currentSession.messages.indexOf(msg)` 定位消息索引，article 设 `data-msg-index` 供分叉按钮使用。
 
 **renderResponse** (行 120)：按 `firstTokenTime` 排序后端响应。对每个 response：
 - 复用已有的 streaming card（`data-endpoint-id` 匹配），或从 template 新建
@@ -287,3 +288,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-16 | 批量创建 style/type 新增显式"继承"选项 | 与单节点对话框一致，默认选中"继承"且互斥于具体值；有父节点时显示继承值标签；提交时跳过空值标记使节点运行时自然继承 |
 | 2026-07-20 | 编辑弹窗字段顺序重排：名称→模型名→类型→接口风格→Base URL→API Key→备注 | 逻辑分组：标识信息放前（名称+模型名+类型），协议信息居中（接口风格+Base URL），认证信息最后；名称加 placeholder 提示默认值 |
 | 2026-07-23 | Base URL 行新增路径后缀显示 + checkbox 驱动的 directUrl 切换 | 路径映射基于实际 API 文档（含 style+type+modelId 三维度）；toggle 改用 common.css `.toggle` 模式，checkbox 驱动 ✕/ 图标切换；视觉上路径与按钮包裹为 `.path-group`；弹窗宽度 720→800px |
+| 2026-07-23 | 用户消息 header 新增分叉按钮（handleForkClick） | renderMessages 设 data-msg-index 供分叉定位；appendUserMessage 通过 indexOf 获取消息索引；fork 按钮事件绑定在 meta.querySelector('.fork') |
