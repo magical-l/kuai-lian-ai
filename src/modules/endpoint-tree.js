@@ -392,6 +392,52 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
     }
 
     renderTreeNode(nodes, container);
+    var testAllBtn = document.querySelector(".test-all");
+
+    if (testAllBtn && typeof getGroups === "function") {
+        var allTestableIds = [];
+
+        function collectAllTestable(ns) {
+            ns.forEach(function(n) {
+                var cfg = resolveNodeConfig(n.id);
+
+                if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts"))
+                    allTestableIds.push(n.id);
+
+                if (n.children)
+                    collectAllTestable(n.children);
+            });
+        }
+
+        collectAllTestable(getGroups());
+        var hasTesting = false, hasFail = false, hasSuccess = false;
+
+        allTestableIds.forEach(function(id) {
+            var sd = connectionStatus.get(id);
+
+            if (sd) {
+                if (sd.status === "testing")
+                    hasTesting = true;
+                else if (sd.status === "connected")
+                    hasSuccess = true;
+                else if (sd.status === "failed" || sd.status === "cors_blocked")
+                    hasFail = true;
+            }
+        });
+
+        testAllBtn.classList.remove("busy", "connected", "failed");
+        testAllBtn.classList.add("test-connection");
+
+        if (hasTesting) {
+            testAllBtn.classList.add("busy");
+        } else {
+            if (hasFail)
+                testAllBtn.classList.add("failed");
+            else if (hasSuccess)
+                testAllBtn.classList.add("connected");
+        }
+    }
+
     initEndpointFilter();
     applyEndpointFilter();
     updateEmptyState();
@@ -539,9 +585,9 @@ function updateEndpointTestUI(nodeId) {
         if (hasTesting) {
             testAllBtn.classList.add("busy");
         } else {
-            if (hasFail && !hasSuccess)
+            if (hasFail)
                 testAllBtn.classList.add("failed");
-            else if (hasSuccess && !hasFail)
+            else if (hasSuccess)
                 testAllBtn.classList.add("connected");
         }
 
@@ -613,9 +659,9 @@ function updateEndpointTestUI(nodeId) {
                 if (anyTesting) {
                     parentBtn.classList.add("busy");
                 } else {
-                    if (anyFail && !anySuccess)
+                    if (anyFail)
                         parentBtn.classList.add("failed");
-                    else if (anySuccess && !anyFail)
+                    else if (anySuccess)
                         parentBtn.classList.add("connected");
                 }
 
