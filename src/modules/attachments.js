@@ -6,9 +6,65 @@ function isTextFile(filename) {
 	return textExtensions.includes(ext);
 }
 
+// ========== Audio recording ==========
+var _mediaRecorder = null;
+var _recordingChunks = [];
+var _recordingMimeType = '';
+var _recordingTimer = null;
+
+function isRecording() { return _mediaRecorder && _mediaRecorder.state === 'recording'; }
+
+async function startRecording() {
+	if (isRecording()) return;
+	try {
+		var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+		_mediaRecorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4' });
+			_recordingMimeType = _mediaRecorder.mimeType;
+		_recordingChunks = [];
+		_mediaRecorder.ondataavailable = function(e) {
+			if (e.data.size > 0) _recordingChunks.push(e.data);
+		};
+		_mediaRecorder.onstop = function() {
+			stream.getTracks().forEach(function(t) { t.stop(); });
+			var mt = _recordingMimeType || 'audio/webm';
+			var blob = new Blob(_recordingChunks, { type: mt });
+			var ext = mt.includes('webm') ? '.webm' : '.mp4';
+			var file = new File([blob], 'recording' + ext, { type: mt, lastModified: Date.now() });
+			addAttachment(file);
+			renderPendingAttachments();
+			_recordingChunks = [];
+		};
+		_mediaRecorder.start(100);
+		return true;
+	} catch (err) {
+		if (err.name === 'NotAllowedError') {
+			alert('麦克风权限被拒绝，请在浏览器设置中允许麦克风访问。');
+		} else {
+			alert('启动录音失败: ' + err.message);
+		}
+		return false;
+	}
+}
+
+function stopRecording() {
+	if (!isRecording()) return;
+	_mediaRecorder.stop();
+	_mediaRecorder = null;
+}
+
 function getMediaType(filename) {
 	const dotIndex = filename.lastIndexOf('.');
 	const ext = dotIndex > 0 ? filename.toLowerCase().slice(dotIndex) : '';
+	const audioTypes = {
+		'.mp3': 'audio/mpeg',
+		'.wav': 'audio/wav',
+		'.ogg': 'audio/ogg',
+		'.webm': 'audio/webm',
+		'.m4a': 'audio/mp4',
+		'.flac': 'audio/flac',
+		'.aac': 'audio/aac',
+		'.wma': 'audio/x-ms-wma'
+	};
 	const imageTypes = {
 		'.jpg': 'image/jpeg',
 		'.jpeg': 'image/jpeg',
@@ -19,6 +75,7 @@ function getMediaType(filename) {
 		'.svg': 'image/svg+xml'
 	};
 	if (imageTypes[ext]) return imageTypes[ext];
+	if (audioTypes[ext]) return audioTypes[ext];
 	const fileTypes = {
 		'.pdf': 'application/pdf',
 		'.doc': 'application/msword',
@@ -79,7 +136,7 @@ async function addAttachment(file) {
 		mediaType: getMediaType(file.name),
 		previewUrl: null // 缩略图 URL（图片用）
 	};
-	if (isImage) {
+	if (isImage || file.type.startsWith('audio/')) {
 		attachment.previewUrl = await new Promise((resolve, reject) => {
 			const reader = new FileReader();
 			reader.onload = () => resolve(reader.result);
@@ -173,7 +230,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var urlRow = $('.url-row', dialog);
 			function apiPath(style, type, modelId) {
 			var paths = {
-				openai: { chat: '/v1/chat/completions', embedding: '/v1/embeddings', 'image-generation': '/v1/images/generations', tts: '/v1/audio/speech', reranking: '/v1/rerank' },
+				openai: { chat: '/v1/chat/completions', embedding: '/v1/embeddings', 'image-generation': '/v1/images/generations', tts: '/v1/audio/speech', reranking: '/v1/rerank', asr: '/v1/audio/transcriptions' },
 				claude: { chat: '/v1/messages' },
 				gemini: { chat: '/v1beta/models/' + (modelId || '{modelId}') + ':streamGenerateContent?alt=sse', embedding: '/v1beta/models/' + (modelId || '{modelId}') + ':embedContent', 'image-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', tts: '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent' }
 			};
@@ -639,7 +696,8 @@ function buildBatchFields(dialog, parentId) {
 			{ value: 'embedding', icon: 'digits', text: '嵌入' },
 			{ value: 'image-generation', icon: 'palette', text: '生图' },
 			{ value: 'reranking', icon: 'chart', text: '重排序' },
-			{ value: 'tts', icon: 'speaker', text: '语音' }
+			{ value: 'tts', icon: 'speaker', text: '语音' },
+			{ value: 'asr', icon: 'mic', text: '语音识别' }
 		]},
 		{ key: 'key', label: 'API Key' },
 		{ key: 'modelId', label: '模型名', placeholder: '如 gpt-4o' }
@@ -1012,6 +1070,7 @@ async function testConnection(nodeId) {
 		var modelType = detectModelType(modelName);
 		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig :
 		             (modelType === 'tts' && provider.testTTSConfig) ? provider.testTTSConfig :
+		             (modelType === 'asr' && provider.testASRConfig) ? provider.testASRConfig :
 		             provider.testConfig;
 		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
 		if (rcfg.directUrl) tcfg.url = rcfg.baseUrl.replace(/\/+$/, '');
@@ -1025,11 +1084,16 @@ async function testConnection(nodeId) {
 			}
 		}
 		mergeParams(tcfg.body, rcfg.params, rcfg.style);
-		var res = await fetchWithTimeout(tcfg.url, {
+		var fetchOpts = {
 			method: 'POST',
 			headers: tcfg.headers,
-			body: JSON.stringify(tcfg.body)
-		}, 30000);
+		};
+		if (tcfg.body instanceof FormData) {
+			fetchOpts.body = tcfg.body;
+		} else {
+			fetchOpts.body = JSON.stringify(tcfg.body);
+		}
+		var res = await fetchWithTimeout(tcfg.url, fetchOpts, 30000);
 		if (res && res.ok) {
 			// 检测 HTTP 200 但返回了 HTML 错误页面的情况
 			var ct = (res.headers.get('content-type') || '');
@@ -1132,27 +1196,36 @@ function renderPendingAttachments() {
 	if (!row) return;
 	row.innerHTML = '';
 	pendingAttachments.forEach(att => {
-		const thumb = mk('div', `thumb icon ${att.type === 'image' ? 'image' : 'file'} , flex items-go-x`);
-		thumb.dataset.id = att.id;
+		var typeClass = att.type;
+		if (att.file && att.file.type && att.file.type.indexOf('audio/') === 0) typeClass = 'audio';
+		else if (typeClass !== 'image') typeClass = 'file';
+		const el = mk('div', `one attachment ${typeClass} , flex items-go-x`);
+		el.dataset.id = att.id;
+		const thumb = mk('div', 'thumb');
 		if (att.type === 'image' && att.previewUrl) {
 			thumb.style.backgroundImage = `url(${att.previewUrl})`;
+			thumb.style.backgroundSize = 'cover';
+			thumb.style.backgroundPosition = 'center';
+		} else if (typeClass === 'audio') {
+			thumb.classList.add('icon', 'char-style', 'mic');
 		} else {
-			thumb.textContent = '';
+			thumb.classList.add('icon', 'char-style', 'file');
 		}
 		// hover显示名字
 		thumb.onmouseenter = () => showAttachmentTooltip(att.name, thumb);
 		thumb.onmouseleave = () => hideAttachmentTooltip();
-		const remove = mk('span', 'icon remove btn');
-		remove.textContent = '';
+		// 删除按钮
+		const remove = mk('button', 'icon remove btn , char-style');
 		remove.onclick = (e) => {
 			e.stopPropagation();
 			removeAttachment(att.id);
 			renderPendingAttachments();
 		};
-		thumb.appendChild(remove);
+		el.appendChild(thumb);
+		el.appendChild(remove);
 		// 点击预览
-		thumb.onclick = () => showAttachmentPreview(att);
-		row.appendChild(thumb);
+		el.onclick = () => showAttachmentPreview(att);
+		row.appendChild(el);
 	});
 }
 

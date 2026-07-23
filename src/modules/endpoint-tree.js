@@ -212,6 +212,8 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                     typeEl.classList.add("chart");
                 } else if (type === "tts") {
                     typeEl.classList.add("speaker");
+                } else if (type === "asr") {
+                    typeEl.classList.add("mic");
                 }
             }
 
@@ -263,7 +265,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
                 if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId)
                     return false;
 
-                return cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed";
+                return cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "asr";
             }
 
             function collectTestable(nds, out) {
@@ -401,7 +403,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             ns.forEach(function(n) {
                 var cfg = resolveNodeConfig(n.id);
 
-                if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts"))
+                if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts" || cfg.type === "asr"))
                     allTestableIds.push(n.id);
 
                 if (n.children)
@@ -501,6 +503,7 @@ function applyEndpointFilter() {
 			else if (typeEl.classList.contains('palette')) type = 'image-generation';
 			else if (typeEl.classList.contains('chart')) type = 'reranking';
 			else if (typeEl.classList.contains('speaker')) type = 'tts';
+			else if (typeEl.classList.contains('mic')) type = 'asr';
 		}
 
 		if (activeTypeFilters.has(type)) {
@@ -624,7 +627,7 @@ function updateEndpointTestUI(nodeId) {
                 nds.forEach(function(n) {
                     var cfg = resolveNodeConfig(n.id);
 
-                    if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts"))
+                    if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts" || cfg.type === "asr"))
                         tids.push(n.id);
 
                     if (n.children)

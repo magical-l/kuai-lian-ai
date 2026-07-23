@@ -807,7 +807,8 @@ main {
 .one.attachment {
 	align-items: center;
 	gap: var(--space-1);
-	padding: var(--space-1) var(--space-2);
+	padding: 0;
+	position: relative;
 	background: var(--bg-muted);
 	border-radius: var(--radius-sm);
 	font-size: 12px;
@@ -817,14 +818,15 @@ main {
 		padding: 2px;
 	}
 	& .thumb {
-		width: 32px;
-		height: 32px;
-		border-radius: var(--radius-sm);
 		object-fit: cover;
 		background: var(--bg-subtle);
-		& .remove:hover {
-			background: #b91c1c;
-		}
+		background-size: cover;
+		background-position: center;
+		overflow: hidden;
+		--icon-max-width: 40px;
+		--icon-max-height: 40px;
+
+		&.mic, &.file { font-size: 20px; }
 	}
 	& .name {
 		color: var(--text-secondary);
@@ -833,7 +835,27 @@ main {
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
+	> .remove.btn {
+		position: absolute;
+		top: 0;
+		right: -4px;
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		background: var(--danger);
+		color: white;
+		font-size: 10px;
+		border: none;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		&:hover { background: #b91c1c; }
+	}
 }
+.mic { --char-mic: 🎤; --icon-char: var(--char-mic); }
+
 .image-preview-overlay {
 	position: fixed;
 	inset: 0;

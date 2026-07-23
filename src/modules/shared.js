@@ -383,6 +383,49 @@ async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction,
     return { blobUrl: blobUrl, audioData: audioData, contentType: ct, size: blob.size };
 }
 
+async function callASR(style, baseUrl, apiKey, model, audioFile, params, directUrl) {
+    var provider = providers[style];
+    if (!provider) throw new Error('不支持的接口风格: ' + style);
+    // Currently only OpenAI-style ASR (Whisper API) is supported
+
+    var fd = new FormData();
+    fd.append('file', audioFile, audioFile.name || 'audio.wav');
+    fd.append('model', model);
+    if (params && params.language) fd.append('language', params.language);
+    if (params && params.prompt) fd.append('prompt', params.prompt);
+    if (params && params.temperature) fd.append('temperature', String(params.temperature));
+    fd.append('response_format', 'json');
+
+    var url = baseUrl.replace(/\/+$/, '') + '/v1/audio/transcriptions';
+    if (directUrl) url = baseUrl.replace(/\/+$/, '');
+
+    var res = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + apiKey },
+        body: fd
+    }, 120000);
+
+    if (!res.ok) {
+        var errText = await res.text().catch(function() { return ''; });
+        throw new Error('ASR请求失败: ' + res.status + (errText ? ' - ' + errText : ''));
+    }
+
+    var ct = res.headers.get('content-type') || '';
+    if (ct.includes('text/html')) {
+        var body = await res.text().catch(function() { return ''; });
+        var m = body.match(/<title>([^<]+)<\/title>/i);
+        throw new Error('ASR请求失败: 返回了HTML — ' + (m ? m[1] : body.slice(0, 100)));
+    }
+
+    var json = await res.json();
+    if (json.error) {
+        var msg = json.error.message || json.error.code || JSON.stringify(json.error);
+        throw new Error('ASR请求失败: ' + msg);
+    }
+
+    return { text: json.text || '', duration: json.duration, language: json.language };
+}
+
 async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) {
 	const startTime = Date.now();
 	clearSessionGenerations(sessionId);

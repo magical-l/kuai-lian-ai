@@ -40,6 +40,14 @@ var PARAMS_REGISTRY = {
       { key: "n",       label: "生成数量", type: "integer", min: 1, max: 10, default: 1 },
     ],
   },
+  asr: {
+    common: [
+      { key: "language",       label: "语言代码", type: "text",    placeholder: "如 zh、en、ja（留空自动检测）" },
+      { key: "prompt",         label: "提示文本", type: "text",    placeholder: "引导识别结果的提示词" },
+      { key: "temperature",    label: "温度",     type: "range",   min: 0, max: 1,   step: 0.1, default: 0 },
+      { key: "response_format",label: "响应格式", type: "select",  options: ["json", "verbose_json", "text"], default: "json" },
+    ],
+  },
   reranking: {
     common: [
       { key: "top_n", label: "Top N", type: "integer", min: 1, default: 10 },

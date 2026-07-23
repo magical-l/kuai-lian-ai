@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.27.1</span>
+			<span class="version">v6.29.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -157,6 +157,9 @@
 					</label>
 					<label title="语音" class="option btn : speaker icon-only char-style , square shape">
 						<input type="checkbox" value="tts" checked>
+					</label>
+					<label title="语音识别" class="option btn : mic icon-only char-style , square shape">
+						<input type="checkbox" value="asr" checked>
 					</label>
 				</div>
 				<span class="btn-group : op list , flex items-go-x">
@@ -309,6 +312,9 @@
 						<span class="char-style icon , attach"></span>
 						<input type="file" multiple accept="*/*">
 					</label>
+					<button class="btn : record , square shape" title="录制语音">
+						<span class="char-style icon , mic"></span>
+					</button>
 
 					<div title="发送" class="split-style btn-group : send , flex items-go-x items-from-left">
 						<button class="main btn : send , primary">
@@ -469,6 +475,10 @@
 							<label class="option btn">
 								<input type="radio" name="type" value="tts">
 								<span class="char-style icon , speaker"></span> 语音
+							</label>
+							<label class="option btn">
+								<input type="radio" name="type" value="asr">
+								<span class="char-style icon , mic"></span> 语音识别
 							</label>
 						</div>
 						<span class="hint"></span>

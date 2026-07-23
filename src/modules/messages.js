@@ -536,6 +536,20 @@ function appendUserMessage(msg) {
                 }
             }
         }
+
+        // ASR 转写结果
+        if (r.asrResult && r.asrResult.transcriptions && r.asrResult.transcriptions.length) {
+            var asrSayEl = $('.say', existing);
+            if (asrSayEl) {
+                var asrLabel = asrSayEl.querySelector('.asr-source-label');
+                if (!asrLabel) {
+                    asrLabel = mk('span', 'asr-source-label');
+                    asrLabel.textContent = '🎤 语音转写';
+                    asrLabel.style.cssText = 'display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;';
+                    asrSayEl.insertBefore(asrLabel, asrSayEl.firstChild);
+                }
+            }
+        }
 }
 
 function getStatusText(status) {

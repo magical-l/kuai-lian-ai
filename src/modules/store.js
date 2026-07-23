@@ -109,6 +109,9 @@ function detectModelType(name) {
     if (lower.indexOf("reranking") >= 0 || lower.indexOf("rerank") >= 0 || lower.indexOf("re-rank") >= 0)
         return "reranking";
 
+    if (lower.indexOf("whisper") >= 0 || lower.indexOf("transcrib") >= 0 || lower.indexOf("asr") >= 0)
+        return "asr";
+
     if (lower.indexOf("tts") >= 0 || lower.indexOf("audio") >= 0 ||
         lower.indexOf("speech") >= 0 || lower.indexOf("voice") >= 0)
         return "tts";

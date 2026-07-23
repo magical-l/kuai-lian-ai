@@ -1,9 +1,9 @@
 ---
 title: 技术架构
-covers_file: [src/layout.html, src/style.css, src/modules/storage-core.js, src/modules/providers.js, src/modules/boot.js, src/modules/main.js]
+covers_file: [src/layout.html, src/style.css, src/modules/storage-core.js, src/modules/providers.js, src/modules/boot.js, src/modules/main.js, src/modules/shared.js, src/modules/attachments.js, src/modules/messages.js, src/modules/params-registry.js, src/modules/selected-endpoints.js, src/modules/endpoint-tree.js, src/modules/store.js]
 depends_on: []
 api_signature: window.__STORAGE__ / window.__IS_EXTENSION__ / window.__EXTENSION_FETCH__
-last_updated: 2026-07-15
+last_updated: 2026-07-23
 why_exists: 定义快连AI的技术选型、模块依赖关系和数据流向，作为所有代码改动的架构参照
 ---
 
@@ -112,4 +112,6 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 - 2026-07-09: inhert-source hint 移入 dialog header；修复 dialog 编辑弹窗二次打开崩溃（radio 标签重置 + null 安全）
 - 2026-07-16: 端点编辑弹窗 no-tabs 模式修复。根因：`dialog[open].editing.endpoint header` 特异性盖过 `.tab.container.no-tabs > header`，tab 按钮行在编辑模式下未隐藏。修复：`header`→`> header` 限制为 dialog 直属子级。同步对 `dialog.editing.endpoint` 整段 CSS 做 DOM 树嵌套整理，消除 `> .btn-group` 等无效路径和重复选择器。
 - 2026-07-11: class 名规范化 `.stop-one` → `.stop-one-response`、`.stop` → `.stop-all-response`；`.stop-icon` 替换为统一 `char-style icon : stop`；`.embedding-full-json` 内联样式提取为 CSS 类；`.stop-all-response` 复用 `.danger` 减少重复样式
+- 2026-07-23: 新增 asr 端点类型（Whisper API），支持音频上传和麦克风录制转写；新增 --char-mic 图标
 - 2026-07-15: icon 系统 bug 修复：选中端点类型图标补 `char-style` 类；3 处 SVG 补 `viewBox`；嵌入结果展开按钮替换为原生 `<details>/<summary>`，删除 `handleExpandJsonClick` 及相关 JS
+- 2026-07-23: 新增 asr 端点类型（OpenAI Whisper API），支持音频文件上传和麦克风录制转写；新增 --char-mic 图标；录音按钮放"添加附件"右侧

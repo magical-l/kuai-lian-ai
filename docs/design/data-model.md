@@ -3,7 +3,7 @@ title: 数据模型
 covers_file: [src/modules/store.js, src/modules/storage-core.js, src/extension/storage-core.js]
 depends_on: [architecture.md]
 api_signature: endpointsData / sessionsCache / storage.loadEndpoints / storage.saveEndpoints / storage.loadSession / storage.saveSession
-last_updated: 2026-07-22
+last_updated: 2026-07-23
 why_exists: 定义端点树、会话和消息的数据结构及存储抽象层，确保前后端存储迁移的正确性
 ---
 
@@ -47,7 +47,7 @@ why_exists: 定义端点树、会话和消息的数据结构及存储抽象层�
 
 一个节点可以作为"端点容器"（有 children 但自身无 modelId），也可以作为"端点叶子"（无 children，有 modelId），或同时兼具两者。
 
-**节点有效性判断**（isNodeTestable）：resolveNodeConfig 返回的配置中 baseUrl、key、modelId 均非空，且 config.type 为 chat 或 embedding。
+**节点有效性判断**（isNodeTestable）：resolveNodeConfig 返回的配置中 baseUrl、key、modelId 均非空，且 config.type 为 chat、embedding 或 asr。
 
 ### 会话和消息结构
 
@@ -133,7 +133,7 @@ function migrateEndpoints(data) {
 |------|----------|------|--------|------|
 | findNodeWithAncestors | src/modules/store.js | 递归查找节点及其祖先链 | 内部 | 返回 {node, ancestors} |
 | resolveNodeConfig | src/modules/store.js | 沿祖先链继承解析端点配置 | 全局 | 五个字段继承 + type 回退 detectModelType |
-| detectModelType | src/modules/store.js | 从模型名推断类型 | 全局 | embedding/rerank/chat |
+| detectModelType | src/modules/store.js | 从模型名推断类型 | 全局 | embedding/rerank/asr/tts/image-generation/chat |
 | migrateEndpoints | src/modules/store.js | 旧 groups→nodes 迁移 | 全局 | 自动运行 |
 | addNode | src/modules/store.js | 创建节点 | 全局 | 支持指定父节点 |
 | updateNode | src/modules/store.js | 更新节点字段 | 全局 | Object.assign |
@@ -153,4 +153,6 @@ function migrateEndpoints(data) {
 - 2026-07-08: 新增节点复刻能力，数据层深拷贝整棵子树并为每个节点重新生成 UUID，根副本名称追加”（副本）”
 - 2026-07-17: 助手消息格式变更——移除 `msg.responses` 嵌套，每条 response 为独立 `{role:”assistant”, endpointId, content, status, ...}` 消息。`msg.content` 不再写入。存量数据在加载时由 `migrateSession` 自动 flat
 - 2026-07-17: 迁移函数 `migrateSession` 处理 3 种存量格式：(1) `responses` 数组→flat, (2) 老单端点 `endpointId` + 字符串 content (保持), (3) 远古无 endpointId 格式 (保留 content 字符串)
+- 2026-07-23: 新增 asr 端点类型（Whisper 风格 API），detectModelType 加 whisper/transcribe/asr 关键词
+- 2026-07-23: 新增 asr 端点类型（Whisper API），detectModelType 加 whisper/transcribe/asr 关键词
 - 2026-07-22: 会话新增 `modelParams` 字段（API 参数覆盖），新增工作空间参数覆盖系统（localStorage + `defaultSelectedEndpointParams`），用于无会话时/新建会话时的参数持久化

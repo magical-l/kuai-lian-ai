@@ -64,6 +64,21 @@ async function handleFileInputChange(input) {
     renderPendingAttachments();
 }
 
+async function handleRecordClick() {
+    var btn = document.querySelector('.record.btn');
+    if (typeof isRecording === 'function' && isRecording()) {
+        stopRecording();
+        btn.classList.remove('recording');
+        btn.title = '录制语音';
+    } else {
+        var ok = await startRecording();
+        if (ok) {
+            btn.classList.add('recording');
+            btn.title = '停止录制';
+        }
+    }
+}
+
 function handleSendModePopBeforetoggle(e) {
     if (e.newState === 'open') {
         var toggle = document.querySelector(".send-shortcut-selector");
@@ -133,6 +148,8 @@ async function init() {
 	$('.new-session').on('click', handleNewSession);
 	// 文件上传
 	$('.add.attachment.btn input[type="file"]').on('change', e => handleFileInputChange(e.currentTarget));
+	// 音频录制
+	$('.record.btn').on('click', handleRecordClick);
 	// 发送 & 全部停止
 	$('.main.btn.send').on('click', handleSend);
 	$('.stop-all-response').on('click', handleStopAllResponses);
@@ -459,6 +476,8 @@ async function handleSend() {
 	const textContent = content.filter(c => c.type === 'text' || c.type === 'file_text').map(c => c.text || '').join('\n');
 	lastUserMessage = textContent;
 	clearInput();
+	// Save audio files for ASR before clearing attachments
+	var asrAudioFiles = pendingAttachments.filter(function(a) { return a.file && a.file.type && a.file.type.indexOf('audio/') === 0; }).map(function(a) { return a.file; });
 	clearAttachments();
 	setButtonState(true, true);
 	renderSelectedEndpoints(getGroups(), selectedEndpoints, true);
@@ -484,11 +503,13 @@ async function handleSend() {
 	const embedIds = [];
 	const imgGenerateIds = [];
 	const ttsIds = [];
+	const asrIds = [];
 	selectedEndpoints.forEach(id => {
 		const cfg = resolveNodeConfig(id);
 		if (cfg.type === 'embedding' || cfg.type === 'embed') embedIds.push(id);
 		else if (cfg.type === 'image-generation' || cfg.type === 'image') imgGenerateIds.push(id);
 		else if (cfg.type === 'tts') ttsIds.push(id);
+		else if (cfg.type === 'asr') asrIds.push(id);
 		else chatIds.push(id);
 	});
 
@@ -614,6 +635,51 @@ async function handleSend() {
 				return { endpointId: id, status: 'failed', error: err.message, content: '' };
 			}
 		});
+		// ASR endpoints (non-streaming, file upload)
+		const asrPromises = asrIds.map(async function(id) {
+			var info = findModelById(groups, id);
+			if (!info) {
+				return { endpointId: id, status: 'failed', error: '端点不存在', content: '' };
+			}
+			if (!asrAudioFiles.length) {
+				return { endpointId: id, status: 'failed', error: '没有音频文件', content: '' };
+			}
+			try {
+				var cfg = resolveNodeConfig(id);
+				// Merge param overrides for ASR
+				var asrOvr = null;
+				if (currentSession && currentSession.modelParams && currentSession.modelParams[id]) {
+					asrOvr = currentSession.modelParams[id];
+				} else if (typeof defaultSelectedEndpointParams !== "undefined" && defaultSelectedEndpointParams[id]) {
+					asrOvr = defaultSelectedEndpointParams[id];
+				}
+				if (asrOvr) {
+					cfg.params = cfg.params || {};
+					for (var sk in asrOvr) { if (asrOvr.hasOwnProperty(sk) && sk !== "_custom") cfg.params[sk] = asrOvr[sk]; }
+				}
+				// Process each audio file through the ASR endpoint
+				var transcriptions = [];
+				for (var fi = 0; fi < asrAudioFiles.length; fi++) {
+					var af = asrAudioFiles[fi];
+					var result = await callASR(cfg.style || 'openai', cfg.baseUrl, cfg.key,
+						(info.node.modelId || info.node.name), af, cfg.params, cfg.directUrl);
+					transcriptions.push({ name: af.name, text: result.text });
+				}
+				var combinedText = transcriptions.map(function(t) { return t.text; }).join('\n');
+				updateCardAsText(id, combinedText, targetSessionId);
+				return {
+					endpointId: id,
+					status: 'completed',
+					content: combinedText,
+					asrResult: {
+						transcriptions: transcriptions
+					}
+				};
+			} catch (err) {
+				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
+				return { endpointId: id, status: 'failed', error: err.message, content: '' };
+			}
+		});
 		const chatPromise = (async () => {
 			if (chatIds.length === 0) return [];
 			return await callAllModels(groups, chatIds, messages, (endpointId, partialContent, firstTokenTime) => {
@@ -626,14 +692,15 @@ async function handleSend() {
 			}, targetSessionId);
 		})();
 
-		const [embedResults, imgGenerateResults, ttsResults, chatResults] = await Promise.all([
+		const [embedResults, imgGenerateResults, ttsResults, asrResults, chatResults] = await Promise.all([
 			Promise.all(embedPromises),
 			Promise.all(imgGeneratePromises),
 			Promise.all(ttsPromises),
+			Promise.all(asrPromises),
 			chatPromise
 		]);
 
-		allResults.push(...embedResults, ...imgGenerateResults, ...ttsResults, ...chatResults);
+		allResults.push(...embedResults, ...imgGenerateResults, ...ttsResults, ...asrResults, ...chatResults);
 
 		await addMessage(targetSessionId, 'assistant', null, { responses: allResults });
 	} catch (err) {
@@ -1028,6 +1095,15 @@ function updateCardAsAudio(endpointId, result, sessionId) {
 			audio.style.height = '40px';
 			sayEl.addChild(audio);
 		}
+	}
+	updateCardStatus(endpointId, 'completed', null, null, sessionId);
+}
+function updateCardAsText(endpointId, text, sessionId) {
+	var card = $('.one.response.msg[data-session-id="' + sessionId + '"][data-endpoint-id="' + endpointId + '"]');
+	if (!card) return;
+	var sayEl = $('.say', card);
+	if (sayEl) {
+		sayEl.textContent = text;
 	}
 	updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }

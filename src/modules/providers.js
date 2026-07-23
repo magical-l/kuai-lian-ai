@@ -139,6 +139,40 @@ const providers = {
 		testTTSConfig(baseUrl, apiKey, model) {
 			return this.buildTTSRequest(baseUrl, apiKey, model, '.');
 		},
+		testASRConfig(baseUrl, apiKey, model) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
+			// Generate a minimal valid WAV file (44-byte header + 1 sample)
+			function writeString(view, offset, str) {
+				for (var i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+			}
+			var buf = new ArrayBuffer(46);
+			var dv = new DataView(buf);
+			writeString(dv, 0, 'RIFF');
+			dv.setUint32(4, 42, true);
+			writeString(dv, 8, 'WAVE');
+			writeString(dv, 12, 'fmt ');
+			dv.setUint32(16, 16, true);
+			dv.setUint16(20, 1, true);
+			dv.setUint16(22, 1, true);
+			dv.setUint32(24, 8000, true);
+			dv.setUint32(28, 8000, true);
+			dv.setUint16(32, 1, true);
+			dv.setUint16(34, 8, true);
+			writeString(dv, 36, 'data');
+			dv.setUint32(40, 2, true);
+			dv.setUint8(44, 128);
+			dv.setUint8(45, 128);
+			var blob = new Blob([buf], { type: 'audio/wav' });
+			var fd = new FormData();
+			fd.append('file', blob, 'test.wav');
+			fd.append('model', model);
+			return {
+				url: baseUrl + '/v1/audio/transcriptions',
+				headers: { 'Authorization': 'Bearer ' + apiKey },
+				body: fd,
+				_multipart: true
+			};
+		},
 	},
 	claude: {
 		buildRequest(baseUrl, apiKey, model, messages) {
