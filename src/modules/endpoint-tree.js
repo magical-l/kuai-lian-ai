@@ -175,21 +175,6 @@ function handleFilterBarChange(e) {
 
 function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onTestConnection, onMoveNode) {
     var container = document.querySelector("aside.endpoint.list > ol");
-    var scrollAnchor = null;
-
-    if (container) {
-        var inView = container.querySelectorAll("li.one.endpoint");
-
-        for (var i = 0; i < inView.length; i++) {
-            var rect = inView[i].getBoundingClientRect();
-
-            if (rect.bottom >= 0 && rect.top <= window.innerHeight) {
-                scrollAnchor = inView[i].dataset.nodeId;
-                break;
-            }
-        }
-    }
-
     container.querySelectorAll("li").forEach(el => el.remove());
 
     function renderTreeNode(nodes, parentEl) {
@@ -410,16 +395,6 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
     initEndpointFilter();
     applyEndpointFilter();
     updateEmptyState();
-
-    if (scrollAnchor) {
-        var target = container.querySelector("[data-node-id=\"" + scrollAnchor + "\"]");
-
-        if (target) {
-            target.scrollIntoView({
-                block: "nearest"
-            });
-        }
-    }
 }
 
 function updateEmptyState() {

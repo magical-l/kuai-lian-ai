@@ -186,3 +186,4 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-13 | 测试按钮 CSS class 从 `.testing`（+ 内 span `.spin.animation`）改为 `.connecting`（按钮隐藏，由兄弟 `.status.icon.wait` 沙漏图标站台） | common.css 新增 `.btn.busy + .btn:not(.busy) + .status.icon.wait + .btn + .status.icon` 组件模式，沙漏翻转动画替代旋转动画 |
 | 2026-07-23 | `updateEndpointTestUI` 除 CSS class 外，同步更新按钮的 `title` 属性（含错误信息和时间戳） | 测试完成后 hover 仍显示"未测试"，因 `title` 从未更新——只改了视觉 class 没改 tooltip 文案 |
 | 2026-07-23 | `renderEndpointList` 新增滚动位置保持：渲染前记住第一个可见节点 ID，渲染后 `scrollIntoView({ block: 'nearest' })` | 删除端点后全量重绘导致滚动位置丢失，"定位不准" |
+| 2026-07-23 | 撤销滚动锚点方案，改为 `handleNodeDelete` 直接删 DOM 节点 + 跳过 `renderEndpointList` 重绘 | 滚动锚点无效——DOM 和 data 同时改变，`scrollIntoView` 找不到目标。更根本的方案是不重绘整棵树 |

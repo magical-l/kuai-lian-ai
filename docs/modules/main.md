@@ -303,3 +303,4 @@ radio change → setThemePref(mode)
 | 2026-07-22 | TTS handler 新增会话参数覆盖合并（与 image generation 模式一致） | 修复 TTS 端点绕过会话级 voice/instruction 覆盖的 bug |
 | 2026-07-22 | TTS 播放器从 `.content > .audio-result` 移到 `.say` 内部 | `(无内容)` 占位文本被 `<audio controls>` 播放器取代；updateCardAsAudio 和 messages.js 音频渲染同步修改 |
 | 2026-07-22 | 新增消息分叉功能（handleFork） | 用户消息 header 新增分叉按钮，点击后以该消息为分叉点创建新会话（复制之前的历史消息），消息文本填入输入框，等待编辑/重发 |
+| 2026-07-23 | `handleNodeDelete` 直接移除 DOM 节点，`refreshUI` 新增 `{ skipEndpointTree: true }` 选项 | 删除端点后不触发整个端点树重绘，保持滚动位置不丢失 |

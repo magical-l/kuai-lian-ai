@@ -249,7 +249,8 @@ async function updateDirectoryDisplay() {
 	dirPath.textContent = info.text;
 	dirPath.title = info.title;
 }
-async function refreshUI() {
+async function refreshUI(opts) {
+	opts = opts || {};
     const groups = getGroups();
     const before = selectedEndpoints.length;
     selectedEndpoints = selectedEndpoints.filter(id => !!findModelById(groups, id));
@@ -266,14 +267,16 @@ async function refreshUI() {
     const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === "generating");
     renderSelectedEndpoints(groups, selectedEndpoints, isGenerating);
 
-    renderEndpointList(
-        groups,
-        handleNodeEdit,
-        handleNodeDelete,
-        handleReorderNode,
-        testConnection,
-        handleMoveNodeAsChild
-    );
+    if (!opts.skipEndpointTree) {
+        renderEndpointList(
+            groups,
+            handleNodeEdit,
+            handleNodeDelete,
+            handleReorderNode,
+            testConnection,
+            handleMoveNodeAsChild
+        );
+    }
 
     const sessions = getAllSessions();
 
@@ -393,8 +396,26 @@ async function handleNodeDelete(nodeId) {
 		return parts[0] !== nodeId;
 	});
 	saveDefaultSelectedEndpoints(selectedEndpoints);
+	// 收集子孙 ID 用于清理状态
+	var allIds = collectDescendantIds(nodeId);
+	allIds.forEach(function(id) {
+		connectionStatus.delete(id);
+		collapsedEndpoints.delete(id);
+	});
+	// 直接移除 DOM 节点（不触发整树重绘）
+	var nodeEl = document.querySelector('.one.endpoint[data-node-id="' + nodeId + '"]');
+	var parentContainer = nodeEl ? nodeEl.closest('ol') : null;
+	if (nodeEl) nodeEl.remove();
+	// 更新父节点的批量测试按钮状态
+	if (parentContainer) {
+		var parentEndpoint = parentContainer.closest('.one.endpoint');
+		if (parentEndpoint) updateEndpointTestUI(parentEndpoint.dataset.nodeId);
+	}
+	// 数据层删除
 	await deleteNode(nodeId);
-	await refreshUI();
+	// 轻量刷新（跳过端点树重绘）
+	await refreshUI({ skipEndpointTree: true });
+	updateEmptyState();
 }
 
 function handleCopy(content) {

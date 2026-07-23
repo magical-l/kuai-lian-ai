@@ -3365,17 +3365,6 @@ function handleFilterBarChange(e) {
 }
 function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onTestConnection, onMoveNode) {
     var container = document.querySelector("aside.endpoint.list > ol");
-    var scrollAnchor = null;
-    if (container) {
-        var inView = container.querySelectorAll("li.one.endpoint");
-        for (var i = 0; i < inView.length; i++) {
-            var rect = inView[i].getBoundingClientRect();
-            if (rect.bottom >= 0 && rect.top <= window.innerHeight) {
-                scrollAnchor = inView[i].dataset.nodeId;
-                break;
-            }
-        }
-    }
     container.querySelectorAll("li").forEach(el => el.remove());
     function renderTreeNode(nodes, parentEl) {
         nodes.forEach(function(node, index) {
@@ -3554,14 +3543,6 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
     initEndpointFilter();
     applyEndpointFilter();
     updateEmptyState();
-    if (scrollAnchor) {
-        var target = container.querySelector("[data-node-id=\"" + scrollAnchor + "\"]");
-        if (target) {
-            target.scrollIntoView({
-                block: "nearest"
-            });
-        }
-    }
 }
 function updateEmptyState() {
 	var aside = document.querySelector('aside.endpoint.list');
@@ -7003,7 +6984,8 @@ async function updateDirectoryDisplay() {
 	dirPath.textContent = info.text;
 	dirPath.title = info.title;
 }
-async function refreshUI() {
+async function refreshUI(opts) {
+	opts = opts || {};
     const groups = getGroups();
     const before = selectedEndpoints.length;
     selectedEndpoints = selectedEndpoints.filter(id => !!findModelById(groups, id));
@@ -7016,14 +6998,16 @@ async function refreshUI() {
     const gens = currentSession ? sessionGenerations.get(currentSession.id) : null;
     const isGenerating = gens && gens.size > 0 && Array.from(gens.values()).some(s => s.status === "generating");
     renderSelectedEndpoints(groups, selectedEndpoints, isGenerating);
-    renderEndpointList(
-        groups,
-        handleNodeEdit,
-        handleNodeDelete,
-        handleReorderNode,
-        testConnection,
-        handleMoveNodeAsChild
-    );
+    if (!opts.skipEndpointTree) {
+        renderEndpointList(
+            groups,
+            handleNodeEdit,
+            handleNodeDelete,
+            handleReorderNode,
+            testConnection,
+            handleMoveNodeAsChild
+        );
+    }
     const sessions = getAllSessions();
     renderSessionList(
         sessions,
@@ -7136,8 +7120,26 @@ async function handleNodeDelete(nodeId) {
 		return parts[0] !== nodeId;
 	});
 	saveDefaultSelectedEndpoints(selectedEndpoints);
+	// 收集子孙 ID 用于清理状态
+	var allIds = collectDescendantIds(nodeId);
+	allIds.forEach(function(id) {
+		connectionStatus.delete(id);
+		collapsedEndpoints.delete(id);
+	});
+	// 直接移除 DOM 节点（不触发整树重绘）
+	var nodeEl = document.querySelector('.one.endpoint[data-node-id="' + nodeId + '"]');
+	var parentContainer = nodeEl ? nodeEl.closest('ol') : null;
+	if (nodeEl) nodeEl.remove();
+	// 更新父节点的批量测试按钮状态
+	if (parentContainer) {
+		var parentEndpoint = parentContainer.closest('.one.endpoint');
+		if (parentEndpoint) updateEndpointTestUI(parentEndpoint.dataset.nodeId);
+	}
+	// 数据层删除
 	await deleteNode(nodeId);
-	await refreshUI();
+	// 轻量刷新（跳过端点树重绘）
+	await refreshUI({ skipEndpointTree: true });
+	updateEmptyState();
 }
 function handleCopy(content) {
 	navigator.clipboard.writeText(content).then(() => {
