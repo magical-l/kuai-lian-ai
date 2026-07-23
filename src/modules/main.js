@@ -70,11 +70,13 @@ async function handleRecordClick() {
         stopRecording();
         btn.classList.remove('recording');
         btn.title = '录制语音';
+        btn.setAttribute('aria-pressed', 'false');
     } else {
         var ok = await startRecording();
         if (ok) {
             btn.classList.add('recording');
             btn.title = '停止录制';
+            btn.setAttribute('aria-pressed', 'true');
         }
     }
 }

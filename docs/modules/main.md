@@ -214,6 +214,7 @@ showThinkingCards(idList, groups, sessionId)
 | `handleSendModePopToggle(e)` | sendModePop toggle | 同步按钮 active class |
 | `handleThemeRadioChange(radio)` | 主题 radio change | setThemePref + updateThemeIcon + 关闭 Popover |
 | `handleStopOneResponseClick(btn)` | 单端点停止按钮 | stopSingleGeneration + 禁用按钮 |
+| `handleRecordClick()` | 录音按钮 | 切换录音/停止状态，同步 `aria-pressed` 属性 |
 
 ### 8. 主题管理
 
@@ -304,3 +305,4 @@ radio change → setThemePref(mode)
 | 2026-07-22 | TTS 播放器从 `.content > .audio-result` 移到 `.say` 内部 | `(无内容)` 占位文本被 `<audio controls>` 播放器取代；updateCardAsAudio 和 messages.js 音频渲染同步修改 |
 | 2026-07-22 | 新增消息分叉功能（handleFork） | 用户消息 header 新增分叉按钮，点击后以该消息为分叉点创建新会话（复制之前的历史消息），消息文本填入输入框，等待编辑/重发 |
 | 2026-07-23 | `handleNodeDelete` 直接移除 DOM 节点，`refreshUI` 新增 `{ skipEndpointTree: true }` 选项 | 删除端点后不触发整个端点树重绘，保持滚动位置不丢失 |
+| 2026-07-23 | 录音按钮添加 aria-pressed 属性，CSS 切换图标（🎤→⏹）+ 脉冲动画 | 录音中无视觉反馈，用户无法区分是否正在录音 |

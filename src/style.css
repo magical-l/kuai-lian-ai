@@ -854,7 +854,20 @@ main {
 		&:hover { background: #b91c1c; }
 	}
 }
-.mic { --char-mic: 🎤; --icon-char: var(--char-mic); }
+.mic { --char-mic: '🎤'; --icon-char: var(--char-mic); }
+
+/* 录音按钮：录音中切换图标+脉冲提示 */
+.record.btn.recording {
+	--btn-color: var(--danger);
+	animation: recording-pulse 1.2s ease-in-out infinite;
+	& .icon.mic {
+		--icon-char: '⏹';
+	}
+}
+@keyframes recording-pulse {
+	0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 40%, transparent); }
+	50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 0%, transparent); }
+}
 
 .image-preview-overlay {
 	position: fixed;
