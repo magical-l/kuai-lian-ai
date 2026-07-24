@@ -311,13 +311,14 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 
 - 2026-07-01: 初始文档创建。确认 style.css 实际 ~1200 行（非预估的 3000+）、:has() 共 3 处（非"大量"）
 - 2026-07-10: 新增第 4 处 `:has()` 使用——侧栏 toggle，CSS 变量驱动，JS 仅做 localStorage 持久化
+- 2026-07-24: `--selector-bg/--selector-color/--selector-font-weight` → `--checked-*`。`.join-session` 选中态从 `--btn-text-color: var(--success)`（对图标按钮无效）改为 `--checked-bg: var(--accent-primary)`。`.btn.busy + .status.icon.wait` 从 `button, .btn` 嵌套中抽出为独立规则。`.join-session` 内冗余的 `& input[type=checkbox] { opacity:0; ... }` 删除（已由 `label.btn > input { display:none }` 覆盖）。
 - 2026-07-01: 暗色模式实现。采用 `html.dark` class 覆写全部 CSS 变量，而非 `prefers-color-scheme` 媒体查询。交互三态（亮→暗→跟随系统），偏好持久化到 settings。html.dark 块约 40 行，新增 4 个 SVG icon 符号。版本 6.3.2。
 - 2026-07-02: 根级 compact 节点间距修复。`.compact` 设 `margin-bottom:0` 对子级节点正确（间距由 `.children` 的 gap 控制），但根级 compact 节点（`<ol>` 的直接子元素）丢失了正常间距。新增 `ol > .one.endpoint.compact` 恢复 `margin-bottom:var(--space-3)` 和底部边框。
 - 2026-07-05: 清除 style.css 中所有注释掉的外部 CSS 变量副本（共 9 组）。这些是 common.css 剥离后的历史快照，其中 `--radius-*: 0` 与实际值（4/6/8/12px）不符。变量分层不再需要在 style.css 中留注释副本，统一在本文档的变量分层表中说明。
 - 2026-07-05: `--shadow-*` 四值和 `--space-{2..8}` 刻度从 style.css 迁移到 common.css，作为跨项目设计令牌统一管理。style.css :root 仅保留项目专有变量（`--bg-elevated`、`--font-sans`、`--btn-h` 等 11 个变量）。
 - 2026-07-06: 试用 `@import layer(base)` 后因 utility class（`.items-y-near-center`）被降层误伤而放弃。改用 style.css 加 `:root { --btn-h: 24px; --icon-*: 16px }` 块以源顺序覆盖 common.css 同名变量。删除 `main > header .btn .icon` 固定宽高规则，使图标由 `.btn.icon-only` 的 100% 约束。修复 `endpoint-tree.js` 第三处 `collectTestable` 中 `testableIds`→`allTestableIds` 笔误。
 - 2026-07-20: `.divider.row/.col` → `.divider.go-x/.go-y`。方向语义重构：`.go-x`=分割条沿 X 轴走（横条），`.go-y`=沿 Y 轴走（竖条），消除 `row`/`col` 歧义。同步更新 `src/layout.html` HTML 类名、`ui-utils.js` 选择器、dist 文件。
-- 2026-07-15: 端点类型图标从 `.endpoint-type` 自定义 CSS 迁移到 common.css 抽象类（`.digits` `.palette` `.chart`）。筛选按钮选中态改为变量驱动（`--selector-bg`/`--selector-color`），不再直接设 `background`。新增 `--icon-font-size: 18px`。
+- 2026-07-15: 端点类型图标从 `.endpoint-type` 自定义 CSS 迁移到 common.css 抽象类（`.digits` `.palette` `.chart`）。筛选按钮选中态改为变量驱动（`--checked-bg`/`--checked-color`/`--checked-font-weight`，原 `--selector-*` 于 2026-07-24 改名），不再直接设 `background`。新增 `--icon-font-size: 18px`。
 - 2026-07-13: 新增 `color: var(--danger)` 赋值到 `.warning`（`style.css` 第 4 行）。测试按钮状态 UI 从 `.testing + .spin.animation` 改为 `.busy` + `.status.icon.wait` 站台模式。`style.css` 新增 `.btn.busy ~ .status.icon.wait` 显示规则，由消费方决定 display 值和尺寸（`.btn + .status.icon` 在 common.css 中提供 `--icon-width/height: var(--btn-h)` 自动匹配按钮大小）。
 - 2026-07-16: 继承图标重构。将 `.inherit-icon` 冗余类名合并为 `.inherit.icon`，从行内样式提取到 style.css（cursor/color/shrink/margin），`font-size` 改为 `1.6em` 随父级缩放。新增 `.input-row` 全局布局类。
 - 2026-07-16: `.tab.container` 重构。修复 `no-tabs` 编辑模式 bug（dialog `& header`→`> header` 避免样式穿透覆盖 no-tabs）。全段 CSS 按 DOM 树嵌套重组（`.btn-group` 路径修正、`.field-*`/`.option.btn` 收拢入 `& form`、`.batch-field` 树型嵌套、tag 移入 batch-field）。`.one.tab` 布局属性与可见性切换分离；radio selector 包 `:not(.no-tabs)` 实现结构互斥，去除冗余 `display: none` 对抗。

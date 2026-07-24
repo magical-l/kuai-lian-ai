@@ -177,9 +177,95 @@ aside {
 	& .secondary.btn.active { background: var(--accent-primary-hover); }
 }
 
-/* ============ 主题选择 Popover ============ */
-.theme.btn {
-	anchor-name: --theme-btn;
+.workspace-setting .cur {
+	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 12px;
+}
+
+/* ============ 各处按钮 ============ */
+button, .btn {
+	&.duplicate {
+		--btn-text-color: var(--accent-primary);
+	}
+
+	&.join-session {
+		--btn-font-weight: 600;
+		--icon-text-color: var(--bg-base);
+		--icon-text-shadow: 0 0 1px black;
+
+		&:has(input:checked) {
+			--checked-bg: var(--accent-primary);
+		}
+	}
+
+	&.test-connection {
+		--btn-text-color: var(--text-muted);
+
+		&.connected {
+			--btn-text-color: var(--success);
+			--btn-bg: var(--success-light);
+		}
+
+		&.failed {
+			--btn-text-color: var(--danger);
+			--btn-bg: var(--danger-light);
+		}
+	}
+
+	&.stop-all-response {
+		--btn-font-weight: 500;
+		--icon-font-size: 1.8em;
+		line-height: 1;
+		overflow: hidden;
+	}
+
+	&.cancel, &.done {
+		width: auto;
+		height: auto;
+		min-width: 0;
+		min-height: 0;
+		max-width: none;
+		max-height: none;
+	}
+
+	/* 录音按钮：label.toggle 内 checkbox :checked 驱动图标切换 + 声波可视化 */
+	&.record {
+		position: relative;
+		overflow: hidden;
+		&:has(:checked) {
+			--btn-color: var(--danger);
+		}
+		& .icon {
+			position: relative;
+			z-index: 1;
+		}
+		& .wave {
+			display: flex;
+			align-items: flex-end;
+			justify-content: center;
+			gap: 1px;
+			position: absolute;
+			inset: 2px;
+			pointer-events: none;
+			z-index: 0;
+			& .bar {
+				flex: 1;
+				max-width: 3px;
+				border-radius: 1px;
+				background: var(--danger);
+				opacity: 0.8;
+				height: calc(var(--h) * 1%);
+				min-height: 0;
+			}
+		}
+	}
+	/* 主题选择 */
+	.theme.btn {
+		anchor-name: --theme-btn;
+	}
 }
 #themePop {
 	position: fixed;
@@ -214,74 +300,11 @@ aside {
 	}
 }
 
-.workspace-setting .cur {
-	color: var(--text-muted);
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	font-size: 12px;
-}
-
-/* ============ 各处按钮 ============ */
-button, .btn {
-
-	&.duplicate {
-		--btn-text-color: var(--accent-primary);
-	}
-
-	&.join-session {
-		--btn-font-weight: 600;
-		--icon-text-color: var(--bg-base);
-		--icon-text-shadow: 0 0 1px black;
-
-		& input[type=checkbox] {
-			position: absolute;
-			opacity: 0;
-			width: 0;
-			height: 0;
-			pointer-events: none;
-		}
-		&:has(input:checked) {
-			--btn-text-color: var(--success);
-		}
-	}
-
-	&.test-connection {
-		--btn-text-color: var(--text-muted);
-
-		&.connected {
-			--btn-text-color: var(--success);
-			--btn-bg: var(--success-light);
-		}
-
-		&.failed {
-			--btn-text-color: var(--danger);
-			--btn-bg: var(--danger-light);
-		}
-	}
-
-	/* 按钮繁忙时，由等待状态图标占位 */
-	.btn.busy + .status.icon.wait {
-		display: inline-flex;
-		width: var(--btn-h);
-		height: var(--btn-h);
-	}
-
-	&.stop-all-response {
-		--btn-font-weight: 500;
-		--icon-font-size: 1.8em;
-		line-height: 1;
-		overflow: hidden;
-	}
-
-	&.cancel, &.done {
-		width: auto;
-		height: auto;
-		min-width: 0;
-		min-height: 0;
-		max-width: none;
-		max-height: none;
-	}
+/* 按钮繁忙时，由其后的等待状态图标（如有）占位 */
+.btn.busy + .status.icon.wait {
+	display: inline-flex;
+	width: var(--btn-h);
+	height: var(--btn-h);
 }
 
 /* ====== 各种切换按钮 ====== */
@@ -854,40 +877,6 @@ main {
 		&:hover { background: #b91c1c; }
 	}
 }
-.mic { --char-mic: '🎤'; --icon-char: var(--char-mic); }
-.audio { --char-music: '♫'; --icon-char: var(--char-music); }
-
-/* 录音按钮：label.toggle 内 checkbox :checked 驱动图标切换 + 声波可视化 */
-.record.btn {
-	position: relative;
-	overflow: hidden;
-	&:has(:checked) {
-		--btn-color: var(--danger);
-	}
-	& .icon {
-		position: relative;
-		z-index: 1;
-	}
-	& .wave {
-		display: flex;
-		align-items: flex-end;
-		justify-content: center;
-		gap: 1px;
-		position: absolute;
-		inset: 2px;
-		pointer-events: none;
-		z-index: 0;
-		& .bar {
-			flex: 1;
-			max-width: 3px;
-			border-radius: 1px;
-			background: var(--danger);
-			opacity: 0.8;
-			height: calc(var(--h) * 1%);
-			min-height: 0;
-		}
-	}
-}
 
 .preview-overlay {
 	position: fixed;
@@ -909,8 +898,8 @@ aside.endpoint.list {
 		--icon-max-width: var(--btn-h);
 		--icon-max-height: var(--btn-h);
 		&:has(input:checked) {
-			--selector-bg: var(--accent-primary);
-			--selector-color: #FFFFFF;
+			--checked-bg: var(--accent-primary);
+			--checked-color: #FFFFFF;
 		}
 	}
 	/* 根级 compact 节点保持正常间距 */
@@ -1872,7 +1861,7 @@ dialog[open] {
 	cursor: help;
 }
 .emoji { --char-inherit: '⬆'; }
-/* 输入行水平布局 */
+
 /* ============ 媒体查询相关 ============ */
 @media (prefers-reduced-motion: reduce) {
 	/* 若用户设置减少动画，则把动画时间减到0.01ms（据说用0无效） */
