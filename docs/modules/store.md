@@ -3,7 +3,7 @@ title: 数据管理层
 covers_file: [src/modules/store.js]
 depends_on: [storage-core.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-07-22
+last_updated: 2026-07-24
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -32,7 +32,7 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
   key: "sk-...",           // API key
   modelId: "gpt-4",       // 叶子节点：实际模型 ID；父节点：空
   remark: "备注文本",
-  type: "chat",           // chat | embedding | image-generation | reranking；空串=自动检测
+  type: "chat",           // chat | embedding | image-generation | video-generation | reranking；空串=自动检测
   children: [ /* 子节点 */ ]
 }
 ```
@@ -51,7 +51,7 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
 | `findNodeInTree(nodes, nodeId)` | 只查找节点对象，不返回祖先链 | O(n) |
 | `resolveNodeConfig(nodeId)` | 合并节点自身及祖先链的配置字段，返回 `{ baseUrl, style, key, modelId, type }` | O(n + d) |
 | `findModelById(nodes, nodeId)` | 同 `findNodeWithAncestors`，语义别名 | O(n) |
-| `detectModelType(name)` | 从模型名推断 `chat` / `embedding` / `image-generation` / `reranking` | 字符串匹配 |
+| `detectModelType(name)` | 从模型名推断 `chat` / `embedding` / `image-generation` / `video-generation` / `reranking` | 字符串匹配 |
 
 ### 数据加载与迁移
 
@@ -169,3 +169,5 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 2026-07-12 | `resolveNodeConfig` 增加类型别名归一 | 旧数据中 `img-generate`/`image`/`embed`/`rerank` 统一转为标准值；修复端点树图标和筛选 |
 | 2026-07-12 | `detectModelType` 增加 image-generation 检测 | 按关键词 `image`/`dall-e`/`diffusion`/`flux` 识别生图模型，自动设为 `image-generation` |
 | 2026-07-22 | `resolveNodeConfig` 增加 voice/instruction 向后兼容 | 旧版 TTS 节点将 voice/instruction 存为顶层字段而非 `node.params`，`config.params` 构建时补充读取顶层字段 |
+| 2026-07-24 | 增加 `video-generation` 类型 + `video` 别名 | 关键词 `video`/`seedance`/`kling` → `video-generation` |
+| 2026-07-24 | 增加 `video-generation` 类型 + `video` 别名 | 关键词 `video`/`seedance`/`kling` → `video-generation` |

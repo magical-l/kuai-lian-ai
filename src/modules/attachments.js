@@ -296,9 +296,10 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var urlRow = $('.url-row', dialog);
 			function apiPath(style, type, modelId) {
 			var paths = {
-				openai: { chat: '/v1/chat/completions', embedding: '/v1/embeddings', 'image-generation': '/v1/images/generations', tts: '/v1/audio/speech', reranking: '/v1/rerank', asr: '/v1/audio/transcriptions' },
+				openai: { chat: '/v1/chat/completions', embedding: '/v1/embeddings', 'image-generation': '/v1/images/generations', 'video-generation': '/v1/videos', tts: '/v1/audio/speech', reranking: '/v1/rerank', asr: '/v1/audio/transcriptions' },
+				jimeng: { 'video-generation': '/v1/videos/generations' },
 				claude: { chat: '/v1/messages' },
-				gemini: { chat: '/v1beta/models/' + (modelId || '{modelId}') + ':streamGenerateContent?alt=sse', embedding: '/v1beta/models/' + (modelId || '{modelId}') + ':embedContent', 'image-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', tts: '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent' }
+				gemini: { chat: '/v1beta/models/' + (modelId || '{modelId}') + ':streamGenerateContent?alt=sse', embedding: '/v1beta/models/' + (modelId || '{modelId}') + ':embedContent', 'image-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', 'video-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', tts: '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent' }
 			};
 			var map = paths[style];
 			return (map && map[type]) || (map && map.chat) || '';
@@ -753,6 +754,7 @@ function buildBatchFields(dialog, parentId) {
 		{ key: 'style', label: '接口风格', options: [
 			{ value: '', text: '继承', inherit: true },
 			{ value: 'openai', text: 'ChatGPT式', hint: 'OpenAI、国内主流<br>/v1/chat/completions' },
+			{ value: 'jimeng', text: '即梦式', hint: '即梦/Seedance<br>/v1/videos/generations' },
 			{ value: 'claude', text: 'Claude式', hint: 'Anthropic<br>/v1/messages' },
 			{ value: 'gemini', text: 'Gemini式', hint: 'Google<br>/v1beta/models/……' }
 		]},
@@ -761,6 +763,7 @@ function buildBatchFields(dialog, parentId) {
 			{ value: 'chat', icon: 'chat', text: '聊天' },
 			{ value: 'embedding', icon: 'digits', text: '嵌入' },
 			{ value: 'image-generation', icon: 'palette', text: '生图' },
+			{ value: 'video-generation', icon: 'video', text: '视频' },
 			{ value: 'reranking', icon: 'chart', text: '重排序' },
 			{ value: 'tts', icon: 'speaker', text: '语音' },
 			{ value: 'asr', icon: 'mic', text: '语音识别' }

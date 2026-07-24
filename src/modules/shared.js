@@ -351,6 +351,67 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages, dire
     return result;
 }
 
+async function callVideoGeneration(style, baseUrl, apiKey, model, messages, directUrl, params) {
+    const provider = providers[style];
+    if (!provider) throw new Error('不支持的接口风格: ' + style);
+    if (!provider.buildVideoRequest) throw new Error('该接口不支持视频生成');
+
+    const req = provider.buildVideoRequest(baseUrl, apiKey, model, messages, params);
+    if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
+    if (params) { mergeParams(req.body, params, style); }
+    const res = await fetchWithTimeout(req.url, {
+        method: 'POST',
+        headers: req.headers,
+        body: JSON.stringify(req.body)
+    }, 180000);
+
+    if (!res.ok) {
+        const err = await res.text().catch(() => '');
+        throw new Error('视频生成请求失败: ' + res.status + (err ? ' - ' + err : ''));
+    }
+
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('text/html')) {
+        const body = await res.text().catch(() => '');
+        const m = body.match(/<title>([^<]+)<\/title>/i);
+        throw new Error('视频生成请求失败: 服务器返回了HTML页面 — ' + (m ? m[1] : body.slice(0, 100)));
+    }
+
+    const text = await res.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        throw new Error('视频生成请求失败: 响应体不是有效 JSON — ' + text.slice(0, 100));
+    }
+
+    if (data.error) {
+        const msg = data.error.message || data.error.code || JSON.stringify(data.error);
+        throw new Error('视频生成请求失败: ' + msg);
+    }
+
+    if (!data.data || !data.data[0]) {
+        throw new Error('视频生成响应格式错误: 缺少 data[0]');
+    }
+
+    const result = {
+        videoUrl: data.data[0].url || data.data[0].video_url || null
+    };
+
+    if (result.videoUrl) {
+        try {
+            const vidRes = await fetch(result.videoUrl);
+            if (vidRes.ok) {
+                const blob = await vidRes.blob();
+                result.blobUrl = URL.createObjectURL(blob);
+            }
+        } catch (e) {
+            console.warn('视频下载失败，将使用原始 URL:', e.message);
+        }
+    }
+    return result;
+}
+
 async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction, directUrl) {
     var provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);

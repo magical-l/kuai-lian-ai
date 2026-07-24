@@ -530,6 +530,27 @@ function appendUserMessage(msg) {
             }
         }
 
+        // video 结果（非流式视频生成场景）
+        if (r.videoResult) {
+            const videoRes = r.videoResult;
+            let videoMeta = $('.video-result', existing);
+            if (!videoMeta) {
+                videoMeta = mk('div', 'video-result');
+                existing.addChild(videoMeta);
+            }
+            const hasVideo = videoMeta.querySelector('video');
+            if (!hasVideo && videoRes.videoUrl) {
+                const video = mk('video', 'generated');
+                if (videoRes.blobUrl) video.src = videoRes.blobUrl;
+                else if (videoRes.videoUrl) video.src = videoRes.videoUrl;
+                video.controls = true;
+                video.autoplay = false;
+                video.style.maxWidth = '100%';
+                video.style.borderRadius = '8px';
+                videoMeta.addChild(video);
+            }
+        }
+
         // audio 结果（TTS 场景）
         if (r.audioResult) {
             var audioSayEl = $('.say', existing);

@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.31.3</span>
+			<span class="version">v6.32.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -151,6 +151,9 @@
 					</label>
 					<label title="生图" class="option btn : palette icon-only char-style , square shape">
 						<input type="checkbox" value="image-generation" checked>
+					</label>
+					<label title="视频" class="option btn : video icon-only char-style , square shape">
+						<input type="checkbox" value="video-generation" checked>
 					</label>
 					<label title="重排序" class="option btn : chart icon-only char-style , square shape">
 						<input type="checkbox" value="reranking" checked>
@@ -474,6 +477,10 @@
 								<span class="char-style icon , palette"></span> 生图
 							</label>
 							<label class="option btn">
+								<input type="radio" name="type" value="video-generation">
+								<span class="char-style icon , video"></span> 视频
+							</label>
+							<label class="option btn">
 								<input type="radio" name="type" value="reranking">
 								<span class="char-style icon , chart"></span> 重排序
 							</label>
@@ -504,6 +511,15 @@
 									OpenAI、国内主流
 									<br>
 									/v1/chat/completions
+								</span>
+							</label>
+							<label class="option btn">
+								<input type="radio" name="style" value="jimeng">
+								即梦式
+								<span class="hint">
+									即梦/Seedance
+									<br>
+									/v1/videos/generations
 								</span>
 							</label>
 							<label class="option btn">

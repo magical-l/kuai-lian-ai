@@ -538,12 +538,14 @@ async function handleSend() {
 	const imgGenerateIds = [];
 	const ttsIds = [];
 	const asrIds = [];
+	const videoGenerateIds = [];
 	selectedEndpoints.forEach(id => {
 		const cfg = resolveNodeConfig(id);
 		if (cfg.type === 'embedding' || cfg.type === 'embed') embedIds.push(id);
 		else if (cfg.type === 'image-generation' || cfg.type === 'image') imgGenerateIds.push(id);
 		else if (cfg.type === 'tts') ttsIds.push(id);
 		else if (cfg.type === 'asr') asrIds.push(id);
+			else if (cfg.type === 'video-generation' || cfg.type === 'video') videoGenerateIds.push(id);
 		else chatIds.push(id);
 	});
 
@@ -612,6 +614,38 @@ async function handleSend() {
 						b64_json: result.b64_json,
 						revised_prompt: result.revised_prompt
 					}
+				};
+			} catch (err) {
+				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
+				return { endpointId: id, status: 'failed', error: err.message, content: '' };
+			}
+		});
+
+		// 并行处理视频生成类端点（非流式）
+		const videoGeneratePromises = videoGenerateIds.map(async (id) => {
+			const info = findModelById(groups, id);
+			if (!info) {
+				return { endpointId: id, status: 'failed', error: '端点不存在', content: '' };
+			}
+			try {
+				const cfg = resolveNodeConfig(id);
+				var videoOvr = null;
+				if (currentSession && currentSession.modelParams && currentSession.modelParams[id]) {
+					videoOvr = currentSession.modelParams[id];
+				} else if (typeof defaultSelectedEndpointParams !== 'undefined' && defaultSelectedEndpointParams[id]) {
+					videoOvr = defaultSelectedEndpointParams[id];
+				}
+				if (videoOvr) {
+					cfg.params = cfg.params || {};
+					for (var sk in videoOvr) { if (videoOvr.hasOwnProperty(sk) && sk !== '_custom') cfg.params[sk] = videoOvr[sk]; }
+				}
+				const result = await callVideoGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.directUrl, cfg.params);
+				updateCardAsVideo(id, result, targetSessionId);
+				return {
+					endpointId: id,
+					status: 'completed',
+					content: result.videoUrl ? '```plaintext\n' + result.videoUrl + '\n```' : '',
+					videoResult: { blobUrl: result.blobUrl, videoUrl: result.videoUrl }
 				};
 			} catch (err) {
 				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
@@ -726,15 +760,16 @@ async function handleSend() {
 			}, targetSessionId);
 		})();
 
-		const [embedResults, imgGenerateResults, ttsResults, asrResults, chatResults] = await Promise.all([
+		const [embedResults, imgGenerateResults, videoGenerateResults, ttsResults, asrResults, chatResults] = await Promise.all([
 			Promise.all(embedPromises),
 			Promise.all(imgGeneratePromises),
+			Promise.all(videoGeneratePromises),
 			Promise.all(ttsPromises),
 			Promise.all(asrPromises),
 			chatPromise
 		]);
 
-		allResults.push(...embedResults, ...imgGenerateResults, ...ttsResults, ...asrResults, ...chatResults);
+		allResults.push(...embedResults, ...imgGenerateResults, ...videoGenerateResults, ...ttsResults, ...asrResults, ...chatResults);
 
 		await addMessage(targetSessionId, 'assistant', null, { responses: allResults });
 	} catch (err) {
@@ -1111,6 +1146,32 @@ function updateCardAsImage(endpointId, result, sessionId) {
 			imgDiv.addChild(revised);
 		}
 		contentWrapper.addChild(imgDiv);
+	}
+	updateCardStatus(endpointId, 'completed', null, null, sessionId);
+}
+
+function updateCardAsVideo(endpointId, result, sessionId) {
+	var card = $('.one.response.msg[data-session-id="' + sessionId + '"][data-endpoint-id="' + endpointId + '"]');
+	if (!card) return;
+	var sayEl = $('.say', card);
+	if (sayEl) sayEl.textContent = '';
+	var contentWrapper = $('.content', card);
+	if (contentWrapper) {
+		var existing = $('.video-result', contentWrapper);
+		if (existing) existing.remove();
+
+		var videoDiv = mk('div', 'video-result');
+		var videoUrl = result.blobUrl || result.videoUrl;
+		if (videoUrl) {
+			var video = mk('video', 'generated');
+			video.src = videoUrl;
+			video.controls = true;
+			video.autoplay = false;
+			video.style.maxWidth = '100%';
+			video.style.borderRadius = '8px';
+			videoDiv.addChild(video);
+		}
+		contentWrapper.addChild(videoDiv);
 	}
 	updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }

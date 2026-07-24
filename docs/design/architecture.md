@@ -3,7 +3,7 @@ title: 技术架构
 covers_file: [src/layout.html, src/style.css, src/modules/storage-core.js, src/modules/providers.js, src/modules/boot.js, src/modules/main.js, src/modules/shared.js, src/modules/attachments.js, src/modules/messages.js, src/modules/params-registry.js, src/modules/selected-endpoints.js, src/modules/endpoint-tree.js, src/modules/store.js]
 depends_on: []
 api_signature: window.__STORAGE__ / window.__IS_EXTENSION__ / window.__EXTENSION_FETCH__
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 why_exists: 定义快连AI的技术选型、模块依赖关系和数据流向，作为所有代码改动的架构参照
 ---
 

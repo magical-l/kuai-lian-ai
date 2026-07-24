@@ -41,6 +41,33 @@ const providers = {
                 }
             };
         },
+		buildVideoRequest(baseUrl, apiKey, model, messages, params) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
+			let prompt = "";
+			for (let i = messages.length - 1; i >= 0; i--) {
+				const m = messages[i];
+				if (m.role !== "user") continue;
+				if (typeof m.content === "string") { prompt = m.content; break; }
+				if (Array.isArray(m.content)) {
+					const text = m.content.filter(c => c.type === "text").map(c => c.text).join("\n");;
+					if (text) { prompt = text; break; }
+				}
+			}
+			var body = { model, prompt, n: 1 };
+			if (params) {
+				if (params.duration) body.duration = params.duration;
+				if (params.ratio) body.ratio = params.ratio;
+				if (params.resolution) body.resolution = params.resolution;
+			}
+			return {
+				url: baseUrl + "/v1/videos",
+				headers: {
+					"Content-Type": "application/json",
+					"Authorization": "Bearer " + apiKey
+				},
+				body: body
+			};
+		},
 		buildRequest(baseUrl, apiKey, model, messages) {
 			baseUrl = baseUrl.replace(/\/+$/, '');
 			return {
@@ -173,6 +200,35 @@ const providers = {
 				_multipart: true
 			};
 		},
+	},
+	jimeng: {
+		buildVideoRequest(baseUrl, apiKey, model, messages, params) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
+			let prompt = "";
+			for (let i = messages.length - 1; i >= 0; i--) {
+				const m = messages[i];
+				if (m.role !== "user") continue;
+				if (typeof m.content === "string") { prompt = m.content; break; }
+				if (Array.isArray(m.content)) {
+					const text = m.content.filter(c => c.type === "text").map(c => c.text).join("\n");;
+					if (text) { prompt = text; break; }
+				}
+			}
+			var body = { model, prompt, n: 1 };
+			if (params) {
+				if (params.duration) body.duration = params.duration;
+				if (params.ratio) body.ratio = params.ratio;
+				if (params.resolution) body.resolution = params.resolution;
+			}
+			return {
+				url: baseUrl + "/v1/videos/generations",
+				headers: {
+					"Content-Type": "application/json",
+					"Authorization": "Bearer " + apiKey
+				},
+				body: body
+			};
+		}
 	},
 	claude: {
 		buildRequest(baseUrl, apiKey, model, messages) {
@@ -339,6 +395,31 @@ const providers = {
 					}],
 					generationConfig: {
 						response_modalities: ['IMAGE']
+					}
+				}
+			};
+		},
+		buildVideoRequest(baseUrl, apiKey, model, messages, params) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
+			var prompt = '';
+			if (messages && messages.length) {
+				var last = messages[messages.length - 1];
+				if (typeof last.content === 'string') prompt = last.content;
+				else if (Array.isArray(last.content)) {
+					var textParts = last.content.filter(function(p) { return p.type === 'text' || p.type === 'file_text'; });
+					prompt = textParts.map(function(p) { return p.text || ''; }).join('\n');
+				}
+			}
+			return {
+				url: baseUrl + '/v1beta/models/' + model + ':generateContent',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Goog-Api-Key': apiKey
+				},
+				body: {
+					contents: [{ parts: [{ text: prompt }] }],
+					generationConfig: {
+						response_modalities: ['VIDEO']
 					}
 				}
 			};

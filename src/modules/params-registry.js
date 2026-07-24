@@ -48,6 +48,13 @@ var PARAMS_REGISTRY = {
       { key: "response_format",label: "响应格式", type: "select",  options: ["json", "verbose_json", "text"], default: "json" },
     ],
   },
+  "video-generation": {
+    common: [
+      { key: "duration",   label: "时长（秒）", type: "integer", min: 1, max: 15, default: 5 },
+      { key: "ratio",      label: "画面比例",   type: "select", options: ["16:9", "4:3", "1:1", "9:16", "3:4"], default: "16:9" },
+      { key: "resolution", label: "分辨率",     type: "select", options: ["480p", "720p", "1080p"], default: "720p" },
+    ],
+  },
   reranking: {
     common: [
       { key: "top_n", label: "Top N", type: "integer", min: 1, default: 10 },

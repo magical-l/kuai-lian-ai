@@ -3,7 +3,7 @@ title: Provider 抽象层 + DOM 工具集
 covers_file: [src/modules/providers.js]
 depends_on: []
 api_signature: providers.openai, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip, handleCopyValueClick
-last_updated: 2026-07-20
+last_updated: 2026-07-24
 why_exists: 三种 Provider 格式差异的封装和公共 DOM 辅助函数的复用
 ---
 
@@ -209,3 +209,4 @@ tooltip 内含 copy 按钮（`button.copy`），复制按钮点击已移至模�
 | 2026-07-12 | tooltip 复制按钮事件从 JS 绑定移到 HTML onclick 属性 | 模板 `#tooltip-content` 中 button 的 onclick 设为 `handleCopyValueClick(this)`，移除 createTooltip 中的 click 绑定；`handleCopyValueClick` 提取为全局函数 |
 | 2026-07-20 | Gemini apiKey 从 URL query param 改为 `X-Goog-Api-Key` header | URL 中的 API key 可能被日志/历史记录泄露，header 更安全 |
 | 2026-07-20 | Gemini 新增 `buildImageRequest` / `parseImageResponse` | 支持 Gemini 生图模型（如 gemini-3.1-flash-lite-image），使用同 `generateContent` 端点 + `response_modalities: ["IMAGE"]` |
+| 2026-07-24 | 新增 `jimeng` provider + `buildVideoRequest` | 即梦/Seedance 视频生成用 `/v1/videos/generations`；openai 视频用 `/v1/videos`；gemini 用 `:generateContent` + `VIDEO` |

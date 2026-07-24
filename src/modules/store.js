@@ -77,7 +77,8 @@ function resolveNodeConfig(nodeId) {
         "img-generate": "image-generation",
         "image": "image-generation",
         "embed": "embedding",
-        "rerank": "reranking"
+        "rerank": "reranking",
+        "video": "video-generation"
     };
 
     if (typeAliases[config.type])
@@ -118,6 +119,9 @@ function detectModelType(name) {
 
     if (lower.indexOf("image") >= 0 || lower.indexOf("dall-e") >= 0 || lower.indexOf("diffusion") >= 0 || lower.indexOf("flux") >= 0 || lower.indexOf("imagen") >= 0)
         return "image-generation";
+
+    if (lower.indexOf("video") >= 0 || lower.indexOf("seedance") >= 0 || lower.indexOf("kling") >= 0)
+        return "video-generation";
 
     return "chat";
 }

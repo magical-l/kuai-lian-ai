@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -307,3 +307,4 @@ radio change → setThemePref(mode)
 | 2026-07-23 | `handleNodeDelete` 直接移除 DOM 节点，`refreshUI` 新增 `{ skipEndpointTree: true }` 选项 | 删除端点后不触发整个端点树重绘，保持滚动位置不丢失 |
 | 2026-07-23 | 录音按钮添加 aria-pressed 属性，CSS 切换图标（🎤→⏹）+ 脉冲动画 | 录音中无视觉反馈，用户无法区分是否正在录音 |
 | 2026-07-23 | 录音按钮改为 label.toggle 模式（checkbox 驱动），声波可视化替代脉冲动画 | 移除 JS 手工 class 管理，改用 :has(:checked) 纯 CSS 驱动；AnalyserNode + raf 驱动 10 根频率条柱 |
+| 2026-07-24 | 增加 `video-generation` 端点的分流、请求处理和 `updateCardAsVideo` 渲染 | 视频端点走 `callVideoGeneration`，结果渲染为 `<video>` 播放器 |

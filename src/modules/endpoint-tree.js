@@ -229,6 +229,8 @@ function buildEndpointNodeEl(node) {
 			typeEl.classList.add("digits");
 		} else if (type === "image" || type === "image-generation") {
 			typeEl.classList.add("palette");
+		} else if (type === "video" || type === "video-generation") {
+			typeEl.classList.add("video");
 		} else if (type === "reranking") {
 			typeEl.classList.add("chart");
 		} else if (type === "tts") {
@@ -502,6 +504,7 @@ function applyEndpointFilter() {
 			if (typeEl.classList.contains('chat')) type = 'chat';
 			else if (typeEl.classList.contains('digits')) type = 'embedding';
 			else if (typeEl.classList.contains('palette')) type = 'image-generation';
+			else if (typeEl.classList.contains('video')) type = 'video-generation';
 			else if (typeEl.classList.contains('chart')) type = 'reranking';
 			else if (typeEl.classList.contains('speaker')) type = 'tts';
 			else if (typeEl.classList.contains('mic')) type = 'asr';
