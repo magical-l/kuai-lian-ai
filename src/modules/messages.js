@@ -136,12 +136,13 @@ function renderMessages(messages, groups, onCopy) {
 						const nameEl = mk('span', 'name');
 						nameEl.textContent = att.name || '图片';
 						attEl.addChild(nameEl);
-					} else if (att.type === 'file' && att.source) {
-						const fileIcon = mk('span', 'icon file');
+					} else if (att.type === 'file' && att.source && att.source.media_type && att.source.media_type.indexOf('audio/') === 0) {
+						const isRecorded = att.source.origin === 'recording';
+						const fileIcon = mk('span', isRecorded ? 'icon char-style mic' : 'icon char-style audio');
 						fileIcon.textContent = '';
 						attEl.addChild(fileIcon);
 						const nameEl = mk('span', 'name');
-						nameEl.textContent = att.name || '文件';
+						nameEl.textContent = att.name || (isRecorded ? '录音' : '音频');
 						attEl.addChild(nameEl);
 						attEl.onclick = () => {
 							const data = att.source.data;
@@ -149,11 +150,26 @@ function renderMessages(messages, groups, onCopy) {
 							const blob = new Blob([Uint8Array.from(atob(data), c => c.charCodeAt(0))], {
 								type: mime
 							});
-							const link = mk('a');
-							link.href = URL.createObjectURL(blob);
-							link.download = att.name || 'file';
-							link.click();
-							URL.revokeObjectURL(link.href);
+							const url = URL.createObjectURL(blob);
+							const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+							overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
+							const audio = mk('audio', '');
+							audio.src = url;
+							audio.controls = true;
+							audio.style.cssText = 'max-width:90%;border-radius:8px;';
+							const wrapper = mk('div', 'flex items-go-y');
+							wrapper.style.cssText = 'align-items:center;gap:12px;';
+							wrapper.appendChild(audio);
+							const dlBtn = mk('a', 'btn');
+							dlBtn.href = url;
+							dlBtn.download = att.name || 'recording.webm';
+							dlBtn.textContent = '下载';
+							dlBtn.style.cssText = 'padding:6px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;cursor:pointer;';
+							dlBtn.onclick = e => e.stopPropagation();
+							wrapper.appendChild(dlBtn);
+							overlay.onclick = () => { overlay.remove(); URL.revokeObjectURL(url); };
+							overlay.appendChild(wrapper);
+							document.body.appendChild(overlay);
 						};
 					}
 					attContainer.addChild(attEl);
@@ -220,12 +236,13 @@ function appendUserMessage(msg) {
 					const nameEl = mk('span', 'name');
 					nameEl.textContent = att.name || '图片';
 					attEl.addChild(nameEl);
-				} else if (att.type === 'file' && att.source) {
-					const fileIcon = mk('span', 'icon file');
+				} else if (att.type === 'file' && att.source && att.source.media_type && att.source.media_type.indexOf('audio/') === 0) {
+					const isRecorded = att.source.origin === 'recording';
+					const fileIcon = mk('span', isRecorded ? 'icon char-style mic' : 'icon char-style audio');
 					fileIcon.textContent = '';
 					attEl.addChild(fileIcon);
 					const nameEl = mk('span', 'name');
-					nameEl.textContent = att.name || '文件';
+					nameEl.textContent = att.name || (isRecorded ? '录音' : '音频');
 					attEl.addChild(nameEl);
 					attEl.onclick = () => {
 						const data = att.source.data;
@@ -233,11 +250,26 @@ function appendUserMessage(msg) {
 						const blob = new Blob([Uint8Array.from(atob(data), c => c.charCodeAt(0))], {
 							type: mime
 						});
-						const link = mk('a');
-						link.href = URL.createObjectURL(blob);
-						link.download = att.name || 'file';
-						link.click();
-						URL.revokeObjectURL(link.href);
+						const url = URL.createObjectURL(blob);
+						const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+						overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
+						const audio = mk('audio', '');
+						audio.src = url;
+						audio.controls = true;
+						audio.style.cssText = 'max-width:90%;border-radius:8px;';
+						const wrapper = mk('div', 'flex items-go-y');
+						wrapper.style.cssText = 'align-items:center;gap:12px;';
+						wrapper.appendChild(audio);
+						const dlBtn = mk('a', 'btn');
+						dlBtn.href = url;
+						dlBtn.download = att.name || 'recording.webm';
+						dlBtn.textContent = '下载';
+						dlBtn.style.cssText = 'padding:6px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;cursor:pointer;';
+						dlBtn.onclick = e => e.stopPropagation();
+						wrapper.appendChild(dlBtn);
+						overlay.onclick = () => { overlay.remove(); URL.revokeObjectURL(url); };
+						overlay.appendChild(wrapper);
+						document.body.appendChild(overlay);
 					};
 				}
 				attContainer.addChild(attEl);
@@ -607,7 +639,8 @@ async function getInputMessage() {
 					source: {
 						type: 'base64',
 						media_type: att.mediaType,
-						data
+						data,
+						origin: att.source || 'upload'
 					}
 				});
 			} else if (att.type === 'file_text') {
@@ -625,7 +658,8 @@ async function getInputMessage() {
 					source: {
 						type: 'base64',
 						media_type: att.mediaType,
-						data
+						data,
+						origin: att.source || 'upload'
 					}
 				});
 			}

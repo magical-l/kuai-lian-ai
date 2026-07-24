@@ -80,7 +80,7 @@ async function startRecording() {
 			var blob = new Blob(_recordingChunks, { type: mt });
 			var ext = mt.includes('webm') ? '.webm' : '.mp4';
 			var file = new File([blob], 'recording' + ext, { type: mt, lastModified: Date.now() });
-			addAttachment(file);
+			addAttachment(file, 'recording');
 			renderPendingAttachments();
 			_recordingChunks = [];
 		};
@@ -190,7 +190,7 @@ async function fileToText(file) {
 		reader.readAsText(file);
 	});
 }
-async function addAttachment(file) {
+async function addAttachment(file, source) {
 	const isImage = getMediaType(file.name).startsWith('image/');
 	const isText = isTextFile(file.name);
 	const attachment = {
@@ -199,7 +199,8 @@ async function addAttachment(file) {
 		type: isImage ? 'image' : (isText ? 'file_text' : 'file'),
 		file: file, // 临时存储 File 对象，用于缩略图和预览
 		mediaType: getMediaType(file.name),
-		previewUrl: null // 缩略图 URL（图片用）
+		previewUrl: null, // 缩略图 URL（图片用）
+		source: source || null // 来源标记：'recording' | null
 	};
 	if (isImage || file.type.startsWith('audio/')) {
 		attachment.previewUrl = await new Promise((resolve, reject) => {
@@ -1272,7 +1273,7 @@ function renderPendingAttachments() {
 			thumb.style.backgroundSize = 'cover';
 			thumb.style.backgroundPosition = 'center';
 		} else if (typeClass === 'audio') {
-			thumb.classList.add('icon', 'char-style', 'mic');
+			thumb.classList.add('icon', 'char-style', att.source === 'recording' ? 'mic' : 'audio');
 		} else {
 			thumb.classList.add('icon', 'char-style', 'file');
 		}
@@ -1304,6 +1305,30 @@ function showAttachmentPreview(att) {
 		img.style.cssText = 'max-width:90%;max-height:90%;border-radius:8px;';
 		overlay.onclick = () => overlay.remove();
 		overlay.appendChild(img);
+		document.body.appendChild(overlay);
+	} else if (att.file && att.file.type && att.file.type.indexOf('audio/') === 0) {
+		// 音频预览弹窗
+		const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+		overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
+		const audio = mk('audio', '');
+		audio.src = att.previewUrl || URL.createObjectURL(att.file);
+		audio.controls = true;
+		audio.style.cssText = 'max-width:90%;border-radius:8px;';
+		const wrapper = mk('div', 'flex items-go-y');
+		wrapper.style.cssText = 'align-items:center;gap:12px;';
+		wrapper.appendChild(audio);
+		const dlBtn = mk('a', 'btn');
+		dlBtn.href = att.previewUrl || URL.createObjectURL(att.file);
+		dlBtn.download = att.name || 'recording.webm';
+		dlBtn.textContent = '下载';
+		dlBtn.style.cssText = 'padding:6px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;cursor:pointer;';
+		dlBtn.onclick = e => e.stopPropagation();
+		wrapper.appendChild(dlBtn);
+		overlay.onclick = () => {
+			overlay.remove();
+			if (!att.previewUrl) URL.revokeObjectURL(audio.src);
+		};
+		overlay.appendChild(wrapper);
 		document.body.appendChild(overlay);
 	} else {
 		// 文件下载

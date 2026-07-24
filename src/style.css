@@ -855,6 +855,7 @@ main {
 	}
 }
 .mic { --char-mic: '🎤'; --icon-char: var(--char-mic); }
+.audio { --char-audio: '♫'; --icon-char: var(--char-audio); }
 
 /* 录音按钮：label.toggle 内 checkbox :checked 驱动图标切换 + 声波可视化 */
 .record.btn {
