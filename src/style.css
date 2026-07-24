@@ -855,7 +855,7 @@ main {
 	}
 }
 .mic { --char-mic: '🎤'; --icon-char: var(--char-mic); }
-.audio { --char-audio: '♫'; --icon-char: var(--char-audio); }
+.audio { --char-music: '♫'; --icon-char: var(--char-music); }
 
 /* 录音按钮：label.toggle 内 checkbox :checked 驱动图标切换 + 声波可视化 */
 .record.btn {
@@ -889,18 +889,24 @@ main {
 	}
 }
 
-.image-preview-overlay {
+.preview-overlay {
 	position: fixed;
 	inset: 0;
 	background: rgba(0, 0, 0, 0.8);
-	align-items: center;
-	justify-content: center;
 	z-index: 1000;
 	cursor: pointer;
-	& img {
+	& img, & audio {
 		max-width: 90%;
 		max-height: 90%;
 		border-radius: var(--radius-md);
+	}
+	& .download-btn {
+		padding: 6px 16px;
+		border-radius: 6px;
+		background: var(--accent);
+		color: #fff;
+		text-decoration: none;
+		cursor: pointer;
 	}
 }
 

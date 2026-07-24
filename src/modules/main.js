@@ -1093,7 +1093,7 @@ function updateCardAsImage(endpointId, result, sessionId) {
 			img.style.maxWidth = '100%';
 			img.style.borderRadius = '8px';
 			img.onclick = () => {
-				const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+				const overlay = mk('div', 'preview-overlay , flex items-go-x');
 				const fullImg = mk('img');
 				fullImg.src = imgUrl;
 				overlay.onclick = () => overlay.remove();

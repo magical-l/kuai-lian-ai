@@ -1298,7 +1298,7 @@ function renderPendingAttachments() {
 function showAttachmentPreview(att) {
 	if (att.type === 'image' && att.previewUrl) {
 		// 图片预览弹窗
-		const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+		const overlay = mk('div', 'preview-overlay , flex items-go-x');
 		overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
 		const img = mk('img');
 		img.src = att.previewUrl;
@@ -1308,27 +1308,17 @@ function showAttachmentPreview(att) {
 		document.body.appendChild(overlay);
 	} else if (att.file && att.file.type && att.file.type.indexOf('audio/') === 0) {
 		// 音频预览弹窗
-		const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
-		overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
-		const audio = mk('audio', '');
+		var overlay = fromTemplate('audio-preview', '.preview-overlay');
+		var audio = overlay.querySelector('audio');
 		audio.src = att.previewUrl || URL.createObjectURL(att.file);
-		audio.controls = true;
-		audio.style.cssText = 'max-width:90%;border-radius:8px;';
-		const wrapper = mk('div', 'flex items-go-y');
-		wrapper.style.cssText = 'align-items:center;gap:12px;';
-		wrapper.appendChild(audio);
-		const dlBtn = mk('a', 'btn');
+		var dlBtn = overlay.querySelector('.btn');
 		dlBtn.href = att.previewUrl || URL.createObjectURL(att.file);
 		dlBtn.download = att.name || 'recording.webm';
-		dlBtn.textContent = '下载';
-		dlBtn.style.cssText = 'padding:6px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;cursor:pointer;';
-		dlBtn.onclick = e => e.stopPropagation();
-		wrapper.appendChild(dlBtn);
-		overlay.onclick = () => {
+		dlBtn.onclick = function(e) { e.stopPropagation(); };
+		overlay.onclick = function() {
 			overlay.remove();
 			if (!att.previewUrl) URL.revokeObjectURL(audio.src);
 		};
-		overlay.appendChild(wrapper);
 		document.body.appendChild(overlay);
 	} else {
 		// 文件下载

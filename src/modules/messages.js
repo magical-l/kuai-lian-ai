@@ -125,7 +125,7 @@ function renderMessages(messages, groups, onCopy) {
 						const thumb = mk('img', 'thumb');
 						thumb.src = imgSrc;
 						thumb.onclick = () => {
-							const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+							const overlay = mk('div', 'preview-overlay , flex items-go-x');
 							const fullImg = mk('img');
 							fullImg.src = imgSrc;
 							overlay.onclick = () => overlay.remove();
@@ -151,24 +151,14 @@ function renderMessages(messages, groups, onCopy) {
 								type: mime
 							});
 							const url = URL.createObjectURL(blob);
-							const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
-							overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
-							const audio = mk('audio', '');
-							audio.src = url;
-							audio.controls = true;
-							audio.style.cssText = 'max-width:90%;border-radius:8px;';
-							const wrapper = mk('div', 'flex items-go-y');
-							wrapper.style.cssText = 'align-items:center;gap:12px;';
-							wrapper.appendChild(audio);
-							const dlBtn = mk('a', 'btn');
+							var overlay = fromTemplate('audio-preview', '.preview-overlay');
+							var ao = overlay.querySelector('audio');
+							ao.src = url;
+							var dlBtn = overlay.querySelector('.btn');
 							dlBtn.href = url;
 							dlBtn.download = att.name || 'recording.webm';
-							dlBtn.textContent = '下载';
-							dlBtn.style.cssText = 'padding:6px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;cursor:pointer;';
-							dlBtn.onclick = e => e.stopPropagation();
-							wrapper.appendChild(dlBtn);
-							overlay.onclick = () => { overlay.remove(); URL.revokeObjectURL(url); };
-							overlay.appendChild(wrapper);
+							dlBtn.onclick = function(e) { e.stopPropagation(); };
+							overlay.onclick = function() { overlay.remove(); URL.revokeObjectURL(url); };
 							document.body.appendChild(overlay);
 						};
 					}
@@ -225,7 +215,7 @@ function appendUserMessage(msg) {
 					const thumb = mk('img', 'thumb');
 					thumb.src = imgSrc;
 					thumb.onclick = () => {
-						const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+						const overlay = mk('div', 'preview-overlay , flex items-go-x');
 						const fullImg = mk('img');
 						fullImg.src = imgSrc;
 						overlay.onclick = () => overlay.remove();
@@ -251,24 +241,14 @@ function appendUserMessage(msg) {
 							type: mime
 						});
 						const url = URL.createObjectURL(blob);
-						const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
-						overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
-						const audio = mk('audio', '');
-						audio.src = url;
-						audio.controls = true;
-						audio.style.cssText = 'max-width:90%;border-radius:8px;';
-						const wrapper = mk('div', 'flex items-go-y');
-						wrapper.style.cssText = 'align-items:center;gap:12px;';
-						wrapper.appendChild(audio);
-						const dlBtn = mk('a', 'btn');
+						var overlay = fromTemplate('audio-preview', '.preview-overlay');
+						var ao = overlay.querySelector('audio');
+						ao.src = url;
+						var dlBtn = overlay.querySelector('.btn');
 						dlBtn.href = url;
 						dlBtn.download = att.name || 'recording.webm';
-						dlBtn.textContent = '下载';
-						dlBtn.style.cssText = 'padding:6px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;cursor:pointer;';
-						dlBtn.onclick = e => e.stopPropagation();
-						wrapper.appendChild(dlBtn);
-						overlay.onclick = () => { overlay.remove(); URL.revokeObjectURL(url); };
-						overlay.appendChild(wrapper);
+						dlBtn.onclick = function(e) { e.stopPropagation(); };
+						overlay.onclick = function() { overlay.remove(); URL.revokeObjectURL(url); };
 						document.body.appendChild(overlay);
 					};
 				}
@@ -486,7 +466,7 @@ function appendUserMessage(msg) {
                     img.style.borderRadius = '8px';
                     img.onclick = () => {
                         const src = img.src;
-                        const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+                        const overlay = mk('div', 'preview-overlay , flex items-go-x');
                         const fullImg = mk('img');
                         fullImg.src = src;
                         overlay.onclick = () => overlay.remove();
@@ -513,7 +493,7 @@ function appendUserMessage(msg) {
                                 img.style.maxWidth = '100%';
                                 img.style.borderRadius = '8px';
                                 img.onclick = () => {
-                                    const overlay = mk('div', 'image-preview-overlay , flex items-go-x');
+                                    const overlay = mk('div', 'preview-overlay , flex items-go-x');
                                     const fullImg = mk('img');
                                     fullImg.src = dataUrl;
                                     overlay.onclick = () => overlay.remove();
