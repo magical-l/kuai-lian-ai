@@ -283,6 +283,29 @@ function showEditGroupDialog(node, parentId, onSave) {
 	// 重置 API Key 可见性 toggle
 	var toggleCheckbox = dialog.querySelector('.toggle.apikey input');
 	if (toggleCheckbox) toggleCheckbox.checked = false;
+	// 重置 directUrl 状态（dialog 复用清除）
+	var _du = dialog.querySelector('.direct-url.toggle');
+	var _ducb = _du ? _du.querySelector('input[type="checkbox"]') : null;
+	if (_ducb) _ducb.checked = false;
+	dialog.querySelector('.url-row').classList.remove('direct');
+	// 清除前一次留下的继承图标和内联样式
+	['url', 'apikey', 'model-id'].forEach(function(name) {
+		var inp = dialog.querySelector('input[name="' + name + '"]');
+		if (inp) {
+			var ic = inp.parentNode.querySelector('.inherit.icon');
+			if (ic) ic.remove();
+			inp._inheritIconAdded = false;
+			inp.style.flex = '';
+		}
+	});
+	dialog.querySelectorAll('.input-row').forEach(function(r) {
+		var inp = r.querySelector('input');
+		if (inp) {
+			var parent = r.parentNode;
+			while (r.firstChild) parent.insertBefore(r.firstChild, r);
+			r.remove();
+		}
+	});
 	var nameInput = $("input[name=\"name\"]", dialog);
 	var urlInput = $('input[name="url"]', dialog);
 	var styleSel = dialog.querySelector('input[name="style"]:checked') || dialog.querySelector('input[name="style"]');
@@ -302,7 +325,10 @@ function showEditGroupDialog(node, parentId, onSave) {
 				gemini: { chat: '/v1beta/models/' + (modelId || '{modelId}') + ':streamGenerateContent?alt=sse', embedding: '/v1beta/models/' + (modelId || '{modelId}') + ':embedContent', 'image-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', 'video-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', tts: '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent' }
 			};
 			var map = paths[style];
-			return (map && map[type]) || (map && map.chat) || '';
+			if (map && map[type]) return map[type];
+			if (map && map.chat) return map.chat;
+			if (map) { var ks = Object.keys(map); if (ks.length) return map[ks[0]]; }
+			return '';
 		}
 	var paramSection = $('.param.section', dialog);
 	var paramList = $('.param-control.list', dialog);
@@ -311,17 +337,26 @@ function showEditGroupDialog(node, parentId, onSave) {
 		function setRadio(name, val, ctx) { ctx.querySelectorAll('input[name="' + name + '"]').forEach(function(r) { r.checked = r.value === val; }); }
 		function getRadio(name, ctx) { var r = ctx.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
 		function updatePathDisplay(styleVal) {
+			// directUrl 态：path 被用户显式清空，不显示路径后缀
+			if (directUrlCheckbox && directUrlCheckbox.checked) {
+				pathSuffix.textContent = '';
+				pathSuffix.style.display = 'none';
+				return;
+			}
 			var modelId = modelidInput.value.trim();
 			var typeVal = getRadio('type', dialog) || (typeof rcfg !== 'undefined' && rcfg && rcfg.type) || '';
 			var path = apiPath(styleVal, typeVal, modelId);
 			if (!path) {
 				var inheritHint = dialog.querySelector('input[name="style"][value=""]');
-				if (inheritHint) {
-					var hintParent = inheritHint.parentElement;
-					var inheritVal = hintParent ? hintParent.querySelector('.inheriting-val') : null;
-					if (inheritVal && inheritVal.textContent) {
-						var m = inheritVal.textContent.match(/\(([^)]+)\)/);
-						if (m) { var inheritedType = getRadio('type', dialog) || ''; path = apiPath(m[1].toLowerCase(), inheritedType, modelId); }
+				if (inheritHint && inheritHint.checked) {
+					// 继承态：用 rcfg.style（实际 key，如 "openai"）而非从显示文本抠
+					var inheritedStyle = (typeof rcfg !== 'undefined' && rcfg && rcfg.style) || '';
+					if (inheritedStyle) {
+						var inheritedType = getRadio('type', dialog) || '';
+						if (!inheritedType) {
+							inheritedType = (typeof rcfg !== 'undefined' && rcfg && rcfg.type) || '';
+						}
+						path = apiPath(inheritedStyle.toLowerCase(), inheritedType, modelId);
 					}
 				}
 			}
@@ -639,6 +674,13 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 	if (directUrlCheckbox) {
 			directUrlCheckbox.addEventListener('change', function() {
 				urlRow.classList.toggle('direct', this.checked);
+				// 同步清空/恢复路径后缀，而非仅靠 CSS 遮挡
+				if (this.checked) {
+					pathSuffix.textContent = '';
+					pathSuffix.style.display = 'none';
+				} else {
+					updatePathDisplay(getRadio('style', dialog));
+				}
 			});
 		}
 	// Enter → 切到下一个输入框

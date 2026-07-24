@@ -256,6 +256,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-14 | 编辑弹窗新增 `.tab.container` 组件；批量创建节点功能 | 单节点/批量创建两种模式，radio 驱动 CSS `:has()` 显隐 |
 | 2026-07-01 | 侧边栏切换时 updateSidebarToggleIcon 移入 doToggle 内部 | icon 在 ViewTransition 路径外更新导致暗色下图标颜色不随状态正确切换。版本 6.3.1。 |
 | 2026-07-24 | 音频附件预览改为播放器（含下载按钮）；录音/上传音频图标区分（🎤 mic vs ♫ audio）；source 标记写入 session | 录音 WebM 原生控件无下载按钮需手动补；用户需区分录音和上传音频。版本 6.31.0。 |
+| 2026-07-24 | 编辑弹窗 dialog 复用残留修复：重置 directUrl 状态、清理继承图标 DOM；`updatePathDisplay` 继承提取改用 `rcfg.style`/`rcfg.type` 而非显示文本正则；`apiPath` 增加无匹配 type 时的首个可用路径兜底 | dialog 元素复用导致前一次打开的 directUrl checkbox/.direct class/继承图标残留到下一节点；继承显示文本用全角括号与半角正则不匹配；即梦等非 openai 风格无 `.chat` 兜底导致 type 不匹配时 path 空。版本 6.32.1。 |
 | 2026-07-24 | 图片/音频预览 overlay 从 JS `mk()` 抽为 `<template id="image-preview">` / `<template id="audio-preview">`，CSS 类名统一为 `.preview-overlay`，移除所有内联 style | template 承载结构、CSS 承载样式、JS 只留行为逻辑，三权分离。滥用 `.download-btn` 类被纠正为 `<button class="btn download char-style">` 复用 common.css。 |
 
 | 2026-07-03 | 端点编辑对话框新增类型选择器，移除全局 taskMode radio | 每个端点独立标注类型（chat/embedding/image/rerank），不再用全局切换；类型自动从 modelId 检测，用户可覆盖 |
