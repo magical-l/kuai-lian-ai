@@ -1482,6 +1482,9 @@ dialog[open] {
 							input[type="range"] {
 								flex: 1;
 								min-width: 60px;
+								padding: 0;
+								border: none;
+								border-radius: 0;
 							}
 							input[type="number"] {
 								width: 100%;
@@ -1800,7 +1803,7 @@ dialog[open] {
 				flex: 1;
 				min-width: 0;
 
-				input[type="range"] { flex: 1; min-width: 60px; }
+				input[type="range"] { flex: 1; min-width: 60px; padding: 0; border: none; border-radius: 0; }
 				input[type="number"] { width: 100%; }
 						select { width: 100%; }
 				& .param.val {
