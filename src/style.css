@@ -900,14 +900,6 @@ main {
 		max-height: 90%;
 		border-radius: var(--radius-md);
 	}
-	& .download-btn {
-		padding: 6px 16px;
-		border-radius: 6px;
-		background: var(--accent);
-		color: #fff;
-		text-decoration: none;
-		cursor: pointer;
-	}
 }
 
 aside.endpoint.list {

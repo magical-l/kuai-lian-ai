@@ -1298,12 +1298,10 @@ function renderPendingAttachments() {
 function showAttachmentPreview(att) {
 	if (att.type === 'image' && att.previewUrl) {
 		// 图片预览弹窗
-		const overlay = mk('div', 'preview-overlay , flex items-go-x');
-		overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
-		const img = mk('img');
+		var overlay = fromTemplate('image-preview', '.preview-overlay');
+		var img = mk('img');
 		img.src = att.previewUrl;
-		img.style.cssText = 'max-width:90%;max-height:90%;border-radius:8px;';
-		overlay.onclick = () => overlay.remove();
+		overlay.onclick = function() { overlay.remove(); };
 		overlay.appendChild(img);
 		document.body.appendChild(overlay);
 	} else if (att.file && att.file.type && att.file.type.indexOf('audio/') === 0) {

@@ -612,11 +612,16 @@
 			<div class="multi-select btn-group , flex items-go-x , hidden"></div>
 		</div>
 	</template>
+	<template id="image-preview">
+		<div class="preview-overlay , flex items-go-x items-near-center"></div>
+	</template>
 	<template id="audio-preview">
-		<div class="preview-overlay , flex items-go-x">
-			<div class="flex items-go-y" style="align-items:center;gap:12px;">
+		<div class="preview-overlay , flex items-go-x items-near-center">
+			<div class="flex items-go-y items-x-near-center" style="gap:12px;">
 				<audio controls></audio>
-				<a class="download-btn">下载</a>
+				<button class="download btn">
+					<span class="char-style icon"></span>
+					下载</button>
 			</div>
 		</div>
 	</template>

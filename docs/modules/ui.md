@@ -178,7 +178,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 - `addAttachment` — 生成附件对象，图片预生成 dataURL 缩略图
 - `renderPendingAttachments` — `.attachment.list` 内渲染缩略图 `div.thumb`（图片 backgroundImage / 文件 📄）
 - hover 时 `showAttachmentTooltip`（fixed tooltip 显示文件名）
-- 点击预览：图片弹窗遮罩，音频弹窗播放器（含下载按钮），文件触发下载
+- 点击预览：图片/音频从 `<template id="image-preview">` / `<template id="audio-preview">` 克隆（`.preview-overlay`），JS 只负责赋值 src/href 和事件绑定
 - 粘贴图片：通过 `paste` 事件直接 `addAttachment`
 - 录音：`startRecording` → `MediaRecorder` 收集 `audio/webm` → `addAttachment(file, 'recording')`，渲染时以 🎤 mic 图标区分；上传的音频文件以 ♫ 图标显示
 
@@ -256,6 +256,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-14 | 编辑弹窗新增 `.tab.container` 组件；批量创建节点功能 | 单节点/批量创建两种模式，radio 驱动 CSS `:has()` 显隐 |
 | 2026-07-01 | 侧边栏切换时 updateSidebarToggleIcon 移入 doToggle 内部 | icon 在 ViewTransition 路径外更新导致暗色下图标颜色不随状态正确切换。版本 6.3.1。 |
 | 2026-07-24 | 音频附件预览改为播放器（含下载按钮）；录音/上传音频图标区分（🎤 mic vs ♫ audio）；source 标记写入 session | 录音 WebM 原生控件无下载按钮需手动补；用户需区分录音和上传音频。版本 6.31.0。 |
+| 2026-07-24 | 图片/音频预览 overlay 从 JS `mk()` 抽为 `<template id="image-preview">` / `<template id="audio-preview">`，CSS 类名统一为 `.preview-overlay`，移除所有内联 style | template 承载结构、CSS 承载样式、JS 只留行为逻辑，三权分离。滥用 `.download-btn` 类被纠正为 `<button class="btn download char-style">` 复用 common.css。 |
 
 | 2026-07-03 | 端点编辑对话框新增类型选择器，移除全局 taskMode radio | 每个端点独立标注类型（chat/embedding/image/rerank），不再用全局切换；类型自动从 modelId 检测，用户可覆盖 |
 | 2026-07-07 | help-dialog 从 template 改为直接 DOM 元素 | 帮助弹窗始终在场，无需 template 克隆 |

@@ -1093,10 +1093,10 @@ function updateCardAsImage(endpointId, result, sessionId) {
 			img.style.maxWidth = '100%';
 			img.style.borderRadius = '8px';
 			img.onclick = () => {
-				const overlay = mk('div', 'preview-overlay , flex items-go-x');
-				const fullImg = mk('img');
+				var overlay = fromTemplate('image-preview', '.preview-overlay');
+				var fullImg = mk('img');
 				fullImg.src = imgUrl;
-				overlay.onclick = () => overlay.remove();
+				overlay.onclick = function() { overlay.remove(); };
 				overlay.addChild(fullImg);
 				doc.body.addChild(overlay);
 			};
