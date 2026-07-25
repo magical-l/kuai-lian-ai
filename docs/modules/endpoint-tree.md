@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-23
+last_updated: 2026-07-25
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
