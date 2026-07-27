@@ -21,6 +21,13 @@ function findNodeInTree(nodes, nodeId) {
 	return r ? r.node : null;
 }
 
+function resolveTreeMove(nodes, draggedId, targetId) {
+	const dragged = findNodeInTree(nodes, draggedId);
+	const target = findNodeInTree(nodes, targetId);
+	if (!dragged || !target || findNodeInTree([dragged], targetId)) return null;
+	return { dragged, target };
+}
+
 function resolveNodeConfig(nodeId) {
     if (!endpointsData) endpointsData = {
         nodes: []
@@ -384,25 +391,27 @@ async function cloneNode(nodeId) {
 
 // 重新排序：将节点插入到目标位置（同级或跨级均可）
 async function reorderNode(draggedId, targetId, insertBefore = true) {
-	if (!endpointsData) endpointsData = { nodes: [] };
+	if (!endpointsData) return false;
+	const move = resolveTreeMove(endpointsData.nodes, draggedId, targetId);
+	if (!move) return false;
 
-	// 从当前位置移除 dragged 节点
-	let dragged = null;
 	const removeNode = (siblings) => {
 		const idx = siblings.findIndex(n => n.id === draggedId);
-		if (idx >= 0) { dragged = siblings.splice(idx, 1)[0]; return true; }
+		if (idx >= 0) {
+			siblings.splice(idx, 1);
+			return true;
+		}
 		for (const n of siblings) {
 			if (n.children && removeNode(n.children)) return true;
 		}
 		return false;
 	};
 
-	// 在 target 所在层级插入
 	let ok = false;
 	const insertAtTarget = (siblings) => {
 		const idx = siblings.findIndex(n => n.id === targetId);
 		if (idx >= 0) {
-			siblings.splice(insertBefore ? idx : idx + 1, 0, dragged);
+			siblings.splice(insertBefore ? idx : idx + 1, 0, move.dragged);
 			ok = true;
 			return true;
 		}
@@ -412,7 +421,7 @@ async function reorderNode(draggedId, targetId, insertBefore = true) {
 		return false;
 	};
 
-	if (!removeNode(endpointsData.nodes)) return false;
+	removeNode(endpointsData.nodes);
 	insertAtTarget(endpointsData.nodes);
 	if (ok) await saveEndpoints();
 	return ok;
@@ -420,7 +429,10 @@ async function reorderNode(draggedId, targetId, insertBefore = true) {
 
 // 将节点移动为另一个节点的子节点
 async function moveNodeAsChild(draggedId, targetParentId) {
-	if (!endpointsData) endpointsData = { nodes: [] };
+	if (!endpointsData) return false;
+	const move = resolveTreeMove(endpointsData.nodes, draggedId, targetParentId);
+	if (!move) return false;
+
 	const removeRecursive = (siblings) => {
 		const idx = siblings.findIndex(n => n.id === draggedId);
 		if (idx >= 0) return siblings.splice(idx, 1)[0];
@@ -432,15 +444,9 @@ async function moveNodeAsChild(draggedId, targetParentId) {
 		}
 		return null;
 	};
-	const dragged = removeRecursive(endpointsData.nodes);
-	if (!dragged) return false;
-	const target = findNodeInTree(endpointsData.nodes, targetParentId);
-	if (target) {
-		if (!target.children) target.children = [];
-		target.children.push(dragged);
-	} else {
-		endpointsData.nodes.push(dragged);
-	}
+	removeRecursive(endpointsData.nodes);
+	if (!move.target.children) move.target.children = [];
+	move.target.children.push(move.dragged);
 	await saveEndpoints();
 	return true;
 }

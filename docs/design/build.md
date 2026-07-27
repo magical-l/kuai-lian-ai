@@ -3,7 +3,7 @@ title: 构建流程
 covers_file: [build.js, src/layout.html, src/extension/manifest.json]
 depends_on: [architecture.md, data-model.md]
 api_signature: node build.js / MODULE_ORDER / DEV_MODE
-last_updated: 2026-07-15
+last_updated: 2026-07-27
 why_exists: 定义从源码到双产物的构建流程，确保构建可复现、产物可预测
 ---
 
@@ -90,7 +90,7 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 
 ### 版本管理
 
-- 版本号存在于三处：manifest.json 的 `version` 字段 + layout.html 中 `<span class="version">v6.7.3</span>` + 根目录的 kuai-lian-ai.html（测试用单页面）
+- 版本号存在于三处：manifest.json 的 `version` 字段 + layout.html 中 `<span class="version">v6.32.3</span>` + 根目录的 kuai-lian-ai.html（测试用单页面）
 - 每次改动后三处均需同步更新
 - 版本号递增遵循语义化版本（MAJOR.MINOR.PATCH）
 
@@ -116,3 +116,4 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 - 2026-07-15: 筛选按钮 class 从 `endpoint-type.chat`/`embedding`/`image-generation`/`reranking` 改为 `chat`/`digits`/`palette`/`chart`，对齐 common.css 抽象图标
 
 - 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`（路径从 `/css/name.css` 简化为 `/name.css`）
+- 2026-07-27: bug 修复验收后将页面、扩展 manifest 和文档版本同步到 v6.32.3

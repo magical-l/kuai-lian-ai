@@ -176,6 +176,12 @@ function handleNodeDrop(e, nodeEl) {
 	}
 }
 
+function bindEndpointNodeDragEvents(nodeEl) {
+	nodeEl.addEventListener("dragover", e => handleNodeDragover(e, e.currentTarget));
+	nodeEl.addEventListener("dragleave", e => handleNodeDragleave(e.currentTarget));
+	nodeEl.addEventListener("drop", e => handleNodeDrop(e, e.currentTarget));
+}
+
 function handleResetFilter() {
 	document.querySelectorAll('.endpoint-type.filter input[type="checkbox"]').forEach(function(cb) { cb.checked = true; });
 	activeTypeFilters.clear();
@@ -251,6 +257,7 @@ function buildEndpointNodeEl(node) {
 	summaryEl.addEventListener("click", e => handleSummaryTooltipClick(e.currentTarget));
 	dragHandle.addEventListener("dragstart", e => handleDragStart(e, e.currentTarget));
 	dragHandle.addEventListener("dragend", e => handleDragEnd(e.currentTarget));
+	bindEndpointNodeDragEvents(nodeEl);
 
 	addChildBtn.addEventListener("click", e => {
 		e.stopPropagation();

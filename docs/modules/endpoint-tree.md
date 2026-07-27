@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-25
+last_updated: 2026-07-27
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -22,7 +22,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 - 节点类型 tooltip（hover 显示继承链配置）
 - 顶部类型筛选栏（全部/嵌入/生图/重排序）
 
-树的数据模型由 `store.js` 管理（`getGroups` / `endpointsData`），`endpoint-tree.js` 只负责 DOM 渲染。交互事件绑定已移至 HTML 模板 `#one-endpoint` 的 onclick/onchange/ontoggle/ondragstart/ondragend/onmouseover/onmouseleave 属性，JS 中只保留 `ondragover`/`ondragleave`/`ondrop` 三个拖放事件（动态 DOM 无法用模板属性绑定）。
+树的数据模型由 `store.js` 管理（`getGroups` / `endpointsData`），`endpoint-tree.js` 负责 DOM 渲染和交互事件绑定。Chrome 扩展 CSP 禁止内联脚本，因此节点事件统一在 `buildEndpointNodeEl()` 中通过 `addEventListener` 注册；拖放目标事件由 `bindEndpointNodeDragEvents()` 集中绑定，避免局部 DOM 构建时漏接事件链。
 
 ---
 
@@ -52,6 +52,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | `handleNodeDragover` | dragover 根据鼠标位置设置 drop zone class（before/child） |
 | `handleNodeDragleave` | dragleave 清除 drop zone class |
 | `handleNodeDrop` | drop 根据 zone 类型调 reorderNode 或 moveNodeAsChild |
+| `bindEndpointNodeDragEvents` | 给新建节点集中绑定 dragover / dragleave / drop，保证局部 DOM 构建保持完整拖放链 |
 | `handleResetFilter` | 重置筛选按钮，全选所有 type-filter checkbox |
 | `handleClickAddEndpoint` | 空状态"去创建"按钮，触发 .add-node.btn click |
 | `handleFilterBarChange` | 类型筛选栏 change 事件，操作 activeTypeFilters Set |
@@ -191,3 +192,4 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | 2026-07-23 | 补回 `renderEndpointList` 末尾被 AST 工具误删的 test-all 按钮状态更新代码 | AST 替换函数体时漏掉了 `renderTreeNode` 之后的 `.test-all` 更新逻辑，导致树重绘后 test-all 按钮状态卡在旧值 |
 | 2026-07-23 | `updateEndpointTestUI` Part 2/3 及 `renderEndpointList` test-all 按钮：混成状态时也显示叉叉（`anyFail` 而非 `anyFail && !anySuccess`） | 父节点兼有成功/失败的子节点时，原逻辑两个条件都不满足，按钮失去状态类 |
 | 2026-07-23 | `buildEndpointNodeEl` 中 tooltip 对象改存到 `summaryEl._tooltip` 而非 `nameSpan._tooltip` | tooltip 事件处理器挂在 `summaryEl` 上、读 `summaryEl._tooltip`，但创建时存到了 `nameSpan`，导致始终 `undefined`，hover 不显示 tooltip |
+| 2026-07-27 | `buildEndpointNodeEl` 通过 `bindEndpointNodeDragEvents` 统一绑定 dragover / dragleave / drop | 局部 DOM 构建抽取时漏掉目标事件，浏览器将拖动退化为文本搜索且 drop 不触发；集中绑定避免同类回归 |
