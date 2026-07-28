@@ -3,7 +3,7 @@ title: 数据管理层
 covers_file: [src/modules/store.js]
 depends_on: [storage-core.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-07-27
+last_updated: 2026-07-28
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -85,7 +85,7 @@ stripModels(node)
 
 | 函数 | 功能 | 持久化 |
 |------|------|--------|
-| `addNode(parentId, data)` | 在指定父节点下新增子节点（parentId 为空则加到根），生成 UUID | 实时 save |
+| `addNode(parentId, data)` | 在指定父节点下新增子节点（parentId 为空则加到根），生成 UUID；成功返回创建的节点对象，失败返回 `null` | 实时 save |
 | `updateNode(nodeId, updates)` | 更新节点字段（Object.assign），支持任意顶层字段 | 实时 save |
 | `deleteNode(nodeId)` | 递归删除节点及其所有子代，同步清理 `selectedEndpoints` 中的引用 | 实时 save |
 | `cloneNode(nodeId)` | 深拷贝节点及其所有子代，重新生成每个节点 UUID，并把根副本插到原节点之后 | 实时 save |
@@ -172,3 +172,4 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 2026-07-22 | `resolveNodeConfig` 增加 voice/instruction 向后兼容 | 旧版 TTS 节点将 voice/instruction 存为顶层字段而非 `node.params`，`config.params` 构建时补充读取顶层字段 |
 | 2026-07-24 | 增加 `video-generation` 类型 + `video` 别名 | 关键词 `video`/`seedance`/`kling` → `video-generation` |
 | 2026-07-27 | `reorderNode` / `moveNodeAsChild` 在修改树前统一调用 `resolveTreeMove` | 祖先拖向自身后代时，原流程先移除源再查目标，可能丢失子树或错误重根；非法移动现在不改树、不持久化 |
+| 2026-07-28 | `addNode` 返回创建的节点对象，失败返回 `null`；`batchAddNodes` 仍返回 ID 数组 | 局部 UI 插入需要节点完整数据，批量导入保留 ID 数组契约以区分两类调用 |

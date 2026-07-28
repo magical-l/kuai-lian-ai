@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -45,8 +45,8 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `handleSessionSelect` | 切换当前会话 |
 | `handleSessionEdit` | 编辑会话标题 |
 | `handleSessionDelete` | 删除会话 |
-| `handleAddGroup` | 新增端点组 |
-| `handleNodeEdit` | 编辑端点节点 |
+| `handleAddGroup` | 新增端点组：局部插入返回节点并跳过端点树重绘 |
+| `handleNodeEdit` | 编辑端点节点；保存期间父 DOM 被重绘时按 nodeId 重新定位，找不到则完整刷新 |
 | `handleNodeDelete` | 删除端点节点 |
 | `handleCopy` | 复制内容到剪贴板 |
 | `handleReorderNode` | 同级拖拽重排 |
@@ -81,15 +81,15 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 
 ### 1. 初始化流程 (init)
 
-行 22-165。顺序：
+顺序：
 
 1. **UI 组件初始化**：`initDividers()`（分隔条拖拽）、`initScrollNav()`（滚动导航按钮）、`initScrollPaddingObserver()`（sticky 区高度监听）
 2. **输入绑定**：
    - `keydown` 监听：Enter / Ctrl+Enter 切换发送模式，统一调用 `handleSend`（按端点 type 内部分流）
    - `paste` 监听：剪贴板图片提取 → `addAttachment`
-3. **发送模式选择器**（Popover API）：radio change 事件持久化 `sendMode` 到 localStorage；`beforetoggle`/`toggle` 事件已移至 HTML `onbeforetoggle`/`ontoggle` 属性，对应 `handleSendModePopBeforetoggle` / `handleSendModePopToggle`
+3. **发送模式选择器**（Popover API）：radio change 事件持久化 `sendMode` 到 localStorage；`beforetoggle`/`toggle` 事件由 JS 监听，对应 `handleSendModePopBeforetoggle` / `handleSendModePopToggle`
 4. **存储恢复**：`tryRestoreDirectory()` → 成功则 `refreshUI`，失败则 `showDirectoryPrompt`
-5. **按钮绑定**：不再在 JS 中绑定按钮事件。所有按钮/表单的 onclick/onchange 已从 HTML 移至 JS：静态按钮在 init() 中用 .on() 绑定，模板内元素在 fromTemplate() 后用 addEventListener 绑定。详见决策日志 2026-07-13 CSP 兼容性变更。
+5. **按钮绑定**：所有按钮/表单事件均在 JS 中绑定：静态按钮在 init() 中用 `.on()` 绑定，模板内元素在 `fromTemplate()` 后用 `addEventListener` 绑定。详见决策日志 2026-07-13 CSP 兼容性变更。
 
 ### 2. 发送主逻辑 (handleSend)
 
@@ -167,12 +167,12 @@ showThinkingCards(idList, groups, sessionId)
 
 ### 5. refreshUI — 全局状态同步枢纽
 
-行 211-269。在 store 变更后统一调用，保证 DOM 与数据层一致：
+在 store 变更后统一调用，保证 DOM 与数据层一致：
 
 1. **端点过滤**：移除已不存在的 `selectedEndpoints` ID
 2. **当前会话有效性**：会话已被删除时清空 `currentSession`
 3. **渲染端点标签栏**：`renderSelectedEndpoints`
-4. **渲染端点树**：`renderEndpointList`（递归重绘整棵树）
+4. **渲染端点树**：默认 `renderEndpointList` 递归重绘整棵树；局部增删时传入 `{ skipEndpointTree: true }`，保留已处理的树 DOM
 5. **渲染会话列表**：`renderSessionList`
 6. **渲染消息区**：
    - 有流式卡片 → 调用 `renderResponse` 增量更新
@@ -181,7 +181,7 @@ showThinkingCards(idList, groups, sessionId)
 
 ### 6. 会话选择与恢复 (handleSessionSelect)
 
-行 278-317。切换会话时：
+切换会话时：
 
 1. `loadSession(sessionId)` 从 store 加载完整会话数据
 2. 从 lastUserMessage 恢复 `selectedEndpoints`（targetEndpoints/targetModels）
@@ -197,8 +197,8 @@ showThinkingCards(idList, groups, sessionId)
 | `handleSessionSelect(id)` | 点击会话 | 加载会话、恢复端点、恢复生成状态 |
 | `handleSessionEdit(id, title)` | 编辑标题 | 原地更新 title → saveSession → refreshUI |
 | `handleSessionDelete(id)` | 删除按钮 | deleteSessionGenerations → deleteSession → refreshUI |
-| `handleAddGroup()` | 添加组 | showEditGroupDialog → addNode → refreshUI |
-| `handleNodeEdit(id)` | 编辑节点 | clearTestResults → showEditGroupDialog → updateNode → refreshUI |
+| `handleAddGroup()` | 添加组 | showEditGroupDialog → addNode 返回节点对象 → 局部插入 → refreshUI({ skipEndpointTree: true }) |
+| `handleNodeEdit(id)` | 编辑节点 | clearTestResults → showEditGroupDialog → updateNode；保存期间父 DOM 已重绘则按 nodeId 重新定位，找不到则完整 refreshUI |
 | `handleNodeDelete(id)` | 删除节点 | 清理 selectedEndpoints 引用 → deleteNode → refreshUI |
 | `handleCopy(content)` | 复制按钮 | navigator.clipboard.writeText |
 | `handleReorderNode` | 拖拽排序 | clearTestResults → reorderNode → refreshUI |
@@ -218,7 +218,7 @@ showThinkingCards(idList, groups, sessionId)
 
 ### 8. 主题管理
 
-行 730+。Popover 下拉选择 + radio 直选（亮色/暗色/跟随系统），不再用循环切换。
+Popover 下拉选择 + radio 直选（亮色/暗色/跟随系统），不再用循环切换。
 
 ```
 initTheme()  [init() 末尾调用]
@@ -299,8 +299,7 @@ radio change → setThemePref(mode)
 | 2026-07-17 | updateCardStatus failed/stopped 时 `.say` 显示 ✗ 及失败色 | 空 `.say` 让用户困惑；✗ + `--danger-light` 背景比空白或等待回复更清晰 |
 | 2026-07-09 | 内联样式迁移到 utility class + classList。`style.display` → `classList.remove('hidden')`；移除无定义的 `.mb-1` 查询及冗余 inline 样式设置 | 与 CSS 分离，用 classList 而非 style.display 控制显隐；`.mb-1` 无对应 CSS 定义
 | 2026-07-11 | handleSend 改用 appendUserMessage 替代 renderMessages | 发送消息时不清空 `.msg.list`，避免全量 DOM 重建；旧回复卡片保留，清除 `data-endpoint-id`/`data-session-id` 防止与新 streaming cards 冲突 |
-| 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性（随后因 CSP 限制回退） | 减少 init() 中的事件绑定代码，但 Chrome 扩展 CSP 禁止内联脚本执行 |
-| 2026-07-13 | 事件绑定从 HTML 内联属性回到 JS addEventListener | Chrome 扩展 CSP script-src 'self' 禁止内联 onclick/onchange/ontoggle 等，所有 46 处 onxxx 改为 init() 中的 .on() 或模板克隆后的 addEventListener |
+| 2026-07-13 | 事件绑定统一回到 JS 的 `.on()` 和 `addEventListener` | Chrome 扩展 CSP 禁止内联脚本；静态与模板元素分别在初始化和克隆后绑定，兼容两种运行形态 |
 | 2026-07-22 | TTS handler 新增会话参数覆盖合并（与 image generation 模式一致） | 修复 TTS 端点绕过会话级 voice/instruction 覆盖的 bug |
 | 2026-07-22 | TTS 播放器从 `.content > .audio-result` 移到 `.say` 内部 | `(无内容)` 占位文本被 `<audio controls>` 播放器取代；updateCardAsAudio 和 messages.js 音频渲染同步修改 |
 | 2026-07-22 | 新增消息分叉功能（handleFork） | 用户消息 header 新增分叉按钮，点击后以该消息为分叉点创建新会话（复制之前的历史消息），消息文本填入输入框，等待编辑/重发 |
@@ -308,3 +307,5 @@ radio change → setThemePref(mode)
 | 2026-07-23 | 录音按钮添加 aria-pressed 属性，CSS 切换图标（🎤→⏹）+ 脉冲动画 | 录音中无视觉反馈，用户无法区分是否正在录音 |
 | 2026-07-23 | 录音按钮改为 label.toggle 模式（checkbox 驱动），声波可视化替代脉冲动画 | 移除 JS 手工 class 管理，改用 :has(:checked) 纯 CSS 驱动；AnalyserNode + raf 驱动 10 根频率条柱 |
 | 2026-07-24 | 增加 `video-generation` 端点的分流、请求处理和 `updateCardAsVideo` 渲染 | 视频端点走 `callVideoGeneration`，结果渲染为 `<video>` 播放器 |
+| 2026-07-28 | 新增组/子节点使用 `addNode` 的返回对象局部插入，并用 `skipEndpointTree` 刷新其余 UI | 避免并发完整重绘与局部插入同时发生而重复插入；首子节点同步树形状态、筛选和祖先批量测试状态 |
+| 2026-07-28 | 子节点保存后若父 DOM 已被重绘，按 nodeId 重新定位；定位失败时完整刷新 | 异步保存不能依赖已失效的 DOM 引用，完整刷新为无法局部恢复时的一致性回退 |

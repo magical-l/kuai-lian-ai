@@ -7,6 +7,7 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const endpointTreeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'endpoint-tree.js');
+const mainSourcePath = path.join(__dirname, '..', 'src', 'modules', 'main.js');
 const storeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'store.js');
 
 class FakeEventTarget {
@@ -25,6 +26,101 @@ class FakeEventTarget {
 		listeners.forEach(listener => listener(event));
 		return true;
 	}
+}
+
+function maskJavaScriptStringsAndComments(source) {
+	let masked = '';
+	let index = 0;
+	let state = 'code';
+
+	while (index < source.length) {
+		const character = source[index];
+		const nextCharacter = source[index + 1];
+
+		if (state === 'code') {
+			if (character === '/' && nextCharacter === '/') {
+				masked += '  ';
+				index += 2;
+				state = 'line-comment';
+				continue;
+			}
+			if (character === '/' && nextCharacter === '*') {
+				masked += '  ';
+				index += 2;
+				state = 'block-comment';
+				continue;
+			}
+			if (character === '\'' || character === '"' || character === '`') {
+				masked += ' ';
+				index += 1;
+				state = character;
+				continue;
+			}
+			masked += character;
+			index += 1;
+			continue;
+		}
+
+		if (state === 'line-comment') {
+			if (character === '\n' || character === '\r') {
+				masked += character;
+				state = 'code';
+			} else {
+				masked += ' ';
+			}
+			index += 1;
+			continue;
+		}
+
+		if (state === 'block-comment') {
+			if (character === '*' && nextCharacter === '/') {
+				masked += '  ';
+				index += 2;
+				state = 'code';
+				continue;
+			}
+			masked += character === '\n' || character === '\r' ? character : ' ';
+			index += 1;
+			continue;
+		}
+
+		if (character === '\\') {
+			masked += '  ';
+			index += 2;
+			continue;
+		}
+		if (character === state) {
+			masked += ' ';
+			index += 1;
+			state = 'code';
+			continue;
+		}
+		masked += character === '\n' || character === '\r' ? character : ' ';
+		index += 1;
+	}
+
+	return masked;
+}
+
+function extractFunctionDeclaration(source, functionName) {
+	const maskedSource = maskJavaScriptStringsAndComments(source);
+	const declarationPattern = new RegExp(`\\bfunction\\s+${functionName}\\s*\\(`);
+	const declarationMatch = declarationPattern.exec(maskedSource);
+
+	assert.ok(declarationMatch, `Could not find function declaration ${functionName}`);
+
+	const declarationStart = declarationMatch.index;
+	const bodyStart = maskedSource.indexOf('{', declarationStart);
+	assert.notEqual(bodyStart, -1, `Could not find function body for ${functionName}`);
+
+	let depth = 0;
+	for (let index = bodyStart; index < maskedSource.length; index += 1) {
+		if (maskedSource[index] === '{') depth += 1;
+		if (maskedSource[index] === '}') depth -= 1;
+		if (depth === 0) return source.slice(declarationStart, index + 1);
+	}
+
+	throw new Error(`Could not balance function body for ${functionName}`);
 }
 
 function createEndpointTreeHarness(handlerSpies) {
@@ -184,6 +280,494 @@ test('bindEndpointNodeDragEvents dispatches drag events to the real named handle
 	assert.equal(dropEvent.currentTarget, nodeEl);
 });
 
+function assertSkipEndpointTreeRefresh(call) {
+	assert.equal(call[0], 'refresh');
+	assert.equal(call[1].skipEndpointTree, true);
+	assert.equal(Object.keys(call[1]).length, 1);
+}
+
+test('handleAddGroup filters its appended root node before refreshing the endpoint tree', async () => {
+	const calls = [];
+	const data = { name: 'New group' };
+	const newNode = { id: 'new-group', name: 'New group', children: [] };
+	const builtNodeEl = { id: 'built-new-group' };
+	let onSubmit;
+	const container = {
+		appendChild(nodeEl) {
+			calls.push(['append', nodeEl]);
+		}
+	};
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const handleAddGroupSource = extractFunctionDeclaration(mainSource, 'handleAddGroup');
+	const context = vm.createContext({
+		addNode: async (...args) => {
+			calls.push(['addNode', ...args]);
+			return newNode;
+		},
+		applyEndpointFilter() {
+			calls.push(['filter']);
+		},
+		buildEndpointNodeEl(node) {
+			calls.push(['build', node]);
+			return builtNodeEl;
+		},
+		document: {
+			querySelector(selector) {
+				assert.equal(selector, 'aside.endpoint.list > ol');
+				return container;
+			}
+		},
+		refreshUI: async options => {
+			calls.push(['refresh', options]);
+		},
+		showEditGroupDialog(...args) {
+			assert.equal(args[0], null);
+			assert.equal(args[1], null);
+			onSubmit = args[2];
+		},
+		updateEmptyState() {}
+	});
+
+	new vm.Script(`${handleAddGroupSource}\nglobalThis.__handleAddGroup = handleAddGroup;`, {
+		filename: mainSourcePath
+	}).runInContext(context);
+
+	context.__handleAddGroup();
+	await onSubmit(data);
+
+	assert.equal(calls[0][0], 'addNode');
+	assert.equal(calls[0][1], null);
+	assert.equal(calls[0][2], data);
+	assert.equal(calls[1][0], 'build');
+	assert.equal(calls[1][1], newNode);
+	assert.equal(calls[2][0], 'append');
+	assert.equal(calls[2][1], builtNodeEl);
+	assert.equal(calls[3][0], 'filter');
+	assertSkipEndpointTreeRefresh(calls[4]);
+});
+
+test('handleAddGroup refreshes without local DOM work when addNode returns null', async () => {
+	const calls = [];
+	let onSubmit;
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const handleAddGroupSource = extractFunctionDeclaration(mainSource, 'handleAddGroup');
+	const context = vm.createContext({
+		addNode: async (...args) => {
+			calls.push(['addNode', ...args]);
+			return null;
+		},
+		applyEndpointFilter() {
+			calls.push(['filter']);
+		},
+		buildEndpointNodeEl() {
+			calls.push(['build']);
+		},
+		document: {
+			querySelector() {
+				calls.push(['query']);
+				return null;
+			}
+		},
+		refreshUI: async options => {
+			calls.push(['refresh', options]);
+		},
+		showEditGroupDialog(...args) {
+			onSubmit = args[2];
+		},
+		updateEmptyState() {}
+	});
+
+	new vm.Script(`${handleAddGroupSource}\nglobalThis.__handleAddGroup = handleAddGroup;`, {
+		filename: mainSourcePath
+	}).runInContext(context);
+
+	context.__handleAddGroup();
+	const data = { name: 'Cancelled group' };
+	await onSubmit(data);
+
+	assert.equal(calls.length, 2);
+	assert.equal(calls[0][0], 'addNode');
+	assert.equal(calls[0][1], null);
+	assert.equal(calls[0][2], data);
+	assertSkipEndpointTreeRefresh(calls[1]);
+});
+
+test('handleAddChildClick creates a first child list, filters it, then refreshes', async () => {
+	const calls = [];
+	const data = { name: 'New child' };
+	const newNode = { id: 'new-child', name: 'New child', children: [] };
+	const builtNodeEl = { id: 'built-new-child' };
+	let onSubmit;
+	const childrenOl = {
+		set className(value) {
+			calls.push(['children-class', value]);
+		},
+		appendChild(nodeEl) {
+			calls.push(['children-append', nodeEl]);
+		}
+	};
+	const detailsEl = {
+		open: false,
+		appendChild(nodeEl) {
+			calls.push(['details-append', nodeEl]);
+		}
+	};
+	const parentClassList = {
+		remove(className) {
+			calls.push(['parent-class-remove', className]);
+		}
+	};
+	const parentNameClassList = {
+		add(className) {
+			calls.push(['parent-name-class-add', className]);
+		}
+	};
+	const nodeEl = {
+		classList: parentClassList,
+		dataset: { nodeId: 'parent-node' },
+		querySelector(selector) {
+			if (selector === 'details > ol.children') return null;
+			if (selector === 'details') return detailsEl;
+			if (selector === '.name') return { classList: parentNameClassList };
+			throw new Error(`Unexpected node selector: ${selector}`);
+		}
+	};
+	const button = {
+		closest(selector) {
+			assert.equal(selector, '.one.endpoint');
+			return nodeEl;
+		}
+	};
+	const endpointTreeSource = fs.readFileSync(endpointTreeSourcePath, 'utf8');
+	const context = vm.createContext({
+		addNode: async (...args) => {
+			calls.push(['addNode', ...args]);
+			return newNode;
+		},
+		applyEndpointFilter() {
+			calls.push(['filter']);
+		},
+		buildEndpointNodeEl(node) {
+			calls.push(['build', node]);
+			return builtNodeEl;
+		},
+		document: {
+			createElement(tagName) {
+				calls.push(['create', tagName]);
+				return childrenOl;
+			}
+		},
+		refreshUI: async options => {
+			calls.push(['refresh', options]);
+		},
+		showEditGroupDialog(...args) {
+			assert.equal(args[0], null);
+			assert.equal(args[1], 'parent-node');
+			onSubmit = args[2];
+		},
+		updateEmptyState() {}
+	});
+
+	const handleAddChildClickSource = extractFunctionDeclaration(endpointTreeSource, 'handleAddChildClick');
+	new vm.Script(`${handleAddChildClickSource}\nglobalThis.__handleAddChildClick = handleAddChildClick;`, {
+		filename: endpointTreeSourcePath
+	}).runInContext(context);
+
+	context.__handleAddChildClick(button);
+	await onSubmit(data);
+
+	assert.equal(calls[0][0], 'addNode');
+	assert.equal(calls[0][1], 'parent-node');
+	assert.equal(calls[0][2], data);
+	assert.equal(calls[1][0], 'create');
+	assert.equal(calls[1][1], 'ol');
+	assert.equal(calls[2][0], 'children-class');
+	assert.equal(calls[2][1], 'children');
+	assert.equal(calls[3][0], 'details-append');
+	assert.equal(calls[3][1], childrenOl);
+	assert.equal(calls[4][0], 'build');
+	assert.equal(calls[4][1], newNode);
+	assert.equal(calls[5][0], 'children-append');
+	assert.equal(calls[5][1], builtNodeEl);
+	assert.equal(calls[6][0], 'parent-class-remove');
+	assert.equal(calls[6][1], 'compact');
+	assert.equal(calls[7][0], 'parent-name-class-add');
+	assert.equal(calls[7][1], 'has-children');
+	assert.equal(calls[8][0], 'filter');
+	assertSkipEndpointTreeRefresh(calls[9]);
+	assert.equal(detailsEl.open, true);
+});
+
+test('local child append refreshes ancestor batch test ids before its real batch action', async () => {
+	let onSubmit;
+	const batchTestedIds = [];
+	const parentNode = {
+		id: 'parent-node',
+		name: 'Parent group',
+		children: [{ id: 'existing-child', name: 'Existing endpoint', children: [] }]
+	};
+	const newNode = { id: 'new-child', name: 'New endpoint', children: [] };
+	const classList = {
+		add() {},
+		remove() {},
+		contains(className) {
+			return className === 'children';
+		}
+	};
+	const parentBatchBtn = {
+		classList,
+		dataset: { testableIds: JSON.stringify(['existing-child']) },
+		title: ''
+	};
+	const childTestBtn = { classList, title: '' };
+	const detailsEl = {
+		open: false,
+		appendChild(nodeEl) {
+			nodeEl.parentElement = this;
+		}
+	};
+	const childrenOl = {
+		classList,
+		appendChild(nodeEl) {
+			nodeEl.parentElement = this;
+		},
+		closest(selector) {
+			assert.equal(selector, '.one.endpoint');
+			return parentNodeEl;
+		}
+	};
+	const parentNodeEl = {
+		classList,
+		dataset: { nodeId: 'parent-node' },
+		parentElement: { classList: { contains() { return false; } } },
+		querySelector(selector) {
+			if (selector === 'details > ol.children') return null;
+			if (selector === 'details') return detailsEl;
+			if (selector === '.name') return { classList };
+			if (selector === '.test-connection') return parentBatchBtn;
+			throw new Error(`Unexpected parent selector: ${selector}`);
+		}
+	};
+	const childNodeEl = {
+		dataset: { nodeId: 'new-child' },
+		querySelector(selector) {
+			assert.equal(selector, '.test-connection');
+			return childTestBtn;
+		}
+	};
+	const button = {
+		closest(selector) {
+			assert.equal(selector, '.one.endpoint');
+			return parentNodeEl;
+		}
+	};
+	const endpointTreeSource = fs.readFileSync(endpointTreeSourcePath, 'utf8');
+	const handleAddChildClickSource = extractFunctionDeclaration(endpointTreeSource, 'handleAddChildClick');
+	const handleBatchTestClickSource = extractFunctionDeclaration(endpointTreeSource, 'handleBatchTestClick');
+	const updateEndpointTestUISource = extractFunctionDeclaration(endpointTreeSource, 'updateEndpointTestUI');
+	const context = vm.createContext({
+		addNode: async (parentId, data) => {
+			assert.equal(parentId, 'parent-node');
+			assert.deepEqual(data, { name: 'New endpoint' });
+			parentNode.children.push(newNode);
+			return newNode;
+		},
+		applyEndpointFilter() {},
+		buildEndpointNodeEl(node) {
+			assert.equal(node, newNode);
+			return childNodeEl;
+		},
+		connectionStatus: new Map(),
+		document: {
+			createElement(tagName) {
+				assert.equal(tagName, 'ol');
+				return childrenOl;
+			},
+			querySelector(selector) {
+				if (selector === '.test-all') return null;
+				assert.equal(selector, '.one.endpoint[data-node-id="new-child"]');
+				return childNodeEl;
+			}
+		},
+		getConnectionStatusText() {
+			return 'Not tested';
+		},
+		getNode(nodeId) {
+			assert.equal(nodeId, 'parent-node');
+			return parentNode;
+		},
+		refreshUI: async () => {},
+		resolveNodeConfig(nodeId) {
+			if (nodeId === 'existing-child' || nodeId === 'new-child') {
+				return { baseUrl: 'https://example.test', modelId: 'test-model', type: 'chat' };
+			}
+			return null;
+		},
+		showEditGroupDialog(_node, parentId, submit) {
+			assert.equal(parentId, 'parent-node');
+			onSubmit = submit;
+		},
+		updateEmptyState() {},
+		testConnection(nodeId) {
+			batchTestedIds.push(nodeId);
+		}
+	});
+
+	new vm.Script(`${updateEndpointTestUISource}
+var synchronizeEndpointTestUI = updateEndpointTestUI;
+var updateEndpointTestUICalls = 0;
+updateEndpointTestUI = function(nodeId) {
+	updateEndpointTestUICalls += 1;
+	return synchronizeEndpointTestUI(nodeId);
+};
+${handleAddChildClickSource}
+${handleBatchTestClickSource}
+globalThis.__handleAddChildClick = handleAddChildClick;
+globalThis.__handleBatchTestClick = handleBatchTestClick;
+globalThis.__synchronizeEndpointTestUI = synchronizeEndpointTestUI;
+globalThis.__updateEndpointTestUICalls = function() { return updateEndpointTestUICalls; };`, {
+		filename: endpointTreeSourcePath
+	}).runInContext(context);
+
+	context.__handleAddChildClick(button);
+	await onSubmit({ name: 'New endpoint' });
+
+	assert.deepEqual(
+		JSON.parse(parentBatchBtn.dataset.testableIds),
+		['existing-child', 'new-child'],
+		'parent batch test data must include the locally appended testable child'
+	);
+	context.__handleBatchTestClick(parentBatchBtn);
+	assert.deepEqual(batchTestedIds, ['existing-child', 'new-child']);
+	assert.equal(context.__updateEndpointTestUICalls(), 1);
+});
+
+test('handleAddChildClick refreshes without local DOM work when addNode returns null', async () => {
+	const calls = [];
+	let onSubmit;
+	const nodeEl = {
+		dataset: { nodeId: 'parent-node' },
+		querySelector() {
+			calls.push(['query']);
+			return null;
+		}
+	};
+	const button = {
+		closest() {
+			return nodeEl;
+		}
+	};
+	const endpointTreeSource = fs.readFileSync(endpointTreeSourcePath, 'utf8');
+	const handleAddChildClickSource = extractFunctionDeclaration(endpointTreeSource, 'handleAddChildClick');
+	const context = vm.createContext({
+		addNode: async (...args) => {
+			calls.push(['addNode', ...args]);
+			return null;
+		},
+		applyEndpointFilter() {
+			calls.push(['filter']);
+		},
+		buildEndpointNodeEl() {
+			calls.push(['build']);
+		},
+		document: {
+			createElement() {
+				calls.push(['create']);
+			}
+		},
+		refreshUI: async options => {
+			calls.push(['refresh', options]);
+		},
+		showEditGroupDialog(...args) {
+			onSubmit = args[2];
+		},
+		updateEmptyState() {}
+	});
+
+	new vm.Script(`${handleAddChildClickSource}\nglobalThis.__handleAddChildClick = handleAddChildClick;`, {
+		filename: endpointTreeSourcePath
+	}).runInContext(context);
+
+	context.__handleAddChildClick(button);
+	const data = { name: 'Cancelled child' };
+	await onSubmit(data);
+
+	assert.equal(calls.length, 2);
+	assert.equal(calls[0][0], 'addNode');
+	assert.equal(calls[0][1], 'parent-node');
+	assert.equal(calls[0][2], data);
+	assertSkipEndpointTreeRefresh(calls[1]);
+});
+
+test('updateEmptyState shows the filtered-empty state when every endpoint has the hidden class', () => {
+	function createClassList(...classes) {
+		const values = new Set(classes);
+		return {
+			add(...names) {
+				names.forEach(name => values.add(name));
+			},
+			contains(name) {
+				return values.has(name);
+			},
+			remove(...names) {
+				names.forEach(name => values.delete(name));
+			}
+		};
+	}
+
+	const emptyState = { classList: createClassList('hidden') };
+	const emptyHint = { textContent: '' };
+	const resetBtn = { classList: createClassList('hidden') };
+	const addBtn = { classList: createClassList() };
+	const aside = {
+		querySelector(selector) {
+			if (selector === '.empty-state') return emptyState;
+			throw new Error(`Unexpected aside selector: ${selector}`);
+		}
+	};
+	const hiddenEndpointNodes = [
+		{ classList: createClassList('hidden') },
+		{ classList: createClassList('hidden') }
+	];
+	const endpointTreeSource = fs.readFileSync(endpointTreeSourcePath, 'utf8');
+	const updateEmptyStateSource = extractFunctionDeclaration(endpointTreeSource, 'updateEmptyState');
+	const context = vm.createContext({
+		activeTypeFilters: new Set(['embedding']),
+		document: {
+			querySelector(selector) {
+				if (selector === 'aside.endpoint.list') return aside;
+				throw new Error(`Unexpected document selector: ${selector}`);
+			},
+			querySelectorAll(selector) {
+				if (selector === 'aside.endpoint.list li.one.endpoint') return hiddenEndpointNodes;
+				if (selector === 'aside.endpoint.list li.one.endpoint[style*="display: none"]') return [];
+				throw new Error(`Unexpected document selector: ${selector}`);
+			}
+		},
+		getGroups() {
+			return [{ id: 'filtered-group' }];
+		}
+	});
+
+	emptyState.querySelector = selector => {
+		if (selector === '.hint') return emptyHint;
+		if (selector === '.reset-filter') return resetBtn;
+		if (selector === '.add-endpoint') return addBtn;
+		throw new Error(`Unexpected empty-state selector: ${selector}`);
+	};
+
+	new vm.Script(`${updateEmptyStateSource}\nglobalThis.__updateEmptyState = updateEmptyState;`, {
+		filename: endpointTreeSourcePath
+	}).runInContext(context);
+
+	context.__updateEmptyState();
+
+	assert.equal(emptyState.classList.contains('hidden'), false);
+	assert.equal(emptyHint.textContent, '没有符合筛选的端点。');
+	assert.equal(resetBtn.classList.contains('hidden'), false);
+	assert.equal(addBtn.classList.contains('hidden'), true);
+});
+
 test('reorderNode moves a node to the target position exactly once and persists once', async () => {
 	const tree = {
 		nodes: [
@@ -329,4 +913,181 @@ test('moveNodeAsChild rejects a target inside the dragged subtree without mutati
 	const result = await harness.api.moveNodeAsChild('dragged', 'target');
 
 	assertRejectedWithoutChanges(result, harness, originalTree);
+});
+
+test('handleAddGroup does not append a node already inserted by a complete tree render during addNode', async () => {
+	let onSubmit;
+	let treeWasRendered = false;
+	let buildCount = 0;
+	let appendCount = 0;
+	const newNode = { id: 'new-group', name: 'New group', children: [] };
+	const existingNodeEl = {};
+	const container = {
+		appendChild() {
+			appendCount += 1;
+		},
+		querySelector(selector) {
+			return treeWasRendered && selector.includes(newNode.id) ? existingNodeEl : null;
+		}
+	};
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const handleAddGroupSource = extractFunctionDeclaration(mainSource, 'handleAddGroup');
+	const context = vm.createContext({
+		addNode: async () => {
+			treeWasRendered = true;
+			return newNode;
+		},
+		applyEndpointFilter() {},
+		buildEndpointNodeEl() {
+			buildCount += 1;
+			return {};
+		},
+		document: {
+			querySelector(selector) {
+				if (selector === 'aside.endpoint.list > ol') return container;
+				return treeWasRendered && selector.includes(newNode.id) ? existingNodeEl : null;
+			}
+		},
+		refreshUI: async () => {},
+		showEditGroupDialog(_node, _parentId, submit) {
+			onSubmit = submit;
+		},
+		updateEmptyState() {}
+	});
+
+	new vm.Script(`${handleAddGroupSource}\nglobalThis.__handleAddGroup = handleAddGroup;`, {
+		filename: mainSourcePath
+	}).runInContext(context);
+
+	context.__handleAddGroup();
+	await onSubmit({ name: 'New group' });
+
+	assert.equal(buildCount, 0);
+	assert.equal(appendCount, 0);
+});
+
+test('handleAddChildClick does not append a node already inserted by a complete tree render during addNode', async () => {
+	let onSubmit;
+	let buildCount = 0;
+	let appendCount = 0;
+	const newNode = { id: 'new-child', name: 'New child', children: [] };
+	const existingNodeEl = {};
+	const childList = {
+		appendChild() {
+			appendCount += 1;
+		},
+		querySelector(selector) {
+			return selector.includes(newNode.id) ? existingNodeEl : null;
+		}
+	};
+	const detailsEl = { open: false };
+	const refreshedNodeEl = {
+		classList: { remove() {} },
+		dataset: { nodeId: 'parent-node' },
+		querySelector(selector) {
+			if (selector === 'details > ol.children') return childList;
+			if (selector === 'details') return detailsEl;
+			if (selector === '.name') return { classList: { add() {} } };
+			return selector.includes(newNode.id) ? existingNodeEl : null;
+		}
+	};
+	const originalNodeEl = {
+		isConnected: true,
+		dataset: { nodeId: 'parent-node' }
+	};
+	const button = {
+		closest() {
+			return originalNodeEl;
+		}
+	};
+	const endpointTreeSource = fs.readFileSync(endpointTreeSourcePath, 'utf8');
+	const handleAddChildClickSource = extractFunctionDeclaration(endpointTreeSource, 'handleAddChildClick');
+	const context = vm.createContext({
+		addNode: async () => {
+			originalNodeEl.isConnected = false;
+			return newNode;
+		},
+		applyEndpointFilter() {},
+		buildEndpointNodeEl() {
+			buildCount += 1;
+			return {};
+		},
+		document: {
+			createElement() {
+				throw new Error('The refreshed tree already has a child list');
+			},
+			querySelector(selector) {
+				if (selector.includes('parent-node')) return refreshedNodeEl;
+				return selector.includes(newNode.id) ? existingNodeEl : null;
+			}
+		},
+		refreshUI: async () => {},
+		showEditGroupDialog(_node, _parentId, submit) {
+			onSubmit = submit;
+		},
+		updateEmptyState() {}
+	});
+
+	new vm.Script(`${handleAddChildClickSource}\nglobalThis.__handleAddChildClick = handleAddChildClick;`, {
+		filename: endpointTreeSourcePath
+	}).runInContext(context);
+
+	context.__handleAddChildClick(button);
+	await onSubmit({ name: 'New child' });
+
+	assert.equal(buildCount, 0);
+	assert.equal(appendCount, 0);
+});
+
+test('applyEndpointFilter removes hidden from every endpoint when no type filters are active', () => {
+	function createClassList(...initialClasses) {
+		const classes = new Set(initialClasses);
+		return {
+			add(...names) {
+				names.forEach(name => classes.add(name));
+			},
+			contains(name) {
+				return classes.has(name);
+			},
+			remove(...names) {
+				names.forEach(name => classes.delete(name));
+			},
+			toggle(name, force) {
+				if (force) classes.add(name);
+				else classes.delete(name);
+			}
+		};
+	}
+
+	function createEndpoint(typeClass) {
+		return {
+			classList: createClassList('hidden'),
+			querySelector(selector) {
+				if (selector === '.endpoint-type') return { classList: createClassList(typeClass) };
+				if (selector === 'details > ol') return null;
+				throw new Error(`Unexpected endpoint selector: ${selector}`);
+			}
+		};
+	}
+
+	const endpoints = [createEndpoint('chat'), createEndpoint('digits')];
+	const endpointTreeSource = fs.readFileSync(endpointTreeSourcePath, 'utf8');
+	const applyEndpointFilterSource = extractFunctionDeclaration(endpointTreeSource, 'applyEndpointFilter');
+	const context = vm.createContext({
+		activeTypeFilters: new Set(),
+		document: {
+			querySelectorAll(selector) {
+				assert.equal(selector, 'aside.endpoint.list li.one.endpoint');
+				return endpoints;
+			}
+		}
+	});
+
+	new vm.Script(`${applyEndpointFilterSource}\nglobalThis.__applyEndpointFilter = applyEndpointFilter;`, {
+		filename: endpointTreeSourcePath
+	}).runInContext(context);
+
+	context.__applyEndpointFilter();
+
+	endpoints.forEach(endpoint => assert.equal(endpoint.classList.contains('hidden'), false));
 });

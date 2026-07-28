@@ -1015,6 +1015,9 @@ aside.endpoint.list {
 		& .btn {
 			margin-top: 8px;
 		}
+		&:not(.hidden) {
+			display: block;
+		}
 	}
 }
 

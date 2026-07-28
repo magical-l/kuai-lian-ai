@@ -73,22 +73,37 @@ function handleAddChildClick(btn) {
 	var nodeEl = btn.closest('.one.endpoint');
 	var nodeId = nodeEl.dataset.nodeId;
 	showEditGroupDialog(null, nodeId, async function(data) {
-		var createdIds = await addNode(nodeId, data);
-		var newId = createdIds && createdIds[0];
-		if (newId) {
-			var newNode = getNode(newId);
-			if (newNode) {
-				var childrenOl = nodeEl.querySelector('details > ol.children');
+		var newNode = await addNode(nodeId, data);
+
+		if (newNode) {
+			var currentNodeEl = nodeEl;
+			var existingNodeEl = null;
+			if (typeof nodeEl.isConnected === 'boolean') {
+				currentNodeEl = document.querySelector(".one.endpoint[data-node-id=\"" + nodeId + "\"]");
+				if (!currentNodeEl) {
+					await refreshUI();
+					updateEmptyState();
+					return;
+				}
+				existingNodeEl = currentNodeEl.querySelector(".one.endpoint[data-node-id=\"" + newNode.id + "\"]");
+			}
+
+			if (!existingNodeEl) {
+				var childrenOl = currentNodeEl.querySelector('details > ol.children');
 				if (!childrenOl) {
 					childrenOl = document.createElement('ol');
 					childrenOl.className = 'children';
-					nodeEl.querySelector('details').appendChild(childrenOl);
+					currentNodeEl.querySelector('details').appendChild(childrenOl);
 				}
 				childrenOl.appendChild(buildEndpointNodeEl(newNode));
+				currentNodeEl.classList.remove('compact');
+				currentNodeEl.querySelector('.name').classList.add('has-children');
 				// 展开父节点以便看到新子节点
-				var detailsEl = nodeEl.querySelector('details');
+				var detailsEl = currentNodeEl.querySelector('details');
 				if (detailsEl) detailsEl.open = true;
+				if (typeof updateEndpointTestUI === 'function') updateEndpointTestUI(newNode.id);
 			}
+			applyEndpointFilter();
 		}
 		await refreshUI({ skipEndpointTree: true });
 		updateEmptyState();
@@ -465,7 +480,9 @@ function updateEmptyState() {
 
 	var groups = getGroups();
 	var totalNodes = document.querySelectorAll('aside.endpoint.list li.one.endpoint').length;
-	var hiddenNodes = document.querySelectorAll('aside.endpoint.list li.one.endpoint[style*="display: none"]').length;
+	var hiddenNodes = Array.from(document.querySelectorAll('aside.endpoint.list li.one.endpoint')).filter(function(node) {
+		return node.classList.contains('hidden');
+	}).length;
 	var hasVisible = totalNodes - hiddenNodes;
 
 	if (groups.length === 0) {
@@ -474,7 +491,7 @@ function updateEmptyState() {
 		emptyHint.textContent = '目前还没有创建端点。';
 		resetBtn.classList.add('hidden');
 		addBtn.classList.remove('hidden');
-	} else if (groups.length > 0 && hasVisible === 0 && activeTypeFilters.size > 0 && activeTypeFilters.size < 4) {
+	} else if (groups.length > 0 && hasVisible === 0 && activeTypeFilters.size > 0) {
 		// 筛选后无结果：隐藏 ol，显示 empty-state
 		emptyState.classList.remove('hidden');
 		emptyHint.textContent = '没有符合筛选的端点。';
@@ -503,6 +520,12 @@ function initEndpointFilter() {
 
 function applyEndpointFilter() {
 	var items = document.querySelectorAll('aside.endpoint.list li.one.endpoint');
+	if (activeTypeFilters.size === 0) {
+		items.forEach(function(li) {
+			li.classList.remove('hidden');
+		});
+		return;
+	}
 	for (var i = items.length - 1; i >= 0; i--) {
 		var li = items[i];
 		var typeEl = li.querySelector('.endpoint-type');
@@ -668,6 +691,11 @@ function updateEndpointTestUI(nodeId) {
             var parentBtn = parentEl.querySelector(".test-connection");
 
             if (parentBtn) {
+                parentBtn.dataset.testableIds = JSON.stringify(tids);
+                if (tids.length === 0)
+                    parentBtn.classList.add("hidden");
+                else
+                    parentBtn.classList.remove("hidden");
                 parentBtn.classList.remove("busy", "connected", "failed");
 
                 if (anyTesting) {

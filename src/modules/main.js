@@ -393,16 +393,18 @@ async function handleSessionDelete(sessionId) {
 
 function handleAddGroup() {
     showEditGroupDialog(null, null, async data => {
-        var createdIds = await addNode(null, data);
-        var newId = createdIds && createdIds[0];
+        var newNode = await addNode(null, data);
 
-        if (newId) {
-            var newNode = getNode(newId);
+        if (newNode) {
+            var container = document.querySelector("aside.endpoint.list > ol");
+            var existingNodeEl = container.querySelector
+                ? container.querySelector(".one.endpoint[data-node-id=\"" + newNode.id + "\"]")
+                : null;
 
-            if (newNode) {
-                var container = document.querySelector("aside.endpoint.list > ol");
+            if (!existingNodeEl) {
                 container.appendChild(buildEndpointNodeEl(newNode));
             }
+            applyEndpointFilter();
         }
 
         await refreshUI({
