@@ -103,7 +103,7 @@ function openSessionParamEditor(endpointId) {
 	// Bind buttons
 	dialog.querySelector('.close').onclick = function() { dialog.close(); };
 
-	dialog.querySelector('.ok').onclick = function() {
+	dialog.querySelector('.ok').onclick = async function() {
 		var paramList = dialog.querySelector('.param-control.list');
 		if (!paramList) { dialog.close(); return; }
 		var params = {};
@@ -120,20 +120,22 @@ function openSessionParamEditor(endpointId) {
 		defaultSelectedEndpointParams[endpointId] = params;
 		saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
 		if (currentSession) {
-			if (!currentSession.modelParams) currentSession.modelParams = {};
-			currentSession.modelParams[endpointId] = JSON.parse(JSON.stringify(params));
-			storage.saveSession(currentSession);
+			await updateSession(currentSession.id, session => {
+				if (!session.modelParams) session.modelParams = {};
+				session.modelParams[endpointId] = JSON.parse(JSON.stringify(params));
+			});
 		}
 		dialog.close();
 	};
 
-	dialog.querySelector('.reset').onclick = function() {
+	dialog.querySelector('.reset').onclick = async function() {
 		delete defaultSelectedEndpointParams[endpointId];
 		saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
 		if (currentSession && currentSession.modelParams) {
-			delete currentSession.modelParams[endpointId];
-			if (Object.keys(currentSession.modelParams).length === 0) delete currentSession.modelParams;
-			storage.saveSession(currentSession);
+			await updateSession(currentSession.id, session => {
+				delete session.modelParams[endpointId];
+				if (Object.keys(session.modelParams).length === 0) delete session.modelParams;
+			});
 		}
 		defaults = {};
 		if (rcfg && rcfg.params) { for (var k in rcfg.params) { if (rcfg.params.hasOwnProperty(k)) defaults[k] = rcfg.params[k]; } }

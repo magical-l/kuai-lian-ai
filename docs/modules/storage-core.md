@@ -3,7 +3,7 @@ title: 存储层核心
 covers_file: [src/modules/storage-core.js, src/extension/storage-core.js]
 depends_on: []
 api_signature: storage 对象（init/selectMode/switchMode/loadEndpoints/saveEndpoints/loadSessions/...）
-last_updated: 2026-07-01
+last_updated: 2026-08-03
 why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+File System Access）
 ---
 
@@ -54,7 +54,7 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 | `saveSettings(s)` | 保存设置 | -> `getBackend().saveSettings(s)` |
 | `clearAll()` | 清除所有数据 | -> `getBackend().clearAll()` |
 | `exportAll()` | 导出全部（迁移用） | -> `getBackend().exportAll()` |
-| `importAll(data)` | 导入全部（迁移用） | -> `getBackend().importAll(data)` |
+| `importAll(data)` | 导入全部（迁移用） | 当前实现 -> `getBackend()._importAllNow(data)`；不执行后端 `importAll` 的检查点和失败回滚 |
 | `hasSavedHandle()` | 检查是否存有目录句柄 | 查询 `endpoint-manager` IndexedDB |
 | `restoreDirectory()` | 尝试恢复目录句柄 | -> `DirectoryStorage.restoreHandle()` |
 | `getDirectoryName()` | 目录模式：返回目录名 | -> `DirectoryStorage.getDirectoryName()` |
@@ -70,8 +70,8 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 | `_delete(key)` | 同上，IndexedDB.delete / chrome.storage.local.remove |
 | `_getAll()` | 扩展版独有，遍历所有 key |
 | `loadEndpoints / saveEndpoints` | 单 key 'endpoints' |
-| `loadSessions / loadSession / saveSession / deleteSession` | 单 key 'sessions'（JSON 对象，以 session.id 为键） |
-| `exportAll / importAll / clearAll` | 批量操作 |
+| `loadSessions / loadSession / saveSession / deleteSession` | `session:<id>` 独立 key；读写前兼容迁移旧的聚合 `sessions` 对象 |
+| `exportAll / importAll / clearAll` | 批量操作；后端公开 `importAll` / `clearAll` 在失败时尝试回滚 |
 
 ### DirectoryStorage
 
@@ -107,7 +107,7 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 |------|---------------|-----------------|
 | 存储引擎 | IndexedDB（扩展版：`chrome.storage.local`） | File System Access API |
 | 数据格式 | key-value（blob） | 可读 JSON 文本文件 |
-| 会话存储 | 单 key 内嵌全部会话（JSON 对象） | 每会话独立文件 |
+| 会话存储 | `session:<id>` 独立 key（兼容迁移旧聚合对象） | 每会话独立文件 |
 | 设置持久化 | 支持 | 暂不支持（返回空对象） |
 | 数据可见性 | 浏览器内部，用户不可直接访问 | 用户可直接编辑 JSON |
 | 权限模型 | 无额外权限 | 需用户选择目录 + 授予读写权限 |
@@ -144,3 +144,4 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 | 设置不在目录模式持久化 | 设置（主题/布局）与 UI 强相关，放在目录中无意义；当前需求不要求跨机器同步设置 |
 | 切换模式使用 exportAll + importAll 而非逐条迁移 | 数据量小（百级端点+会话），全量快照原子性更高，实现简单 |
 | `migrateEndpoints` 不在 storage-core 中 | 数据格式迁移是业务逻辑，在 `store.js` 中处理；storage-core 只负责读写原始 JSON |
+| 2026-08-03: 同步会话 keyspace 拆分、兼容迁移和批量回滚实现；记录统一接口 `importAll` 当前绕过后端事务的实际行为 | 文档原先描述与当前代码不符 |

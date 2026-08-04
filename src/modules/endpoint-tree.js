@@ -2,6 +2,13 @@
 const collapsedEndpoints = new Set();
 var activeTypeFilters = new Set();
 
+function isEndpointTestable(nodeId) {
+	var cfg = resolveNodeConfig(nodeId);
+	if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId)
+		return false;
+	return cfg.type === 'chat' || cfg.type === 'embedding' || cfg.type === 'embed' || cfg.type === 'tts' || cfg.type === 'asr';
+}
+
 function setEmptyStateVisibility(show) {
 	var aside = document.querySelector('aside.endpoint.list');
 	if (!aside) return;
@@ -304,16 +311,9 @@ function buildEndpointNodeEl(node) {
 		handleRemoveNodeClick(e.currentTarget);
 	});
 
-	function isNodeTestable(n) {
-		var cfg = resolveNodeConfig(n.id);
-		if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId)
-			return false;
-		return cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "asr";
-	}
-
 	function collectTestable(nds, out) {
 		nds.forEach(function(n) {
-			if (isNodeTestable(n)) out.push(n.id);
+			if (isEndpointTestable(n.id)) out.push(n.id);
 			if (n.children) collectTestable(n.children, out);
 		});
 	}
@@ -428,7 +428,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
             ns.forEach(function(n) {
                 var cfg = resolveNodeConfig(n.id);
 
-                if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts" || cfg.type === "asr"))
+                if (isEndpointTestable(n.id))
                     allTestableIds.push(n.id);
 
                 if (n.children)
@@ -588,7 +588,7 @@ function updateEndpointTestUI(nodeId) {
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
 
-                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed" || rcfg.type === "tts"))
+                if (isEndpointTestable(n.id))
                     allTestableIds.push(n.id);
 
                 if (n.children)
@@ -661,7 +661,7 @@ function updateEndpointTestUI(nodeId) {
                 nds.forEach(function(n) {
                     var cfg = resolveNodeConfig(n.id);
 
-                    if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts" || cfg.type === "asr"))
+                    if (isEndpointTestable(n.id))
                         tids.push(n.id);
 
                     if (n.children)

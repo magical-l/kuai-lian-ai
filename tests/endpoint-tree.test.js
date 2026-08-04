@@ -9,6 +9,7 @@ const vm = require('node:vm');
 const endpointTreeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'endpoint-tree.js');
 const mainSourcePath = path.join(__dirname, '..', 'src', 'modules', 'main.js');
 const storeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'store.js');
+const sessionListSourcePath = path.join(__dirname, '..', 'src', 'modules', 'session-list.js');
 
 class FakeEventTarget {
 	constructor() {
@@ -230,6 +231,75 @@ function assertRejectedWithoutChanges(result, harness, originalTree) {
 	assert.deepEqual(harness.api.getEndpointsData(), originalTree);
 	assert.equal(harness.getSaveCount(), 0);
 }
+
+test('handleEditSessionTitleClick consumes a rejected save Promise after blur while restoring the old title', () => {
+	const currentTitle = '旧标题';
+	const titleEl = {
+		textContent: currentTitle,
+		classList: {
+			add(className) { assert.equal(className, 'hidden'); },
+			remove(className) { assert.equal(className, 'hidden'); }
+		}
+	};
+	const inputEl = {
+		value: '新标题',
+		blur() { this.onblur(); },
+		focus() {},
+		remove() {},
+		select() {}
+	};
+	const meta = {};
+	const sessionEl = {
+		dataset: { sessionId: 'session-1' },
+		insertBefore(input, reference) {
+			assert.equal(input, inputEl);
+			assert.equal(reference, meta);
+		},
+		querySelector(selector) {
+			if (selector === '.title') return titleEl;
+			if (selector === '.meta') return meta;
+			throw new Error(`Unexpected session selector: ${selector}`);
+		}
+	};
+	const button = {
+		closest(selector) {
+			assert.equal(selector, 'li');
+			return sessionEl;
+		}
+	};
+	const sessionListSource = fs.readFileSync(sessionListSourcePath, 'utf8');
+	const handleEditSource = extractFunctionDeclaration(sessionListSource, 'handleEditSessionTitleClick');
+	const context = vm.createContext({
+		mk(tagName, className) {
+			assert.equal(tagName, 'input');
+			assert.equal(className, 'editing title');
+			return inputEl;
+		}
+	});
+	new vm.Script(`
+		globalThis.__consumedRejection = false;
+		const savePromise = Promise.reject(new Error('save failed'));
+		savePromise.catch(() => {});
+		savePromise.catch = onRejected => {
+			globalThis.__consumedRejection = true;
+			return Promise.prototype.catch.call(savePromise, onRejected);
+		};
+		function handleSessionEdit() {
+			return savePromise;
+		}
+		${handleEditSource}
+		globalThis.__handleEditSessionTitleClick = handleEditSessionTitleClick;
+	`, {
+		filename: sessionListSourcePath
+	}).runInContext(context);
+
+	context.__handleEditSessionTitleClick(button);
+	inputEl.value = '新标题';
+	inputEl.blur();
+
+	assert.equal(context.__consumedRejection, true, 'the rejected save Promise must be consumed');
+	assert.equal(titleEl.textContent, currentTitle);
+});
 
 test('bindEndpointNodeDragEvents dispatches drag events to the real named handlers', () => {
 	const calls = {
@@ -595,6 +665,9 @@ test('local child append refreshes ancestor batch test ids before its real batch
 		getNode(nodeId) {
 			assert.equal(nodeId, 'parent-node');
 			return parentNode;
+		},
+		isEndpointTestable(nodeId) {
+			return nodeId === 'existing-child' || nodeId === 'new-child';
 		},
 		refreshUI: async () => {},
 		resolveNodeConfig(nodeId) {
@@ -1090,4 +1163,135 @@ test('applyEndpointFilter removes hidden from every endpoint when no type filter
 	context.__applyEndpointFilter();
 
 	endpoints.forEach(endpoint => assert.equal(endpoint.classList.contains('hidden'), false));
+});
+
+test('handleWipeDirectory clears persisted directory data exactly once in standard and extension pages', async () => {
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const storeSource = fs.readFileSync(storeSourcePath, 'utf8');
+	const handleWipeDirectorySource = extractFunctionDeclaration(mainSource, 'handleWipeDirectory');
+	const clearDirectorySource = extractFunctionDeclaration(storeSource, 'clearDirectory');
+
+	for (const isExtension of [false, true]) {
+		let storageClearCount = 0;
+		let directoryClearCount = 0;
+		const confirmations = [];
+		const context = vm.createContext({
+			DirectoryStorage: {
+				async clearAll() { directoryClearCount += 1; }
+			},
+			Map,
+			alert() {},
+			confirmAction(_message, onConfirm) { confirmations.push(onConfirm); },
+			refreshUI: async () => {},
+			sessionsCache: new Map(),
+			showDirectoryPrompt() {},
+			storage: {
+				getDirectoryName() { return 'test-directory'; },
+				mode: 'directory',
+				async clearAll() { storageClearCount += 1; }
+			},
+			updateDirectoryDisplay: async () => {},
+			window: { __IS_EXTENSION__: isExtension }
+		});
+
+		const harnessSource = [
+			'var endpointsData = null;',
+			'async ' + clearDirectorySource,
+			handleWipeDirectorySource,
+			'globalThis.__handleWipeDirectory = handleWipeDirectory;'
+		].join(String.fromCharCode(10));
+		new vm.Script(harnessSource, { filename: mainSourcePath }).runInContext(context);
+
+		await context.__handleWipeDirectory();
+		assert.equal(confirmations.length, 1, 'first confirmation must be retained');
+		await confirmations.shift()();
+		assert.equal(confirmations.length, 1, 'second confirmation must be retained');
+		await confirmations.shift()();
+		assert.equal(storageClearCount, 1, 'storage.clearAll must run once when isExtension=' + isExtension);
+		assert.equal(directoryClearCount, 0, 'DirectoryStorage.clearAll must be delegated through clearDirectory when isExtension=' + isExtension);
+	}
+});
+
+test('endpoint connection testing uses one eligibility rule and explicit resolved types', async () => {
+	const endpointTreeSource = fs.readFileSync(endpointTreeSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const attachmentsSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'attachments.js'), 'utf8');
+	const eligibilitySource = extractFunctionDeclaration(endpointTreeSource, 'isEndpointTestable');
+
+	[
+		'buildEndpointNodeEl',
+		'renderEndpointList',
+		'updateEndpointTestUI'
+	].forEach(function(functionName) {
+		assert.match(extractFunctionDeclaration(endpointTreeSource, functionName), /isEndpointTestable\(/, functionName + ' must reuse isEndpointTestable');
+	});
+	assert.match(extractFunctionDeclaration(mainSource, 'handleTestAllConnections'), /isEndpointTestable\(/, 'handleTestAllConnections must reuse isEndpointTestable');
+	assert.match(extractFunctionDeclaration(attachmentsSource.slice(attachmentsSource.indexOf('async function testConnection')), 'testConnection'), /isEndpointTestable\(/, 'testConnection must reuse isEndpointTestable');
+
+	const configs = {
+		chat: { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'chat' },
+		embedding: { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'embedding' },
+		embed: { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'embed' },
+		tts: { baseUrl: 'https://example.test', key: '', modelId: 'chat-looking-model', type: 'tts' },
+		asr: { baseUrl: 'https://example.test', key: '', modelId: 'chat-looking-model', type: 'asr' },
+		missingTestFn: { baseUrl: 'https://example.test', key: '', modelId: 'chat-looking-model', style: 'missing-tts', type: 'tts' },
+		missingProvider: { baseUrl: 'https://example.test', key: '', modelId: 'model', style: 'missing-provider', type: 'chat' },
+		image: { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'image-generation' },
+		video: { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'video-generation' },
+		reranking: { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'reranking' },
+		missingKey: { baseUrl: 'https://example.test', modelId: 'model', type: 'chat' }
+	};
+	const eligibleIds = new Set(['chat', 'embedding', 'embed', 'tts', 'asr', 'missingTestFn', 'missingProvider']);
+	const testCases = [
+		{ id: 'tts', expectedCall: 'tts' },
+		{ id: 'asr', expectedCall: 'asr' },
+		{ id: 'image' },
+		{ id: 'video' },
+		{ id: 'reranking' },
+		{ id: 'missingTestFn', expectedStatus: 'failed', expectedUiUpdates: 2 },
+		{ id: 'missingProvider', expectedStatus: 'failed', expectedUiUpdates: 2 }
+	];
+	const eligibilityContext = vm.createContext({
+		resolveNodeConfig(nodeId) { return configs[nodeId]; }
+	});
+	new vm.Script(eligibilitySource + '\nglobalThis.__isEndpointTestable = isEndpointTestable;').runInContext(eligibilityContext);
+	Object.keys(configs).forEach(function(id) {
+		assert.equal(eligibilityContext.__isEndpointTestable(id), eligibleIds.has(id), id + ' eligibility');
+	});
+
+	const calls = [];
+	const uiUpdates = [];
+	const testConnectionSource = extractFunctionDeclaration(attachmentsSource.slice(attachmentsSource.indexOf('async function testConnection')).replace('async function ', 'function '), 'testConnection');
+	const testContext = vm.createContext({
+		Date,
+		FormData,
+		connectionStatus: new Map(),
+		detectModelType() { return 'chat'; },
+		fetchWithTimeout: async function() {
+			return { ok: true, headers: { get() { return 'text/plain'; } } };
+		},
+		getNode() { return {}; },
+		isEndpointTestable(nodeId) { return eligibleIds.has(nodeId); },
+		mergeParams() {},
+		providers: {
+			openai: {
+				testConfig() { calls.push('chat'); return { url: 'https://example.test', headers: {}, body: {} }; },
+				testEmbeddingConfig() { calls.push('embedding'); return { url: 'https://example.test', headers: {}, body: {} }; },
+				testTTSConfig() { calls.push('tts'); return { url: 'https://example.test', headers: {}, body: {} }; },
+				testASRConfig() { calls.push('asr'); return { url: 'https://example.test', headers: {}, body: {} }; }
+			},
+			'missing-tts': {}
+		},
+		resolveNodeConfig(nodeId) { return configs[nodeId]; },
+		updateEndpointTestUI(nodeId) { uiUpdates.push(nodeId); }
+	});
+	new vm.Script(testConnectionSource.replace('function testConnection', 'async function testConnection') + '\nglobalThis.__testConnection = testConnection;').runInContext(testContext);
+	for (const scenario of testCases) {
+		await testContext.__testConnection(scenario.id);
+		if (scenario.expectedStatus) {
+			assert.equal(testContext.connectionStatus.get(scenario.id).status, scenario.expectedStatus, scenario.id + ' must not remain testing without a provider test function');
+			assert.equal(uiUpdates.filter(nodeId => nodeId === scenario.id).length, scenario.expectedUiUpdates, scenario.id + ' must update its UI after the failed test');
+		}
+	}
+	assert.deepEqual(calls, testCases.filter(scenario => scenario.expectedCall).map(scenario => scenario.expectedCall), 'only TTS and ASR use their explicit test functions; unsupported types must not fall back to chat');
 });

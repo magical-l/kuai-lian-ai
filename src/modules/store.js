@@ -1,6 +1,9 @@
 // ========== Store Functions ==========
 let endpointsData = null;
 let sessionsCache = new Map();
+let endpointsMutationQueue = Promise.resolve();
+const sessionMutationQueues = new Map();
+const sessionMigrationPromises = new WeakMap();
 
 // ========== 树形工具函数 ==========
 
@@ -172,9 +175,9 @@ function stripModels(node) {
 // ========== 数据操作 ==========
 
 async function clearDirectory() {
+	await storage.clearAll();
 	endpointsData = { nodes: [] };
 	sessionsCache.clear();
-	await storage.clearAll();
 	updateDirectoryDisplay();
 	await refreshUI();
 }
@@ -187,7 +190,9 @@ async function tryRestoreDirectory() {
 	endpointsData = migrateEndpoints(await storage.loadEndpoints());
 	stripModels(endpointsData);
 	const sessions = await storage.loadSessions();
-	sessions.forEach(s => { migrateSession(s); sessionsCache.set(s.id, s); });
+	for (const session of sessions) await migrateSession(session);
+	sessionsCache.clear();
+	for (const session of sessions) sessionsCache.set(session.id, session);
 	updateDirectoryDisplay();
 	return { success: true };
 }
@@ -223,6 +228,101 @@ async function saveEndpoints() {
 	return await storage.saveEndpoints(endpointsData);
 }
 
+function snapshotData(value) {
+	if (typeof structuredClone === 'function') return structuredClone(value);
+	return JSON.parse(JSON.stringify(value));
+}
+
+function enqueueMutation(queue, operation) {
+	const result = queue.then(operation, operation);
+	return { result, queue: result.catch(() => {}) };
+}
+
+function restoreObject(target, snapshot) {
+	for (const key of Object.keys(target)) delete target[key];
+	Object.assign(target, snapshotData(snapshot));
+}
+
+function checkpointEndpoints(data) {
+	const references = new Map();
+	function collect(nodes) {
+		for (const node of nodes) {
+			references.set(node.id, { node, children: node.children });
+			if (node.children) collect(node.children);
+		}
+	}
+	collect(data.nodes || []);
+	return { data, references, snapshot: snapshotData(data) };
+}
+
+function restoreEndpoints(checkpoint) {
+	const { data, references, snapshot } = checkpoint;
+	function restoreNode(nodeSnapshot) {
+		const reference = references.get(nodeSnapshot.id);
+		const node = reference.node;
+		for (const key of Object.keys(node)) delete node[key];
+		for (const key of Object.keys(nodeSnapshot)) {
+			node[key] = key === 'children' ? reference.children : snapshotData(nodeSnapshot[key]);
+		}
+		if (nodeSnapshot.children) {
+			const restoredChildren = nodeSnapshot.children.map(restoreNode);
+			reference.children.splice(0, reference.children.length, ...restoredChildren);
+		}
+		return node;
+	}
+	for (const key of Object.keys(data)) delete data[key];
+	for (const key of Object.keys(snapshot)) {
+		data[key] = key === 'nodes' ? checkpoint.nodes : snapshotData(snapshot[key]);
+	}
+	checkpoint.nodes.splice(0, checkpoint.nodes.length, ...(snapshot.nodes || []).map(restoreNode));
+}
+
+function persistEndpointsMutation(mutate) {
+	const queued = enqueueMutation(endpointsMutationQueue, async () => {
+		const checkpoint = checkpointEndpoints(endpointsData || { nodes: [] });
+		checkpoint.nodes = checkpoint.data.nodes || [];
+		const hasSelectedEndpoints = typeof selectedEndpoints !== 'undefined';
+		const previousSelection = hasSelectedEndpoints ? selectedEndpoints.slice() : [];
+		try {
+			const result = mutate();
+			if (result === false || result === null) return result;
+			await saveEndpoints();
+			return result;
+		} catch (error) {
+			restoreEndpoints(checkpoint);
+			if (hasSelectedEndpoints) {
+				selectedEndpoints = previousSelection;
+				try {
+					saveDefaultSelectedEndpoints(selectedEndpoints);
+				} catch (_) {}
+			}
+			throw error;
+		}
+	});
+	endpointsMutationQueue = queued.queue;
+	return queued.result;
+}
+
+function persistSessionMutation(session, mutate) {
+	const previousQueue = sessionMutationQueues.get(session.id) || Promise.resolve();
+	const queued = enqueueMutation(previousQueue, async () => {
+		const previous = snapshotData(session);
+		try {
+			const result = mutate();
+			await saveSession(session);
+			return result;
+		} catch (error) {
+			restoreObject(session, previous);
+			throw error;
+		}
+	});
+	sessionMutationQueues.set(session.id, queued.queue);
+	queued.queue.finally(() => {
+		if (sessionMutationQueues.get(session.id) === queued.queue) sessionMutationQueues.delete(session.id);
+	});
+	return queued.result;
+}
+
 function getGroups() {
 	if (!endpointsData) endpointsData = { nodes: [] };
 	return endpointsData.nodes || [];
@@ -249,18 +349,19 @@ async function addNode(parentId, data) {
 		customParams: data.customParams || [],
 		children: []
 	};
-	if (parentId) {
-		const parent = findNodeInTree(endpointsData.nodes, parentId);
-		if (parent) {
-			parent.children.push(node);
+	return persistEndpointsMutation(() => {
+		if (parentId) {
+			const parent = findNodeInTree(endpointsData.nodes, parentId);
+			if (parent) {
+				parent.children.push(node);
+			} else {
+				endpointsData.nodes.push(node);
+			}
 		} else {
 			endpointsData.nodes.push(node);
 		}
-	} else {
-		endpointsData.nodes.push(node);
-	}
-	await saveEndpoints();
-	return node;
+		return node;
+	});
 }
 
 // 批量创建子树：一次 save 插入所有节点
@@ -270,54 +371,41 @@ async function batchAddNodes(parentId, subtrees) {
 		alert('请先选择存储位置');
 		return null;
 	}
-	var createdIds = [];
-	var batchParent = parentId ? findNodeInTree(endpointsData.nodes, parentId) : null;
-	function assignIds(nodes, parent) {
-		nodes.forEach(function(n) {
-			var node = {
+	return persistEndpointsMutation(() => {
+		const createdIds = [];
+		const parent = parentId ? findNodeInTree(endpointsData.nodes, parentId) : null;
+		function createSubtree(source) {
+			const node = {
 				id: generateUUID(),
-				name: n.name || '',
-				baseUrl: n.baseUrl || '',
-				style: n.style || '',
-				key: n.key || '',
-				modelId: n.modelId || '',
-				remark: n.remark || '',
-				type: n.type || '',
+				name: source.name || '',
+				baseUrl: source.baseUrl || '',
+				style: source.style || '',
+				key: source.key || '',
+				modelId: source.modelId || '',
+				remark: source.remark || '',
+				type: source.type || '',
 				children: []
 			};
 			createdIds.push(node.id);
-			if (n.children && n.children.length > 0) {
-				assignIds(n.children, node);
+			if (source.children && source.children.length > 0) {
+				node.children = source.children.map(createSubtree);
 			}
-			if (parent) {
-				parent.children.push(node);
-			} else {
-				// 根级节点
-				if (batchParent) { batchParent.children.push(node); }
-				else if (parentId) {
-					var p = findNodeInTree(endpointsData.nodes, parentId);
-					if (p) p.children.push(node);
-					else endpointsData.nodes.push(node);
-				} else {
-					endpointsData.nodes.push(node);
-				}
-			}
-		});
-	}
-	assignIds(subtrees, null);
-	await saveEndpoints();
-	return createdIds;
+			return node;
+		}
+		const destination = parent ? parent.children : endpointsData.nodes;
+		for (const subtree of subtrees) destination.push(createSubtree(subtree));
+		return createdIds;
+	});
 }
 
 async function updateNode(nodeId, updates) {
 	if (!endpointsData) endpointsData = { nodes: [] };
-	const node = findNodeInTree(endpointsData.nodes, nodeId);
-	if (node) {
+	return persistEndpointsMutation(() => {
+		const node = findNodeInTree(endpointsData.nodes, nodeId);
+		if (!node) return false;
 		Object.assign(node, updates);
-		await saveEndpoints();
 		return node;
-	}
-	return null;
+	});
 }
 
 // 递归删除节点及其所有子代
@@ -344,56 +432,48 @@ async function deleteNode(nodeId) {
 		}
 		return false;
 	};
-	const ok = removeRecursive(endpointsData.nodes, nodeId);
-	if (ok) await saveEndpoints();
-	return ok;
+	return persistEndpointsMutation(() => removeRecursive(endpointsData.nodes, nodeId));
 }
 
 async function cloneNode(nodeId) {
 	if (!endpointsData) endpointsData = { nodes: [] };
-	const result = findNodeWithAncestors(endpointsData.nodes, nodeId);
-	if (!result) return null;
-	const { node, ancestors } = result;
-
-	function deepClone(n) {
-		const c = {
-			id: generateUUID(),
-			name: n.name,
-			baseUrl: n.baseUrl || '',
-			style: n.style || '',
-			key: n.key || '',
-			modelId: n.modelId || '',
-			remark: n.remark || '',
-			type: n.type || '',
-			children: []
-		};
-		if (n.children && n.children.length > 0) {
-			c.children = n.children.map(child => deepClone(child));
+	return persistEndpointsMutation(() => {
+		const result = findNodeWithAncestors(endpointsData.nodes, nodeId);
+		if (!result) return null;
+		const { node, ancestors } = result;
+		function deepClone(source) {
+			const cloned = {
+				id: generateUUID(),
+				name: source.name,
+				baseUrl: source.baseUrl || '',
+				style: source.style || '',
+				key: source.key || '',
+				modelId: source.modelId || '',
+				remark: source.remark || '',
+				type: source.type || '',
+				params: snapshotData(source.params || {}),
+				customParams: snapshotData(source.customParams || []),
+				children: []
+			};
+			if (source.children && source.children.length > 0) {
+				cloned.children = source.children.map(deepClone);
+			}
+			return cloned;
 		}
-		return c;
-	}
-
-	const cloned = deepClone(node);
-	cloned.name = node.name + '（副本）';
-
-	const parent = ancestors.length > 0 ? ancestors[ancestors.length - 1] : null;
-	const siblings = parent ? parent.children : endpointsData.nodes;
-	const idx = siblings.findIndex(n => n.id === nodeId);
-	if (idx >= 0) {
-		siblings.splice(idx + 1, 0, cloned);
-	} else {
-		siblings.push(cloned);
-	}
-
-	await saveEndpoints();
-	return cloned;
+		const cloned = deepClone(node);
+		cloned.name = node.name + '（副本）';
+		const parent = ancestors.length > 0 ? ancestors[ancestors.length - 1] : null;
+		const siblings = parent ? parent.children : endpointsData.nodes;
+		const index = siblings.findIndex(sibling => sibling.id === nodeId);
+		if (index >= 0) siblings.splice(index + 1, 0, cloned);
+		else siblings.push(cloned);
+		return cloned;
+	});
 }
 
 // 重新排序：将节点插入到目标位置（同级或跨级均可）
 async function reorderNode(draggedId, targetId, insertBefore = true) {
 	if (!endpointsData) return false;
-	const move = resolveTreeMove(endpointsData.nodes, draggedId, targetId);
-	if (!move) return false;
 
 	const removeNode = (siblings) => {
 		const idx = siblings.findIndex(n => n.id === draggedId);
@@ -408,10 +488,11 @@ async function reorderNode(draggedId, targetId, insertBefore = true) {
 	};
 
 	let ok = false;
+	let draggedNode = null;
 	const insertAtTarget = (siblings) => {
 		const idx = siblings.findIndex(n => n.id === targetId);
 		if (idx >= 0) {
-			siblings.splice(insertBefore ? idx : idx + 1, 0, move.dragged);
+			siblings.splice(insertBefore ? idx : idx + 1, 0, draggedNode);
 			ok = true;
 			return true;
 		}
@@ -421,34 +502,39 @@ async function reorderNode(draggedId, targetId, insertBefore = true) {
 		return false;
 	};
 
-	removeNode(endpointsData.nodes);
-	insertAtTarget(endpointsData.nodes);
-	if (ok) await saveEndpoints();
-	return ok;
+	return persistEndpointsMutation(() => {
+		const move = resolveTreeMove(endpointsData.nodes, draggedId, targetId);
+		if (!move) return false;
+		draggedNode = move.dragged;
+		removeNode(endpointsData.nodes);
+		insertAtTarget(endpointsData.nodes);
+		return ok;
+	});
 }
 
 // 将节点移动为另一个节点的子节点
 async function moveNodeAsChild(draggedId, targetParentId) {
 	if (!endpointsData) return false;
-	const move = resolveTreeMove(endpointsData.nodes, draggedId, targetParentId);
-	if (!move) return false;
-
 	const removeRecursive = (siblings) => {
-		const idx = siblings.findIndex(n => n.id === draggedId);
-		if (idx >= 0) return siblings.splice(idx, 1)[0];
-		for (const n of siblings) {
-			if (n.children) {
-				const found = removeRecursive(n.children);
-				if (found) return found;
+		const index = siblings.findIndex(node => node.id === draggedId);
+		if (index >= 0) return siblings.splice(index, 1)[0];
+		for (const node of siblings) {
+			if (node.children) {
+				const removed = removeRecursive(node.children);
+				if (removed) return removed;
 			}
 		}
 		return null;
 	};
-	removeRecursive(endpointsData.nodes);
-	if (!move.target.children) move.target.children = [];
-	move.target.children.push(move.dragged);
-	await saveEndpoints();
-	return true;
+	return persistEndpointsMutation(() => {
+		const move = resolveTreeMove(endpointsData.nodes, draggedId, targetParentId);
+		if (!move) return false;
+		const dragged = removeRecursive(endpointsData.nodes);
+		if (!dragged) return false;
+		if (!move.target.children) move.target.children = [];
+		move.target.children.push(dragged);
+		return true;
+	});
 }
 
 // ========== 节点查询 ==========
@@ -462,11 +548,9 @@ function getNode(nodeId) {
 
 async function loadSessionsIndex() {
 	const sessions = await storage.loadSessions();
+	for (const session of sessions) await migrateSession(session);
 	sessionsCache.clear();
-	for (const s of sessions) {
-		migrateSession(s);
-		sessionsCache.set(s.id, s);
-	}
+	for (const session of sessions) sessionsCache.set(session.id, session);
 	return sessions;
 }
 
@@ -474,7 +558,13 @@ function getAllSessions() {
 	return Array.from(sessionsCache.values());
 }
 
-async function createSession(firstMessage = null, targetModels = null) {
+function updateSession(sessionId, mutate) {
+	const session = sessionsCache.get(sessionId);
+	if (!session) return Promise.resolve(null);
+	return persistSessionMutation(session, () => mutate(session));
+}
+
+async function createSession(firstMessage = null, targetModels = null, modelParams = null) {
 	let title = '新会话';
 	if (firstMessage) {
 		if (Array.isArray(firstMessage)) {
@@ -490,6 +580,7 @@ async function createSession(firstMessage = null, targetModels = null) {
 		createdAt: Date.now(),
 		messages: []
 	};
+	if (modelParams) session.modelParams = snapshotData(modelParams);
 	if (firstMessage) {
 		let content;
 		if (Array.isArray(firstMessage)) {
@@ -503,23 +594,21 @@ async function createSession(firstMessage = null, targetModels = null) {
 		if (targetModels) msg.targetEndpoints = targetModels;
 		session.messages.push(msg);
 	}
-	sessionsCache.set(session.id, session);
 	await saveSession(session);
+	sessionsCache.set(session.id, session);
 	return session;
 }
 
 async function loadSession(sessionId) {
 	if (sessionsCache.has(sessionId)) {
 		const cached = sessionsCache.get(sessionId);
-		// 缓存中的会话可能未迁移（loadSessionsIndex 在历史版本中未调 migrateSession）
-		migrateSession(cached);
+		await migrateSession(cached);
 		return cached;
 	}
 	const session = await storage.loadSession(sessionId);
-	if (session) {
-		migrateSession(session);
-		sessionsCache.set(session.id, session);
-	}
+	if (!session) return session;
+	await migrateSession(session);
+	sessionsCache.set(session.id, session);
 	return session;
 }
 
@@ -527,14 +616,15 @@ async function saveSession(session) {
 	return await storage.saveSession(session);
 }
 
-// 会话格式迁移：存量数据归一化——每条 response 是独立 assistant 消息
 function migrateSession(session) {
+	const inProgress = sessionMigrationPromises.get(session);
+	if (inProgress) return inProgress;
+
 	let changed = false;
 	const newMessages = [];
 
 	for (const msg of session.messages) {
 		if (msg.role === 'assistant' && msg.responses) {
-			// 格式 2（当前）：responses 数组 → flat 为 N 条独立消息
 			for (const r of msg.responses) {
 				const m = { role: 'assistant', timestamp: r.timestamp || msg.timestamp || Date.now() };
 				for (const k of Object.keys(r)) {
@@ -548,7 +638,6 @@ function migrateSession(session) {
 			}
 			changed = true;
 		} else {
-			// 用户消息 / 已 flat 的 assistant 消息
 			const copy = { ...msg };
 			if (copy.role === 'assistant') {
 				if (!copy.endpointId && copy.modelId) {
@@ -556,17 +645,14 @@ function migrateSession(session) {
 					delete copy.modelId;
 					changed = true;
 				}
-				// 旧 assistant 消息残留的空 content[] 删掉
 				if (copy.content && Array.isArray(copy.content)) {
 					delete copy.content;
 					changed = true;
 				}
-				// 确保没有残留的 responses 字段
 				if (copy.responses) {
 					delete copy.responses;
 					changed = true;
 				}
-				// 清理旧单端点格式的残留同级字段
 				if (copy.endpointGroupId) { delete copy.endpointGroupId; changed = true; }
 				if (copy.usage) { delete copy.usage; changed = true; }
 			}
@@ -574,10 +660,18 @@ function migrateSession(session) {
 		}
 	}
 
-	if (changed) {
+	if (!changed) return Promise.resolve(session);
+
+	const migration = persistSessionMutation(session, () => {
 		session.messages = newMessages;
-		saveSession(session).catch(err => console.error('migrate: save failed', err));
-	}
+		return session;
+	});
+	sessionMigrationPromises.set(session, migration);
+	const clearMigration = () => {
+		if (sessionMigrationPromises.get(session) === migration) sessionMigrationPromises.delete(session);
+	};
+	migration.then(clearMigration, clearMigration);
+	return migration;
 }
 
 function normalizeMessageContent(msg) {
@@ -593,21 +687,22 @@ async function addMessage(sessionId, role, content, options = {}) {
 
 	// 新格式：每条 response 是独立 assistant 消息
 	if (options.responses) {
-		for (const r of options.responses) {
-			const msg = { role: 'assistant', timestamp: r.timestamp || Date.now() };
-			// 复制 response 所有字段到消息级别
-			for (const k of Object.keys(r)) {
-				msg[k] = r[k];
+		return persistSessionMutation(session, () => {
+			for (const r of options.responses) {
+				const msg = { role: 'assistant', timestamp: r.timestamp || Date.now() };
+				// 复制 response 所有字段到消息级别
+				for (const k of Object.keys(r)) {
+					msg[k] = r[k];
+				}
+				// 兼容 modelId → endpointId
+				if (!msg.endpointId && msg.modelId) {
+					msg.endpointId = msg.modelId;
+					delete msg.modelId;
+				}
+				session.messages.push(msg);
 			}
-			// 兼容 modelId → endpointId
-			if (!msg.endpointId && msg.modelId) {
-				msg.endpointId = msg.modelId;
-				delete msg.modelId;
-			}
-			session.messages.push(msg);
-		}
-		await saveSession(session);
-		return session.messages[session.messages.length - 1];
+			return session.messages[session.messages.length - 1];
+		});
 	}
 
 	const message = { role, timestamp: Date.now() };
@@ -627,13 +722,14 @@ async function addMessage(sessionId, role, content, options = {}) {
 			if (options.usage) message.usage = options.usage;
 		}
 	}
-	if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 1) {
-		const firstText = message.content.find(c => c.type === 'text');
-		session.title = firstText ? firstText.text.slice(0, 20) : '新会话';
-	}
-	session.messages.push(message);
-	await saveSession(session);
-	return message;
+	return persistSessionMutation(session, () => {
+		if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 0) {
+			const firstText = message.content.find(c => c.type === 'text');
+			session.title = firstText ? firstText.text.slice(0, 20) : '新会话';
+		}
+		session.messages.push(message);
+		return message;
+	});
 }
 
 function getSession(sessionId) {
@@ -641,6 +737,14 @@ function getSession(sessionId) {
 }
 
 async function deleteSession(sessionId) {
-	sessionsCache.delete(sessionId);
-	return await storage.deleteSession(sessionId);
+	const previousQueue = sessionMutationQueues.get(sessionId) || Promise.resolve();
+	const queued = enqueueMutation(previousQueue, async () => {
+		await storage.deleteSession(sessionId);
+		sessionsCache.delete(sessionId);
+	});
+	sessionMutationQueues.set(sessionId, queued.queue);
+	queued.queue.finally(() => {
+		if (sessionMutationQueues.get(sessionId) === queued.queue) sessionMutationQueues.delete(sessionId);
+	});
+	return queued.result;
 }

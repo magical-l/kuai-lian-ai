@@ -1169,21 +1169,25 @@ async function testConnection(nodeId) {
 	var node = getNode(nodeId);
 	if (!node) return;
 	var rcfg = resolveNodeConfig(nodeId);
-	if (!rcfg || !rcfg.modelId) return;
+	if (!isEndpointTestable(nodeId)) return;
 	var modelName = rcfg.modelId;
-	if (!rcfg || !rcfg.baseUrl || (rcfg.key === undefined || rcfg.key === null)) return;
 	var provider = providers[rcfg.style || 'openai'];
-	if (!provider) return;
 	var key = nodeId;
 	connectionStatus.set(key, { status: 'testing', timestamp: null });
 	updateEndpointTestUI(key);
 	try {
-		var modelType = detectModelType(modelName);
-		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig :
-		             (modelType === 'tts' && provider.testTTSConfig) ? provider.testTTSConfig :
-		             (modelType === 'asr' && provider.testASRConfig) ? provider.testASRConfig :
-		             provider.testConfig;
-		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
+		if (!provider) throw new Error('未找到接口格式: ' + (rcfg.style || 'openai'));
+		var testFn = null;
+		if (rcfg.type === 'embedding' || rcfg.type === 'embed')
+			testFn = provider.testEmbeddingConfig;
+		else if (rcfg.type === 'tts')
+			testFn = provider.testTTSConfig;
+		else if (rcfg.type === 'asr')
+			testFn = provider.testASRConfig;
+		else if (rcfg.type === 'chat')
+			testFn = provider.testConfig;
+		if (!testFn) throw new Error('该接口格式不支持连接测试');
+		var tcfg = testFn.call(provider, rcfg.baseUrl, rcfg.key, modelName);
 		if (rcfg.directUrl) tcfg.url = rcfg.baseUrl.replace(/\/+$/, '');
 		// Workspace param override (test connection)
 		var ovr2 = typeof defaultSelectedEndpointParams !== 'undefined' ? defaultSelectedEndpointParams[nodeId] : null;

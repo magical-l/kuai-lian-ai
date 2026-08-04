@@ -1927,8 +1927,15 @@ let storage, currentMode;
 		});
 	}
 if (!window.__IS_EXTENSION__) {
+	const SESSION_PREFIX = 'session:';
 	const BrowserStorage = {
 		_db: null,
+		_operationQueue: Promise.resolve(),
+		_enqueue(operation) {
+			const result = this._operationQueue.then(operation, operation);
+			this._operationQueue = result.catch(() => {});
+			return result;
+		},
 		async _getDB() {
 			if (this._db) return this._db;
 			return new Promise((resolve, reject) => {
@@ -1971,71 +1978,191 @@ if (!window.__IS_EXTENSION__) {
 				tx.onerror = () => reject(tx.error);
 			});
 		},
-		async loadEndpoints() {
+		async _loadEndpointsNow() {
 			return await this._get('endpoints') || {
 				nodes: []
 			};
 		},
-		async saveEndpoints(data) {
+		async loadEndpoints() {
+			return this._enqueue(() => this._loadEndpointsNow());
+		},
+		async _saveEndpointsNow(data) {
 			await this._set('endpoints', data);
 			return true;
 		},
-		async loadSessions() {
-			const sessions = await this._get('sessions') || {};
-			return Object.values(sessions).sort((a, b) => {
-				const ta = a.updatedAt || a.createdAt || 0;
-				const tb = b.updatedAt || b.createdAt || 0;
-				return tb - ta;
+		async saveEndpoints(data) {
+			return this._enqueue(() => this._saveEndpointsNow(data));
+		},
+		async _entries() {
+			const db = await this._getDB();
+			return new Promise((resolve, reject) => {
+				const tx = db.transaction('store', 'readonly');
+				const req = tx.objectStore('store').openCursor();
+				const entries = [];
+				req.onsuccess = () => {
+					const cursor = req.result;
+					if (!cursor) {
+						resolve(entries);
+						return;
+					}
+					entries.push([cursor.key, cursor.value]);
+					cursor.continue();
+				};
+				req.onerror = () => reject(req.error);
 			});
 		},
+		async _migrateLegacySessionsNow() {
+			const legacy = await this._get('sessions');
+			if (!legacy || typeof legacy !== 'object') return;
+			for (const [id, session] of Object.entries(legacy)) {
+				const key = SESSION_PREFIX + id;
+				if (await this._get(key)) continue;
+				if (!await this._get(key)) await this._set(key, session);
+			}
+			await this._delete('sessions');
+		},
+		async _migrateLegacySessions() {
+			return this._enqueue(() => this._migrateLegacySessionsNow());
+		},
+		async _loadSessionsNow() {
+			await this._migrateLegacySessionsNow();
+			const entries = await this._entries();
+			return entries
+				.filter(([key]) => key.startsWith(SESSION_PREFIX))
+				.map(([, session]) => session)
+				.sort((a, b) => {
+					const ta = a.updatedAt || a.createdAt || 0;
+					const tb = b.updatedAt || b.createdAt || 0;
+					return tb - ta;
+				});
+		},
+		async loadSessions() {
+			return this._enqueue(() => this._loadSessionsNow());
+		},
+		async _loadSessionNow(sessionId) {
+			await this._migrateLegacySessionsNow();
+			return await this._get(SESSION_PREFIX + sessionId) || null;
+		},
 		async loadSession(sessionId) {
-			const sessions = await this._get('sessions') || {};
-			return sessions[sessionId] || null;
+			return this._enqueue(() => this._loadSessionNow(sessionId));
+		},
+		async _saveSessionNow(session) {
+			await this._migrateLegacySessionsNow();
+			await this._set(SESSION_PREFIX + session.id, session);
 		},
 		async saveSession(session) {
-			const sessions = await this._get('sessions') || {};
-			sessions[session.id] = session;
-			await this._set('sessions', sessions);
-			return true;
+			return this._enqueue(() => this._saveSessionNow(session));
+		},
+		async _deleteSessionNow(sessionId) {
+			await this._migrateLegacySessionsNow();
+			await this._delete(SESSION_PREFIX + sessionId);
 		},
 		async deleteSession(sessionId) {
-			const sessions = await this._get('sessions') || {};
-			delete sessions[sessionId];
-			await this._set('sessions', sessions);
-			return true;
+			return this._enqueue(() => this._deleteSessionNow(sessionId));
 		},
-		async loadSettings() {
+		async _loadSettingsNow() {
 			return await this._get('settings') || {};
 		},
-		async saveSettings(settings) {
+		async loadSettings() {
+			return this._enqueue(() => this._loadSettingsNow());
+		},
+		async _saveSettingsNow(settings) {
 			await this._set('settings', settings);
 		},
-		async exportAll() {
+		async saveSettings(settings) {
+			return this._enqueue(() => this._saveSettingsNow(settings));
+		},
+		async _exportAllNow() {
+			await this._migrateLegacySessionsNow();
+			const entries = await this._entries();
+			const sessions = entries
+				.filter(([key]) => key.startsWith(SESSION_PREFIX))
+				.map(([, session]) => session);
 			return {
-				endpoints: await this._get('endpoints') || {
-					groups: []
-				},
-				sessions: await this._get('sessions') || {},
+				endpoints: await this._get('endpoints') || { nodes: [] },
+				sessions: Object.fromEntries(sessions.map(session => [session.id, session])),
 				settings: await this._get('settings') || {},
 				exportedAt: Date.now()
 			};
 		},
-		async importAll(data) {
+		async exportAll() {
+			return this._enqueue(() => this._exportAllNow());
+		},
+		async _importAllNow(data) {
 			if (!data || typeof data !== 'object') throw new Error('无效');
-			await this._set('endpoints', data.endpoints || {
-				groups: []
-			});
-			await this._set('sessions', data.sessions || {});
+			await this._migrateLegacySessionsNow();
+			await this._set('endpoints', data.endpoints || { nodes: [] });
+			const sessions = Array.isArray(data.sessions)
+				? data.sessions
+				: Object.values(data.sessions || {});
+			const importedIds = new Set();
+			for (const session of sessions) {
+				importedIds.add(String(session.id));
+				await this._set(SESSION_PREFIX + session.id, session);
+			}
+			const entries = await this._entries();
+			for (const [key] of entries) {
+				if (key.startsWith(SESSION_PREFIX) && !importedIds.has(key.slice(SESSION_PREFIX.length))) {
+					await this._delete(key);
+				}
+			}
 			if (data.settings) await this._set('settings', data.settings);
 		},
-		async clearAll() {
+		async importAll(data) {
+			return this._enqueue(async () => {
+				const snapshot = await this._exportAllNow();
+				try {
+					await this._importAllNow(data);
+				} catch (error) {
+					try {
+						await this._importAllNow(snapshot);
+					} catch (rollbackError) {
+						throw new AggregateError([error, rollbackError], '浏览器导入失败且回滚失败', { cause: error });
+					}
+					throw error;
+				}
+			});
+		},
+		async _clearAllNow(checkpoint) {
 			await this._delete('endpoints');
 			await this._delete('sessions');
 			await this._delete('settings');
+			for (const [key] of checkpoint) {
+				if (key.startsWith(SESSION_PREFIX)) await this._delete(key);
+			}
+		},
+		async _restoreClearCheckpointNow(checkpoint) {
+			const checkpointKeys = new Set(checkpoint.map(([key]) => key));
+			const currentEntries = await this._entries();
+			for (const [key] of currentEntries) {
+				if (!checkpointKeys.has(key)) await this._delete(key);
+			}
+			for (const [key, value] of checkpoint) await this._set(key, value);
+		},
+		async clearAll() {
+			return this._enqueue(async () => {
+				const checkpoint = await this._entries();
+				try {
+					await this._clearAllNow(checkpoint);
+				} catch (error) {
+					try {
+						await this._restoreClearCheckpointNow(checkpoint);
+					} catch (rollbackError) {
+						throw new AggregateError([error, rollbackError], '浏览器清空失败且回滚失败', { cause: error });
+					}
+					throw error;
+				}
+			});
 		}
 	};
 	const DirectoryStorage = {
-		async loadEndpoints() {
+		_operationQueue: Promise.resolve(),
+		_enqueue(operation) {
+			const result = this._operationQueue.then(operation, operation);
+			this._operationQueue = result.catch(() => {});
+			return result;
+		},
+		async _loadEndpointsNow() {
 			if (!directoryHandle) return {
 				groups: []
 			};
@@ -2055,22 +2182,27 @@ if (!window.__IS_EXTENSION__) {
 				};
 			}
 		},
-		async saveEndpoints(data) {
-			if (!directoryHandle) return false;
+		async loadEndpoints() {
+			return this._enqueue(() => this._loadEndpointsNow());
+		},
+		async _saveEndpointsNow(data) {
+			if (!directoryHandle) throw new Error('未选择存储目录');
+			const fileHandle = await directoryHandle.getFileHandle('endpoints.json', {
+				create: true
+			});
+			const writable = await fileHandle.createWritable();
 			try {
-				const fileHandle = await directoryHandle.getFileHandle('endpoints.json', {
-					create: true
-				});
-				const writable = await fileHandle.createWritable();
 				await writable.write(JSON.stringify(data, null, 2));
 				await writable.close();
-				return true;
-			} catch (err) {
-				console.error('保存端点失败:', err);
-				return false;
+			} catch (error) {
+				await writable.abort?.().catch(() => {});
+				throw error;
 			}
 		},
-		async loadSessions() {
+		async saveEndpoints(data) {
+			return this._enqueue(() => this._saveEndpointsNow(data));
+		},
+		async _loadSessionsNow() {
 			if (!directoryHandle) return [];
 			try {
 				const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
@@ -2089,7 +2221,10 @@ if (!window.__IS_EXTENSION__) {
 				return [];
 			}
 		},
-		async loadSession(sessionId) {
+		async loadSessions() {
+			return this._enqueue(() => this._loadSessionsNow());
+		},
+		async _loadSessionNow(sessionId) {
 			if (!directoryHandle) return null;
 			try {
 				const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
@@ -2100,64 +2235,276 @@ if (!window.__IS_EXTENSION__) {
 				return null;
 			}
 		},
-		async saveSession(session) {
-			if (!directoryHandle) return false;
+		async loadSession(sessionId) {
+			return this._enqueue(() => this._loadSessionNow(sessionId));
+		},
+		async _saveSessionNow(session) {
+			if (!directoryHandle) throw new Error('未选择存储目录');
+			const sessionsDir = await directoryHandle.getDirectoryHandle('sessions', {
+				create: true
+			});
+			const fileHandle = await sessionsDir.getFileHandle(session.id + '.json', {
+				create: true
+			});
+			const writable = await fileHandle.createWritable();
 			try {
-				const sessionsDir = await directoryHandle.getDirectoryHandle('sessions', {
-					create: true
-				});
-				const fileHandle = await sessionsDir.getFileHandle(session.id + '.json', {
-					create: true
-				});
-				const writable = await fileHandle.createWritable();
 				await writable.write(JSON.stringify(session, null, 2));
 				await writable.close();
-				return true;
-			} catch (err) {
-				console.error('保存会话失败:', err);
-				return false;
+			} catch (error) {
+				await writable.abort?.().catch(() => {});
+				throw error;
 			}
 		},
-		async deleteSession(sessionId) {
-			if (!directoryHandle) return false;
+		async saveSession(session) {
+			return this._enqueue(() => this._saveSessionNow(session));
+		},
+		async _deleteSessionNow(sessionId) {
+			if (!directoryHandle) throw new Error('未选择存储目录');
 			try {
 				const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
 				await sessionsDir.removeEntry(sessionId + '.json');
-				return true;
-			} catch (err) {
-				return err.name === 'NotFoundError';
+			} catch (error) {
+				if (error.name !== 'NotFoundError') throw error;
 			}
 		},
-		async loadSettings() {
+		async deleteSession(sessionId) {
+			return this._enqueue(() => this._deleteSessionNow(sessionId));
+		},
+		async _loadSettingsNow() {
 			return {};
 		},
-		async saveSettings(settings) {},
-		async exportAll() {
+		async loadSettings() {
+			return this._enqueue(() => this._loadSettingsNow());
+		},
+		async _saveSettingsNow(settings) {},
+		async saveSettings(settings) {
+			return this._enqueue(() => this._saveSettingsNow(settings));
+		},
+		async _exportAllNow() {
 			return {
-				endpoints: await this.loadEndpoints(),
-				sessions: await this.loadSessions(),
-				settings: {},
+				endpoints: await this._loadEndpointsNow(),
+				sessions: await this._loadSessionsNow(),
+				settings: await this._loadSettingsNow(),
 				exportedAt: Date.now()
 			};
 		},
-		async importAll(data) {
-			if (data.endpoints) await this.saveEndpoints(data.endpoints);
-			if (data.sessions) {
-				for (const id in data.sessions) {
-					await this.saveSession(data.sessions[id]);
-				}
+		async exportAll() {
+			return this._enqueue(() => this._exportAllNow());
+		},
+		async _readRawFileNow(parentHandle, name) {
+			try {
+				const fileHandle = await parentHandle.getFileHandle(name);
+				const file = await fileHandle.getFile();
+				const bytes = await file.arrayBuffer();
+				return { exists: true, bytes: bytes.slice(0) };
+			} catch (error) {
+				if (error.name === 'NotFoundError') return { exists: false };
+				throw error;
 			}
 		},
-		async clearAll() {
+		async _writeRawFileNow(parentHandle, name, bytes) {
+			const fileHandle = await parentHandle.getFileHandle(name, { create: true });
+			const writable = await fileHandle.createWritable();
+			try {
+				await writable.write(bytes);
+				await writable.close();
+			} catch (error) {
+				await writable.abort?.().catch(() => {});
+				throw error;
+			}
+		},
+		async _checkpointImportNow() {
+			if (!directoryHandle) throw new Error('未选择目录');
+			const endpoints = await this._readRawFileNow(directoryHandle, 'endpoints.json');
+			const sessions = [];
+			try {
+				const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+				for await (const handle of sessionsDir.values()) {
+					if (handle.kind !== 'file' || !handle.name.endsWith('.json')) continue;
+					const file = await handle.getFile();
+					const bytes = await file.arrayBuffer();
+					sessions.push({ name: handle.name, bytes: bytes.slice(0) });
+				}
+			} catch (error) {
+				if (error.name !== 'NotFoundError') throw error;
+			}
+			return { endpoints, sessions };
+		},
+		_checkpointImport() {
+			return this._enqueue(() => this._checkpointImportNow());
+		},
+		async _restoreImportCheckpointNow(checkpoint) {
+			if (!directoryHandle) throw new Error('未选择目录');
+			if (checkpoint.endpoints.exists) {
+				await this._writeRawFileNow(directoryHandle, 'endpoints.json', checkpoint.endpoints.bytes);
+			} else {
+				try {
+					await directoryHandle.removeEntry('endpoints.json');
+				} catch (error) {
+					if (error.name !== 'NotFoundError') throw error;
+				}
+			}
+			let sessionsDir;
+			try {
+				sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+			} catch (error) {
+				if (error.name !== 'NotFoundError') throw error;
+				if (!checkpoint.sessions.length) return;
+				sessionsDir = await directoryHandle.getDirectoryHandle('sessions', { create: true });
+			}
+			const currentSessionNames = [];
+			for await (const handle of sessionsDir.values()) {
+				if (handle.kind === 'file' && handle.name.endsWith('.json')) currentSessionNames.push(handle.name);
+			}
+			const checkpointSessionNames = new Set(checkpoint.sessions.map(session => session.name));
+			for (const session of checkpoint.sessions) {
+				await this._writeRawFileNow(sessionsDir, session.name, session.bytes);
+			}
+			for (const name of currentSessionNames) {
+				if (!checkpointSessionNames.has(name)) await sessionsDir.removeEntry(name);
+			}
+		},
+		_restoreImportCheckpoint(checkpoint) {
+			return this._enqueue(() => this._restoreImportCheckpointNow(checkpoint));
+		},
+		async _importAllNow(data) {
+			if (!directoryHandle) throw new Error('未选择目录');
+			if (data.endpoints) await this._saveEndpointsNow(data.endpoints);
+			const sessions = Array.isArray(data.sessions)
+				? data.sessions
+				: Object.values(data.sessions || {});
+			const importedIds = new Set();
+			for (const session of sessions) {
+				importedIds.add(String(session.id));
+				await this._saveSessionNow(session);
+			}
+			let sessionsDir;
+			try {
+				sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+			} catch (error) {
+				if (error.name === 'NotFoundError') return;
+				throw error;
+			}
+			for await (const handle of sessionsDir.values()) {
+				if (handle.kind !== 'file' || !handle.name.endsWith('.json')) continue;
+				const id = handle.name.slice(0, -5);
+				if (!importedIds.has(id)) await sessionsDir.removeEntry(handle.name);
+			}
+		},
+		async importAll(data) {
+			return this._enqueue(async () => {
+				const checkpoint = await this._checkpointImportNow();
+				try {
+					await this._importAllNow(data);
+				} catch (error) {
+					try {
+						await this._restoreImportCheckpointNow(checkpoint);
+					} catch (rollbackError) {
+						throw new AggregateError([error, rollbackError], '目录导入失败且回滚失败', { cause: error });
+					}
+					throw error;
+				}
+			});
+		},
+		async _checkpointClearDirectoryNow(parentHandle, path = '') {
+			const entries = [];
+			for await (const handle of parentHandle.values()) {
+				const currentPath = path + handle.name;
+				if (handle.kind === 'file') {
+					const file = await handle.getFile();
+					const bytes = await file.arrayBuffer();
+					entries.push({ kind: 'file', path: currentPath, bytes: bytes.slice(0) });
+				} else if (handle.kind === 'directory') {
+					entries.push({ kind: 'directory', path: currentPath });
+					entries.push(...await this._checkpointClearDirectoryNow(handle, currentPath + '/'));
+				}
+			}
+			return entries;
+		},
+		async _checkpointClearNow() {
+			if (!directoryHandle) return null;
+			const endpoints = await this._readRawFileNow(directoryHandle, 'endpoints.json');
+			let sessions = [];
+			try {
+				const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+				if (sessionsDir.values) sessions = await this._checkpointClearDirectoryNow(sessionsDir, 'sessions/');
+				sessions.unshift({ kind: 'directory', path: 'sessions' });
+			} catch (error) {
+				if (error.name !== 'NotFoundError') throw error;
+			}
+			return { endpoints, sessions };
+		},
+		async _restoreClearCheckpointNow(checkpoint) {
+			if (!directoryHandle) return;
+			if (checkpoint.endpoints.exists) {
+				await this._writeRawFileNow(directoryHandle, 'endpoints.json', checkpoint.endpoints.bytes);
+			} else {
+				try {
+					await directoryHandle.removeEntry('endpoints.json');
+				} catch (error) {
+					if (error.name !== 'NotFoundError') throw error;
+				}
+			}
+			let currentSessions = [];
+			try {
+				const sessionsDir = await directoryHandle.getDirectoryHandle('sessions');
+				if (sessionsDir.values) currentSessions = await this._checkpointClearDirectoryNow(sessionsDir, 'sessions/');
+			} catch (error) {
+				if (error.name !== 'NotFoundError') throw error;
+			}
+			const checkpointPaths = new Set(checkpoint.sessions.map(entry => entry.path));
+			if (!checkpoint.sessions.length) {
+				try {
+					await directoryHandle.removeEntry('sessions', { recursive: true });
+				} catch (error) {
+					if (error.name !== 'NotFoundError') throw error;
+				}
+				return;
+			}
+			if (currentSessions.some(entry => !checkpointPaths.has(entry.path))) {
+				await directoryHandle.removeEntry('sessions', { recursive: true });
+			}
+			await directoryHandle.getDirectoryHandle('sessions', { create: true });
+			for (const entry of checkpoint.sessions.filter(entry => entry.kind === 'directory' && entry.path !== 'sessions').sort((left, right) => left.path.length - right.path.length)) {
+				let parentHandle = directoryHandle;
+				for (const part of entry.path.split('/')) parentHandle = await parentHandle.getDirectoryHandle(part, { create: true });
+			}
+			for (const entry of checkpoint.sessions.filter(entry => entry.kind === 'file')) {
+				const parts = entry.path.split('/');
+				const name = parts.pop();
+				let parentHandle = directoryHandle;
+				for (const part of parts) parentHandle = await parentHandle.getDirectoryHandle(part, { create: true });
+				await this._writeRawFileNow(parentHandle, name, entry.bytes);
+			}
+		},
+		async _clearAllNow() {
 			if (!directoryHandle) return;
 			try {
 				await directoryHandle.removeEntry('endpoints.json');
-			} catch (e) {}
+			} catch (error) {
+				if (error.name !== 'NotFoundError') throw error;
+			}
 			try {
-				await directoryHandle.removeEntry('sessions', {
-					recursive: true
-				});
-			} catch (e) {}
+				await directoryHandle.removeEntry('sessions', { recursive: true });
+			} catch (error) {
+				if (error.name !== 'NotFoundError') throw error;
+			}
+		},
+		async clearAll() {
+			return this._enqueue(async () => {
+				if (!directoryHandle) return;
+				const checkpoint = await this._checkpointClearNow();
+				try {
+					await this._clearAllNow();
+				} catch (error) {
+					try {
+						await this._restoreClearCheckpointNow(checkpoint);
+					} catch (rollbackError) {
+						throw new AggregateError([error, rollbackError], '目录清空失败且回滚失败', { cause: error });
+					}
+					throw error;
+				}
+			});
 		},
 		getDirectoryName() {
 			return directoryHandle ? directoryHandle.name : null;
@@ -2185,23 +2532,54 @@ if (!window.__IS_EXTENSION__) {
 			}
 		},
 		async pickAndSave() {
+			let handle;
 			try {
-				directoryHandle = await window.showDirectoryPicker({
+				handle = await window.showDirectoryPicker({
 					mode: 'readwrite'
 				});
-				await saveHandleToIndexedDB(directoryHandle);
-				return true;
-			} catch (err) {
-				return false;
+			} catch (error) {
+				if (error.name === 'AbortError') return false;
+				throw error;
 			}
+			await saveHandleToIndexedDB(handle);
+			directoryHandle = handle;
+			return true;
 		},
 		async _setHandle(handle) {
 			directoryHandle = handle;
 			await saveHandleToIndexedDB(handle);
 		},
+		_snapshotHandle() {
+			return directoryHandle;
+		},
+		async _snapshotHandleState() {
+			return {
+				activeHandle: directoryHandle,
+				persistedHandle: await loadHandleFromIndexedDB()
+			};
+		},
+		_setActiveHandle(handle) {
+			directoryHandle = handle;
+		},
+		async _restoreHandle(handle) {
+			directoryHandle = handle;
+			if (handle) await saveHandleToIndexedDB(handle);
+			else await clearHandleFromIndexedDB();
+		},
+		async _restoreHandleState({ activeHandle, persistedHandle }) {
+			if (persistedHandle) await saveHandleToIndexedDB(persistedHandle);
+			else await clearHandleFromIndexedDB();
+			directoryHandle = activeHandle;
+		},
 		async release() {
-			directoryHandle = null;
-			await clearHandleFromIndexedDB();
+			const previousHandle = directoryHandle;
+			try {
+				await clearHandleFromIndexedDB();
+				directoryHandle = null;
+			} catch (error) {
+				directoryHandle = previousHandle;
+				throw error;
+			}
 		}
 	};
 	// 统一存储接口
@@ -2210,10 +2588,19 @@ if (!window.__IS_EXTENSION__) {
 		return currentMode === 'directory' ? DirectoryStorage : BrowserStorage;
 	}
 	storage = {
+		_modeQueue: Promise.resolve(),
+		_enqueueModeOperation(operation) {
+			const result = this._modeQueue.then(operation, operation);
+			this._modeQueue = result.catch(() => {});
+			return result;
+		},
 		get mode() {
 			return currentMode;
 		},
 		async init() {
+			return this._enqueueModeOperation(() => this._initNow());
+		},
+		async _initNow() {
 			let savedMode = null;
 			try {
 				savedMode = await BrowserStorage._get('__mode');
@@ -2247,76 +2634,169 @@ if (!window.__IS_EXTENSION__) {
 			};
 		},
 		async selectMode(mode, handle) {
-			if (mode === 'directory') {
-				if (handle) {
-					await DirectoryStorage._setHandle(handle);
-				} else {
-					const ok = await DirectoryStorage.pickAndSave();
-					if (!ok) return false;
+			return this._enqueueModeOperation(() => this._selectModeNow(mode, handle));
+		},
+		async _selectModeNow(mode, handle) {
+			const previousMode = currentMode;
+			const previousHandleState = await DirectoryStorage._snapshotHandleState();
+			try {
+				if (mode === 'directory') {
+					if (handle) {
+						await DirectoryStorage._setHandle(handle);
+					} else {
+						const ok = await DirectoryStorage.pickAndSave();
+						if (!ok) return false;
+					}
 				}
+				currentMode = mode;
+				await this._saveModePref();
+				return true;
+			} catch (error) {
+				currentMode = previousMode;
+				try {
+					await DirectoryStorage._restoreHandleState(previousHandleState);
+					await this._saveModePref();
+				} catch (rollbackError) {
+					throw new AggregateError([error, rollbackError], '选择存储模式失败且回滚失败', { cause: error });
+				}
+				throw error;
 			}
-			currentMode = mode;
-			await this._saveModePref();
-			return true;
 		},
 		async switchMode(target, handle) {
+			return this._enqueueModeOperation(() => this._switchModeNow(target, handle));
+		},
+		async _switchModeNow(target, handle) {
 			if (target === currentMode) return true;
-			const data = await getBackend().exportAll();
-			if (target === 'directory') {
-				if (handle) {
-					await DirectoryStorage._setHandle(handle);
-				} else {
-					const ok = await DirectoryStorage.pickAndSave();
-					if (!ok) return false;
-				}
-			}
 			const oldMode = currentMode;
-			currentMode = target;
+			const oldHandleState = await DirectoryStorage._snapshotHandleState();
+			const data = await getBackend()._exportAllNow();
+			let targetBackend, directoryTarget, targetSnapshot;
 			try {
-				await getBackend().importAll(data);
+				if (target === 'directory') {
+					if (handle) await DirectoryStorage._setHandle(handle);
+					else if (!await DirectoryStorage.pickAndSave()) return false;
+				}
+				currentMode = target;
+				targetBackend = getBackend();
+				directoryTarget = targetBackend === DirectoryStorage;
+				targetSnapshot = directoryTarget
+					? await DirectoryStorage._checkpointImportNow()
+					: await targetBackend._exportAllNow();
+				if (directoryTarget) await DirectoryStorage._importAllNow(data);
+				else await targetBackend._importAllNow(data);
 				await this._saveModePref();
 				if (oldMode === 'directory') await DirectoryStorage.release();
 				return true;
-			} catch (e) {
+			} catch (error) {
+				const rollbackErrors = [];
+				if (targetSnapshot) {
+					try {
+						if (directoryTarget) await DirectoryStorage._restoreImportCheckpointNow(targetSnapshot);
+						else await targetBackend._importAllNow(targetSnapshot);
+					} catch (rollbackError) {
+						rollbackErrors.push(rollbackError);
+					}
+				}
 				currentMode = oldMode;
-				return false;
+				try {
+					await DirectoryStorage._restoreHandleState(oldHandleState);
+				} catch (rollbackError) {
+					rollbackErrors.push(rollbackError);
+				}
+				try {
+					await this._saveModePref();
+				} catch (rollbackError) {
+					rollbackErrors.push(rollbackError);
+				}
+				if (rollbackErrors.length) {
+					throw new AggregateError([error, ...rollbackErrors], '模式切换失败且回滚失败', { cause: error });
+				}
+				throw error;
 			}
 		},
 		async _saveModePref() {
 			await BrowserStorage._set('__mode', currentMode);
 		},
+		async _clearModePref() {
+			await BrowserStorage._delete('__mode');
+		},
+		async disconnectDirectory() {
+			return this._enqueueModeOperation(() => this._disconnectDirectoryNow());
+		},
+		async _disconnectDirectoryNow() {
+			if (currentMode !== 'directory') return;
+			const previousHandle = DirectoryStorage._snapshotHandle();
+			try {
+				await DirectoryStorage.release();
+				currentMode = null;
+				await this._clearModePref();
+			} catch (error) {
+				currentMode = 'directory';
+				try {
+					await DirectoryStorage._restoreHandle(previousHandle);
+					await this._saveModePref();
+				} catch (rollbackError) {
+					throw new AggregateError([error, rollbackError], '解除目录失败且回滚失败', { cause: error });
+				}
+				throw error;
+			}
+		},
+		async activateRestoredDirectory() {
+			return this._enqueueModeOperation(() => this._activateRestoredDirectoryNow());
+		},
+		async _activateRestoredDirectoryNow() {
+			const previousMode = currentMode;
+			const previousHandle = DirectoryStorage._snapshotHandle();
+			const restored = await DirectoryStorage.restoreHandle();
+			if (!restored) return false;
+			try {
+				currentMode = 'directory';
+				await this._saveModePref();
+				return true;
+			} catch (error) {
+				currentMode = previousMode;
+				try {
+					if (previousHandle) await DirectoryStorage._restoreHandle(previousHandle);
+					else DirectoryStorage._setActiveHandle(null);
+					await this._saveModePref();
+				} catch (rollbackError) {
+					throw new AggregateError([error, rollbackError], '恢复目录失败且回滚失败', { cause: error });
+				}
+				throw error;
+			}
+		},
 		async loadEndpoints() {
-			return getBackend().loadEndpoints();
+			return this._enqueueModeOperation(() => getBackend()._loadEndpointsNow());
 		},
 		async saveEndpoints(data) {
-			return getBackend().saveEndpoints(data);
+			return this._enqueueModeOperation(() => getBackend()._saveEndpointsNow(data));
 		},
 		async loadSessions() {
-			return getBackend().loadSessions();
+			return this._enqueueModeOperation(() => getBackend()._loadSessionsNow());
 		},
 		async loadSession(id) {
-			return getBackend().loadSession(id);
+			return this._enqueueModeOperation(() => getBackend()._loadSessionNow(id));
 		},
 		async saveSession(session) {
-			return getBackend().saveSession(session);
+			return this._enqueueModeOperation(() => getBackend()._saveSessionNow(session));
 		},
 		async deleteSession(id) {
-			return getBackend().deleteSession(id);
+			return this._enqueueModeOperation(() => getBackend()._deleteSessionNow(id));
 		},
 		async loadSettings() {
-			return getBackend().loadSettings();
+			return this._enqueueModeOperation(() => getBackend()._loadSettingsNow());
 		},
 		async saveSettings(s) {
-			return getBackend().saveSettings(s);
+			return this._enqueueModeOperation(() => getBackend()._saveSettingsNow(s));
 		},
 		async clearAll() {
-			return getBackend().clearAll();
+			return this._enqueueModeOperation(() => getBackend().clearAll());
 		},
 		async exportAll() {
-			return getBackend().exportAll();
+			return this._enqueueModeOperation(() => getBackend()._exportAllNow());
 		},
 		async importAll(data) {
-			return getBackend().importAll(data);
+			return this._enqueueModeOperation(() => getBackend()._importAllNow(data));
 		},
 		async hasSavedHandle() {
 			try {
@@ -2326,7 +2806,10 @@ if (!window.__IS_EXTENSION__) {
 			}
 		},
 		async restoreDirectory() {
-			return await DirectoryStorage.restoreHandle();
+			return this._enqueueModeOperation(() => this._restoreDirectoryNow());
+		},
+		async _restoreDirectoryNow() {
+			return DirectoryStorage.restoreHandle();
 		},
 		getDirectoryName() {
 			return currentMode === 'directory' ? DirectoryStorage.getDirectoryName() : null;
@@ -3210,7 +3693,7 @@ function openSessionParamEditor(endpointId) {
 	dialog.showModal();
 	// Bind buttons
 	dialog.querySelector('.close').onclick = function() { dialog.close(); };
-	dialog.querySelector('.ok').onclick = function() {
+	dialog.querySelector('.ok').onclick = async function() {
 		var paramList = dialog.querySelector('.param-control.list');
 		if (!paramList) { dialog.close(); return; }
 		var params = {};
@@ -3227,19 +3710,21 @@ function openSessionParamEditor(endpointId) {
 		defaultSelectedEndpointParams[endpointId] = params;
 		saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
 		if (currentSession) {
-			if (!currentSession.modelParams) currentSession.modelParams = {};
-			currentSession.modelParams[endpointId] = JSON.parse(JSON.stringify(params));
-			storage.saveSession(currentSession);
+			await updateSession(currentSession.id, session => {
+				if (!session.modelParams) session.modelParams = {};
+				session.modelParams[endpointId] = JSON.parse(JSON.stringify(params));
+			});
 		}
 		dialog.close();
 	};
-	dialog.querySelector('.reset').onclick = function() {
+	dialog.querySelector('.reset').onclick = async function() {
 		delete defaultSelectedEndpointParams[endpointId];
 		saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
 		if (currentSession && currentSession.modelParams) {
-			delete currentSession.modelParams[endpointId];
-			if (Object.keys(currentSession.modelParams).length === 0) delete currentSession.modelParams;
-			storage.saveSession(currentSession);
+			await updateSession(currentSession.id, session => {
+				delete session.modelParams[endpointId];
+				if (Object.keys(session.modelParams).length === 0) delete session.modelParams;
+			});
 		}
 		defaults = {};
 		if (rcfg && rcfg.params) { for (var k in rcfg.params) { if (rcfg.params.hasOwnProperty(k)) defaults[k] = rcfg.params[k]; } }
@@ -3387,6 +3872,12 @@ function buildTooltipHTML(node, rcfg, nameOverride) {
 	<script>// ========== Endpoint Tree Functions ==========
 const collapsedEndpoints = new Set();
 var activeTypeFilters = new Set();
+function isEndpointTestable(nodeId) {
+	var cfg = resolveNodeConfig(nodeId);
+	if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId)
+		return false;
+	return cfg.type === 'chat' || cfg.type === 'embedding' || cfg.type === 'embed' || cfg.type === 'tts' || cfg.type === 'asr';
+}
 function setEmptyStateVisibility(show) {
 	var aside = document.querySelector('aside.endpoint.list');
 	if (!aside) return;
@@ -3656,15 +4147,9 @@ function buildEndpointNodeEl(node) {
 		e.stopPropagation();
 		handleRemoveNodeClick(e.currentTarget);
 	});
-	function isNodeTestable(n) {
-		var cfg = resolveNodeConfig(n.id);
-		if (!cfg || !cfg.baseUrl || cfg.key === undefined || cfg.key === null || !cfg.modelId)
-			return false;
-		return cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "asr";
-	}
 	function collectTestable(nds, out) {
 		nds.forEach(function(n) {
-			if (isNodeTestable(n)) out.push(n.id);
+			if (isEndpointTestable(n.id)) out.push(n.id);
 			if (n.children) collectTestable(n.children, out);
 		});
 	}
@@ -3762,7 +4247,7 @@ function renderEndpointList(nodes, onNodeEdit, onNodeDelete, onReorderNodes, onT
         function collectAllTestable(ns) {
             ns.forEach(function(n) {
                 var cfg = resolveNodeConfig(n.id);
-                if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts" || cfg.type === "asr"))
+                if (isEndpointTestable(n.id))
                     allTestableIds.push(n.id);
                 if (n.children)
                     collectAllTestable(n.children);
@@ -3898,7 +4383,7 @@ function updateEndpointTestUI(nodeId) {
         function collectTestable(ns) {
             ns.forEach(function(n) {
                 var rcfg = resolveNodeConfig(n.id);
-                if (rcfg && rcfg.baseUrl && rcfg.modelId && (rcfg.type === "chat" || rcfg.type === "embedding" || rcfg.type === "embed" || rcfg.type === "tts"))
+                if (isEndpointTestable(n.id))
                     allTestableIds.push(n.id);
                 if (n.children)
                     collectTestable(n.children);
@@ -3952,7 +4437,7 @@ function updateEndpointTestUI(nodeId) {
             (function collect(nds) {
                 nds.forEach(function(n) {
                     var cfg = resolveNodeConfig(n.id);
-                    if (cfg && cfg.baseUrl && cfg.modelId && (cfg.type === "chat" || cfg.type === "embedding" || cfg.type === "embed" || cfg.type === "tts" || cfg.type === "asr"))
+                    if (isEndpointTestable(n.id))
                         tids.push(n.id);
                     if (n.children)
                         collect(n.children);
@@ -4661,7 +5146,7 @@ function handleEditSessionTitleClick(btn) {
 		inputEl.remove();
 		titleEl.classList.remove('hidden');
 		if (newTitle && newTitle !== currentTitle) {
-			handleSessionEdit(sessionId, newTitle);
+			handleSessionEdit(sessionId, newTitle).catch(() => {});
 		}
 	};
 	inputEl.onblur = finishEdit;
@@ -5850,21 +6335,25 @@ async function testConnection(nodeId) {
 	var node = getNode(nodeId);
 	if (!node) return;
 	var rcfg = resolveNodeConfig(nodeId);
-	if (!rcfg || !rcfg.modelId) return;
+	if (!isEndpointTestable(nodeId)) return;
 	var modelName = rcfg.modelId;
-	if (!rcfg || !rcfg.baseUrl || (rcfg.key === undefined || rcfg.key === null)) return;
 	var provider = providers[rcfg.style || 'openai'];
-	if (!provider) return;
 	var key = nodeId;
 	connectionStatus.set(key, { status: 'testing', timestamp: null });
 	updateEndpointTestUI(key);
 	try {
-		var modelType = detectModelType(modelName);
-		var testFn = (modelType === 'embedding' && provider.testEmbeddingConfig) ? provider.testEmbeddingConfig :
-		             (modelType === 'tts' && provider.testTTSConfig) ? provider.testTTSConfig :
-		             (modelType === 'asr' && provider.testASRConfig) ? provider.testASRConfig :
-		             provider.testConfig;
-		var tcfg = testFn(rcfg.baseUrl, rcfg.key, modelName);
+		if (!provider) throw new Error('未找到接口格式: ' + (rcfg.style || 'openai'));
+		var testFn = null;
+		if (rcfg.type === 'embedding' || rcfg.type === 'embed')
+			testFn = provider.testEmbeddingConfig;
+		else if (rcfg.type === 'tts')
+			testFn = provider.testTTSConfig;
+		else if (rcfg.type === 'asr')
+			testFn = provider.testASRConfig;
+		else if (rcfg.type === 'chat')
+			testFn = provider.testConfig;
+		if (!testFn) throw new Error('该接口格式不支持连接测试');
+		var tcfg = testFn.call(provider, rcfg.baseUrl, rcfg.key, modelName);
 		if (rcfg.directUrl) tcfg.url = rcfg.baseUrl.replace(/\/+$/, '');
 		// Workspace param override (test connection)
 		var ovr2 = typeof defaultSelectedEndpointParams !== 'undefined' ? defaultSelectedEndpointParams[nodeId] : null;
@@ -6049,6 +6538,9 @@ function showAttachmentPreview(att) {
 	<script>// ========== Store Functions ==========
 let endpointsData = null;
 let sessionsCache = new Map();
+let endpointsMutationQueue = Promise.resolve();
+const sessionMutationQueues = new Map();
+const sessionMigrationPromises = new WeakMap();
 // ========== 树形工具函数 ==========
 // 递归查找节点及其祖先链
 function findNodeWithAncestors(nodes, nodeId, ancestors = []) {
@@ -6189,9 +6681,9 @@ function stripModels(node) {
 }
 // ========== 数据操作 ==========
 async function clearDirectory() {
+	await storage.clearAll();
 	endpointsData = { nodes: [] };
 	sessionsCache.clear();
-	await storage.clearAll();
 	updateDirectoryDisplay();
 	await refreshUI();
 }
@@ -6203,7 +6695,9 @@ async function tryRestoreDirectory() {
 	endpointsData = migrateEndpoints(await storage.loadEndpoints());
 	stripModels(endpointsData);
 	const sessions = await storage.loadSessions();
-	sessions.forEach(s => { migrateSession(s); sessionsCache.set(s.id, s); });
+	for (const session of sessions) await migrateSession(session);
+	sessionsCache.clear();
+	for (const session of sessions) sessionsCache.set(session.id, session);
 	updateDirectoryDisplay();
 	return { success: true };
 }
@@ -6234,6 +6728,94 @@ async function loadEndpoints() {
 async function saveEndpoints() {
 	return await storage.saveEndpoints(endpointsData);
 }
+function snapshotData(value) {
+	if (typeof structuredClone === 'function') return structuredClone(value);
+	return JSON.parse(JSON.stringify(value));
+}
+function enqueueMutation(queue, operation) {
+	const result = queue.then(operation, operation);
+	return { result, queue: result.catch(() => {}) };
+}
+function restoreObject(target, snapshot) {
+	for (const key of Object.keys(target)) delete target[key];
+	Object.assign(target, snapshotData(snapshot));
+}
+function checkpointEndpoints(data) {
+	const references = new Map();
+	function collect(nodes) {
+		for (const node of nodes) {
+			references.set(node.id, { node, children: node.children });
+			if (node.children) collect(node.children);
+		}
+	}
+	collect(data.nodes || []);
+	return { data, references, snapshot: snapshotData(data) };
+}
+function restoreEndpoints(checkpoint) {
+	const { data, references, snapshot } = checkpoint;
+	function restoreNode(nodeSnapshot) {
+		const reference = references.get(nodeSnapshot.id);
+		const node = reference.node;
+		for (const key of Object.keys(node)) delete node[key];
+		for (const key of Object.keys(nodeSnapshot)) {
+			node[key] = key === 'children' ? reference.children : snapshotData(nodeSnapshot[key]);
+		}
+		if (nodeSnapshot.children) {
+			const restoredChildren = nodeSnapshot.children.map(restoreNode);
+			reference.children.splice(0, reference.children.length, ...restoredChildren);
+		}
+		return node;
+	}
+	for (const key of Object.keys(data)) delete data[key];
+	for (const key of Object.keys(snapshot)) {
+		data[key] = key === 'nodes' ? checkpoint.nodes : snapshotData(snapshot[key]);
+	}
+	checkpoint.nodes.splice(0, checkpoint.nodes.length, ...(snapshot.nodes || []).map(restoreNode));
+}
+function persistEndpointsMutation(mutate) {
+	const queued = enqueueMutation(endpointsMutationQueue, async () => {
+		const checkpoint = checkpointEndpoints(endpointsData || { nodes: [] });
+		checkpoint.nodes = checkpoint.data.nodes || [];
+		const hasSelectedEndpoints = typeof selectedEndpoints !== 'undefined';
+		const previousSelection = hasSelectedEndpoints ? selectedEndpoints.slice() : [];
+		try {
+			const result = mutate();
+			if (result === false || result === null) return result;
+			await saveEndpoints();
+			return result;
+		} catch (error) {
+			restoreEndpoints(checkpoint);
+			if (hasSelectedEndpoints) {
+				selectedEndpoints = previousSelection;
+				try {
+					saveDefaultSelectedEndpoints(selectedEndpoints);
+				} catch (_) {}
+			}
+			throw error;
+		}
+	});
+	endpointsMutationQueue = queued.queue;
+	return queued.result;
+}
+function persistSessionMutation(session, mutate) {
+	const previousQueue = sessionMutationQueues.get(session.id) || Promise.resolve();
+	const queued = enqueueMutation(previousQueue, async () => {
+		const previous = snapshotData(session);
+		try {
+			const result = mutate();
+			await saveSession(session);
+			return result;
+		} catch (error) {
+			restoreObject(session, previous);
+			throw error;
+		}
+	});
+	sessionMutationQueues.set(session.id, queued.queue);
+	queued.queue.finally(() => {
+		if (sessionMutationQueues.get(session.id) === queued.queue) sessionMutationQueues.delete(session.id);
+	});
+	return queued.result;
+}
 function getGroups() {
 	if (!endpointsData) endpointsData = { nodes: [] };
 	return endpointsData.nodes || [];
@@ -6258,18 +6840,19 @@ async function addNode(parentId, data) {
 		customParams: data.customParams || [],
 		children: []
 	};
-	if (parentId) {
-		const parent = findNodeInTree(endpointsData.nodes, parentId);
-		if (parent) {
-			parent.children.push(node);
+	return persistEndpointsMutation(() => {
+		if (parentId) {
+			const parent = findNodeInTree(endpointsData.nodes, parentId);
+			if (parent) {
+				parent.children.push(node);
+			} else {
+				endpointsData.nodes.push(node);
+			}
 		} else {
 			endpointsData.nodes.push(node);
 		}
-	} else {
-		endpointsData.nodes.push(node);
-	}
-	await saveEndpoints();
-	return node;
+		return node;
+	});
 }
 // 批量创建子树：一次 save 插入所有节点
 async function batchAddNodes(parentId, subtrees) {
@@ -6278,53 +6861,40 @@ async function batchAddNodes(parentId, subtrees) {
 		alert('请先选择存储位置');
 		return null;
 	}
-	var createdIds = [];
-	var batchParent = parentId ? findNodeInTree(endpointsData.nodes, parentId) : null;
-	function assignIds(nodes, parent) {
-		nodes.forEach(function(n) {
-			var node = {
+	return persistEndpointsMutation(() => {
+		const createdIds = [];
+		const parent = parentId ? findNodeInTree(endpointsData.nodes, parentId) : null;
+		function createSubtree(source) {
+			const node = {
 				id: generateUUID(),
-				name: n.name || '',
-				baseUrl: n.baseUrl || '',
-				style: n.style || '',
-				key: n.key || '',
-				modelId: n.modelId || '',
-				remark: n.remark || '',
-				type: n.type || '',
+				name: source.name || '',
+				baseUrl: source.baseUrl || '',
+				style: source.style || '',
+				key: source.key || '',
+				modelId: source.modelId || '',
+				remark: source.remark || '',
+				type: source.type || '',
 				children: []
 			};
 			createdIds.push(node.id);
-			if (n.children && n.children.length > 0) {
-				assignIds(n.children, node);
+			if (source.children && source.children.length > 0) {
+				node.children = source.children.map(createSubtree);
 			}
-			if (parent) {
-				parent.children.push(node);
-			} else {
-				// 根级节点
-				if (batchParent) { batchParent.children.push(node); }
-				else if (parentId) {
-					var p = findNodeInTree(endpointsData.nodes, parentId);
-					if (p) p.children.push(node);
-					else endpointsData.nodes.push(node);
-				} else {
-					endpointsData.nodes.push(node);
-				}
-			}
-		});
-	}
-	assignIds(subtrees, null);
-	await saveEndpoints();
-	return createdIds;
+			return node;
+		}
+		const destination = parent ? parent.children : endpointsData.nodes;
+		for (const subtree of subtrees) destination.push(createSubtree(subtree));
+		return createdIds;
+	});
 }
 async function updateNode(nodeId, updates) {
 	if (!endpointsData) endpointsData = { nodes: [] };
-	const node = findNodeInTree(endpointsData.nodes, nodeId);
-	if (node) {
+	return persistEndpointsMutation(() => {
+		const node = findNodeInTree(endpointsData.nodes, nodeId);
+		if (!node) return false;
 		Object.assign(node, updates);
-		await saveEndpoints();
 		return node;
-	}
-	return null;
+	});
 }
 // 递归删除节点及其所有子代
 async function deleteNode(nodeId) {
@@ -6350,50 +6920,46 @@ async function deleteNode(nodeId) {
 		}
 		return false;
 	};
-	const ok = removeRecursive(endpointsData.nodes, nodeId);
-	if (ok) await saveEndpoints();
-	return ok;
+	return persistEndpointsMutation(() => removeRecursive(endpointsData.nodes, nodeId));
 }
 async function cloneNode(nodeId) {
 	if (!endpointsData) endpointsData = { nodes: [] };
-	const result = findNodeWithAncestors(endpointsData.nodes, nodeId);
-	if (!result) return null;
-	const { node, ancestors } = result;
-	function deepClone(n) {
-		const c = {
-			id: generateUUID(),
-			name: n.name,
-			baseUrl: n.baseUrl || '',
-			style: n.style || '',
-			key: n.key || '',
-			modelId: n.modelId || '',
-			remark: n.remark || '',
-			type: n.type || '',
-			children: []
-		};
-		if (n.children && n.children.length > 0) {
-			c.children = n.children.map(child => deepClone(child));
+	return persistEndpointsMutation(() => {
+		const result = findNodeWithAncestors(endpointsData.nodes, nodeId);
+		if (!result) return null;
+		const { node, ancestors } = result;
+		function deepClone(source) {
+			const cloned = {
+				id: generateUUID(),
+				name: source.name,
+				baseUrl: source.baseUrl || '',
+				style: source.style || '',
+				key: source.key || '',
+				modelId: source.modelId || '',
+				remark: source.remark || '',
+				type: source.type || '',
+				params: snapshotData(source.params || {}),
+				customParams: snapshotData(source.customParams || []),
+				children: []
+			};
+			if (source.children && source.children.length > 0) {
+				cloned.children = source.children.map(deepClone);
+			}
+			return cloned;
 		}
-		return c;
-	}
-	const cloned = deepClone(node);
-	cloned.name = node.name + '（副本）';
-	const parent = ancestors.length > 0 ? ancestors[ancestors.length - 1] : null;
-	const siblings = parent ? parent.children : endpointsData.nodes;
-	const idx = siblings.findIndex(n => n.id === nodeId);
-	if (idx >= 0) {
-		siblings.splice(idx + 1, 0, cloned);
-	} else {
-		siblings.push(cloned);
-	}
-	await saveEndpoints();
-	return cloned;
+		const cloned = deepClone(node);
+		cloned.name = node.name + '（副本）';
+		const parent = ancestors.length > 0 ? ancestors[ancestors.length - 1] : null;
+		const siblings = parent ? parent.children : endpointsData.nodes;
+		const index = siblings.findIndex(sibling => sibling.id === nodeId);
+		if (index >= 0) siblings.splice(index + 1, 0, cloned);
+		else siblings.push(cloned);
+		return cloned;
+	});
 }
 // 重新排序：将节点插入到目标位置（同级或跨级均可）
 async function reorderNode(draggedId, targetId, insertBefore = true) {
 	if (!endpointsData) return false;
-	const move = resolveTreeMove(endpointsData.nodes, draggedId, targetId);
-	if (!move) return false;
 	const removeNode = (siblings) => {
 		const idx = siblings.findIndex(n => n.id === draggedId);
 		if (idx >= 0) {
@@ -6406,10 +6972,11 @@ async function reorderNode(draggedId, targetId, insertBefore = true) {
 		return false;
 	};
 	let ok = false;
+	let draggedNode = null;
 	const insertAtTarget = (siblings) => {
 		const idx = siblings.findIndex(n => n.id === targetId);
 		if (idx >= 0) {
-			siblings.splice(insertBefore ? idx : idx + 1, 0, move.dragged);
+			siblings.splice(insertBefore ? idx : idx + 1, 0, draggedNode);
 			ok = true;
 			return true;
 		}
@@ -6418,32 +6985,38 @@ async function reorderNode(draggedId, targetId, insertBefore = true) {
 		}
 		return false;
 	};
-	removeNode(endpointsData.nodes);
-	insertAtTarget(endpointsData.nodes);
-	if (ok) await saveEndpoints();
-	return ok;
+	return persistEndpointsMutation(() => {
+		const move = resolveTreeMove(endpointsData.nodes, draggedId, targetId);
+		if (!move) return false;
+		draggedNode = move.dragged;
+		removeNode(endpointsData.nodes);
+		insertAtTarget(endpointsData.nodes);
+		return ok;
+	});
 }
 // 将节点移动为另一个节点的子节点
 async function moveNodeAsChild(draggedId, targetParentId) {
 	if (!endpointsData) return false;
-	const move = resolveTreeMove(endpointsData.nodes, draggedId, targetParentId);
-	if (!move) return false;
 	const removeRecursive = (siblings) => {
-		const idx = siblings.findIndex(n => n.id === draggedId);
-		if (idx >= 0) return siblings.splice(idx, 1)[0];
-		for (const n of siblings) {
-			if (n.children) {
-				const found = removeRecursive(n.children);
-				if (found) return found;
+		const index = siblings.findIndex(node => node.id === draggedId);
+		if (index >= 0) return siblings.splice(index, 1)[0];
+		for (const node of siblings) {
+			if (node.children) {
+				const removed = removeRecursive(node.children);
+				if (removed) return removed;
 			}
 		}
 		return null;
 	};
-	removeRecursive(endpointsData.nodes);
-	if (!move.target.children) move.target.children = [];
-	move.target.children.push(move.dragged);
-	await saveEndpoints();
-	return true;
+	return persistEndpointsMutation(() => {
+		const move = resolveTreeMove(endpointsData.nodes, draggedId, targetParentId);
+		if (!move) return false;
+		const dragged = removeRecursive(endpointsData.nodes);
+		if (!dragged) return false;
+		if (!move.target.children) move.target.children = [];
+		move.target.children.push(dragged);
+		return true;
+	});
 }
 // ========== 节点查询 ==========
 function getNode(nodeId) {
@@ -6453,17 +7026,20 @@ function getNode(nodeId) {
 // ========== 会话管理（不变） ==========
 async function loadSessionsIndex() {
 	const sessions = await storage.loadSessions();
+	for (const session of sessions) await migrateSession(session);
 	sessionsCache.clear();
-	for (const s of sessions) {
-		migrateSession(s);
-		sessionsCache.set(s.id, s);
-	}
+	for (const session of sessions) sessionsCache.set(session.id, session);
 	return sessions;
 }
 function getAllSessions() {
 	return Array.from(sessionsCache.values());
 }
-async function createSession(firstMessage = null, targetModels = null) {
+function updateSession(sessionId, mutate) {
+	const session = sessionsCache.get(sessionId);
+	if (!session) return Promise.resolve(null);
+	return persistSessionMutation(session, () => mutate(session));
+}
+async function createSession(firstMessage = null, targetModels = null, modelParams = null) {
 	let title = '新会话';
 	if (firstMessage) {
 		if (Array.isArray(firstMessage)) {
@@ -6479,6 +7055,7 @@ async function createSession(firstMessage = null, targetModels = null) {
 		createdAt: Date.now(),
 		messages: []
 	};
+	if (modelParams) session.modelParams = snapshotData(modelParams);
 	if (firstMessage) {
 		let content;
 		if (Array.isArray(firstMessage)) {
@@ -6492,34 +7069,32 @@ async function createSession(firstMessage = null, targetModels = null) {
 		if (targetModels) msg.targetEndpoints = targetModels;
 		session.messages.push(msg);
 	}
-	sessionsCache.set(session.id, session);
 	await saveSession(session);
+	sessionsCache.set(session.id, session);
 	return session;
 }
 async function loadSession(sessionId) {
 	if (sessionsCache.has(sessionId)) {
 		const cached = sessionsCache.get(sessionId);
-		// 缓存中的会话可能未迁移（loadSessionsIndex 在历史版本中未调 migrateSession）
-		migrateSession(cached);
+		await migrateSession(cached);
 		return cached;
 	}
 	const session = await storage.loadSession(sessionId);
-	if (session) {
-		migrateSession(session);
-		sessionsCache.set(session.id, session);
-	}
+	if (!session) return session;
+	await migrateSession(session);
+	sessionsCache.set(session.id, session);
 	return session;
 }
 async function saveSession(session) {
 	return await storage.saveSession(session);
 }
-// 会话格式迁移：存量数据归一化——每条 response 是独立 assistant 消息
 function migrateSession(session) {
+	const inProgress = sessionMigrationPromises.get(session);
+	if (inProgress) return inProgress;
 	let changed = false;
 	const newMessages = [];
 	for (const msg of session.messages) {
 		if (msg.role === 'assistant' && msg.responses) {
-			// 格式 2（当前）：responses 数组 → flat 为 N 条独立消息
 			for (const r of msg.responses) {
 				const m = { role: 'assistant', timestamp: r.timestamp || msg.timestamp || Date.now() };
 				for (const k of Object.keys(r)) {
@@ -6533,7 +7108,6 @@ function migrateSession(session) {
 			}
 			changed = true;
 		} else {
-			// 用户消息 / 已 flat 的 assistant 消息
 			const copy = { ...msg };
 			if (copy.role === 'assistant') {
 				if (!copy.endpointId && copy.modelId) {
@@ -6541,27 +7115,31 @@ function migrateSession(session) {
 					delete copy.modelId;
 					changed = true;
 				}
-				// 旧 assistant 消息残留的空 content[] 删掉
 				if (copy.content && Array.isArray(copy.content)) {
 					delete copy.content;
 					changed = true;
 				}
-				// 确保没有残留的 responses 字段
 				if (copy.responses) {
 					delete copy.responses;
 					changed = true;
 				}
-				// 清理旧单端点格式的残留同级字段
 				if (copy.endpointGroupId) { delete copy.endpointGroupId; changed = true; }
 				if (copy.usage) { delete copy.usage; changed = true; }
 			}
 			newMessages.push(copy);
 		}
 	}
-	if (changed) {
+	if (!changed) return Promise.resolve(session);
+	const migration = persistSessionMutation(session, () => {
 		session.messages = newMessages;
-		saveSession(session).catch(err => console.error('migrate: save failed', err));
-	}
+		return session;
+	});
+	sessionMigrationPromises.set(session, migration);
+	const clearMigration = () => {
+		if (sessionMigrationPromises.get(session) === migration) sessionMigrationPromises.delete(session);
+	};
+	migration.then(clearMigration, clearMigration);
+	return migration;
 }
 function normalizeMessageContent(msg) {
 	if (!msg.content) return [{ type: 'text', text: '' }];
@@ -6574,21 +7152,22 @@ async function addMessage(sessionId, role, content, options = {}) {
 	if (!session) return null;
 	// 新格式：每条 response 是独立 assistant 消息
 	if (options.responses) {
-		for (const r of options.responses) {
-			const msg = { role: 'assistant', timestamp: r.timestamp || Date.now() };
-			// 复制 response 所有字段到消息级别
-			for (const k of Object.keys(r)) {
-				msg[k] = r[k];
+		return persistSessionMutation(session, () => {
+			for (const r of options.responses) {
+				const msg = { role: 'assistant', timestamp: r.timestamp || Date.now() };
+				// 复制 response 所有字段到消息级别
+				for (const k of Object.keys(r)) {
+					msg[k] = r[k];
+				}
+				// 兼容 modelId → endpointId
+				if (!msg.endpointId && msg.modelId) {
+					msg.endpointId = msg.modelId;
+					delete msg.modelId;
+				}
+				session.messages.push(msg);
 			}
-			// 兼容 modelId → endpointId
-			if (!msg.endpointId && msg.modelId) {
-				msg.endpointId = msg.modelId;
-				delete msg.modelId;
-			}
-			session.messages.push(msg);
-		}
-		await saveSession(session);
-		return session.messages[session.messages.length - 1];
+			return session.messages[session.messages.length - 1];
+		});
 	}
 	const message = { role, timestamp: Date.now() };
 	if (typeof content === 'string') {
@@ -6607,20 +7186,29 @@ async function addMessage(sessionId, role, content, options = {}) {
 			if (options.usage) message.usage = options.usage;
 		}
 	}
-	if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 1) {
-		const firstText = message.content.find(c => c.type === 'text');
-		session.title = firstText ? firstText.text.slice(0, 20) : '新会话';
-	}
-	session.messages.push(message);
-	await saveSession(session);
-	return message;
+	return persistSessionMutation(session, () => {
+		if (role === 'user' && session.messages.filter(m => m.role === 'user').length === 0) {
+			const firstText = message.content.find(c => c.type === 'text');
+			session.title = firstText ? firstText.text.slice(0, 20) : '新会话';
+		}
+		session.messages.push(message);
+		return message;
+	});
 }
 function getSession(sessionId) {
 	return sessionsCache.get(sessionId);
 }
 async function deleteSession(sessionId) {
-	sessionsCache.delete(sessionId);
-	return await storage.deleteSession(sessionId);
+	const previousQueue = sessionMutationQueues.get(sessionId) || Promise.resolve();
+	const queued = enqueueMutation(previousQueue, async () => {
+		await storage.deleteSession(sessionId);
+		sessionsCache.delete(sessionId);
+	});
+	sessionMutationQueues.set(sessionId, queued.queue);
+	queued.queue.finally(() => {
+		if (sessionMutationQueues.get(sessionId) === queued.queue) sessionMutationQueues.delete(sessionId);
+	});
+	return queued.result;
 }</script>
 	<script>// ========== API Functions ==========
 function getSessionGenerations(sessionId) {
@@ -7364,16 +7952,15 @@ let lastUserMessage = null;
 let pendingAttachments = []; // 待发送的附件列表
 // ========== Event Handlers (extracted from init() for HTML onclick) ==========
 function handleTestAllConnections() {
-    var allIds = [];
-    function collectIds(nodes) {
-        nodes.forEach(function(n) {
-            var rcfg = resolveNodeConfig(n.id);
-            if (rcfg && rcfg.baseUrl) allIds.push(n.id);
-            if (n.children) collectIds(n.children);
-        });
-    }
-    collectIds(getGroups());
-    allIds.forEach(function(id) { testConnection(id); });
+	var allIds = [];
+	function collectIds(nodes) {
+		nodes.forEach(function(n) {
+			if (isEndpointTestable(n.id)) allIds.push(n.id);
+			if (n.children) collectIds(n.children);
+		});
+	}
+	collectIds(getGroups());
+	allIds.forEach(function(id) { testConnection(id); });
 }
 function handleStopAllResponses() {
     stopAllGenerations();
@@ -7577,11 +8164,6 @@ async function handleWipeDirectory() {
 	confirmAction('确定清空磁盘上的所有数据？\n这将删除 endpoints.json 和 sessions 目录中的所有会话记录。\n此操作不可恢复！', () => {
 		confirmAction('再次确认：这将永久删除所有端点配置和会话记录！', async () => {
 			try {
-				if (window.__IS_EXTENSION__) {
-					await storage.clearAll();
-				} else {
-					await DirectoryStorage.clearAll();
-				}
 				await clearDirectory();
 				alert('数据已清空');
 				showDirectoryPrompt(false);
@@ -7693,13 +8275,11 @@ async function handleSessionSelect(sessionId) {
 		sessionGenerations.delete(sessionId);
 	}
 }
-function handleSessionEdit(sessionId, newTitle) {
-	// 原地编辑模式：直接更新会话标题
+async function handleSessionEdit(sessionId, newTitle) {
 	const session = getSession(sessionId);
 	if (session && newTitle) {
-		session.title = newTitle;
-		saveSession(session);
-		refreshUI();
+		await updateSession(sessionId, current => { current.title = newTitle; });
+		await refreshUI();
 	}
 }
 async function handleSessionDelete(sessionId) {
@@ -7803,12 +8383,11 @@ async function handleSend() {
 	}
 	let isNewSession = false;
 	if (!currentSession) {
-		currentSession = await createSession(content, [...selectedEndpoints]);
-		// Sync workspace params to new session
-		if (typeof defaultSelectedEndpointParams !== 'undefined' && Object.keys(defaultSelectedEndpointParams).length > 0) {
-			currentSession.modelParams = JSON.parse(JSON.stringify(defaultSelectedEndpointParams));
-			await saveSession(currentSession);
-		}
+		const initialModelParams = typeof defaultSelectedEndpointParams !== 'undefined'
+			&& Object.keys(defaultSelectedEndpointParams).length > 0
+			? defaultSelectedEndpointParams
+			: null;
+		currentSession = await createSession(content, [...selectedEndpoints], initialModelParams);
 		isNewSession = true;
 	}
 	if (!isNewSession) {
@@ -8312,8 +8891,8 @@ async function handleNewSession() {
 			messages: JSON.parse(JSON.stringify(contextMessages)),
 			modelParams: currentSession.modelParams ? JSON.parse(JSON.stringify(currentSession.modelParams)) : {}
 		};
-		sessionsCache.set(newSession.id, newSession);
 		await saveSession(newSession);
+		sessionsCache.set(newSession.id, newSession);
 		selectedEndpoints = [...selectedEndpoints];
 		currentSession = newSession;
 		await refreshUI();

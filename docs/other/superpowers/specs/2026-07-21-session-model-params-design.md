@@ -2,8 +2,8 @@
 title: 会话模型参数覆盖设计
 covers_file: [src/modules/selected-endpoints.js, src/modules/shared.js, src/modules/main.js, src/modules/attachments.js]
 depends_on: [data-model.md]
-api_signature: defaultSelectedEndpointParams / sessionParamOverrides / openSessionParamEditor
-last_updated: 2026-07-22
+api_signature: defaultSelectedEndpointParams / openSessionParamEditor / updateSession
+last_updated: 2026-08-03
 why_exists: 定义会话级 API 参数覆盖机制，用户可为每个端点独立设置仅当前会话/工作空间有效的参数
 ---
 
@@ -31,7 +31,7 @@ why_exists: 定义会话级 API 参数覆盖机制，用户可为每个端点独
 ```
 
 - `modelParams` 是会话的顶级字段，key = endpointId，value = 参数键值对
-- 随会话一起 `storage.saveSession` / `loadSession` 持久化
+- 随会话一起持久化/加载；已缓存会话的参数变更通过 `updateSession` 进入 store 的串行持久化队列
 - 切换会话/刷新页面自动跟随
 
 ### 状态变量
@@ -76,14 +76,14 @@ why_exists: 定义会话级 API 参数覆盖机制，用户可为每个端点独
 
 ### 保存逻辑
 
-- 用户修改后立即写入 `currentSession.modelParams[endpointId]`
-- 关闭弹窗时触发 `storage.saveSession(currentSession)`（异步，不阻塞）
+- 保存按钮先更新工作区级 `defaultSelectedEndpointParams`，有当前会话时再 `await updateSession` 写入 `modelParams[endpointId]`
+- `updateSession` 在保存失败时恢复当前会话缓存的变更前快照；对话框仅在成功后关闭
 - 用户填入的值与原默认值相同时，可存可不存——存了也不影响行为
 
 ### 重置
 
-- "重置为默认"按钮：删除 `currentSession.modelParams[endpointId]` 整个条目，表单回退到 `resolveNodeConfig(id).params`
-- 关闭弹窗时不保存重置状态直到用户关闭
+- "重置为默认"按钮：删除工作区级覆盖；有当前会话时通过 `updateSession` 删除 `modelParams[endpointId]`，表单回退到 `resolveNodeConfig(id).params`
+- 重置完成后立即重绘表单，不等待关闭对话框
 
 ## 数据流
 
@@ -103,7 +103,7 @@ resolveNodeConfig(id).params
 ### 跨会话行为
 
 - 切换会话 → `currentSession` 变 → `modelParams` 自动切换
-- 新建会话 → `currentSession.modelParams` 为空对象 → 无覆盖
+- 新建会话 → 首次发送时将当前工作区参数深拷贝传给 `createSession`，形成之后独立于工作区变更的会话快照
 - 导出/导入会话 → `modelParams` 随会话 JSON 一起导出导入
 
 ## 技术实现
@@ -126,11 +126,15 @@ resolveNodeConfig(id).params
 
 ### 保存时机
 
-用户设了值后的每个修改仅写入内存中的 `currentSession.modelParams`；仅弹窗关闭时触发一次 `saveSession`。
+用户点击保存或重置时立即触发一次会话持久化。会话缓存更新和存储写入由 `updateSession` 原子串行处理，避免直接改 `currentSession` 后再异步调用 `saveSession`。
 
 ## 边界情况
 
 - 端点在端点树中被删除：`selectedEndpoints` 已清，弹窗不会触发
 - 端点的 `type`/`style` 变了：弹窗参数控件根据当前 `resolveNodeConfig` 渲染，参数定义自动跟随
 - 同名参数在 `customParams` 和 session override 中都设了：session override 优先级更高
-- 关闭弹窗时请求正在生成中：允许，参数已写入不会再变
+- 保存或重置期间切换会话：处理器以打开时捕获的 endpointId 写入，但以点击时的 currentSession.id 为目标；调用方应避免在未完成的对话框提交期间切换会话
+
+## 决策日志
+
+- 2026-08-03: 会话参数改用 `updateSession`，新会话在 `createSession` 首次写入时接收工作区参数快照，确保持久化失败可回滚且不会出现“先缓存后保存”的窗口。

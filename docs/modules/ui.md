@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-07-24
+last_updated: 2026-08-03
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -48,6 +48,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `handleSelectedEndpointRemoveClick` | selected-endpoints.js | 端点标签叉号强制移除 |
 | `handleSelectedEndpointMouseover` | selected-endpoints.js | 端点标签 hover 显示 tooltip |
 | `handleSelectedEndpointMouseleave` | selected-endpoints.js | 端点标签 mouseleave 隐藏 tooltip |
+| `openSessionParamEditor` | selected-endpoints.js | 打开会话参数对话框；保存/重置工作区参数，并通过 `updateSession` 异步持久化当前会话的参数覆盖 |
 | `handleEditSessionTitleClick` | session-list.js | 会话标题编辑按钮，创建 input 替换标题 |
 | `handleRemoveSessionClick` | session-list.js | 会话删除按钮，confirmAction 后删除 |
 | `handleSessionListItemClick` | session-list.js | 会话列表项点击，切换当前会话 |
@@ -162,6 +163,12 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 **toggleEndpointSelection** (行 55)：在 `selectedEndpoints` 中添加/移除 ID。正在生成时阻止操作。触发 `syncJoinBtnState` 同步树中 checkbox。
 
 事件绑定已移至 HTML 模板 `#template-selected-endpoint` 的内联 onclick/onmouseover/onmouseleave 属性，对应的 handler 为 `handleSelectedEndpointClick` / `handleSelectedEndpointRemoveClick` / `handleSelectedEndpointMouseover` / `handleSelectedEndpointMouseleave`。标签内容含 tooltip（`createTooltip`），hover 显示节点配置。
+
+### 5.1 会话参数对话框 (`openSessionParamEditor`)
+
+文件：`selected-endpoints.js`
+
+点击已选端点标签后，弹窗按“会话参数 > 工作区参数 > 端点默认参数”合并显示。保存或重置会先更新工作区级 `defaultSelectedEndpointParams`，有当前会话时再 `await updateSession` 写入或移除该端点的 `modelParams` 覆盖，确保缓存变更、串行持久化与失败回滚都由 store 统一处理。
 
 ### 6. 附件系统
 
@@ -293,3 +300,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-20 | 编辑弹窗字段顺序重排：名称→模型名→类型→接口风格→Base URL→API Key→备注 | 逻辑分组：标识信息放前（名称+模型名+类型），协议信息居中（接口风格+Base URL），认证信息最后；名称加 placeholder 提示默认值 |
 | 2026-07-23 | Base URL 行新增路径后缀显示 + checkbox 驱动的 directUrl 切换 | 路径映射基于实际 API 文档（含 style+type+modelId 三维度）；toggle 改用 common.css `.toggle` 模式，checkbox 驱动 ✕/ 图标切换；视觉上路径与按钮包裹为 `.path-group`；弹窗宽度 720→800px |
 | 2026-07-23 | 用户消息 header 新增分叉按钮（handleForkClick） | renderMessages 设 data-msg-index 供分叉定位；appendUserMessage 通过 indexOf 获取消息索引；fork 按钮事件绑定在 meta.querySelector('.fork') |
+| 2026-08-03 | 会话参数弹窗保存/重置改为等待 `updateSession` | 会话级参数必须由 store 的串行持久化队列与失败回滚维护，避免 UI 直接修改缓存对象后异步保存 |

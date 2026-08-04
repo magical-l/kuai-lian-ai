@@ -22,16 +22,15 @@ let pendingAttachments = []; // 待发送的附件列表
 
 // ========== Event Handlers (extracted from init() for HTML onclick) ==========
 function handleTestAllConnections() {
-    var allIds = [];
-    function collectIds(nodes) {
-        nodes.forEach(function(n) {
-            var rcfg = resolveNodeConfig(n.id);
-            if (rcfg && rcfg.baseUrl) allIds.push(n.id);
-            if (n.children) collectIds(n.children);
-        });
-    }
-    collectIds(getGroups());
-    allIds.forEach(function(id) { testConnection(id); });
+	var allIds = [];
+	function collectIds(nodes) {
+		nodes.forEach(function(n) {
+			if (isEndpointTestable(n.id)) allIds.push(n.id);
+			if (n.children) collectIds(n.children);
+		});
+	}
+	collectIds(getGroups());
+	allIds.forEach(function(id) { testConnection(id); });
 }
 
 function handleStopAllResponses() {
@@ -247,11 +246,6 @@ async function handleWipeDirectory() {
 	confirmAction('确定清空磁盘上的所有数据？\n这将删除 endpoints.json 和 sessions 目录中的所有会话记录。\n此操作不可恢复！', () => {
 		confirmAction('再次确认：这将永久删除所有端点配置和会话记录！', async () => {
 			try {
-				if (window.__IS_EXTENSION__) {
-					await storage.clearAll();
-				} else {
-					await DirectoryStorage.clearAll();
-				}
 				await clearDirectory();
 				alert('数据已清空');
 				showDirectoryPrompt(false);
@@ -372,13 +366,11 @@ async function handleSessionSelect(sessionId) {
 	}
 }
 
-function handleSessionEdit(sessionId, newTitle) {
-	// 原地编辑模式：直接更新会话标题
+async function handleSessionEdit(sessionId, newTitle) {
 	const session = getSession(sessionId);
 	if (session && newTitle) {
-		session.title = newTitle;
-		saveSession(session);
-		refreshUI();
+		await updateSession(sessionId, current => { current.title = newTitle; });
+		await refreshUI();
 	}
 }
 async function handleSessionDelete(sessionId) {
@@ -496,12 +488,11 @@ async function handleSend() {
 	}
 	let isNewSession = false;
 	if (!currentSession) {
-		currentSession = await createSession(content, [...selectedEndpoints]);
-		// Sync workspace params to new session
-		if (typeof defaultSelectedEndpointParams !== 'undefined' && Object.keys(defaultSelectedEndpointParams).length > 0) {
-			currentSession.modelParams = JSON.parse(JSON.stringify(defaultSelectedEndpointParams));
-			await saveSession(currentSession);
-		}
+		const initialModelParams = typeof defaultSelectedEndpointParams !== 'undefined'
+			&& Object.keys(defaultSelectedEndpointParams).length > 0
+			? defaultSelectedEndpointParams
+			: null;
+		currentSession = await createSession(content, [...selectedEndpoints], initialModelParams);
 		isNewSession = true;
 	}
 	if (!isNewSession) {
@@ -1027,8 +1018,8 @@ async function handleNewSession() {
 			messages: JSON.parse(JSON.stringify(contextMessages)),
 			modelParams: currentSession.modelParams ? JSON.parse(JSON.stringify(currentSession.modelParams)) : {}
 		};
-		sessionsCache.set(newSession.id, newSession);
 		await saveSession(newSession);
+		sessionsCache.set(newSession.id, newSession);
 		selectedEndpoints = [...selectedEndpoints];
 		currentSession = newSession;
 		await refreshUI();

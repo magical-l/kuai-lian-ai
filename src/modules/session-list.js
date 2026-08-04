@@ -17,7 +17,7 @@ function handleEditSessionTitleClick(btn) {
 		inputEl.remove();
 		titleEl.classList.remove('hidden');
 		if (newTitle && newTitle !== currentTitle) {
-			handleSessionEdit(sessionId, newTitle);
+			handleSessionEdit(sessionId, newTitle).catch(() => {});
 		}
 	};
 	inputEl.onblur = finishEdit;

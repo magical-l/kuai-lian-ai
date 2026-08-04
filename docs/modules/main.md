@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-07-28
+last_updated: 2026-08-03
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -43,7 +43,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `refreshUI` | 全局 UI 重绘（端点树 + 标签栏 + 会话列表 + 消息） |
 | `updateChatTitleDisplay` | 更新会话标题 |
 | `handleSessionSelect` | 切换当前会话 |
-| `handleSessionEdit` | 编辑会话标题 |
+| `handleSessionEdit` | 通过 `updateSession` 持久化编辑后的会话标题，并刷新 UI |
 | `handleSessionDelete` | 删除会话 |
 | `handleAddGroup` | 新增端点组：局部插入返回节点并跳过端点树重绘 |
 | `handleNodeEdit` | 编辑端点节点；保存期间父 DOM 被重绘时按 nodeId 重新定位，找不到则完整刷新 |
@@ -256,7 +256,7 @@ radio change → setThemePref(mode)
 | `getSession(id)` | main → store | 获取单条会话 |
 | `loadSession(id)` | main → store | 加载完整会话（含消息） |
 | `saveSession(session)` | main → store | 保存会话 |
-| `createSession(msg, targets)` | main → store | 创建新会话 |
+| `createSession(msg, targets, modelParams)` | main → store | 创建新会话，并在首个持久化载荷中写入可选的会话级参数快照 |
 | `addMessage(sid, role, content, opts)` | main → store | 追加消息 |
 | `deleteSession(id)` | main → store | 删除会话 |
 | `addNode(pid, data)` | main → store | 添加节点 |
@@ -309,3 +309,4 @@ radio change → setThemePref(mode)
 | 2026-07-24 | 增加 `video-generation` 端点的分流、请求处理和 `updateCardAsVideo` 渲染 | 视频端点走 `callVideoGeneration`，结果渲染为 `<video>` 播放器 |
 | 2026-07-28 | 新增组/子节点使用 `addNode` 的返回对象局部插入，并用 `skipEndpointTree` 刷新其余 UI | 避免并发完整重绘与局部插入同时发生而重复插入；首子节点同步树形状态、筛选和祖先批量测试状态 |
 | 2026-07-28 | 子节点保存后若父 DOM 已被重绘，按 nodeId 重新定位；定位失败时完整刷新 | 异步保存不能依赖已失效的 DOM 引用，完整刷新为无法局部恢复时的一致性回退 |
+| 2026-08-03 | 会话标题和会话级参数改经 `updateSession` 持久化；创建会话时将工作区参数传给 `createSession` | 将缓存对象的变更和持久化纳入 store 的串行队列与失败回滚，避免先改缓存再异步保存留下不一致状态 |
