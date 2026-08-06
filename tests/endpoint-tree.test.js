@@ -10,6 +10,7 @@ const endpointTreeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'end
 const mainSourcePath = path.join(__dirname, '..', 'src', 'modules', 'main.js');
 const storeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'store.js');
 const sessionListSourcePath = path.join(__dirname, '..', 'src', 'modules', 'session-list.js');
+const selectedEndpointsSourcePath = path.join(__dirname, '..', 'src', 'modules', 'selected-endpoints.js');
 
 class FakeEventTarget {
 	constructor() {
@@ -175,6 +176,96 @@ globalThis.__storeTestApi = {
 	};
 }
 
+function createSelectedEndpointsHarness(options) {
+	const storageValues = new Map();
+	if (options.workspaceRaw !== null) storageValues.set('defaultSelectedEndpointParams', options.workspaceRaw);
+	const setItemErrors = new Map(options.setItemErrors || []);
+	const removeItemErrors = new Map(options.removeItemErrors || []);
+	let nextSetItemError = null;
+	let nextRemoveItemError = null;
+	let setItemCallCount = 0;
+	let removeItemCallCount = 0;
+	let updateSessionCallCount = 0;
+	let updateSessionMutated = false;
+	const localStorage = {
+		getItem(key) {
+			return storageValues.has(key) ? storageValues.get(key) : null;
+		},
+		setItem(key, value) {
+			setItemCallCount += 1;
+			const error = nextSetItemError || setItemErrors.get(setItemCallCount);
+			nextSetItemError = null;
+			if (error) throw error;
+			storageValues.set(key, String(value));
+		},
+		removeItem(key) {
+			removeItemCallCount += 1;
+			const error = nextRemoveItemError || removeItemErrors.get(removeItemCallCount);
+			nextRemoveItemError = null;
+			if (error) throw error;
+			storageValues.delete(key);
+		}
+	};
+	let currentSession = cloneJson(options.currentSession);
+	const context = vm.createContext({
+		console,
+		currentSession,
+		localStorage,
+		updateSession: async function(sessionId, mutator) {
+			updateSessionCallCount += 1;
+			if (options.updateSession) {
+				return options.updateSession({
+					callIndex: updateSessionCallCount,
+					sessionId,
+					currentSession,
+					mutator
+				});
+			}
+			assert.equal(sessionId, currentSession.id);
+			const previousSession = cloneJson(currentSession);
+			mutator(currentSession);
+			updateSessionMutated = true;
+			Object.keys(currentSession).forEach(function(key) {
+				delete currentSession[key];
+			});
+			Object.assign(currentSession, previousSession);
+			throw options.updateSessionError;
+		}
+	});
+	const source = fs.readFileSync(selectedEndpointsSourcePath, 'utf8');
+	const exposedSource = source + '\n\nglobalThis.__selectedEndpointsTestApi = {\n\tpersistEndpointParamsTransaction,\n\tgetDefaultSelectedEndpointParams() {\n\t\treturn JSON.parse(JSON.stringify(defaultSelectedEndpointParams));\n\t}\n};';
+
+	new vm.Script(exposedSource, { filename: selectedEndpointsSourcePath }).runInContext(context);
+
+	return {
+		api: context.__selectedEndpointsTestApi,
+		currentSession,
+		setCurrentSession(session) {
+			currentSession = cloneJson(session);
+			context.currentSession = currentSession;
+		},
+		failNextSetItem(error) {
+			nextSetItemError = error;
+		},
+		failNextRemoveItem(error) {
+			nextRemoveItemError = error;
+		},
+		getSetItemCallCount() {
+			return setItemCallCount;
+		},
+		getRemoveItemCallCount() {
+			return removeItemCallCount;
+		},
+		getUpdateSessionCallCount() {
+			return updateSessionCallCount;
+		},
+		wasUpdateSessionMutated() {
+			return updateSessionMutated;
+		},
+		localStorage
+	};
+}
+
 function createDescendantTargetTree() {
 	return {
 		nodes: [
@@ -231,6 +322,520 @@ function assertRejectedWithoutChanges(result, harness, originalTree) {
 	assert.deepEqual(harness.api.getEndpointsData(), originalTree);
 	assert.equal(harness.getSaveCount(), 0);
 }
+
+
+test('workspace/session parameter transaction restores workspace state after save and reset session failures', async () => {
+	const endpointId = 'endpoint-1';
+	const workspaceBefore = {
+		[endpointId]: { temperature: 0.2, topP: 0.9 }
+	};
+	const rawWorkspaceBefore = '{\n  "endpoint-1": { "temperature": 0.2, "topP": 0.9 }\n}';
+	const sessionBefore = {
+		id: 'session-1',
+		modelParams: {
+			[endpointId]: { temperature: 0.6 },
+			'other-endpoint': { topP: 0.4 }
+		}
+	};
+	const harness = createSelectedEndpointsHarness({
+		currentSession: sessionBefore,
+		updateSessionError: new Error('session update failed'),
+		workspaceRaw: rawWorkspaceBefore
+	});
+
+	await assert.rejects(
+		harness.api.persistEndpointParamsTransaction(
+			endpointId,
+			{ temperature: 1.1 },
+			sessionBefore.id,
+			function(session) {
+				if (!session.modelParams) session.modelParams = {};
+				session.modelParams[endpointId] = { temperature: 1.1 };
+			}
+		),
+		/session update failed/
+	);
+
+	assert.equal(harness.wasUpdateSessionMutated(), true);
+	assert.deepEqual(cloneJson(harness.api.getDefaultSelectedEndpointParams()), workspaceBefore);
+	assert.equal(harness.localStorage.getItem('defaultSelectedEndpointParams'), rawWorkspaceBefore);
+	assert.deepEqual(harness.currentSession.modelParams, sessionBefore.modelParams);
+
+	await assert.rejects(
+		harness.api.persistEndpointParamsTransaction(
+			endpointId,
+			undefined,
+			sessionBefore.id,
+			function(session) {
+				delete session.modelParams[endpointId];
+				if (Object.keys(session.modelParams).length === 0) delete session.modelParams;
+			}
+		),
+		/session update failed/
+	);
+
+	assert.deepEqual(cloneJson(harness.api.getDefaultSelectedEndpointParams()), workspaceBefore);
+	assert.equal(harness.localStorage.getItem('defaultSelectedEndpointParams'), rawWorkspaceBefore);
+	assert.deepEqual(harness.currentSession.modelParams, sessionBefore.modelParams);
+	assert.equal(harness.getUpdateSessionCallCount(), 2);
+});
+
+test('workspace/session parameter transaction does not update the session when localStorage rejects the workspace write', async () => {
+	const endpointId = 'endpoint-1';
+	const workspaceBefore = {
+		[endpointId]: { temperature: 0.2 }
+	};
+	const rawWorkspaceBefore = '{"endpoint-1":{"temperature":0.2}}';
+	const sessionBefore = {
+		id: 'session-1',
+		modelParams: {
+			[endpointId]: { temperature: 0.6 }
+		}
+	};
+	const harness = createSelectedEndpointsHarness({
+		currentSession: sessionBefore,
+		updateSessionError: new Error('updateSession must not run'),
+		workspaceRaw: rawWorkspaceBefore
+	});
+	harness.failNextSetItem(new Error('localStorage write failed'));
+
+	await assert.rejects(
+		harness.api.persistEndpointParamsTransaction(
+			endpointId,
+			{ temperature: 1.1 },
+			sessionBefore.id,
+			function(session) {
+				session.modelParams[endpointId] = { temperature: 1.1 };
+			}
+		),
+		/localStorage write failed/
+	);
+
+	assert.equal(harness.getUpdateSessionCallCount(), 0);
+	assert.deepEqual(cloneJson(harness.api.getDefaultSelectedEndpointParams()), workspaceBefore);
+	assert.equal(harness.localStorage.getItem('defaultSelectedEndpointParams'), rawWorkspaceBefore);
+	assert.deepEqual(harness.currentSession.modelParams, sessionBefore.modelParams);
+});
+
+test('workspace/session parameter transaction serializes an earlier session failure before a later save', async () => {
+	const endpointId = 'endpoint-1';
+	let rejectFirstSessionUpdate;
+	let firstSessionUpdateStarted;
+	const firstSessionUpdate = new Promise(function(resolve) {
+		firstSessionUpdateStarted = resolve;
+	});
+	const firstSessionFailure = new Error('first session update failed');
+	const harness = createSelectedEndpointsHarness({
+		currentSession: { id: 'session-1' },
+		workspaceRaw: '{}',
+		updateSession({ callIndex, currentSession, mutator }) {
+			mutator(currentSession);
+			if (callIndex === 1) {
+				firstSessionUpdateStarted();
+				return new Promise(function(resolve, reject) {
+					rejectFirstSessionUpdate = reject;
+				});
+			}
+			return Promise.resolve();
+		}
+	});
+
+	const firstTransaction = harness.api.persistEndpointParamsTransaction(
+		endpointId,
+		{ temperature: 0.2 },
+		'session-1',
+		function(session) {
+			session.modelParams = { [endpointId]: { temperature: 0.2 } };
+		}
+	);
+	await firstSessionUpdate;
+
+	const secondTransaction = harness.api.persistEndpointParamsTransaction(
+		endpointId,
+		{ temperature: 0.8 },
+		'session-1',
+		function(session) {
+			session.modelParams = { [endpointId]: { temperature: 0.8 } };
+		}
+	);
+	await Promise.resolve();
+	assert.equal(harness.getUpdateSessionCallCount(), 1, 'the queued transaction must not start before the first session update settles');
+	rejectFirstSessionUpdate(firstSessionFailure);
+
+	await assert.rejects(firstTransaction, firstSessionFailure);
+	await secondTransaction;
+
+	assert.deepEqual(cloneJson(harness.api.getDefaultSelectedEndpointParams()), {
+		[endpointId]: { temperature: 0.8 }
+	});
+	assert.equal(harness.localStorage.getItem('defaultSelectedEndpointParams'), '{"endpoint-1":{"temperature":0.8}}');
+	assert.equal(harness.getUpdateSessionCallCount(), 2);
+});
+
+test('workspace/session parameter transaction captures the queued session at enqueue time', async () => {
+	const endpointId = 'endpoint-1';
+	const sessionIds = [];
+	let releaseFirstUpdate;
+	let firstUpdateStarted;
+	const firstUpdate = new Promise(function(resolve) {
+		firstUpdateStarted = resolve;
+	});
+	const harness = createSelectedEndpointsHarness({
+		currentSession: { id: 'session-A' },
+		workspaceRaw: '{}',
+		updateSession({ callIndex, sessionId }) {
+			sessionIds.push(sessionId);
+			if (callIndex === 1) {
+				firstUpdateStarted();
+				return new Promise(function(resolve) {
+					releaseFirstUpdate = resolve;
+				});
+			}
+		}
+	});
+
+	const firstTransaction = harness.api.persistEndpointParamsTransaction(endpointId, { temperature: 0.2 }, 'session-A', function() {});
+	await firstUpdate;
+	const secondTransaction = harness.api.persistEndpointParamsTransaction(endpointId, { temperature: 0.8 }, 'session-A', function() {});
+	harness.setCurrentSession({ id: 'session-B' });
+	releaseFirstUpdate();
+
+	await Promise.all([firstTransaction, secondTransaction]);
+	assert.deepEqual(sessionIds, ['session-A', 'session-A']);
+});
+
+test('workspace/session parameter transaction preserves the session error when rollback storage write fails', async () => {
+	const endpointId = 'endpoint-1';
+	const sessionError = new Error('session update failed');
+	const rollbackError = new Error('localStorage rollback failed');
+	const harness = createSelectedEndpointsHarness({
+		currentSession: { id: 'session-1' },
+		workspaceRaw: '{}',
+		setItemErrors: [[2, rollbackError]],
+		updateSession() {
+			return Promise.reject(sessionError);
+		}
+	});
+
+	await assert.rejects(
+		harness.api.persistEndpointParamsTransaction(
+			endpointId,
+			{ temperature: 0.8 },
+			'session-1',
+			function() {}
+		),
+		function(error) {
+			assert.equal(error, sessionError);
+			assert.equal(error.rollbackError, rollbackError);
+			return true;
+		}
+	);
+
+	assert.equal(harness.getSetItemCallCount(), 2);
+	assert.equal(harness.getUpdateSessionCallCount(), 1);
+});
+
+test('workspace/session parameter transaction preserves the session error when rollback removeItem fails without prior workspace storage', async () => {
+	const endpointId = 'endpoint-1';
+	const sessionError = new Error('session update failed');
+	const rollbackError = new Error('localStorage rollback remove failed');
+	const harness = createSelectedEndpointsHarness({
+		currentSession: { id: 'session-1' },
+		workspaceRaw: null,
+		removeItemErrors: [[1, rollbackError]],
+		updateSession() {
+			return Promise.reject(sessionError);
+		}
+	});
+
+	await assert.rejects(
+		harness.api.persistEndpointParamsTransaction(
+			endpointId,
+			{ temperature: 0.8 },
+			'session-1',
+			function() {}
+		),
+		function(error) {
+			assert.equal(error, sessionError);
+			assert.equal(error.rollbackError, rollbackError);
+			return true;
+		}
+	);
+
+	assert.equal(harness.getSetItemCallCount(), 1);
+	assert.equal(harness.getRemoveItemCallCount(), 1);
+	assert.equal(harness.getUpdateSessionCallCount(), 1);
+});
+
+test('parameter dialog keeps the opened session as the save and reset target after switching sessions', async () => {
+	const endpointId = 'endpoint-1';
+	const updateSessionTargets = [];
+	const paramList = {
+		querySelectorAll(selector) {
+			assert.equal(selector, 'input, select');
+			return [{ name: 'param-temperature', type: 'range', value: '0.8' }];
+		}
+	};
+	const dialog = {
+		open: false,
+		querySelector(selector) {
+			if (selector === '.close') return this.closeButton;
+			if (selector === '.ok') return this.okButton;
+			if (selector === '.reset') return this.resetButton;
+			if (selector === '.param-control.list') return paramList;
+			if (selector === '.model-path') return this.modelPath;
+			throw new Error(`Unexpected dialog selector: ${selector}`);
+		},
+		close() {
+			this.open = false;
+		},
+		showModal() {
+			this.open = true;
+		},
+		closeButton: {},
+		okButton: {},
+		resetButton: {},
+		modelPath: { textContent: '' }
+	};
+	const selectedEndpointsSource = fs.readFileSync(selectedEndpointsSourcePath, 'utf8');
+	const persistTransactionSource = extractFunctionDeclaration(selectedEndpointsSource, 'persistEndpointParamsTransaction');
+	const openSessionParamEditorSource = extractFunctionDeclaration(selectedEndpointsSource, 'openSessionParamEditor');
+	const context = vm.createContext({
+		alert() {},
+		currentSession: { id: 'session-A', modelParams: { [endpointId]: { temperature: 0.2 } } },
+		defaultSelectedEndpointParams: {},
+		document: {
+			querySelector(selector) {
+				assert.equal(selector, 'dialog.session-param-editor');
+				return dialog;
+			}
+		},
+		findModelById() {
+			return { ancestors: [], node: { name: 'Endpoint' } };
+		},
+		getGroups() {
+			return [];
+		},
+		persistedWorkspaceParams: [],
+		renderParamControlsInDialog() {},
+		resolveNodeConfig() {
+			return { params: { temperature: 0.2 }, type: 'chat', style: 'openai' };
+		},
+		saveDefaultSelectedEndpointParams() {},
+		localStorage: {
+			getItem() {
+				return '{}';
+			}
+		},
+		updateSession(sessionId) {
+			updateSessionTargets.push(sessionId);
+		}
+	});
+	new vm.Script(`
+		var endpointParamsTransactionQueue = Promise.resolve();
+		${persistTransactionSource}
+		${openSessionParamEditorSource}
+		globalThis.__openSessionParamEditor = openSessionParamEditor;
+	`, {
+		filename: selectedEndpointsSourcePath
+	}).runInContext(context);
+
+	context.__openSessionParamEditor(endpointId);
+	context.currentSession = { id: 'session-B' };
+	await dialog.okButton.onclick();
+	await dialog.resetButton.onclick();
+
+	assert.deepEqual(updateSessionTargets, ['session-A', 'session-A']);
+});
+
+test('parameter dialog ignores stale save and reset completions after a newer operation begins', async () => {
+	const renders = [];
+	const alerts = [];
+	const transactions = [];
+	const paramList = {
+		querySelectorAll(selector) {
+			assert.equal(selector, 'input, select');
+			return [{ name: 'param-temperature', type: 'range', value: '0.8' }];
+		}
+	};
+	const dialog = {
+		closeCount: 0,
+		open: false,
+		querySelector(selector) {
+			if (selector === '.close') return this.closeButton;
+			if (selector === '.ok') return this.okButton;
+			if (selector === '.reset') return this.resetButton;
+			if (selector === '.param-control.list') return paramList;
+			if (selector === '.model-path') return this.modelPath;
+			throw new Error(`Unexpected dialog selector: ${selector}`);
+		},
+		close() {
+			this.closeCount += 1;
+			this.open = false;
+		},
+		showModal() {
+			this.open = true;
+		},
+		closeButton: {},
+		okButton: {},
+		resetButton: {},
+		modelPath: { textContent: '' }
+	};
+	const selectedEndpointsSource = fs.readFileSync(selectedEndpointsSourcePath, 'utf8');
+	const openSessionParamEditorSource = extractFunctionDeclaration(selectedEndpointsSource, 'openSessionParamEditor');
+	const context = vm.createContext({
+		alert(message) {
+			alerts.push(message);
+		},
+		currentSession: null,
+		defaultSelectedEndpointParams: {},
+		document: {
+			querySelector(selector) {
+				assert.equal(selector, 'dialog.session-param-editor');
+				return dialog;
+			}
+		},
+		findModelById() {
+			return { ancestors: [], node: { name: 'Endpoint' } };
+		},
+		getGroups() {
+			return [];
+		},
+		persistEndpointParamsTransaction() {
+			return new Promise(function(resolve, reject) {
+				transactions.push({ resolve, reject });
+			});
+		},
+		renderParamControlsInDialog(...args) {
+			renders.push(args);
+		},
+		resolveNodeConfig() {
+			return { params: { temperature: 0.2 }, type: 'chat', style: 'openai' };
+		}
+	});
+	new vm.Script(`${openSessionParamEditorSource}\nglobalThis.__openSessionParamEditor = openSessionParamEditor;`, {
+		filename: selectedEndpointsSourcePath
+	}).runInContext(context);
+
+	context.__openSessionParamEditor('endpoint-1');
+	const staleSave = dialog.okButton.onclick();
+	const currentReset = dialog.resetButton.onclick();
+	assert.equal(transactions.length, 2);
+	transactions[0].resolve();
+	await staleSave;
+	assert.equal(dialog.closeCount, 0, 'a stale save must not close the dialog opened for the newer operation');
+	transactions[1].resolve();
+	await currentReset;
+	assert.equal(renders.length, 2, 'only the current reset may redraw parameter controls');
+
+	const staleReset = dialog.resetButton.onclick();
+	const currentSave = dialog.okButton.onclick();
+	assert.equal(transactions.length, 4);
+	transactions[2].reject(new Error('stale reset failed'));
+	await staleReset;
+	assert.deepEqual(alerts, [], 'a stale reset error must not replace the newer operation state');
+	transactions[3].reject(new Error('current save failed'));
+	await currentSave;
+	assert.deepEqual(alerts, ['参数保存失败：current save failed']);
+	assert.equal(dialog.open, true, 'the latest failed operation must leave the dialog open');
+});
+
+test('parameter dialog invalidates stale operations after native dialog close', async () => {
+	const renders = [];
+	const alerts = [];
+	const transactions = [];
+	const paramList = {
+		querySelectorAll(selector) {
+			assert.equal(selector, 'input, select');
+			return [{ name: 'param-temperature', type: 'range', value: '0.8' }];
+		}
+	};
+	const dialog = Object.assign(new FakeEventTarget(), {
+		closeCount: 0,
+		open: false,
+		querySelector(selector) {
+			if (selector === '.close') return this.closeButton;
+			if (selector === '.ok') return this.okButton;
+			if (selector === '.reset') return this.resetButton;
+			if (selector === '.param-control.list') return paramList;
+			if (selector === '.model-path') return this.modelPath;
+			throw new Error('Unexpected dialog selector: ' + selector);
+		},
+		close() {
+			this.closeCount += 1;
+			this.open = false;
+		},
+		showModal() {
+			this.open = true;
+		},
+		closeButton: {},
+		okButton: {},
+		resetButton: {},
+		modelPath: { textContent: '' }
+	});
+	const selectedEndpointsSource = fs.readFileSync(selectedEndpointsSourcePath, 'utf8');
+	const openSessionParamEditorSource = extractFunctionDeclaration(selectedEndpointsSource, 'openSessionParamEditor');
+	const context = vm.createContext({
+		alert(message) {
+			alerts.push(message);
+		},
+		currentSession: null,
+		defaultSelectedEndpointParams: {},
+		document: {
+			querySelector(selector) {
+				assert.equal(selector, 'dialog.session-param-editor');
+				return dialog;
+			}
+		},
+		findModelById() {
+			return { ancestors: [], node: { name: 'Endpoint' } };
+		},
+		getGroups() {
+			return [];
+		},
+		persistEndpointParamsTransaction() {
+			return new Promise(function(resolve, reject) {
+				transactions.push({ resolve, reject });
+			});
+		},
+		renderParamControlsInDialog(...args) {
+			renders.push(args);
+		},
+		resolveNodeConfig() {
+			return { params: { temperature: 0.2 }, type: 'chat', style: 'openai' };
+		}
+	});
+	new vm.Script(openSessionParamEditorSource + '\n\nglobalThis.__openSessionParamEditor = openSessionParamEditor;', {
+		filename: selectedEndpointsSourcePath
+	}).runInContext(context);
+
+	context.__openSessionParamEditor('endpoint-1');
+	const staleSave = dialog.okButton.onclick();
+	dialog.dispatchEvent({ type: 'cancel' });
+	dialog.open = false;
+	dialog.showModal();
+	transactions[0].resolve();
+	await staleSave;
+
+	const staleReset = dialog.resetButton.onclick();
+	dialog.dispatchEvent({ type: 'close' });
+	dialog.open = false;
+	dialog.showModal();
+	transactions[1].resolve();
+	await staleReset;
+
+	const staleFailure = dialog.okButton.onclick();
+	dialog.dispatchEvent({ type: 'cancel' });
+	dialog.open = false;
+	dialog.showModal();
+	transactions[2].reject(new Error('stale save failed'));
+	await staleFailure;
+
+	assert.equal(dialog.closeCount, 0, 'old save completions must not close a dialog reopened after native cancel');
+	assert.equal(renders.length, 1, 'old reset completions must not render a dialog reopened after native close');
+	assert.deepEqual(alerts, [], 'old failed saves must not alert in a dialog reopened after native cancel');
+	assert.equal(dialog.open, true, 'old operations must not change the reopened dialog state');
+});
 
 test('handleEditSessionTitleClick consumes a rejected save Promise after blur while restoring the old title', () => {
 	const currentTitle = '旧标题';
@@ -1226,7 +1831,7 @@ test('endpoint connection testing uses one eligibility rule and explicit resolve
 		assert.match(extractFunctionDeclaration(endpointTreeSource, functionName), /isEndpointTestable\(/, functionName + ' must reuse isEndpointTestable');
 	});
 	assert.match(extractFunctionDeclaration(mainSource, 'handleTestAllConnections'), /isEndpointTestable\(/, 'handleTestAllConnections must reuse isEndpointTestable');
-	assert.match(extractFunctionDeclaration(attachmentsSource.slice(attachmentsSource.indexOf('async function testConnection')), 'testConnection'), /isEndpointTestable\(/, 'testConnection must reuse isEndpointTestable');
+	assert.match(extractFunctionDeclaration(attachmentsSource.slice(attachmentsSource.indexOf('function testConnection')), 'testConnection'), /isEndpointTestable\(/, 'testConnection must reuse isEndpointTestable');
 
 	const configs = {
 		chat: { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'chat' },
@@ -1261,11 +1866,13 @@ test('endpoint connection testing uses one eligibility rule and explicit resolve
 
 	const calls = [];
 	const uiUpdates = [];
-	const testConnectionSource = extractFunctionDeclaration(attachmentsSource.slice(attachmentsSource.indexOf('async function testConnection')).replace('async function ', 'function '), 'testConnection');
+	const connectionTestBlock = attachmentsSource.slice(
+		attachmentsSource.indexOf('const connectionStatus = new Map()'),
+		attachmentsSource.indexOf('let attachmentTooltip = null;')
+	);
 	const testContext = vm.createContext({
 		Date,
 		FormData,
-		connectionStatus: new Map(),
 		detectModelType() { return 'chat'; },
 		fetchWithTimeout: async function() {
 			return { ok: true, headers: { get() { return 'text/plain'; } } };
@@ -1285,13 +1892,212 @@ test('endpoint connection testing uses one eligibility rule and explicit resolve
 		resolveNodeConfig(nodeId) { return configs[nodeId]; },
 		updateEndpointTestUI(nodeId) { uiUpdates.push(nodeId); }
 	});
-	new vm.Script(testConnectionSource.replace('function testConnection', 'async function testConnection') + '\nglobalThis.__testConnection = testConnection;').runInContext(testContext);
+	new vm.Script(connectionTestBlock + '\nglobalThis.__testConnection = testConnection;\nglobalThis.__connectionStatus = connectionStatus;').runInContext(testContext);
 	for (const scenario of testCases) {
 		await testContext.__testConnection(scenario.id);
 		if (scenario.expectedStatus) {
-			assert.equal(testContext.connectionStatus.get(scenario.id).status, scenario.expectedStatus, scenario.id + ' must not remain testing without a provider test function');
+			assert.equal(testContext.__connectionStatus.get(scenario.id).status, scenario.expectedStatus, scenario.id + ' must not remain testing without a provider test function');
 			assert.equal(uiUpdates.filter(nodeId => nodeId === scenario.id).length, scenario.expectedUiUpdates, scenario.id + ' must update its UI after the failed test');
 		}
 	}
 	assert.deepEqual(calls, testCases.filter(scenario => scenario.expectedCall).map(scenario => scenario.expectedCall), 'only TTS and ASR use their explicit test functions; unsupported types must not fall back to chat');
+});
+
+
+test('testConnection reuses one in-flight Promise per node and allows a later retry', async () => {
+	const attachmentsSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'attachments.js'), 'utf8');
+	const connectionTestBlock = attachmentsSource.slice(
+		attachmentsSource.indexOf('const connectionStatus = new Map()'),
+		attachmentsSource.indexOf('let attachmentTooltip = null;')
+	);
+	const pendingFetches = [];
+	let fetchCallCount = 0;
+	let providerCallCount = 0;
+	const context = vm.createContext({
+		Date,
+		FormData,
+		fetchWithTimeout() {
+			fetchCallCount += 1;
+			return new Promise(function(resolve) {
+				pendingFetches.push(resolve);
+			});
+		},
+		getNode() { return {}; },
+		isEndpointTestable() { return true; },
+		mergeParams() {},
+		providers: {
+			openai: {
+				testConfig() {
+					providerCallCount += 1;
+					return { url: 'https://example.test', headers: {}, body: {} };
+				}
+			}
+		},
+		resolveNodeConfig() {
+			return { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'chat' };
+		},
+		updateEndpointTestUI() {}
+	});
+	new vm.Script(connectionTestBlock + '\n\nglobalThis.__testConnection = testConnection;', {
+		filename: path.join(__dirname, '..', 'src', 'modules', 'attachments.js')
+	}).runInContext(context);
+
+	const firstTest = context.__testConnection('chat');
+	const concurrentTest = context.__testConnection('chat');
+	assert.strictEqual(concurrentTest, firstTest);
+	assert.equal(fetchCallCount, 1);
+	assert.equal(providerCallCount, 1);
+
+	pendingFetches.shift()({ ok: true, headers: { get() { return 'text/plain'; } } });
+	await firstTest;
+
+	const retry = context.__testConnection('chat');
+	assert.equal(fetchCallCount, 2);
+	assert.equal(providerCallCount, 2);
+	pendingFetches.shift()({ ok: true, headers: { get() { return 'text/plain'; } } });
+	await retry;
+});
+
+test('stale connection test completion cannot restore cleared results or update old result UI', async () => {
+	const attachmentsSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'attachments.js'), 'utf8');
+	const connectionTestBlock = attachmentsSource.slice(
+		attachmentsSource.indexOf('const connectionStatus = new Map()'),
+		attachmentsSource.indexOf('let attachmentTooltip = null;')
+	);
+	let resolveFetch;
+	const uiUpdates = [];
+	const context = vm.createContext({
+		Date,
+		FormData,
+		fetchWithTimeout() {
+			return new Promise(function(resolve) {
+				resolveFetch = resolve;
+			});
+		},
+		getNode() { return {}; },
+		isEndpointTestable() { return true; },
+		mergeParams() {},
+		providers: {
+			openai: {
+				testConfig() {
+					return { url: 'https://example.test', headers: {}, body: {} };
+				}
+			}
+		},
+		resolveNodeConfig() {
+			return { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'chat' };
+		},
+		updateEndpointTestUI(nodeId) {
+			uiUpdates.push(nodeId);
+		}
+	});
+	new vm.Script(connectionTestBlock + '\n\nglobalThis.__testConnection = testConnection;\nglobalThis.__clearTestResults = clearTestResults;\nglobalThis.__connectionStatus = connectionStatus;', {
+		filename: path.join(__dirname, '..', 'src', 'modules', 'attachments.js')
+	}).runInContext(context);
+
+	const pendingTest = context.__testConnection('chat');
+	context.__clearTestResults('chat');
+	resolveFetch({ ok: true, headers: { get() { return 'text/plain'; } } });
+	await pendingTest;
+
+	assert.equal(context.__connectionStatus.has('chat'), false);
+	assert.deepEqual(uiUpdates, ['chat']);
+});
+
+test('clearTestResults retains P1 until it settles before allowing a second connection test', async () => {
+	const attachmentsSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'attachments.js'), 'utf8');
+	const connectionTestBlock = attachmentsSource.slice(
+		attachmentsSource.indexOf('const connectionStatus = new Map()'),
+		attachmentsSource.indexOf('let attachmentTooltip = null;')
+	);
+	const pendingFetches = [];
+	let fetchCallCount = 0;
+	let providerCallCount = 0;
+	const context = vm.createContext({
+		Date,
+		FormData,
+		fetchWithTimeout() {
+			fetchCallCount += 1;
+			return new Promise(function(resolve) {
+				pendingFetches.push(resolve);
+			});
+		},
+		getNode() { return {}; },
+		isEndpointTestable() { return true; },
+		mergeParams() {},
+		providers: {
+			openai: {
+				testConfig() {
+					providerCallCount += 1;
+					return { url: 'https://example.test', headers: {}, body: {} };
+				}
+			}
+		},
+		resolveNodeConfig() {
+			return { baseUrl: 'https://example.test', key: '', modelId: 'model', type: 'chat' };
+		},
+		updateEndpointTestUI() {}
+	});
+	new vm.Script(connectionTestBlock + '\n\nglobalThis.__testConnection = testConnection;\nglobalThis.__clearTestResults = clearTestResults;', {
+		filename: path.join(__dirname, '..', 'src', 'modules', 'attachments.js')
+	}).runInContext(context);
+
+	const p1 = context.__testConnection('chat');
+	context.__clearTestResults('chat');
+	const duringClear = context.__testConnection('chat');
+
+	assert.strictEqual(duringClear, p1, 'clearing results must not permit a duplicate in-flight request');
+	assert.equal(fetchCallCount, 1, 'P1 remains the only fetch until it settles');
+	assert.equal(providerCallCount, 1, 'P1 remains the only provider invocation until it settles');
+
+	pendingFetches.shift()({ ok: true, headers: { get() { return 'text/plain'; } } });
+	await p1;
+
+	const p2 = context.__testConnection('chat');
+	assert.notStrictEqual(p2, p1);
+	assert.equal(fetchCallCount, 2, 'only the post-settlement call may start P2');
+	assert.equal(providerCallCount, 2, 'only the post-settlement call may invoke the provider again');
+	pendingFetches.shift()({ ok: true, headers: { get() { return 'text/plain'; } } });
+	await p2;
+});
+
+test('workspace/session parameter transaction rejects and rolls back when the target session is absent', async () => {
+	const endpointId = 'endpoint-1';
+	const workspaceBefore = {
+		[endpointId]: { temperature: 0.2, topP: 0.9 }
+	};
+	const rawWorkspaceBefore = '{\n  "endpoint-1": { "temperature": 0.2, "topP": 0.9 }\n}';
+	const sessionBefore = {
+		id: 'session-1',
+		modelParams: {
+			[endpointId]: { temperature: 0.6 }
+		}
+	};
+	const harness = createSelectedEndpointsHarness({
+		currentSession: sessionBefore,
+		workspaceRaw: rawWorkspaceBefore,
+		updateSession() {
+			return null;
+		}
+	});
+
+	await assert.rejects(
+		harness.api.persistEndpointParamsTransaction(
+			endpointId,
+			{ temperature: 1.1 },
+			sessionBefore.id,
+			function(session) {
+				session.modelParams[endpointId] = { temperature: 1.1 };
+			}
+		),
+		function(error) {
+			assert.match(error.message, /目标会话.*(不存在|未保存)|(不存在|未保存).*目标会话/);
+			return true;
+		}
+	);
+
+	assert.equal(harness.getUpdateSessionCallCount(), 1);
+	assert.deepEqual(cloneJson(harness.api.getDefaultSelectedEndpointParams()), workspaceBefore);
+	assert.equal(harness.localStorage.getItem('defaultSelectedEndpointParams'), rawWorkspaceBefore);
+	assert.deepEqual(harness.currentSession, sessionBefore);
 });

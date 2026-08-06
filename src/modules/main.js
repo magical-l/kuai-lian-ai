@@ -444,6 +444,7 @@ async function handleNodeDelete(nodeId) {
 	// 收集子孙 ID 用于清理状态
 	var allIds = collectDescendantIds(nodeId);
 	allIds.forEach(function(id) {
+		invalidateConnectionTest(id);
 		connectionStatus.delete(id);
 		collapsedEndpoints.delete(id);
 	});

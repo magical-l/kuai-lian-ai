@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-08-03
+last_updated: 2026-08-05
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -48,7 +48,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `handleSelectedEndpointRemoveClick` | selected-endpoints.js | 端点标签叉号强制移除 |
 | `handleSelectedEndpointMouseover` | selected-endpoints.js | 端点标签 hover 显示 tooltip |
 | `handleSelectedEndpointMouseleave` | selected-endpoints.js | 端点标签 mouseleave 隐藏 tooltip |
-| `openSessionParamEditor` | selected-endpoints.js | 打开会话参数对话框；保存/重置工作区参数，并通过 `updateSession` 异步持久化当前会话的参数覆盖 |
+| `openSessionParamEditor` | selected-endpoints.js | 打开会话参数对话框；保存/重置通过局部事务同步工作区参数与会话覆盖，失败时保持弹窗打开 |
 | `handleEditSessionTitleClick` | session-list.js | 会话标题编辑按钮，创建 input 替换标题 |
 | `handleRemoveSessionClick` | session-list.js | 会话删除按钮，confirmAction 后删除 |
 | `handleSessionListItemClick` | session-list.js | 会话列表项点击，切换当前会话 |
@@ -80,8 +80,11 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `showHelpDialog` | attachments.js | 显示帮助/存储设置对话框 |
 | `closeHelpDialog` | attachments.js | 关闭帮助对话框（带动画） |
 | `testConnection` | attachments.js | 测试端点连接 |
+| `persistEndpointParamsTransaction` | selected-endpoints.js | 原子化串行同步工作区参数与已快照会话的参数覆盖；非空 `sessionId` 时将 `updateSession()` 返回 `null` 视为目标会话不存在或未保存并失败，失败时恢复工作区 |
+| `invalidateConnectionTest` | attachments.js | 仅递增节点连接测试 generation 使已发起测试的结果失效；不取消 fetch，也不移除 in-flight Promise |
+| `setConnectionTestResult` | attachments.js | 仅在连接测试 generation 仍有效时写入状态并刷新 UI |
 | `collectDescendantIds` | attachments.js | 递归收集所有后代 ID |
-| `clearTestResults` | attachments.js | 清空（子）节点测试结果 |
+| `clearTestResults` | attachments.js | 使节点及后代在途测试失效并清空测试结果 |
 | `showAttachmentTooltip` | attachments.js | 显示附件缩略图 tooltip |
 | `hideAttachmentTooltip` | attachments.js | 隐藏附件 tooltip |
 | `renderPendingAttachments` | attachments.js | 渲染待发送附件缩略图 |
@@ -168,7 +171,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 文件：`selected-endpoints.js`
 
-点击已选端点标签后，弹窗按“会话参数 > 工作区参数 > 端点默认参数”合并显示。保存或重置会先更新工作区级 `defaultSelectedEndpointParams`，有当前会话时再 `await updateSession` 写入或移除该端点的 `modelParams` 覆盖，确保缓存变更、串行持久化与失败回滚都由 store 统一处理。
+点击已选端点标签后，弹窗按“会话参数 > 工作区参数 > 端点默认参数”合并显示。保存或重置经 `persistEndpointParamsTransaction` 串行执行：先快照 endpoint 的 workspace 内存值与 `localStorage` 原始字符串，写入工作区后，仅在打开弹窗时快照的 `sessionId` 非空时调用 `updateSession` 写入或移除 `modelParams` 覆盖；该调用返回 `null` 同样视为失败（目标会话不存在或未保存）。任一步骤失败则恢复 workspace 两份状态，由 store 负责 session 回滚，弹窗保持打开并显示错误。每次打开、关闭、取消和操作开始均递增 dialog generation，已排队操作只能影响其原始会话，旧操作成功后也不得关闭重新打开的弹窗。
 
 ### 6. 附件系统
 
@@ -191,18 +194,19 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 ### 7. 连接测试 (testConnection)
 
-文件：`attachments.js:402-471`
+文件：`attachments.js`（连接测试状态区）
 
 流程：
-1. `resolveNodeConfig` 获取解析后的端点配置
-2. 检测模型类型（chat / embedding），选择合适的测试函数
-3. 发起 POST 请求（30s 超时 + AbortController）
+1. `resolveNodeConfig` 获取解析后的端点配置，并由 `isEndpointTestable` 统一判断资格。
+2. 同一 `nodeId` 已有进行中的测试时复用同一个 Promise，避免节点按钮、父级批量按钮和全局按钮重复发请求；失效仅递增 generation，不取消 fetch 或移除该 Promise，因此清除后对同节点的再测仍复用 P1，待 P1 settled 的 `finally` 清理记录后才可发起 P2。
+3. 根据解析后的类型选择 chat、embedding、TTS 或 ASR 测试函数，发起 POST 请求（30s 超时 + AbortController）。
 4. 响应验证：
    - HTTP 非 200 → 提取错误信息
    - content-type `text/html` → 提取 `<title>` 或截取 < 100 字符
    - content-type `application/json` → 检查 `{error:{...}}`
-5. 异常处理：`Failed to fetch` / `NetworkError` → 标记 `cors_blocked`
-6. 更新 `connectionStatus Map` 并调用 `updateEndpointTestUI`
+5. 异常处理：`Failed to fetch` / `NetworkError` → 标记 `cors_blocked`。
+6. 结果写入前检查该节点的 generation；编辑、删除、排序、移动或清除结果后，旧请求只完成网络层流程，不得恢复 `connectionStatus` 或刷新旧 UI。清除后仍在飞的 P1 结算时因 generation 不匹配被丢弃。
+7. 有效结果更新 `connectionStatus Map` 并调用 `updateEndpointTestUI`；请求结束后仅当 in-flight 记录仍指向当前 Promise 时才在 `finally` 清理，之后允许发起 P2。
 
 ### 8. 端点编辑对话框 (showEditGroupDialog)
 
@@ -301,3 +305,4 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-23 | Base URL 行新增路径后缀显示 + checkbox 驱动的 directUrl 切换 | 路径映射基于实际 API 文档（含 style+type+modelId 三维度）；toggle 改用 common.css `.toggle` 模式，checkbox 驱动 ✕/ 图标切换；视觉上路径与按钮包裹为 `.path-group`；弹窗宽度 720→800px |
 | 2026-07-23 | 用户消息 header 新增分叉按钮（handleForkClick） | renderMessages 设 data-msg-index 供分叉定位；appendUserMessage 通过 indexOf 获取消息索引；fork 按钮事件绑定在 meta.querySelector('.fork') |
 | 2026-08-03 | 会话参数弹窗保存/重置改为等待 `updateSession` | 会话级参数必须由 store 的串行持久化队列与失败回滚维护，避免 UI 直接修改缓存对象后异步保存 |
+| 2026-08-05 | 参数 workspace/session 双写增加局部事务队列、会话目标快照和 dialog 生命周期代际保护；连接测试增加单飞 Promise 与 generation 失效 | 非空 `sessionId` 的 `updateSession()` 返回 `null` 也视为失败，抛出“目标会话不存在或未保存”并恢复 workspace；空 `sessionId` 不调用 `updateSession()`。失效仅增加 generation，不取消 fetch 或删除 in-flight P1；清除后同节点再测复用 P1，P1 settled 的 `finally` 清理后才允许 P2，且 P1 结果因过期 generation 被丢弃；不扩大 storage 全局事务。 |

@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-08-03
+last_updated: 2026-08-05
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -47,7 +47,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `handleSessionDelete` | 删除会话 |
 | `handleAddGroup` | 新增端点组：局部插入返回节点并跳过端点树重绘 |
 | `handleNodeEdit` | 编辑端点节点；保存期间父 DOM 被重绘时按 nodeId 重新定位，找不到则完整刷新 |
-| `handleNodeDelete` | 删除端点节点 |
+| `handleNodeDelete` | 在 `deleteNode` 前对目标节点及其后代调用 `clearTestResults`（并由其调用 `invalidateConnectionTest`）清除连接测试结果 |
 | `handleCopy` | 复制内容到剪贴板 |
 | `handleReorderNode` | 同级拖拽重排 |
 | `handleMoveNodeAsChild` | 跨级拖拽降级 |
@@ -199,7 +199,7 @@ showThinkingCards(idList, groups, sessionId)
 | `handleSessionDelete(id)` | 删除按钮 | deleteSessionGenerations → deleteSession → refreshUI |
 | `handleAddGroup()` | 添加组 | showEditGroupDialog → addNode 返回节点对象 → 局部插入 → refreshUI({ skipEndpointTree: true }) |
 | `handleNodeEdit(id)` | 编辑节点 | clearTestResults → showEditGroupDialog → updateNode；保存期间父 DOM 已重绘则按 nodeId 重新定位，找不到则完整 refreshUI |
-| `handleNodeDelete(id)` | 删除节点 | 清理 selectedEndpoints 引用 → deleteNode → refreshUI |
+| `handleNodeDelete(id)` | 删除节点 | `clearTestResults(id)` 对目标节点及其后代清除连接测试结果，并调用 `invalidateConnectionTest` 使请求结果失效 → 清理 `selectedEndpoints` 引用 → `deleteNode(id)` → `refreshUI` |
 | `handleCopy(content)` | 复制按钮 | navigator.clipboard.writeText |
 | `handleReorderNode` | 拖拽排序 | clearTestResults → reorderNode → refreshUI |
 | `handleMoveNodeAsChild` | 跨级降级 | clearTestResults → moveNodeAsChild → refreshUI |

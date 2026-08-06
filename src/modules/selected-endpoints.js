@@ -7,6 +7,37 @@ function saveDefaultSelectedEndpointParams(obj) {
 	localStorage.setItem('defaultSelectedEndpointParams', JSON.stringify(obj));
 }
 var defaultSelectedEndpointParams = loadDefaultSelectedEndpointParams();
+var endpointParamsTransactionQueue = Promise.resolve();
+
+async function persistEndpointParamsTransaction(endpointId, nextWorkspaceParams, sessionId, updateSessionParams) {
+	const transaction = endpointParamsTransactionQueue.then(async function() {
+		const previousWorkspaceParams = Object.prototype.hasOwnProperty.call(defaultSelectedEndpointParams, endpointId)
+			? JSON.parse(JSON.stringify(defaultSelectedEndpointParams[endpointId]))
+			: undefined;
+		const previousWorkspaceRaw = localStorage.getItem('defaultSelectedEndpointParams');
+		try {
+			if (nextWorkspaceParams === undefined) delete defaultSelectedEndpointParams[endpointId];
+			else defaultSelectedEndpointParams[endpointId] = JSON.parse(JSON.stringify(nextWorkspaceParams));
+			saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
+			if (sessionId) {
+				var updatedSession = await updateSession(sessionId, updateSessionParams);
+				if (updatedSession === null) throw new Error('目标会话不存在或未保存');
+			}
+		} catch (error) {
+			if (previousWorkspaceParams === undefined) delete defaultSelectedEndpointParams[endpointId];
+			else defaultSelectedEndpointParams[endpointId] = previousWorkspaceParams;
+			try {
+				if (previousWorkspaceRaw === null) localStorage.removeItem('defaultSelectedEndpointParams');
+				else localStorage.setItem('defaultSelectedEndpointParams', previousWorkspaceRaw);
+			} catch (rollbackError) {
+				error.rollbackError = rollbackError;
+			}
+			throw error;
+		}
+	});
+	endpointParamsTransactionQueue = transaction.catch(function() {});
+	return transaction;
+}
 
 function handleSelectedEndpointClick(tag) {
 	openSessionParamEditor(tag.dataset.endpoint);
@@ -84,6 +115,25 @@ function openSessionParamEditor(endpointId) {
 	var info = findModelById(getGroups(), endpointId);
 	var rcfg = resolveNodeConfig(endpointId);
 	if (!info || !rcfg) return;
+	var sessionId = currentSession ? currentSession.id : null;
+	if (!dialog._paramLifecycleGuardBound && typeof dialog.addEventListener === 'function') {
+		dialog._paramLifecycleGuardBound = true;
+		function invalidateParamOperations() {
+			dialog._paramOperationGeneration = (dialog._paramOperationGeneration || 0) + 1;
+		}
+		dialog.addEventListener('cancel', invalidateParamOperations);
+		dialog.addEventListener('close', invalidateParamOperations);
+	}
+	var operationGeneration = (dialog._paramOperationGeneration || 0) + 1;
+	dialog._paramOperationGeneration = operationGeneration;
+	function beginOperation() {
+		operationGeneration += 1;
+		dialog._paramOperationGeneration = operationGeneration;
+		return operationGeneration;
+	}
+	function isCurrentOperation(generation) {
+		return dialog._paramOperationGeneration === generation;
+	}
 	var fullName = [...(info.ancestors || []).map(function(a) { return a.name; }), info.node.name].join('/');
 	var nameEl = dialog.querySelector('.model-path');
 	if (nameEl) nameEl.textContent = fullName;
@@ -101,11 +151,18 @@ function openSessionParamEditor(endpointId) {
 	dialog.showModal();
 
 	// Bind buttons
-	dialog.querySelector('.close').onclick = function() { dialog.close(); };
+	dialog.querySelector('.close').onclick = function() {
+		beginOperation();
+		dialog.close();
+	};
 
 	dialog.querySelector('.ok').onclick = async function() {
+		var generation = beginOperation();
 		var paramList = dialog.querySelector('.param-control.list');
-		if (!paramList) { dialog.close(); return; }
+		if (!paramList) {
+			if (isCurrentOperation(generation)) dialog.close();
+			return;
+		}
 		var params = {};
 		var inputs = paramList.querySelectorAll('input, select');
 		inputs.forEach(function(el) {
@@ -116,30 +173,32 @@ function openSessionParamEditor(endpointId) {
 			else if (el.type === 'text' || el.type === 'password') { params[key] = el.value; }
 			else { params[key] = el.value; }
 		});
-		// Save to workspace (always) and session (if available)
-		defaultSelectedEndpointParams[endpointId] = params;
-		saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
-		if (currentSession) {
-			await updateSession(currentSession.id, session => {
+		try {
+			await persistEndpointParamsTransaction(endpointId, params, sessionId, session => {
 				if (!session.modelParams) session.modelParams = {};
 				session.modelParams[endpointId] = JSON.parse(JSON.stringify(params));
 			});
+			if (isCurrentOperation(generation)) dialog.close();
+		} catch (error) {
+			if (isCurrentOperation(generation)) alert('参数保存失败：' + error.message);
 		}
-		dialog.close();
 	};
 
 	dialog.querySelector('.reset').onclick = async function() {
-		delete defaultSelectedEndpointParams[endpointId];
-		saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
-		if (currentSession && currentSession.modelParams) {
-			await updateSession(currentSession.id, session => {
+		var generation = beginOperation();
+		try {
+			await persistEndpointParamsTransaction(endpointId, undefined, sessionId, session => {
+				if (!session.modelParams) return;
 				delete session.modelParams[endpointId];
 				if (Object.keys(session.modelParams).length === 0) delete session.modelParams;
 			});
+			if (!isCurrentOperation(generation)) return;
+			defaults = {};
+			if (rcfg && rcfg.params) { for (var k in rcfg.params) { if (rcfg.params.hasOwnProperty(k)) defaults[k] = rcfg.params[k]; } }
+			renderParamControlsInDialog(dialog, rcfg, Object.keys(defaults).length > 0 ? defaults : null);
+		} catch (error) {
+			if (isCurrentOperation(generation)) alert('参数重置失败：' + error.message);
 		}
-		defaults = {};
-		if (rcfg && rcfg.params) { for (var k in rcfg.params) { if (rcfg.params.hasOwnProperty(k)) defaults[k] = rcfg.params[k]; } }
-		renderParamControlsInDialog(dialog, rcfg, Object.keys(defaults).length > 0 ? defaults : null);
 	};
 }
 function handleSelectedEndpointRemoveClick(btn) {
@@ -166,7 +225,7 @@ function renderSelectedEndpoints(groups, selectedEndpoints, isGenerating) {
 
     if (selectedEndpoints.length === 0) {
         if (hint) hint.classList.remove('hidden');
-        
+
         return;
     }
 
