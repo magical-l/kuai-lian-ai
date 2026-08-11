@@ -1712,6 +1712,35 @@ test('deleteSession waits for an earlier session mutation before deleting persis
     assert.equal(harness.api.getSession('S'), undefined);
 });
 
+test('updateSession is rejected while deletion is in progress', async () => {
+    const deleteStarted = deferred();
+    const allowDelete = deferred();
+    const calls = [];
+    const harness = createStoreHarness({
+        async saveSession() {
+            calls.push('save');
+        },
+        async deleteSession() {
+            calls.push('delete');
+            deleteStarted.resolve();
+            await allowDelete.promise;
+        }
+    });
+    harness.api.seedSession({ id: 'S', title: 'old', messages: [] });
+
+    const deleting = harness.api.deleteSession('S');
+    await deleteStarted.promise;
+    const updating = harness.api.updateSession('S', current => { current.title = 'resurrected'; });
+
+    allowDelete.resolve();
+    const [deleteResult, updateResult] = await Promise.all([deleting, updating]);
+
+    assert.equal(deleteResult, undefined);
+    assert.equal(updateResult, null);
+    assert.deepEqual(calls, ['delete']);
+    assert.equal(harness.api.getSession('S'), undefined);
+});
+
 for (const method of ['batchAddNodes', 'cloneNode', 'reorderNode', 'moveNodeAsChild']) {
     test(`${method} rolls back endpoint state when persistence fails`, async () => {
         const harness = createStoreHarness({ saveEndpointsError: new Error('disk full') });

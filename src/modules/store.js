@@ -3,6 +3,7 @@ let endpointsData = null;
 let sessionsCache = new Map();
 let endpointsMutationQueue = Promise.resolve();
 const sessionMutationQueues = new Map();
+const deletingSessionIds = new Set();
 const sessionMigrationPromises = new WeakMap();
 
 // ========== 树形工具函数 ==========
@@ -637,6 +638,7 @@ function getAllSessions() {
 }
 
 function updateSession(sessionId, mutate) {
+	if (deletingSessionIds.has(sessionId)) return Promise.resolve(null);
 	const session = sessionsCache.get(sessionId);
 	if (!session) return Promise.resolve(null);
 	return persistSessionMutation(session, () => mutate(session));
@@ -815,6 +817,7 @@ function getSession(sessionId) {
 }
 
 async function deleteSession(sessionId) {
+	deletingSessionIds.add(sessionId);
 	const previousQueue = sessionMutationQueues.get(sessionId) || Promise.resolve();
 	const queued = enqueueMutation(previousQueue, async () => {
 		await storage.deleteSession(sessionId);
@@ -823,6 +826,7 @@ async function deleteSession(sessionId) {
 	sessionMutationQueues.set(sessionId, queued.queue);
 	queued.queue.finally(() => {
 		if (sessionMutationQueues.get(sessionId) === queued.queue) sessionMutationQueues.delete(sessionId);
+		deletingSessionIds.delete(sessionId);
 	});
 	return queued.result;
 }

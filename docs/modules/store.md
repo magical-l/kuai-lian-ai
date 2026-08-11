@@ -110,12 +110,12 @@ stripModels(node)
 | `loadSessionsIndex()` | 从 storage 加载全部会话到 `sessionsCache` |
 | `getAllSessions()` | 返回 `sessionsCache` 全部值（数组） |
 | `createSession(firstMessage?, targetModels?, modelParams?)` | 创建新会话，自动提取首条消息前 20 字符为标题；可将会话级参数深拷贝写入首个持久化载荷 |
-| `updateSession(sessionId, mutate)` | 串行执行指定会话的缓存变更和持久化；保存失败时恢复变更前的缓存快照 |
+| `updateSession(sessionId, mutate)` | 串行执行指定会话的缓存变更和持久化；保存失败时恢复变更前的缓存快照；会话进入删除队列后返回 `null`，不再排队写回 |
 | `loadSession(sessionId)` | 加载单会话（先查缓存，miss 则查 storage 并缓存） |
 | `saveSession(session)` | 底层持久化委托；调用方应优先使用 `updateSession` / `addMessage` 等事务性入口修改已缓存会话 |
 | `addMessage(sessionId, role, content, options?)` | 追加消息，自动处理首条消息标题更新 |
 | `getSession(sessionId)` | 从缓存获取会话 |
-| `deleteSession(sessionId)` | 从缓存和 storage 删除会话 |
+| `deleteSession(sessionId)` | 标记会话进入删除状态，串行从 storage 和缓存删除；删除完成或失败后解除标记 |
 
 | 辅助函数 | 功能 |
 |----------|------|
@@ -166,6 +166,7 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 端点树在内存中只维护一份 `endpointsData` | 应用为 SP 单用户，无需多实例；减少异步同步复杂度 |
 | 会话用 Map 缓存 + 委托 storage | 频繁读写会话列表时避免每次都全量重查 storage；`addMessage` 高频调用需快速更新 |
 | 2026-08-03: 已缓存会话的修改经 `persistSessionMutation` 串行化，公开为 `updateSession` | 每次写入前保留深拷贝；持久化失败时恢复相同缓存对象，且同会话后续操作在恢复后继续执行，避免 UI 与持久层分叉 |
+| 2026-08-11 | 会话删除期间拒绝新的 `updateSession` | `deleteSession` 入队前加入内存删除标记，更新入口发现标记立即返回 `null`；删除队列成功或失败后清除标记，避免删除后的更新排队复活会话。 |
 | `migrateEndpoints` 在 `loadEndpoints` 和 `tryRestoreDirectory` 中各执行一次 | 双重保障确保旧格式数据在首次加载时被迁移；幂等（第二次 `data.groups` 已不存在） |
 | 继承链解析不含 `modelId` 空值检查 | 空 `modelId` 表示分组节点，继承父节点 `modelId` 无意义；调用方在 `api.js` 中会过滤无 `modelId` 的节点 |
 | 2026-07-17: assistant 消息改为 flat 格式，每条 response 是独立消息 | 原 `msg.responses` 嵌套冗余，`msg.content` 始终为空；新格式直接 `{role:"assistant", endpointId, content, status, ...}`，无 `responses` 中间层。`migrateSession` 在 `loadSession`/`loadSessionsIndex`/`tryRestoreDirectory` 三入口各执行一次 |
