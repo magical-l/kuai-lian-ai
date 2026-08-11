@@ -3,8 +3,11 @@ let endpointsData = null;
 let sessionsCache = new Map();
 let endpointsMutationQueue = Promise.resolve();
 const sessionMutationQueues = new Map();
+let clearInProgress = false;
 const deletingSessionIds = new Set();
 const sessionMigrationPromises = new WeakMap();
+const activeStorageSaves = new Set();
+let clearGeneration = 0;
 
 // ========== 树形工具函数 ==========
 
@@ -232,11 +235,20 @@ function normalizeEndpointFullUrlFlags(data) {
 // ========== 数据操作 ==========
 
 async function clearDirectory() {
-	await storage.clearAll();
-	endpointsData = { nodes: [] };
-	sessionsCache.clear();
-	updateDirectoryDisplay();
-	await refreshUI();
+	clearInProgress = true;
+	clearGeneration += 1;
+	try {
+		const pendingMutations = [endpointsMutationQueue, ...sessionMutationQueues.values()];
+		await Promise.all(pendingMutations);
+		await Promise.allSettled(activeStorageSaves);
+		await storage.clearAll();
+		endpointsData = { nodes: [] };
+		sessionsCache.clear();
+		updateDirectoryDisplay();
+		await refreshUI();
+	} finally {
+		clearInProgress = false;
+	}
 }
 
 async function loadAndNormalizeEndpoints() {
@@ -292,7 +304,16 @@ async function loadEndpoints() {
 }
 
 async function saveEndpoints() {
-	return await storage.saveEndpoints(endpointsData);
+	if (clearInProgress) return null;
+	const generation = clearGeneration;
+	const saving = Promise.resolve().then(() => storage.saveEndpoints(endpointsData));
+	activeStorageSaves.add(saving);
+	try {
+		const result = await saving;
+		return generation === clearGeneration ? result : null;
+	} finally {
+		activeStorageSaves.delete(saving);
+	}
 }
 
 function snapshotData(value) {
@@ -353,7 +374,9 @@ function restoreEndpoints(checkpoint) {
 }
 
 function persistEndpointsMutation(mutate) {
+	if (clearInProgress) return Promise.resolve(null);
 	const queued = enqueueMutation(endpointsMutationQueue, async () => {
+		if (clearInProgress) return null;
 		const checkpoint = checkpointEndpoints(endpointsData || { nodes: [] });
 		checkpoint.nodes = checkpoint.data.nodes || [];
 		const hasSelectedEndpoints = typeof selectedEndpoints !== 'undefined';
@@ -379,8 +402,10 @@ function persistEndpointsMutation(mutate) {
 }
 
 function persistSessionMutation(session, mutate) {
+	if (clearInProgress) return Promise.resolve(null);
 	const previousQueue = sessionMutationQueues.get(session.id) || Promise.resolve();
 	const queued = enqueueMutation(previousQueue, async () => {
+		if (clearInProgress) return null;
 		const previous = snapshotData(session);
 		try {
 			const result = mutate();
@@ -646,13 +671,15 @@ function getAllSessions() {
 }
 
 function updateSession(sessionId, mutate) {
-	if (deletingSessionIds.has(sessionId)) return Promise.resolve(null);
+	if (clearInProgress || deletingSessionIds.has(sessionId)) return Promise.resolve(null);
 	const session = sessionsCache.get(sessionId);
 	if (!session) return Promise.resolve(null);
 	return persistSessionMutation(session, () => mutate(session));
 }
 
 async function createSession(firstMessage = null, targetModels = null, modelParams = null) {
+	if (clearInProgress) return null;
+	const generation = clearGeneration;
 	let title = '新会话';
 	if (firstMessage) {
 		if (Array.isArray(firstMessage)) {
@@ -682,7 +709,8 @@ async function createSession(firstMessage = null, targetModels = null, modelPara
 		if (targetModels) msg.targetEndpoints = targetModels;
 		session.messages.push(msg);
 	}
-	await saveSession(session);
+	const saved = await saveSession(session);
+	if (saved === null || generation !== clearGeneration) return null;
 	sessionsCache.set(session.id, session);
 	return session;
 }
@@ -701,7 +729,16 @@ async function loadSession(sessionId) {
 }
 
 async function saveSession(session) {
-	return await storage.saveSession(session);
+	if (clearInProgress) return null;
+	const generation = clearGeneration;
+	const saving = Promise.resolve().then(() => storage.saveSession(session));
+	activeStorageSaves.add(saving);
+	try {
+		const result = await saving;
+		return generation === clearGeneration ? result : null;
+	} finally {
+		activeStorageSaves.delete(saving);
+	}
 }
 
 function migrateSession(session) {

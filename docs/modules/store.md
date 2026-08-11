@@ -168,6 +168,7 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 2026-08-03: 已缓存会话的修改经 `persistSessionMutation` 串行化，公开为 `updateSession` | 每次写入前保留深拷贝；持久化失败时恢复相同缓存对象，且同会话后续操作在恢复后继续执行，避免 UI 与持久层分叉 |
 | 2026-08-11 | 会话删除期间拒绝新的 `updateSession` | `deleteSession` 入队前加入内存删除标记，更新入口发现标记立即返回 `null`；删除队列成功或失败后清除标记，避免删除后的更新排队复活会话。 |
 | 2026-08-11 | 端点回滚兼容缺失 live reference | `restoreEndpoints` 对 checkpoint 中没有 live reference 的 snapshot 节点创建独立副本；已有节点仍原地恢复并保留 `children` 数组引用，避免回滚异常遮蔽原始持久化错误。 |
+| 2026-08-11 | 清空期间建立 store mutation 屏障 | `clearDirectory` 在持久化清空完成前拒绝 endpoint/session mutation 和新建 session；已有 mutation 允许先完成并由 storage queue 排在清空之前，避免清空完成后新写入复活数据。 |
 | `migrateEndpoints` 在 `loadEndpoints` 和 `tryRestoreDirectory` 中各执行一次 | 双重保障确保旧格式数据在首次加载时被迁移；幂等（第二次 `data.groups` 已不存在） |
 | 继承链解析不含 `modelId` 空值检查 | 空 `modelId` 表示分组节点，继承父节点 `modelId` 无意义；调用方在 `api.js` 中会过滤无 `modelId` 的节点 |
 | 2026-07-17: assistant 消息改为 flat 格式，每条 response 是独立消息 | 原 `msg.responses` 嵌套冗余，`msg.content` 始终为空；新格式直接 `{role:"assistant", endpointId, content, status, ...}`，无 `responses` 中间层。`migrateSession` 在 `loadSession`/`loadSessionsIndex`/`tryRestoreDirectory` 三入口各执行一次 |

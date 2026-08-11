@@ -3418,6 +3418,11 @@ test('handleWipeDirectory clears persisted directory data exactly once in standa
 
 		const harnessSource = [
 			'var endpointsData = null;',
+			'var endpointsMutationQueue = Promise.resolve();',
+			'var sessionMutationQueues = new Map();',
+			'var activeStorageSaves = new Set();',
+			'var clearGeneration = 0;',
+			'var clearInProgress = false;',
 			'async ' + clearDirectorySource,
 			handleWipeDirectorySource,
 			'globalThis.__handleWipeDirectory = handleWipeDirectory;'

@@ -152,6 +152,8 @@ function createStoreHarness(options = {}) {
     const context = vm.createContext({
         alert() {},
         console: testConsole,
+        updateDirectoryDisplay() {},
+        async refreshUI() {},
 
         ...(options.omitSelectedEndpoints ? {} : {
             selectedEndpoints: []
@@ -240,6 +242,7 @@ globalThis.__storeTestApi = {
     moveNodeAsChild,
     reorderNode,
     restoreEndpoints,
+    saveSession,
     seedEndpoints(data) { endpointsData = data; },
     seedSelectedEndpoints(ids) { selectedEndpoints = ids; },
     seedSession(session) { sessionsCache.set(session.id, session); },
@@ -2067,6 +2070,134 @@ for (const loadHarness of [loadStorageHarness, loadExtensionStorageHarness]) {
         assert.equal(directory.files.get('sessions/A.json'), '{original session');
     });
 }
+
+test('clearDirectory blocks endpoint and session mutations while persistent cleanup is pending', async () => {
+	const clearStarted = deferred();
+	const allowClear = deferred();
+	const savedEndpoints = [];
+	const savedSessions = [];
+	const session = { id: 'S', title: 'old', messages: [] };
+	const harness = createStoreHarness({
+		clearAll: async () => {
+			clearStarted.resolve();
+			await allowClear.promise;
+		},
+		saveEndpoints(data) {
+			savedEndpoints.push(structuredClone(data));
+		},
+		saveSession(value) {
+			savedSessions.push(structuredClone(value));
+		}
+	});
+	const endpoints = { nodes: [{ id: 'E', name: 'old', children: [] }] };
+	harness.api.seedEndpoints(endpoints);
+	harness.api.seedSession(session);
+
+	const clearing = harness.api.clearDirectory();
+	await clearStarted.promise;
+	const endpointUpdate = harness.api.updateNode('E', { name: 'resurrected' });
+	const sessionUpdate = harness.api.updateSession('S', current => { current.title = 'resurrected'; });
+	const sessionCreate = harness.api.createSession('new session');
+	allowClear.resolve();
+	await clearing;
+	const [endpointResult, sessionResult, createdSession] = await Promise.all([
+		endpointUpdate,
+		sessionUpdate,
+		sessionCreate
+	]);
+
+	assert.equal(endpointResult, null);
+	assert.equal(sessionResult, null);
+	assert.equal(createdSession, null);
+	assert.deepEqual(savedEndpoints, []);
+	assert.deepEqual(savedSessions, []);
+	assert.equal(harness.api.getEndpointsData().nodes.length, 0);
+	assert.equal(harness.api.getSession('S'), undefined);
+});
+
+test('clearDirectory waits for already queued endpoint and session mutations before clearing', async () => {
+	const endpointSaveStarted = deferred();
+	const sessionSaveStarted = deferred();
+	const allowEndpointSave = deferred();
+	const allowSessionSave = deferred();
+	let clearCalled = false;
+	const harness = createStoreHarness({
+		clearAll: async () => {
+			clearCalled = true;
+		},
+		saveEndpoints: async () => {
+			endpointSaveStarted.resolve();
+			await allowEndpointSave.promise;
+		},
+		saveSession: async () => {
+			sessionSaveStarted.resolve();
+			await allowSessionSave.promise;
+		}
+	});
+	harness.api.seedEndpoints({ nodes: [{ id: 'E', name: 'old', children: [] }] });
+	harness.api.seedSession({ id: 'S', title: 'old', messages: [] });
+
+	const endpointUpdate = harness.api.updateNode('E', { name: 'pending' });
+	const sessionUpdate = harness.api.updateSession('S', current => { current.title = 'pending'; });
+	await Promise.all([endpointSaveStarted.promise, sessionSaveStarted.promise]);
+	const clearing = harness.api.clearDirectory();
+	await Promise.resolve();
+
+	assert.equal(clearCalled, false);
+	allowEndpointSave.resolve();
+	allowSessionSave.resolve();
+	await Promise.all([endpointUpdate, sessionUpdate, clearing]);
+	assert.equal(clearCalled, true);
+});
+
+test('clearDirectory waits for an already started direct session save', async () => {
+	const sessionSaveStarted = deferred();
+	const allowSessionSave = deferred();
+	let clearCalled = false;
+	const harness = createStoreHarness({
+		clearAll: async () => {
+			clearCalled = true;
+		},
+		saveSession: async () => {
+			sessionSaveStarted.resolve();
+			await allowSessionSave.promise;
+		}
+	});
+	const creating = harness.api.createSession('new session');
+	await sessionSaveStarted.promise;
+	const clearing = harness.api.clearDirectory();
+	await Promise.resolve();
+
+	assert.equal(clearCalled, false);
+	allowSessionSave.resolve();
+	const [createdSession] = await Promise.all([creating, clearing]);
+	assert.equal(clearCalled, true);
+	assert.equal(createdSession, null);
+	assert.equal(harness.api.getSession(createdSession?.id), undefined);
+});
+
+test('clearDirectory blocks direct session saves while persistent cleanup is pending', async () => {
+	const clearStarted = deferred();
+	const allowClear = deferred();
+	let saved = false;
+	const harness = createStoreHarness({
+		clearAll: async () => {
+			clearStarted.resolve();
+			await allowClear.promise;
+		},
+		saveSession() {
+			saved = true;
+		}
+	});
+	const clearing = harness.api.clearDirectory();
+	await clearStarted.promise;
+	const saving = harness.api.saveSession({ id: 'fork', title: 'forked', messages: [] });
+	allowClear.resolve();
+	await Promise.all([clearing, saving]);
+
+	assert.equal(saved, false);
+	assert.equal(await saving, null);
+});
 
 test('Task 1D clear clearDirectory preserves endpoint and session cache references when persistent cleanup fails', async () => {
     const clearError = new Error('persistent cleanup failed');

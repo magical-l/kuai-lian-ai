@@ -1040,7 +1040,8 @@ async function handleNewSession() {
 			messages: JSON.parse(JSON.stringify(contextMessages)),
 			modelParams: currentSession.modelParams ? JSON.parse(JSON.stringify(currentSession.modelParams)) : {}
 		};
-		await saveSession(newSession);
+		const saved = await saveSession(newSession);
+		if (saved === null) return;
 		sessionsCache.set(newSession.id, newSession);
 		selectedEndpoints = [...selectedEndpoints];
 		currentSession = newSession;
