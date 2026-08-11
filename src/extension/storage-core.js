@@ -12,6 +12,25 @@
 	// ================================================================
 
 	const SESSION_PREFIX = 'session:';
+
+	function validateImportedSessions(data) {
+		const sessions = Array.isArray(data?.sessions)
+			? data.sessions
+			: Object.values(data?.sessions || {});
+		const ids = new Set();
+		for (const session of sessions) {
+			if (!session || typeof session !== 'object' || Array.isArray(session)) {
+				throw new Error('导入会话无效');
+			}
+			if (typeof session.id !== 'string' || !session.id.trim()) {
+				throw new Error('导入会话 ID 无效');
+			}
+			if (ids.has(session.id)) throw new Error('导入会话 ID 重复: ' + session.id);
+			ids.add(session.id);
+		}
+		return sessions;
+	}
+
 	const BrowserStorage = {
 		_db: null,
 		_operationQueue: Promise.resolve(),
@@ -222,11 +241,9 @@
 
 		async _importAllNow(data) {
 			if (!data || typeof data !== 'object') throw new Error('无效的导入数据');
+			const sessions = validateImportedSessions(data);
 			await this._migrateLegacySessionsNow();
 			await this._set('endpoints', data.endpoints || { nodes: [] });
-			const sessions = Array.isArray(data.sessions)
-				? data.sessions
-				: Object.values(data.sessions || {});
 			const importedIds = new Set();
 			for (const session of sessions) {
 				importedIds.add(String(session.id));
@@ -587,10 +604,8 @@
 
 		async _importAllNow(data) {
 			if (!directoryHandle) throw new Error('未选择目录');
+			const sessions = validateImportedSessions(data);
 			if (data.endpoints) await this._saveEndpointsNow(data.endpoints);
-			const sessions = Array.isArray(data.sessions)
-				? data.sessions
-				: Object.values(data.sessions || {});
 			const importedIds = new Set();
 			for (const session of sessions) {
 				importedIds.add(String(session.id));
@@ -879,6 +894,7 @@
 		},
 
 		async _selectModeNow(mode, handle) {
+			if (mode !== 'browser' && mode !== 'directory') throw new Error('非法存储模式: ' + mode);
 			const previousMode = currentMode;
 			const previousHandleState = await DirectoryStorage._snapshotHandleState();
 			try {
@@ -911,6 +927,7 @@
 		},
 
 		async _switchModeNow(target, handle) {
+			if (target !== 'browser' && target !== 'directory') throw new Error('非法存储模式: ' + target);
 			if (target === currentMode) return true;
 			const oldMode = currentMode;
 			const oldHandleState = await DirectoryStorage._snapshotHandleState();
@@ -1036,7 +1053,7 @@
 		async saveSettings(s) { return this._enqueueModeOperation(() => getBackend()._saveSettingsNow(s)); },
 		async clearAll() { return this._enqueueModeOperation(() => getBackend().clearAll()); },
 		async exportAll() { return this._enqueueModeOperation(() => getBackend()._exportAllNow()); },
-		async importAll(data) { return this._enqueueModeOperation(() => getBackend()._importAllNow(data)); },
+		async importAll(data) { return this._enqueueModeOperation(() => getBackend().importAll(data)); },
 
 		getDirectoryName() {
 			return currentMode === 'directory' ? DirectoryStorage.getDirectoryName() : null;

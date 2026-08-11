@@ -629,6 +629,76 @@ for (const loadHarness of [loadStorageHarness, loadExtensionStorageHarness]) {
         assert.equal(JSON.parse(directory.files.get('sessions/later.json')).title, 'new target');
         assert.equal(browserValues.has('session:later'), false);
     });
+
+    for (const method of ['selectMode', 'switchMode']) {
+        test(`${implementation} ${method} rejects an invalid mode without writing preference`, async () => {
+            const harness = loadHarness();
+            harness.setMode('browser');
+            await harness.storage._saveModePref();
+
+            await assert.rejects(harness.storage[method]('invalid-mode'), /非法存储模式/);
+
+            assert.equal(harness.storage.mode, 'browser');
+            const modePref = loadHarness === loadStorageHarness
+                ? await harness.BrowserStorage._get('__mode')
+                : harness.values.get('__mode');
+            assert.equal(modePref, 'browser');
+        });
+    }
+
+    test(`${implementation} storage.importAll delegates to backend public importAll`, async () => {
+        const harness = loadHarness();
+        const backend = harness.BrowserStorage;
+        let publicCalls = 0;
+        let privateCalls = 0;
+        backend.importAll = async () => {
+            publicCalls += 1;
+            throw new Error('backend import failed');
+        };
+        backend._importAllNow = async () => {
+            privateCalls += 1;
+            throw new Error('facade bypassed backend rollback');
+        };
+
+        await assert.rejects(harness.storage.importAll({}), /backend import failed/);
+        assert.equal(publicCalls, 1);
+        assert.equal(privateCalls, 0);
+    });
+
+    for (const invalid of [
+        { sessions: [null] },
+        { sessions: [{}] },
+        { sessions: [{ id: '   ' }] },
+        { sessions: [{ id: 123 }] },
+        { sessions: [{ id: 'same' }, { id: 'same' }] }
+    ]) {
+        test(`${implementation} rejects invalid imported session schema`, async () => {
+            const harness = loadHarness();
+            const browserValues = installBrowserMap(harness.BrowserStorage, [
+                ['endpoints', { nodes: [{ id: 'old' }] }],
+                ['session:old', { id: 'old', title: 'old' }]
+            ]);
+            harness.setMode('browser');
+            await harness.storage._saveModePref();
+
+            await assert.rejects(harness.storage.importAll(invalid), /导入会话/);
+
+            assert.deepEqual(browserValues.get('endpoints'), { nodes: [{ id: 'old' }] });
+            assert.deepEqual(browserValues.get('session:old'), { id: 'old', title: 'old' });
+            assert.equal(browserValues.has('session:undefined'), false);
+        });
+    }
+
+    test(`${implementation} accepts imported sessions with valid unique IDs`, async () => {
+        const harness = loadHarness();
+        const browserValues = installBrowserMap(harness.BrowserStorage);
+        harness.setMode('browser');
+        await harness.storage._saveModePref();
+
+        await harness.storage.importAll({ sessions: [{ id: 'valid', messages: [] }] });
+
+        assert.deepEqual(browserValues.get('session:valid'), { id: 'valid', messages: [] });
+    });
 }
 
 function installDirectoryHandle(harness, method, error) {

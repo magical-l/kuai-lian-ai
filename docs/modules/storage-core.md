@@ -42,8 +42,8 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 | 方法 | 功能 | 路由 |
 |------|------|------|
 | `init()` | 恢复上次模式；无历史记录时返回 `needUserAction: true` | 读取 `__mode` 偏好，目录模式优先尝试 `restoreHandle` |
-| `selectMode(mode, handle?)` | 选择模式（用户首次选择） | 目录模式则 `pickAndSave` 或接受外部 handle |
-| `switchMode(target, handle?)` | 切换模式并迁移数据 | `exportAll` -> 选目标 -> `importAll`，失败回滚 |
+| `selectMode(mode, handle?)` | 选择模式（用户首次选择） | 只接受 `browser` / `directory`；目录模式则 `pickAndSave` 或接受外部 handle |
+| `switchMode(target, handle?)` | 切换模式并迁移数据 | 只接受 `browser` / `directory`；`exportAll` -> 选目标 -> `importAll`，失败回滚 |
 | `loadEndpoints()` | 加载端点配置 | -> `getBackend().loadEndpoints()` |
 | `saveEndpoints(data)` | 保存端点配置 | -> `getBackend().saveEndpoints(data)` |
 | `loadSessions()` | 加载会话列表 | -> `getBackend().loadSessions()` |
@@ -54,7 +54,7 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 | `saveSettings(s)` | 保存设置 | -> `getBackend().saveSettings(s)` |
 | `clearAll()` | 清除所有数据 | -> `getBackend().clearAll()` |
 | `exportAll()` | 导出全部（迁移用） | -> `getBackend().exportAll()` |
-| `importAll(data)` | 导入全部（迁移用） | 当前实现 -> `getBackend()._importAllNow(data)`；不执行后端 `importAll` 的检查点和失败回滚 |
+| `importAll(data)` | 导入全部（迁移用） | -> `getBackend().importAll(data)`；后端负责检查点和失败回滚，并在写入前校验 session ID |
 | `hasSavedHandle()` | 检查是否存有目录句柄 | 查询 `endpoint-manager` IndexedDB |
 | `restoreDirectory()` | 尝试恢复目录句柄 | -> `DirectoryStorage.restoreHandle()` |
 | `getDirectoryName()` | 目录模式：返回目录名 | -> `DirectoryStorage.getDirectoryName()` |
@@ -71,7 +71,7 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 | `_getAll()` | 扩展版独有，遍历所有 key |
 | `loadEndpoints / saveEndpoints` | 单 key 'endpoints' |
 | `loadSessions / loadSession / saveSession / deleteSession` | `session:<id>` 独立 key；读写前兼容迁移旧的聚合 `sessions` 对象 |
-| `exportAll / importAll / clearAll` | 批量操作；后端公开 `importAll` / `clearAll` 在失败时尝试回滚 |
+| `exportAll / importAll / clearAll` | 批量操作；公开 `importAll` / `clearAll` 在失败时尝试回滚；导入 session 必须是对象、ID 为非空字符串且不可重复 |
 
 ### DirectoryStorage
 
@@ -86,7 +86,7 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 | `deleteSession(id)` | 删 `sessions/{id}.json` |
 | `loadSettings / saveSettings` | 目录模式暂不持久化设置 |
 | `exportAll()` | 组合端点和所有会话 |
-| `importAll(data)` | 写端点和逐个写会话 |
+| `importAll(data)` | 先校验全部 session，再写端点和逐个写会话；失败时由公共入口恢复检查点 |
 | `clearAll()` | 删 `endpoints.json` + `sessions/` 目录 |
 | `restoreHandle()` | 从 IndexedDB 恢复目录句柄 + 检测/请求权限 |
 | `pickAndSave()` | 调用 `showDirectoryPicker` 并将句柄持久化 |
@@ -144,4 +144,5 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 | 设置不在目录模式持久化 | 设置（主题/布局）与 UI 强相关，放在目录中无意义；当前需求不要求跨机器同步设置 |
 | 切换模式使用 exportAll + importAll 而非逐条迁移 | 数据量小（百级端点+会话），全量快照原子性更高，实现简单 |
 | `migrateEndpoints` 不在 storage-core 中 | 数据格式迁移是业务逻辑，在 `store.js` 中处理；storage-core 只负责读写原始 JSON |
-| 2026-08-03: 同步会话 keyspace 拆分、兼容迁移和批量回滚实现；记录统一接口 `importAll` 当前绕过后端事务的实际行为 | 文档原先描述与当前代码不符 |
+| 2026-08-03: 同步会话 keyspace 拆分、兼容迁移和批量回滚实现 | 文档原先描述与当前代码不符 |
+| 2026-08-11: facade `importAll` 委托后端公共事务入口；mode 仅接受 browser/directory；导入先校验 session 对象与唯一非空字符串 ID | 防止导入失败无法回滚、非法模式污染偏好和无效 session 写入存储 |
