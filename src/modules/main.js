@@ -375,7 +375,9 @@ async function handleSessionEdit(sessionId, newTitle) {
 }
 async function handleSessionDelete(sessionId) {
 	// 停止并删除该会话的生成状态
+	invalidateSession(sessionId);
 	deleteSessionGenerations(sessionId);
+	abortSessionRequests(sessionId);
 	await deleteSession(sessionId);
 	if (currentSession?.id === sessionId) {
 		currentSession = null;
@@ -487,6 +489,7 @@ async function handleSend() {
 		renderSelectedEndpoints(getGroups(), selectedEndpoints, false);
 		return;
 	}
+	if (currentSession && isSessionInvalidated(currentSession.id)) return;
 	let isNewSession = false;
 	if (!currentSession) {
 		const initialModelParams = typeof defaultSelectedEndpointParams !== 'undefined'
@@ -500,6 +503,7 @@ async function handleSend() {
 		await addMessage(currentSession.id, 'user', content, {
 			targetEndpoints: [...selectedEndpoints]
 		});
+		if (isSessionInvalidated(currentSession?.id)) return;
 	}
 	const textContent = content.filter(c => c.type === 'text' || c.type === 'file_text').map(c => c.text || '').join('\n');
 	lastUserMessage = textContent;
@@ -525,6 +529,8 @@ async function handleSend() {
 		el.removeAttribute('data-session-id');
 	});
 	const targetSessionId = currentSession.id;
+	const sessionAbortController = getSessionAbortController(targetSessionId);
+	const signal = sessionAbortController.signal;
 	
 	// 按端点类型分流
 	const chatIds = [];
@@ -556,7 +562,9 @@ async function handleSend() {
 			}
 			try {
 				const cfg = resolveNodeConfig(id);
-				const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), textContent, cfg.directUrl);
+				// callEmbedding(..., cfg.isFullUrl, cfg.params) receives signal as its final optional argument.
+				const result = await callEmbedding(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), textContent, cfg.isFullUrl, cfg.params, signal);
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardAsEmbedding(id, result, targetSessionId);
 				return {
 					endpointId: id,
@@ -571,6 +579,7 @@ async function handleSend() {
 					}
 				};
 			} catch (err) {
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
 				return { endpointId: id, status: 'failed', error: err.message, content: '' };
 			}
@@ -595,7 +604,8 @@ async function handleSend() {
 					cfg.params = cfg.params || {};
 					for (var sk in imgOvr) { if (imgOvr.hasOwnProperty(sk) && sk !== '_custom') cfg.params[sk] = imgOvr[sk]; }
 				}
-				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.directUrl, cfg.params);
+				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.isFullUrl, cfg.params, signal);
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardAsImage(id, result, targetSessionId);
 				return {
 					endpointId: id,
@@ -610,6 +620,7 @@ async function handleSend() {
 					}
 				};
 			} catch (err) {
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
 				return { endpointId: id, status: 'failed', error: err.message, content: '' };
 			}
@@ -633,7 +644,8 @@ async function handleSend() {
 					cfg.params = cfg.params || {};
 					for (var sk in videoOvr) { if (videoOvr.hasOwnProperty(sk) && sk !== '_custom') cfg.params[sk] = videoOvr[sk]; }
 				}
-				const result = await callVideoGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.directUrl, cfg.params);
+				const result = await callVideoGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.isFullUrl, cfg.params, signal);
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardAsVideo(id, result, targetSessionId);
 				return {
 					endpointId: id,
@@ -642,6 +654,7 @@ async function handleSend() {
 					videoResult: { blobUrl: result.blobUrl, videoUrl: result.videoUrl }
 				};
 			} catch (err) {
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
 				return { endpointId: id, status: 'failed', error: err.message, content: '' };
 			}
@@ -679,7 +692,8 @@ async function handleSend() {
 					}
 				}
 				var result = await callTTS(cfg.style || 'openai', cfg.baseUrl, cfg.key,
-					(info.node.modelId || info.node.name), input, cfg.params.voice || '', cfg.params.instruction || '', cfg.directUrl);
+					(info.node.modelId || info.node.name), input, cfg.params.voice || '', cfg.params.instruction || '', cfg.isFullUrl, signal);
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardAsAudio(id, result, targetSessionId);
 				return {
 					endpointId: id,
@@ -693,6 +707,7 @@ async function handleSend() {
 					}
 				};
 			} catch (err) {
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
 				return { endpointId: id, status: 'failed', error: err.message, content: '' };
 			}
@@ -722,12 +737,15 @@ async function handleSend() {
 				// Process each audio file through the ASR endpoint
 				var transcriptions = [];
 				for (var fi = 0; fi < asrAudioFiles.length; fi++) {
+					if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 					var af = asrAudioFiles[fi];
 					var result = await callASR(cfg.style || 'openai', cfg.baseUrl, cfg.key,
-						(info.node.modelId || info.node.name), af, cfg.params, cfg.directUrl);
+						(info.node.modelId || info.node.name), af, cfg.params, cfg.isFullUrl, signal);
+					if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 					transcriptions.push({ name: af.name, text: result.text });
 				}
 				var combinedText = transcriptions.map(function(t) { return t.text; }).join('\n');
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardAsText(id, combinedText, targetSessionId);
 				return {
 					endpointId: id,
@@ -738,6 +756,7 @@ async function handleSend() {
 					}
 				};
 			} catch (err) {
+				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardStatus(id, 'failed', err.message, null, targetSessionId);
 				return { endpointId: id, status: 'failed', error: err.message, content: '' };
 			}
@@ -745,6 +764,7 @@ async function handleSend() {
 		const chatPromise = (async () => {
 			if (chatIds.length === 0) return [];
 			return await callAllModels(groups, chatIds, messages, (endpointId, partialContent, firstTokenTime) => {
+				if (isSessionInvalidated(targetSessionId)) return;
 				updateStreamingCard(endpointId, partialContent, firstTokenTime, groups, targetSessionId);
 				if (firstTokenTime != null && !sortedModels.has(endpointId)) {
 					sortedModels.add(endpointId);
@@ -765,15 +785,23 @@ async function handleSend() {
 
 		allResults.push(...embedResults, ...imgGenerateResults, ...videoGenerateResults, ...ttsResults, ...asrResults, ...chatResults);
 
-		await addMessage(targetSessionId, 'assistant', null, { responses: allResults });
+		if (!signal.aborted && !isSessionInvalidated(targetSessionId)) {
+			await addMessage(targetSessionId, 'assistant', null, { responses: allResults });
+		}
 	} catch (err) {
 		console.error('Session generation error:', err);
 	} finally {
+		if (typeof finishSessionAbortController === 'function') {
+			finishSessionAbortController(targetSessionId, sessionAbortController);
+		}
 		sessionGenerations.delete(targetSessionId);
+		if (isSessionInvalidated(targetSessionId)) return;
 		setButtonState(false, false);
 		renderSelectedEndpoints(groups, selectedEndpoints, false);
 		if (currentSession?.id === targetSessionId) {
-			currentSession = await loadSession(targetSessionId);
+			const refreshedSession = await loadSession(targetSessionId);
+			if (isSessionInvalidated(targetSessionId)) return;
+			currentSession = refreshedSession;
 			await refreshUI();
 		}
 	}
@@ -796,8 +824,8 @@ function ensureStreamingHint() {
 
 function showThinkingCards(endpoints, groups, sessionId) {
     const container = $(".msg.list");
-    // 移除该 session 已有的 streaming 元素（防重复触发）
-    $$(`[data-session-id="${sessionId}"]`).forEach(el => el.remove());
+    // 只移除消息区的旧卡片，避免误删会话列表项
+    $$(`[data-session-id="${sessionId}"]`, container).forEach(el => el.remove());
 
     // 在免责声明后追加思考状态
     const hint = ensureStreamingHint();
@@ -897,6 +925,7 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 		const selector = sessionId ? `.one.response.msg[data-session-id="${sessionId}"][data-endpoint-id="${endpointId}"]` : `.one.response.msg[data-endpoint-id="${endpointId}"]`;
 		const card = $(selector);
 		if (!card) return;
+		if (sessionId && typeof isSessionInvalidated === 'function' && isSessionInvalidated(sessionId)) return;
 		// 端点已完成/停止/失败，隐藏停止按钮
 		const stopBtn = $('.stop-one-response', card);
 		if (stopBtn) stopBtn.classList.remove('visible');

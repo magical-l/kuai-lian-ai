@@ -67,6 +67,6 @@ function renderSessionList(sessions, selectedSessionId, onSessionSelect, onSessi
 		editBtn.dataset.sessionId = session.id;
 		deleteBtn.title = '删除该会话';
 		sessionEl.onclick = () => handleSessionListItemClick(sessionEl);
-		container.addChild(sessionEl);
+		container.appendChild(sessionEl);
 	});
 }

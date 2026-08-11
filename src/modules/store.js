@@ -46,18 +46,33 @@ function resolveNodeConfig(nodeId) {
         ancestors
     } = result;
 
-    const fields = ["baseUrl", "style", "key", "modelId", "type", "directUrl"];
-    const config = {};
+	const fields = ["baseUrl", "style", "key", "modelId", "type"];
+	const config = {};
 
-    for (const f of fields)
-        config[f] = node[f] || "";
+	for (const f of fields)
+		config[f] = node[f] || "";
 
-    for (let i = ancestors.length - 1; i >= 0; i--) {
-        for (const f of fields) {
-            if (!config[f] && ancestors[i][f])
-                config[f] = ancestors[i][f];
-        }
-    }
+	for (let i = ancestors.length - 1; i >= 0; i--) {
+		for (const f of fields) {
+			if (!config[f] && ancestors[i][f])
+				config[f] = ancestors[i][f];
+		}
+	}
+
+	function resolveOwnBoolean(source) {
+		if (Object.prototype.hasOwnProperty.call(source, 'isFullUrl')) return !!source.isFullUrl;
+		if (Object.prototype.hasOwnProperty.call(source, 'directUrl')) return !!source.directUrl;
+		return undefined;
+	}
+
+	let isFullUrl = resolveOwnBoolean(node);
+	if (isFullUrl === undefined) {
+		for (let i = ancestors.length - 1; i >= 0; i--) {
+			isFullUrl = resolveOwnBoolean(ancestors[i]);
+			if (isFullUrl !== undefined) break;
+		}
+	}
+	config.isFullUrl = isFullUrl === undefined ? false : isFullUrl;
 
     config.params = {};
     if (node.params) {
@@ -136,31 +151,48 @@ function detectModelType(name) {
     return "chat";
 }
 
+function copyNormalizedIsFullUrl(source, target) {
+	if (Object.prototype.hasOwnProperty.call(source, 'isFullUrl')) {
+		target.isFullUrl = !!source.isFullUrl;
+	} else if (Object.prototype.hasOwnProperty.call(source, 'directUrl')) {
+		target.isFullUrl = !!source.directUrl;
+	}
+	delete target.directUrl;
+}
+
 // ========== 旧数据迁移 ==========
 function migrateEndpoints(data) {
 	if (!data) data = { nodes: [] };
 	if (data.groups && !data.nodes) {
 		console.log('[store] 迁移旧 groups 格式到 nodes（旧 models 逐个转节点）');
-		data.nodes = data.groups.map(g => ({
-			id: g.id,
-			name: g.name,
-			baseUrl: g.baseUrl || '',
-			style: g.style || 'openai',
-			key: g.key || '',
-			modelId: '',
-			remark: '',
-			children: (g.models || []).map(m => ({
-				id: m.id,
-				name: m.name,
-				type: detectModelType(m.name),
-				baseUrl: '',
-				style: '',
-				key: '',
-				modelId: m.name,
-				remark: m.remark || '',
-				children: []
-			}))
-		}));
+		data.nodes = data.groups.map(g => {
+			const group = {
+				id: g.id,
+				name: g.name,
+				baseUrl: g.baseUrl || '',
+				style: g.style || 'openai',
+				key: g.key || '',
+				modelId: '',
+				remark: '',
+				children: (g.models || []).map(m => {
+					const child = {
+						id: m.id,
+						name: m.name,
+						type: detectModelType(m.name),
+						baseUrl: '',
+						style: '',
+						key: '',
+						modelId: m.name,
+						remark: m.remark || '',
+						children: []
+					};
+					copyNormalizedIsFullUrl(m, child);
+					return child;
+				})
+			};
+			copyNormalizedIsFullUrl(g, group);
+			return group;
+		});
 		delete data.groups;
 	}
 	return data;
@@ -170,6 +202,30 @@ function migrateEndpoints(data) {
 function stripModels(node) {
 	delete node.models;
 	if (node.children) node.children.forEach(stripModels);
+}
+
+function normalizeEndpointFullUrlFlags(data) {
+	let changed = false;
+	function visit(node) {
+		if (Object.prototype.hasOwnProperty.call(node, 'isFullUrl')) {
+			const normalized = !!node.isFullUrl;
+			if (node.isFullUrl !== normalized) {
+				node.isFullUrl = normalized;
+				changed = true;
+			}
+			if (Object.prototype.hasOwnProperty.call(node, 'directUrl')) {
+				delete node.directUrl;
+				changed = true;
+			}
+		} else if (Object.prototype.hasOwnProperty.call(node, 'directUrl')) {
+			node.isFullUrl = !!node.directUrl;
+			delete node.directUrl;
+			changed = true;
+		}
+		if (node.children) node.children.forEach(visit);
+	}
+	if (data && data.nodes) data.nodes.forEach(visit);
+	return changed;
 }
 
 // ========== 数据操作 ==========
@@ -182,13 +238,25 @@ async function clearDirectory() {
 	await refreshUI();
 }
 
+async function loadAndNormalizeEndpoints() {
+	endpointsData = migrateEndpoints(await storage.loadEndpoints());
+	stripModels(endpointsData);
+	if (normalizeEndpointFullUrlFlags(endpointsData)) {
+		try {
+			await saveEndpoints();
+		} catch (error) {
+			console.error('保存端点字段迁移失败:', error);
+		}
+	}
+	return endpointsData;
+}
+
 async function tryRestoreDirectory() {
 	const result = await storage.init();
 	if (result.mode === null) {
 		return { success: false, needUserAction: true };
 	}
-	endpointsData = migrateEndpoints(await storage.loadEndpoints());
-	stripModels(endpointsData);
+	await loadAndNormalizeEndpoints();
 	const sessions = await storage.loadSessions();
 	for (const session of sessions) await migrateSession(session);
 	sessionsCache.clear();
@@ -219,9 +287,7 @@ async function selectDirectory() {
 }
 
 async function loadEndpoints() {
-	endpointsData = migrateEndpoints(await storage.loadEndpoints());
-	stripModels(endpointsData);
-	return endpointsData;
+	return loadAndNormalizeEndpoints();
 }
 
 async function saveEndpoints() {
@@ -349,6 +415,7 @@ async function addNode(parentId, data) {
 		customParams: data.customParams || [],
 		children: []
 	};
+	copyNormalizedIsFullUrl(data, node);
 	return persistEndpointsMutation(() => {
 		if (parentId) {
 			const parent = findNodeInTree(endpointsData.nodes, parentId);
@@ -386,6 +453,7 @@ async function batchAddNodes(parentId, subtrees) {
 				type: source.type || '',
 				children: []
 			};
+			copyNormalizedIsFullUrl(source, node);
 			createdIds.push(node.id);
 			if (source.children && source.children.length > 0) {
 				node.children = source.children.map(createSubtree);
@@ -403,7 +471,16 @@ async function updateNode(nodeId, updates) {
 	return persistEndpointsMutation(() => {
 		const node = findNodeInTree(endpointsData.nodes, nodeId);
 		if (!node) return false;
+		const hasIsFullUrl = Object.prototype.hasOwnProperty.call(updates, 'isFullUrl');
+		const hasDirectUrl = Object.prototype.hasOwnProperty.call(updates, 'directUrl');
 		Object.assign(node, updates);
+		if (hasIsFullUrl) {
+			node.isFullUrl = !!updates.isFullUrl;
+			delete node.directUrl;
+		} else if (hasDirectUrl) {
+			node.isFullUrl = !!updates.directUrl;
+			delete node.directUrl;
+		}
 		return node;
 	});
 }
@@ -455,6 +532,7 @@ async function cloneNode(nodeId) {
 				customParams: snapshotData(source.customParams || []),
 				children: []
 			};
+			copyNormalizedIsFullUrl(source, cloned);
 			if (source.children && source.children.length > 0) {
 				cloned.children = source.children.map(deepClone);
 			}

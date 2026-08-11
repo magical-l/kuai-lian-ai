@@ -167,7 +167,8 @@ async function fetchWithTimeout(url, options, timeout = 60000) {
 	const id = setTimeout(() => controller.abort(), timeout);
 	const externalSignal = options?.signal;
 	if (externalSignal) {
-		externalSignal.addEventListener('abort', () => controller.abort());
+		if (externalSignal.aborted) controller.abort();
+		else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
 	}
 	try {
 		const res = await fetch(url, {
@@ -178,7 +179,6 @@ async function fetchWithTimeout(url, options, timeout = 60000) {
 		return res;
 	} catch (e) {
 		clearTimeout(id);
-		if (e.name === 'AbortError') throw new Error('请求超时或已取消');
 		throw e;
 	}
 }
@@ -257,6 +257,13 @@ function addInheritIcon(inputEl) {
 	row.appendChild(inputEl);
 }
 
+function shouldSaveIsFullUrl(node, initialEffectiveValue, currentValue, changed) {
+	if (!node) return !!changed || !!currentValue !== !!initialEffectiveValue;
+	if (Object.prototype.hasOwnProperty.call(node, 'isFullUrl')) return true;
+	if (Object.prototype.hasOwnProperty.call(node, 'directUrl')) return true;
+	return !!changed || !!currentValue !== !!initialEffectiveValue;
+}
+
 function showEditGroupDialog(node, parentId, onSave) {
 	var dialog = $('dialog.editing.endpoint');
 	var isEdit = !!node;
@@ -283,7 +290,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 	// 重置 API Key 可见性 toggle
 	var toggleCheckbox = dialog.querySelector('.toggle.apikey input');
 	if (toggleCheckbox) toggleCheckbox.checked = false;
-	// 重置 directUrl 状态（dialog 复用清除）
+	// 重置 isFullUrl 状态（dialog 复用清除）
 	var _du = dialog.querySelector('.direct-url.toggle');
 	var _ducb = _du ? _du.querySelector('input[type="checkbox"]') : null;
 	if (_ducb) _ducb.checked = false;
@@ -314,8 +321,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var modelidInput = $('input[name="model-id"]', dialog);
 	var remarkInput = $("input[name=\"remark\"]", dialog);
 	var pathSuffix = $('.path-suffix', dialog);
-	var directUrlBtn = $('.direct-url.toggle', dialog);
-		var directUrlCheckbox = directUrlBtn ? directUrlBtn.querySelector('input[type="checkbox"]') : null;
+	var isFullUrlBtn = $('.direct-url.toggle', dialog);
+		var isFullUrlCheckbox = isFullUrlBtn ? isFullUrlBtn.querySelector('input[type="checkbox"]') : null;
 	var urlRow = $('.url-row', dialog);
 			function apiPath(style, type, modelId) {
 			var paths = {
@@ -337,8 +344,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 		function setRadio(name, val, ctx) { ctx.querySelectorAll('input[name="' + name + '"]').forEach(function(r) { r.checked = r.value === val; }); }
 		function getRadio(name, ctx) { var r = ctx.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
 		function updatePathDisplay(styleVal) {
-			// directUrl 态：path 被用户显式清空，不显示路径后缀
-			if (directUrlCheckbox && directUrlCheckbox.checked) {
+			// isFullUrl 态：path 被用户显式清空，不显示路径后缀
+			if (isFullUrlCheckbox && isFullUrlCheckbox.checked) {
 				pathSuffix.textContent = '';
 				pathSuffix.style.display = 'none';
 				return;
@@ -490,12 +497,18 @@ function showEditGroupDialog(node, parentId, onSave) {
 	});
 		setRadio('style', node ? node.style || '' : '', dialog);
 
-	// 加载 directUrl 状态
-		
-		if (node && node.directUrl) {
-			urlRow.classList.add('direct');
-			if (directUrlCheckbox) directUrlCheckbox.checked = true;
-		}
+	function getEditIsFullUrl(node, parentId) {
+		var config = resolveNodeConfig(node ? node.id : parentId);
+		return !!(config && config.isFullUrl);
+	}
+
+	var initialEffectiveIsFullUrl = getEditIsFullUrl(node, parentId);
+	var isFullUrlChanged = false;
+
+	// 加载 isFullUrl 状态
+		var editIsFullUrl = initialEffectiveIsFullUrl;
+		if (isFullUrlCheckbox) isFullUrlCheckbox.checked = editIsFullUrl;
+		urlRow.classList.toggle('direct', editIsFullUrl);
 
 	// type：显式值优先，否则从 modelId 检测作为默认
 	var detectedType = detectModelType(node ? node.modelId || '' : '');
@@ -618,7 +631,10 @@ function showEditGroupDialog(node, parentId, onSave) {
 	};
 	function removeIcon(el) {
 		var ic = el.parentNode.querySelector('.inherit.icon');
-		if (ic) ic.remove();
+		if (ic) {
+			ic.remove();
+		}
+		el._inheritIconAdded = false;
 	}
 	modelidInput.oninput = function() {
 		removeIcon(this);
@@ -671,8 +687,9 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 			keyInput.type = this.checked ? 'text' : 'password';
 		});
 	}
-	if (directUrlCheckbox) {
-			directUrlCheckbox.addEventListener('change', function() {
+	if (isFullUrlCheckbox) {
+			isFullUrlCheckbox.addEventListener('change', function() {
+				isFullUrlChanged = true;
 				urlRow.classList.toggle('direct', this.checked);
 				// 同步清空/恢复路径后缀，而非仅靠 CSS 遮挡
 				if (this.checked) {
@@ -726,11 +743,15 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 					return;
 				}
 			}
-			var saveData = { name: theName, style: getRadio('style', dialog), type: theType, directUrl: directUrlCheckbox ? directUrlCheckbox.checked : false };
+			var currentIsFullUrl = isFullUrlCheckbox ? isFullUrlCheckbox.checked : false;
+			var saveData = { name: theName, style: getRadio('style', dialog), type: theType };
+			if (shouldSaveIsFullUrl(node, initialEffectiveIsFullUrl, currentIsFullUrl, isFullUrlChanged)) {
+				saveData.isFullUrl = currentIsFullUrl;
+			}
 			// 可继承字段：节点原本有值则直接保存（含清空为""）；
 			// 节点原本无值则仅当用户手动输入了不同于继承值的值时才保存，否则不传以保持继承
 			var theUrl = urlInput.value.trim();
-			if (node && node.baseUrl || theUrl !== (rcfg && rcfg.baseUrl || '')) saveData.baseUrl = theUrl;
+			if (node && node.baseUrl || isFullUrlChanged || theUrl !== (rcfg && rcfg.baseUrl || '')) saveData.baseUrl = theUrl;
 			var theKey = keyInput.value.trim();
 			if (node && node.key || theKey !== (rcfg && rcfg.key || '')) saveData.key = theKey;
 			if (node && node.modelId || theModelId !== (rcfg && rcfg.modelId || '')) saveData.modelId = theModelId;
@@ -1206,7 +1227,7 @@ function testConnection(nodeId) {
 				testFn = provider.testConfig;
 			if (!testFn) throw new Error('该接口格式不支持连接测试');
 			var tcfg = testFn.call(provider, rcfg.baseUrl, rcfg.key, modelName);
-			if (rcfg.directUrl) tcfg.url = rcfg.baseUrl.replace(/\/+$/, '');
+			if (rcfg.isFullUrl) tcfg.url = rcfg.baseUrl.replace(/\/+$/, '');
 			// Workspace param override (test connection)
 			var ovr2 = typeof defaultSelectedEndpointParams !== 'undefined' ? defaultSelectedEndpointParams[nodeId] : null;
 			if (ovr2) {

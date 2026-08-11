@@ -1457,7 +1457,7 @@ dialog[open] {
 						overflow: hidden;
 					}
 				}
-				/* directUrl 态：隐藏路径后缀，输入框吃掉全部空间 */
+				/* isFullUrl 状态：隐藏路径后缀，输入框吃掉全部空间 */
 				& .url-row.direct > .flex {
 					& .path-suffix { display: none; }
 				}

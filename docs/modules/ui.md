@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-08-05
+last_updated: 2026-08-06
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -221,12 +221,12 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
   - openai: chat→`/v1/chat/completions`, embedding→`/v1/embeddings`, 生图→`/v1/images/generations`, tts→`/v1/audio/speech`, 重排序→`/v1/rerank`
   - claude: chat→`/v1/messages`
   - gemini: chat→`:streamGenerateContent?alt=sse`, embedding→`:embedContent`, 生图/TTS→`:generateContent`（均前缀 `/v1beta/models/{modelId}`）
-- 路径后缀与 ✕/ toggle 按钮包裹在 `.path-group` 容器中，视觉上联为一体。toggle 用 checkbox 驱动（`common.css` `.toggle` 模式），✕（`.remove`）表示追加路径，`/` 表示直连模式。点击仅隐藏路径文本，按钮始终可见，保存时设置 `directUrl` 标志
+- 路径后缀与 ✕/ toggle 按钮包裹在 `.path-group` 容器中，视觉上联为一体。toggle 用 checkbox 驱动（`common.css` `.toggle` 模式），✕（`.remove`）表示追加路径，`/` 表示 Base URL 已是完整 URL 的直连模式。点击仅隐藏路径文本，按钮始终可见，保存时只写入 `isFullUrl`；旧节点的 `directUrl` 仅由配置读取层兼容，UI 不再写入或传递该字段
 - 类型字段自动从 modelId 检测（chat/embedding/rerank），用户可手动覆盖（覆盖后停止自动检测）
 - 继承值图标（↑）：空字段自动填入祖先值，`addInheritIcon` 添加继承标记
 - Enter 在字段间切换焦点，最后一个字段 Enter 触发保存
 - API Key 显隐切换按钮
-- 保存时区分"节点已有值"和"来自继承"，避免无覆盖继承值
+- 保存时区分"节点已有值"和"来自继承"，避免无覆盖继承值；完整 URL checkbox 未被编辑且节点自身没有 `isFullUrl`/旧 `directUrl` 时不写该字段，保留父级继承
 - 显示继承来源：dialog 标题下方显示"继承自: [父节点名称]"，顶级节点无此提示
 
 ### 9. 帮助/存储对话框 (showHelpDialog / showDirectoryPrompt)
@@ -267,7 +267,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-14 | 编辑弹窗新增 `.tab.container` 组件；批量创建节点功能 | 单节点/批量创建两种模式，radio 驱动 CSS `:has()` 显隐 |
 | 2026-07-01 | 侧边栏切换时 updateSidebarToggleIcon 移入 doToggle 内部 | icon 在 ViewTransition 路径外更新导致暗色下图标颜色不随状态正确切换。版本 6.3.1。 |
 | 2026-07-24 | 音频附件预览改为播放器（含下载按钮）；录音/上传音频图标区分（🎤 mic vs ♫ audio）；source 标记写入 session | 录音 WebM 原生控件无下载按钮需手动补；用户需区分录音和上传音频。版本 6.31.0。 |
-| 2026-07-24 | 编辑弹窗 dialog 复用残留修复：重置 directUrl 状态、清理继承图标 DOM；`updatePathDisplay` 继承提取改用 `rcfg.style`/`rcfg.type` 而非显示文本正则；`apiPath` 增加无匹配 type 时的首个可用路径兜底 | dialog 元素复用导致前一次打开的 directUrl checkbox/.direct class/继承图标残留到下一节点；继承显示文本用全角括号与半角正则不匹配；即梦等非 openai 风格无 `.chat` 兜底导致 type 不匹配时 path 空。版本 6.32.1。 |
+| 2026-07-24 | 编辑弹窗 dialog 复用残留修复：重置完整 URL 开关状态（当时字段为 `directUrl`）、清理继承图标 DOM；`updatePathDisplay` 继承提取改用 `rcfg.style`/`rcfg.type` 而非显示文本正则；`apiPath` 增加无匹配 type 时的首个可用路径兜底 | dialog 元素复用导致前一次打开的完整 URL checkbox/.direct class/继承图标残留到下一节点；继承显示文本用全角括号与半角正则不匹配；即梦等非 openai 风格无 `.chat` 兜底导致 type 不匹配时 path 空。版本 6.32.1。 |
 | 2026-07-24 | 图片/音频预览 overlay 从 JS `mk()` 抽为 `<template id="image-preview">` / `<template id="audio-preview">`，CSS 类名统一为 `.preview-overlay`，移除所有内联 style | template 承载结构、CSS 承载样式、JS 只留行为逻辑，三权分离。滥用 `.download-btn` 类被纠正为 `<button class="btn download char-style">` 复用 common.css。 |
 
 | 2026-07-03 | 端点编辑对话框新增类型选择器，移除全局 taskMode radio | 每个端点独立标注类型（chat/embedding/image/rerank），不再用全局切换；类型自动从 modelId 检测，用户可覆盖 |
@@ -302,7 +302,9 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-17 | `.say.failed` 新增 CSS：`--danger-light` 背景 + `--danger` 色 ✗ 居中，替代空 `.say` 显示 | 失败端点显示空白 `.say` 让用户困惑；用图标 + 状态色比文字更直觉 |
 | 2026-07-16 | 批量创建 style/type 新增显式"继承"选项 | 与单节点对话框一致，默认选中"继承"且互斥于具体值；有父节点时显示继承值标签；提交时跳过空值标记使节点运行时自然继承 |
 | 2026-07-20 | 编辑弹窗字段顺序重排：名称→模型名→类型→接口风格→Base URL→API Key→备注 | 逻辑分组：标识信息放前（名称+模型名+类型），协议信息居中（接口风格+Base URL），认证信息最后；名称加 placeholder 提示默认值 |
-| 2026-07-23 | Base URL 行新增路径后缀显示 + checkbox 驱动的 directUrl 切换 | 路径映射基于实际 API 文档（含 style+type+modelId 三维度）；toggle 改用 common.css `.toggle` 模式，checkbox 驱动 ✕/ 图标切换；视觉上路径与按钮包裹为 `.path-group`；弹窗宽度 720→800px |
+| 2026-07-23 | Base URL 行新增路径后缀显示 + checkbox 驱动的完整 URL 直连切换 | 路径映射基于实际 API 文档（含 style+type+modelId 三维度）；toggle 改用 common.css `.toggle` 模式，checkbox 驱动 ✕/ 图标切换；视觉上路径与按钮包裹为 `.path-group`；弹窗宽度 720→800px。字段现统一为 `isFullUrl`，旧 `directUrl` 仅读兼容。 |
 | 2026-07-23 | 用户消息 header 新增分叉按钮（handleForkClick） | renderMessages 设 data-msg-index 供分叉定位；appendUserMessage 通过 indexOf 获取消息索引；fork 按钮事件绑定在 meta.querySelector('.fork') |
 | 2026-08-03 | 会话参数弹窗保存/重置改为等待 `updateSession` | 会话级参数必须由 store 的串行持久化队列与失败回滚维护，避免 UI 直接修改缓存对象后异步保存 |
 | 2026-08-05 | 参数 workspace/session 双写增加局部事务队列、会话目标快照和 dialog 生命周期代际保护；连接测试增加单飞 Promise 与 generation 失效 | 非空 `sessionId` 的 `updateSession()` 返回 `null` 也视为失败，抛出“目标会话不存在或未保存”并恢复 workspace；空 `sessionId` 不调用 `updateSession()`。失效仅增加 generation，不取消 fetch 或删除 in-flight P1；清除后同节点再测复用 P1，P1 settled 的 `finally` 清理后才允许 P2，且 P1 结果因过期 generation 被丢弃；不扩大 storage 全局事务。 |
+| 2026-08-06 | 编辑对话框的完整 URL 直连开关统一写入 `isFullUrl` | `isFullUrl` 明确表达 Base URL 已是最终请求 URL；旧 `directUrl` 仅由配置读取层兼容，UI 和连接测试请求链路不再写入或使用它。 |
+| 2026-08-06 | 编辑未改完整 URL 开关时保留字段缺失 | 弹窗必须回显有效继承值，但不能把它固化为子节点覆盖；仅在节点原有字段或用户实际修改 checkbox 时写入显式布尔值。 |

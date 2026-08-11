@@ -3,7 +3,7 @@ title: API 层
 covers_file: [src/modules/api.js, src/modules/shared.js]
 depends_on: [providers.md]
 api_signature: callAllModels, callAPI, callProvider, callEmbedding, stopAllGenerations
-last_updated: 2026-07-20
+last_updated: 2026-08-10
 why_exists: 流式 SSE 处理、多模型并发调度、停止机制和 Provider 格式转换
 ---
 
@@ -21,7 +21,7 @@ callAllModels → callAPI → callProvider → mergeParams(config.body, params, 
                                        └─ createInitialState / createTagParser / processWithTagParser
 ```
 
-参数配置（temperature、max_tokens 等）通过 `mergeParams()` 在 `buildRequest` 之后注入请求 body。Gemini 风格的参数放入 `body.generationConfig`，其他风格直接 merge 到顶层。
+参数配置（temperature、max_tokens 等）通过 `mergeParams()` 在 `buildRequest` 之后注入请求 body。Gemini 风格的参数放入 `body.generationConfig`，其他风格直接 merge 到顶层。完整 URL 开关统一接收解析后的 `isFullUrl`：为 `true` 时以去除末尾 `/` 的 `baseUrl` 覆盖 Provider 构造的默认路径，为 `false` 时保留 Provider 路径；API 请求函数不兼容旧 `directUrl`，兼容归一化集中在配置解析边界。
 
 所有逻辑集中在这两个文件中，不分散到 UI 层。
 
@@ -58,10 +58,16 @@ callAllModels → callAPI → callProvider → mergeParams(config.body, params, 
 
 | 函数 | 所在文件 | 签名 |
 |---|---|---|
-| `callAllModels` | api.js | `(groups, endpointIds, messages, onChunk, sessionId) => Promise<Result[]>` |
-| `callAPI` | shared.js | `(style, baseUrl, apiKey, model, messages, onChunk, signal, params) => Promise<ThinkingState>` |
-| `callProvider` | shared.js | `(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params) => Promise<ThinkingState>` |
+| `callAllModels` | shared.js | `(groups, endpointIds, messages, onChunk, sessionId) => Promise<Result[]>` |
+| `callAPI` | shared.js | `(style, baseUrl, apiKey, model, messages, onChunk, signal = null, params, isFullUrl) => Promise<ThinkingState>` |
+| `callProvider` | shared.js | `(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params, isFullUrl) => Promise<ThinkingState>` |
 | `mergeParams` | shared.js | `(body, params, style) => void` |
+| `invalidateSession` | api.js | `(sessionId) => void` |
+| `isSessionInvalidated` | api.js | `(sessionId) => boolean` |
+| `clearSessionInvalidation` | api.js | `(sessionId) => void` |
+| `getSessionAbortController` | api.js | `(sessionId) => AbortController` |
+| `abortSessionRequests` | api.js | `(sessionId) => void` |
+| `finishSessionAbortController` | api.js | `(sessionId, controller) => void` |
 | `getSessionGenerations` | api.js | `(sessionId) => Map<string, GenerationState>` |
 | `clearSessionGenerations` | api.js | `(sessionId) => void` |
 | `deleteSessionGenerations` | api.js | `(sessionId) => void` |
@@ -75,14 +81,15 @@ callAllModels → callAPI → callProvider → mergeParams(config.body, params, 
 
 `callProvider` 是单次 API 调用的完整生命周期：
 1. `provider.buildRequest` 构造请求参数
-2. `mergeParams(config.body, params, style)` 注入用户配置的参数（temperature、max_tokens 等）
-3. `fetchWithTimeout` 发送（60s 超时）
-3. 检测 `text/html` 响应（代理返回错误页面时直接报错，避免解析非 JSON）
-4. 检测 `application/json` 响应（非流式 fallback — 有些代理返回 200 + JSON 错误）
-5. `processSSEStream` 解析流
-6. `finalizeState` 确保 thinkingDuration 已闭合
+2. `isFullUrl === true` 时以 `baseUrl.replace(/\/+$/, '')` 覆盖 `config.url`；否则保留 Provider 构造的默认路径
+3. `mergeParams(config.body, params, style)` 注入用户配置的参数（temperature、max_tokens 等）
+4. `fetchWithTimeout` 发送（60s 超时），并沿用调用方传入的 AbortSignal
+5. 检测 `text/html` 响应（代理返回错误页面时直接报错，避免解析非 JSON）
+6. 检测 `application/json` 响应（非流式 fallback — 有些代理返回 200 + JSON 错误）
+7. `processSSEStream` 解析流
+8. `finalizeState` 确保 thinkingDuration 已闭合
 
-### 停止生成机制
+### 会话失效与停止生成机制
 
 | 函数 | 所在文件 | 签名 |
 |---|---|---|
@@ -90,15 +97,23 @@ callAllModels → callAPI → callProvider → mergeParams(config.body, params, 
 | `stopSessionGenerations` | api.js | `(sessionId) => void` |
 | `stopAllGenerations` | api.js | `() => void` |
 
-三层停止粒度，均通过 `AbortController.abort()` 实现：
+会话删除使用内存级失效集合和两条 AbortController 路径：
 
-- `stopSingleGeneration` — 停止某个 session 的某个 endpoint。从 `sessionGenerations` Map 中查对应 `AbortController` 并 abort。
-- `stopSessionGenerations` — 停止某个 session 下所有正在生成的 endpoint。遍历 Map 逐个 abort。
-- `stopAllGenerations` — 停止当前活跃 session 的所有生成。委托给 `stopSessionGenerations(currentSession.id)`。
+- `invalidateSession` / `isSessionInvalidated` / `clearSessionInvalidation` — 标记、查询、清理 session 失效状态。失效标记不写入 storage；删除入口先标记，再停止请求，阻断迟到回调。
+- `getSessionAbortController` — 为同一 session 的非流式请求提供共享 controller；同一 controller 按并发发送次数引用计数，已 abort 或不存在时创建新的 controller。
+- `abortSessionRequests` — abort 并移除 session 级非流式请求 controller。
+- `finishSessionAbortController` — 当前 controller 仍匹配时递减引用计数；计数归零后移除 controller，避免正常完成的请求影响下一次独立发送。
+- `stopSingleGeneration` — 停止某个 session 的某个 chat endpoint，从 `sessionGenerations` Map 中查对应 AbortController 并 abort。
+- `stopSessionGenerations` — 同时调用 `abortSessionRequests` 和 `clearSessionGenerations`，停止该 session 的非流式请求及所有 chat endpoint。
+- `stopAllGenerations` — 停止当前活跃 session 的全部请求，委托给 `stopSessionGenerations(currentSession.id)`。
 
-Abort 后 `callProvider` 的 catch 块捕获 `AbortError`，返回当前已累积的 state（不重新抛出），`callAllModels` 将其标记为 `status: 'stopped'`。
+`callAllModels` 入口和每次 `onChunk` 前均检查 `isSessionInvalidated(sessionId)`；完成、停止、失败的状态更新也不会写回已失效 session。`main.js` 的非流式分支在结果回写前检查 `signal.aborted || isSessionInvalidated(sessionId)`，最终 assistant 保存和 finally 中的 reload/refresh 同样受保护。`updateCardStatus` 在 `requestAnimationFrame` 实际执行 DOM 写入前再次检查失效状态。
 
-`currentAbortController` 是全局单例，仅当 `callProvider` 未传入外部 signal 时使用（为 `callAPI` 这个单一路由提供兜底取消能力）。
+所有请求函数将 signal 传给 `fetchWithTimeout`；`fetchWithTimeout` 再将外部 signal 与自身超时 controller 组合，因此删除或停止会话时可中止 embedding、image、video、TTS、ASR 请求。
+
+Abort 后，`callAllModels` 将 chat 的 `AbortError` 标记为 `status: 'stopped'` 并保留已累积内容；已失效 session 不更新卡片、不保存 assistant 消息。非失效 session 的 chat AbortError 仍由 `callAllModels` 返回 stopped 结果。
+
+`currentAbortController` 是全局单例，仅当 `callProvider` 未传入外部 signal 时使用（为 `callAPI` 的单一路由提供兜底取消能力）。
 
 ### 格式转换
 
@@ -164,54 +179,61 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 
 | 函数 | 所在文件 | 签名 |
 |---|---|---|
-| `callImageGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages) => Promise<{url?, b64_json?, imageData?, revised_prompt?}>` |
+| `callImageGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) => Promise<{url?, b64_json?, imageData?, revised_prompt?}>` |
 
 非流式请求路径，用于图片生成：
 1. 按 style 查 provider，检查 `buildImageRequest` 方法存在
 2. `provider.buildImageRequest` 构造请求
-3. `fetchWithTimeout` 发送（120s 超时）
-4. 验证非 200 / text/html → 抛错
-5. JSON parse 响应，检查 `data.error`
-6. 优先调用 `provider.parseImageResponse(data)`（Gemini 自定义格式解析），fallback 到 OpenAI 标准格式 `data.data[0].url` / `data.data[0].b64_json`
-7. 若返回 URL 则 fetch 下载转 blob URL + base64，若直接返回 base64 则拼接 data URL
+3. `isFullUrl === true` 时用去掉末尾 `/` 的 `baseUrl` 覆盖请求 URL；否则保留 Provider 默认路径
+4. `fetchWithTimeout` 发送（120s 超时）
+5. 验证非 200 / text/html → 抛错
+6. JSON parse 响应，检查 `data.error`
+7. 优先调用 `provider.parseImageResponse(data)`（Gemini 自定义格式解析），fallback 到 OpenAI 标准格式 `data.data[0].url` / `data.data[0].b64_json`
+8. 若返回 URL 则 fetch 下载转 blob URL + base64，若直接返回 base64 则拼接 data URL
 
 ### 嵌入请求
 
 | 函数 | 所在文件 | 签名 |
 |---|---|---|
-| `callEmbedding` | shared.js | `(style, baseUrl, apiKey, model, input) => Promise<{embedding, model?, usage?}>` |
+| `callEmbedding` | shared.js | `(style, baseUrl, apiKey, model, input, isFullUrl, params, signal) => Promise<{embedding, model?, usage?}>` |
 
 专用嵌入请求路径，不经过流式管线：
 1. 按 style 查 provider，检查 `buildEmbeddingRequest` 方法存在
 2. `provider.buildEmbeddingRequest` 构造请求
-3. `fetchWithTimeout` 发送（60s 超时）
-4. 验证 content-type 非 HTML、是 JSON
-5. 验证 JSON 无 `error` 字段
-6. `provider.parseEmbeddingResponse` 提取 embedding 向量
+3. `isFullUrl === true` 时用去掉末尾 `/` 的 `baseUrl` 覆盖请求 URL；否则保留 Provider 默认路径
+4. 将解析后的 `params` 合并进请求体（与其他请求路径一致）
+5. `fetchWithTimeout` 发送（60s 超时）
+5. 验证 content-type 非 HTML、是 JSON
+6. 验证 JSON 无 `error` 字段
+7. `provider.parseEmbeddingResponse` 提取 embedding 向量
 
 ### TTS 语音合成请求
 
 | 函数 | 所在文件 | 签名 |
 |---|---|---|
-| `callTTS` | shared.js | `(style, baseUrl, apiKey, model, input, voice?, instruction?) => Promise<{blobUrl, audioData, contentType, size}>` |
+| `callTTS` | shared.js | `(style, baseUrl, apiKey, model, input, voice, instruction, isFullUrl, signal) => Promise<{blobUrl, audioData, contentType, size}>` |
 | `base64ToBlob` | shared.js | `(b64, mimeType?) => Blob` |
 
 非流式请求路径，类似 `callImageGeneration`：
 1. 按 style 查 provider，检查 `buildTTSRequest` 方法存在
 2. `provider.buildTTSRequest` 构造请求
-3. `fetchWithTimeout` 发送（120s 超时）
-4. 验证非 200 → 抛错
-5. 验证非 text/html → 抛错
-6. `res.blob()` 获取二进制音频 → `blobToBase64` 转 base64（去 data URL 前缀后存储）→ `URL.createObjectURL` 创建 blobUrl
-7. 返回 `{ blobUrl, audioData, contentType, size }`
+3. `isFullUrl === true` 时用去掉末尾 `/` 的 `baseUrl` 覆盖请求 URL；否则保留 Provider 默认路径
+4. `fetchWithTimeout` 发送（120s 超时）
+5. 验证非 200 → 抛错
+6. 验证非 text/html → 抛错
+7. `res.blob()` 获取二进制音频 → `blobToBase64` 转 base64（去 data URL 前缀后存储）→ `URL.createObjectURL` 创建 blobUrl
+8. 返回 `{ blobUrl, audioData, contentType, size }`
 
 `base64ToBlob` 是 `blobToBase64` 的逆操作，兼容带 `data:...` 前缀和不带前缀两种 base64 格式。由 `messages.js` 在渲染已持久化的音频时调用。
-1. 按 style 查 provider，检查 `buildEmbeddingRequest` 方法存在
-2. `provider.buildEmbeddingRequest` 构造请求
-3. `fetchWithTimeout` 发送（60s 超时）
-4. 验证 content-type 非 HTML、是 JSON
-5. 验证 JSON 无 `error` 字段
-6. `provider.parseEmbeddingResponse` 提取 embedding 向量
+
+### 视频生成与 ASR 请求
+
+| 函数 | 所在文件 | 签名 |
+|---|---|---|
+| `callVideoGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) => Promise<VideoResult>` |
+| `callASR` | shared.js | `(style, baseUrl, apiKey, model, audioFile, params, isFullUrl, signal) => Promise<ASRResult>` |
+
+两者均为非流式请求：先由 Provider 构造默认请求 URL，再仅在 `isFullUrl === true` 时改用去除末尾 `/` 的 `baseUrl`。该布尔值已由 store 归一化，API 层不读取旧 `directUrl`。
 
 ## 错误处理策略
 
@@ -221,7 +243,7 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 | HTTP 200 + text/html | 提取 `<title>` 或前 100 字符，抛出 `'服务器返回了HTML页面: ...'`（代理地址错误） |
 | HTTP 200 + application/json | 尝试解析，若有 `json.error` 则抛出；否则重包装为 Response 供 SSE 解析（兼容非流式代理） |
 | SSE 行 JSON 解析失败 | `try/catch` 静默跳过（单行损坏不影响后续） |
-| AbortError | `callProvider` 返回已累积的 state，不抛出 |
+| AbortError | `callProvider` 的实际行为是沿 finally 清理 controller 后将 AbortError 继续抛出；`callAllModels` 捕获 chat AbortError 并返回 `status: 'stopped'`，非流式编排分支在 signal 已 abort 或 session 已失效时丢弃结果 |
 | 响应体为空 | 抛出 `'Response body is empty'` |
 
 ## 决策日志
@@ -243,3 +265,6 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 | 2026-04-26 | content-type 检测优先于状态码 | 代理可能返回 200 但内容是 HTML 错误页面，仅靠状态码无法区分 |
 | 2026-07-20 | `mergeParams` 新增 Gemini keyMap | Gemini `generationConfig` 字段名是 camelCase，注册表用 snake_case，需要映射（`max_tokens`→`maxOutputTokens`, `top_p`→`topP` 等） |
 | 2026-07-20 | `callImageGeneration` 新增 `provider.parseImageResponse` 优先路径 | Gemini 生图响应格式不同于 OpenAI（`candidates[0].content.parts[].inlineData` 而非 `data.data[0].url`），由各 provider 自定义解析 |
+| 2026-08-06 | 请求函数的完整 URL 开关统一为 `isFullUrl` | 所有流式和非流式请求在 Provider 构造默认路径后，仅在 `isFullUrl` 为真时将 URL 替换为 `baseUrl`；旧 `directUrl` 的兼容集中在 store 配置解析边界，避免请求链路分散兼容。 |
+| 2026-08-06 | `callEmbedding` 接收并合并解析后的 `params` | 嵌入请求此前引用未声明变量，且主编排层未传参数；签名显式接收 `params`，使行为与其他非流式请求一致。 |
+| 2026-08-10 | 会话失效统一覆盖 chat 与非流式请求 | 删除或停止会话时通过 session-level AbortController 取消 embedding/image/video/TTS/ASR；迟到结果在卡片、assistant 持久化和 finally 刷新边界丢弃。 |

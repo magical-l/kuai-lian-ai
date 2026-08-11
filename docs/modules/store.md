@@ -3,7 +3,7 @@ title: 数据管理层
 covers_file: [src/modules/store.js]
 depends_on: [storage-core.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, updateSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-08-03
+last_updated: 2026-08-07
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -33,6 +33,7 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
   modelId: "gpt-4",       // 叶子节点：实际模型 ID；父节点：空
   remark: "备注文本",
   type: "chat",           // chat | embedding | image-generation | video-generation | reranking；空串=自动检测
+  isFullUrl?: false,       // 可选覆盖：缺失时继承父级；true 时 baseUrl 已是最终请求 URL
   children: [ /* 子节点 */ ]
 }
 ```
@@ -40,6 +41,7 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
 - 根层节点：代表 Provider（如 OpenAI、Claude）
 - 二层节点：代表模型（如 gpt-4、claude-3）；也可以是分组（中间层）
 - 节点通过 `modelId` 字段区分是模型节点还是分组节点
+- 新写入统一使用 `isFullUrl`；读取旧节点时仅在配置解析边界兼容 `directUrl`，不会再生成该旧字段
 
 ## 函数索引
 
@@ -50,7 +52,7 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
 | `findNodeWithAncestors(nodes, nodeId, ancestors?)` | 递归查找节点，返回 `{ node, ancestors }`（祖先链从近到远） | O(n) DFS |
 | `findNodeInTree(nodes, nodeId)` | 只查找节点对象，不返回祖先链 | O(n) |
 | `resolveTreeMove(nodes, draggedId, targetId)` | 在修改树前解析源和目标；拒绝不存在、自身或源子树内的目标 | O(n) DFS |
-| `resolveNodeConfig(nodeId)` | 合并节点自身及祖先链的配置字段，返回 `{ baseUrl, style, key, modelId, type }` | O(n + d) |
+| `resolveNodeConfig(nodeId)` | 合并节点自身及祖先链的配置字段，归一化旧 `directUrl` 后返回 `{ baseUrl, style, key, modelId, type, isFullUrl, params }` | O(n + d) |
 | `findModelById(nodes, nodeId)` | 同 `findNodeWithAncestors`，语义别名 | O(n) |
 | `detectModelType(name)` | 从模型名推断 `chat` / `embedding` / `image-generation` / `video-generation` / `reranking` | 字符串匹配 |
 
@@ -58,8 +60,10 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
 
 | 函数 | 功能 |
 |------|------|
-| `tryRestoreDirectory()` | 初始化存储、加载端点（含迁移）、加载会话索引、更新 UI |
-| `loadEndpoints()` | 从 storage 加载端点，执行迁移 + 清洗 |
+| `tryRestoreDirectory()` | 初始化存储、加载端点（含迁移和完整 URL 字段归一化持久化）、加载会话索引、更新 UI |
+| `loadEndpoints()` | 从 storage 加载端点，执行迁移、清洗和完整 URL 字段归一化持久化 |
+| `loadAndNormalizeEndpoints()` | 统一执行端点加载后的迁移、清洗和完整 URL 字段归一化；发生旧字段迁移时尝试保存，失败只记录错误 |
+| `normalizeEndpointFullUrlFlags(data)` | 原地递归把 `directUrl` 迁移为 `isFullUrl`，保留显式 `isFullUrl`（含 `false`），返回是否变更 |
 | `saveEndpoints()` | 持久化当前端点内存数据 |
 | `getGroups()` | 返回 `endpointsData.nodes`（根层列表） |
 | `clearDirectory()` | 清空内存 + storage，刷新 UI |
@@ -73,6 +77,7 @@ migrateEndpoints(data)
 - 检测 `data.groups` 存在而 `data.nodes` 不存在 → 触发迁移
 - 每个旧 group 转为根节点，其 `models[]` 转为子节点
 - 子节点自动调用 `detectModelType()` 设置 `type` 字段
+- 迁移时优先保留 `isFullUrl`，否则把旧 `directUrl` 归一为 `isFullUrl`；两者都缺失则不写覆盖字段
 - 迁移后删除 `data.groups`
 
 ```js
@@ -85,10 +90,10 @@ stripModels(node)
 
 | 函数 | 功能 | 持久化 |
 |------|------|--------|
-| `addNode(parentId, data)` | 在指定父节点下新增子节点（parentId 为空则加到根），生成 UUID；成功返回创建的节点对象，失败返回 `null` | 实时 save |
-| `updateNode(nodeId, updates)` | 更新节点字段（Object.assign），支持任意顶层字段 | 实时 save |
+| `addNode(parentId, data)` | 在指定父节点下新增子节点（parentId 为空则加到根），生成 UUID；仅 source 显式提供开关时写入归一化的 `isFullUrl`，否则保留字段缺失；成功返回创建的节点对象，失败返回 `null` | 实时 save |
+| `updateNode(nodeId, updates)` | 更新节点字段；`isFullUrl` 优先，旧 `directUrl` 更新归一化为 `isFullUrl`，两种情况都会删除旧字段 | 实时 save |
 | `deleteNode(nodeId)` | 递归删除节点及其所有子代，同步清理 `selectedEndpoints` 中的引用 | 实时 save |
-| `cloneNode(nodeId)` | 深拷贝节点及其所有子代，重新生成每个节点 UUID，并把根副本插到原节点之后 | 实时 save |
+| `cloneNode(nodeId)` | 深拷贝节点及其所有子代，保留每个源节点的 `isFullUrl` 字段存在性、重新生成每个节点 UUID，并把根副本插到原节点之后；不生成 `directUrl` | 实时 save |
 | `reorderNode(draggedId, targetId, insertBefore)` | 同级重排序：校验移动关系后，从当前位置移除 dragged，插入到 target 前/后 | 合法时 save |
 | `moveNodeAsChild(draggedId, targetParentId)` | 跨级移动：校验移动关系后，移除 dragged 并追加到 targetParentId 的 children 中 | 合法时 save |
 
@@ -127,10 +132,11 @@ stripModels(node)
 `resolveNodeConfig` 是树形结构的核心能力。给定一个节点 ID，它：
 
 1. 在树中找到该节点及其所有祖先（`findNodeWithAncestors`）
-2. 先从节点自身读取 `{ baseUrl, style, key, modelId, type }`
-3. 从最近祖先向根遍历，对每个空字段尝试从祖先继承
-4. type 继承后仍为空 → 从 modelId 启发式推断（`detectModelType`）
-5. 类型别名规范化：`img-generate`/`image` → `image-generation`，`embed` → `embedding`，`rerank` → `reranking`
+2. 先从节点自身读取 `{ baseUrl, style, key, modelId, type }`，并将完整 URL 开关归一为 `isFullUrl`
+3. 从最近祖先向根遍历，对每个空字符串配置字段尝试继承；`isFullUrl` 按字段是否存在判断，节点显式 `false` 与 `true` 都会覆盖父级值
+4. 节点未设置 `isFullUrl` 时，读取旧 `directUrl` 作为兼容值；解析结果只暴露统一后的 `isFullUrl`
+5. type 继承后仍为空 → 从 modelId 启发式推断（`detectModelType`）
+6. 类型别名规范化：`img-generate`/`image` → `image-generation`，`embed` → `embedding`，`rerank` → `reranking`
 
 **示例**：
 
@@ -140,8 +146,8 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 ├── GPT-3.5 (modelId: "gpt-3.5-turbo")  // 继承 key 和 baseUrl
 ```
 
-- `resolveNodeConfig("GPT-3.5")` → `{ baseUrl: "https://api.openai.com/v1", style: "openai", key: "", modelId: "gpt-3.5-turbo", type: "chat" }`
-- `resolveNodeConfig("GPT-4")` → `{ baseUrl: "https://api.openai.com/v1", style: "openai", key: "sk-xxx", modelId: "gpt-4", type: "chat" }`
+- `resolveNodeConfig("GPT-3.5")` → `{ baseUrl: "https://api.openai.com/v1", style: "openai", key: "", modelId: "gpt-3.5-turbo", type: "chat", isFullUrl: false }`
+- `resolveNodeConfig("GPT-4")` → `{ baseUrl: "https://api.openai.com/v1", style: "openai", key: "sk-xxx", modelId: "gpt-4", type: "chat", isFullUrl: false }`
 
 树中节点可以任意深度，继承链按长度决定优先级（近者优先）。
 
@@ -175,3 +181,6 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 2026-07-24 | 增加 `video-generation` 类型 + `video` 别名 | 关键词 `video`/`seedance`/`kling` → `video-generation` |
 | 2026-07-27 | `reorderNode` / `moveNodeAsChild` 在修改树前统一调用 `resolveTreeMove` | 祖先拖向自身后代时，原流程先移除源再查目标，可能丢失子树或错误重根；非法移动现在不改树、不持久化 |
 | 2026-07-28 | `addNode` 返回创建的节点对象，失败返回 `null`；`batchAddNodes` 仍返回 ID 数组 | 局部 UI 插入需要节点完整数据，批量导入保留 ID 数组契约以区分两类调用 |
+| 2026-08-06 | 完整 URL 直连字段统一为 `isFullUrl` | 旧 `directUrl` 只在解析边界读取兼容；新建、更新、复制和请求链路只使用 `isFullUrl`。继承按字段存在性而非 truthy 判断，使子节点显式 `false` 能覆盖父节点的 `true`。 |
+| 2026-08-06 | 完整 URL 覆盖字段仅在源节点显式设置时持久化 | 未设置并非 `false`，而是继承父级；新增、批量新增、复制与旧 groups/models 迁移保留此三态。`updateNode` 把兼容写入的 `directUrl` 一次性归一，避免双字段继续分叉。 |
+| 2026-08-07 | 端点加载时递归归一化并持久化完整 URL 字段 | `loadEndpoints` 与 `tryRestoreDirectory` 共用加载后处理；检测到旧 `directUrl` 或非布尔 `isFullUrl` 时原地修复并尝试保存，保存失败不阻塞加载，保留内存结果供下次重试。 |

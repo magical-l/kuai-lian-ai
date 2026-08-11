@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-08-05
+last_updated: 2026-08-11
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -51,7 +51,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `handleCopy` | 复制内容到剪贴板 |
 | `handleReorderNode` | 同级拖拽重排 |
 | `handleMoveNodeAsChild` | 跨级拖拽降级 |
-| `handleSend` | 发送消息（主入口，按端点 type 分流 chat/embedding/img-generate） |
+| `handleSend` | 发送消息（主入口，按端点 type 分流 chat/embedding/image/video/TTS/ASR） |
 | `updateCardAsEmbedding` | 嵌入完成后更新卡片（维度/预览/复制） |
 | `updateCardAsImage` | 生图完成后更新卡片（显示图片） |
 | `showThinkingCards` | 显示流式响应卡片 |
@@ -107,30 +107,33 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
   ├─ appendUserMessage() [追加用户消息到 DOM，不清空]
   ├─ showThinkingCards(selectedEndpoints, groups, targetSessionId)
   │
+  ├─ 每个端点经 resolveNodeConfig() 获取继承后的配置（含归一化的 isFullUrl）
+  ├─ 为本轮非流式请求取得 session AbortSignal
   ├─ 按 type 分流：
-  │   ├─ chat 端点 → callAllModels(groups, chatIds, messages, onChunk)
-  │   │     ├─ onChunk → updateStreamingCard() + reorderCardsBySpeed()
-  │   │     └─ 完成后返回 responses
-  │   ├─ embedding 端点 → Promise.all(embedIds.map(id =>
-  │   │     callEmbedding(style, url, key, model, text)
-  │   │     → updateCardAsEmbedding(id, result, sessionId)
-  │   │     → 返回 { endpointId, embeddingResult }
-  │   │   ))
-  │   └─ img-generate 端点 → Promise.all(imgGenerateIds.map(id =>
-  │         callImageGeneration(style, url, key, model, messages)
-  │         → updateCardAsImage(id, result, sessionId)
-  │         → 返回 { endpointId, imageResult }
-  │       ))
+  │   ├─ chat → callAllModels(..., sessionId)
+  │   │     └─ onChunk → updateStreamingCard() + reorderCardsBySpeed()
+  │   ├─ embedding → callEmbedding(..., isFullUrl, params, signal)
+  │   │     └─ updateCardAsEmbedding()
+  │   ├─ image → callImageGeneration(..., isFullUrl, params, signal)
+  │   │     └─ updateCardAsImage()
+  │   ├─ video → callVideoGeneration(..., isFullUrl, params, signal)
+  │   │     └─ updateCardAsVideo()
+  │   ├─ TTS → callTTS(..., isFullUrl, signal)
+  │   │     └─ updateCardAsAudio()
+  │   └─ ASR → callASR(..., params, isFullUrl, signal)
+  │         └─ updateCardAsText()
   │
-  └─ 合并结果 → addMessage('assistant', null, { responses }) [持久化]
-       ├─ sessionGenerations.delete(targetSessionId)
-       ├─ setButtonState(false, false)
-       └─ refreshUI()
+  └─ 合并结果 → 未失效时 addMessage('assistant', null, { responses }) [持久化]
+       ├─ 正常完成或停止时释放 session controller
+       ├─ 已失效会话跳过卡片、assistant 和 finally 刷新
+       └─ 正常会话恢复按钮、端点状态并 refreshUI()
 ```
 
 **多模型消息构建**：
 - 历史 assistant 消息：将多条 `responses` 合并为 `content.join('\n\n---\n\n')`
 - 用户消息：`normalizeMessageContent` → `toOpenAIContent` 标准化为 OpenAI 格式（即使目标 endpoint 用 Claude/Gemini 协议，格式转换在 shared.js 的 callAllModels 内部完成）
+
+`main` 只传递 `resolveNodeConfig` 已归一化的 `isFullUrl`，不读取旧 `directUrl`，也不在编排层拼接或覆盖请求 URL；URL 分支由 API 层执行。
 
 **嵌入端点的处理**：
 - 不再有独立的 `handleEmbeddingSend`，嵌入逻辑内联在 `handleSend` 中
@@ -179,16 +182,16 @@ showThinkingCards(idList, groups, sessionId)
    - 无流式卡片 → `renderMessages` 全量替换
 7. **View Transition**：`document.startViewTransition` 包裹 DOM 更新（降级支持：回退到直接调用）
 
-### 6. 会话选择与恢复 (handleSessionSelect)
+### 6. 会话选择 (handleSessionSelect)
 
 切换会话时：
 
 1. `loadSession(sessionId)` 从 store 加载完整会话数据
 2. 从 lastUserMessage 恢复 `selectedEndpoints`（targetEndpoints/targetModels）
-3. 从 `sessionGenerations` 恢复生成状态
-4. `refreshUI` 重绘
-5. 如果有生成中的端点 → `showThinkingCards` 恢复流式卡片 + `updateStreamingCard` 恢复内容 + `setButtonState(true, true)`
-6. 全部完成/失败 → 清理 `sessionGenerations` 条目
+3. `refreshUI` 重绘消息、端点和会话列表
+4. 若 generation 状态已全部完成/失败/停止，清理对应 `sessionGenerations` 条目
+
+当前实现不会把另一个会话的进行中流式卡片重新绘制到当前页面；生成状态仍由原发送流程和 session 级 AbortSignal 管理。
 
 ### 7. 事件处理函数一览
 
@@ -196,7 +199,7 @@ showThinkingCards(idList, groups, sessionId)
 |---------|------|------|
 | `handleSessionSelect(id)` | 点击会话 | 加载会话、恢复端点、恢复生成状态 |
 | `handleSessionEdit(id, title)` | 编辑标题 | 原地更新 title → saveSession → refreshUI |
-| `handleSessionDelete(id)` | 删除按钮 | deleteSessionGenerations → deleteSession → refreshUI |
+| `handleSessionDelete(id)` | 删除按钮 | invalidateSession → deleteSessionGenerations → abortSessionRequests → deleteSession → refreshUI |
 | `handleAddGroup()` | 添加组 | showEditGroupDialog → addNode 返回节点对象 → 局部插入 → refreshUI({ skipEndpointTree: true }) |
 | `handleNodeEdit(id)` | 编辑节点 | clearTestResults → showEditGroupDialog → updateNode；保存期间父 DOM 已重绘则按 nodeId 重新定位，找不到则完整 refreshUI |
 | `handleNodeDelete(id)` | 删除节点 | `clearTestResults(id)` 对目标节点及其后代清除连接测试结果，并调用 `invalidateConnectionTest` 使请求结果失效 → 清理 `selectedEndpoints` 引用 → `deleteNode(id)` → `refreshUI` |
@@ -206,7 +209,7 @@ showThinkingCards(idList, groups, sessionId)
 | `handleNewSession()` | 新建会话 | 清空 currentSession → 从 defaultSelectedEndpoints 恢复端点 → refreshUI |
 | `handleFork(msgIndex)` | 分叉按钮 | 复制 msgIndex 之前所有消息到新会话 → 切换到新会话 → 该消息文本填入输入框 |
 | `handleTestAllConnections()` | test-all 按钮 | 遍历所有节点 testConnection |
-| `handleStopAllResponses()` | stop 按钮 | stopAllGenerations + setButtonState(false, false) |
+| `handleStopAllResponses()` | stop 按钮 | stopAllGenerations（chat + 非流式 session controller）+ setButtonState(false, false) |
 | `handleShowHelp()` | help 按钮 | 检测是否有已保存 handle → showHelpDialog |
 | `handleChangeDirectory()` | 更换目录按钮 | selectDirectory → updateDirectoryDisplay → refreshUI |
 | `handleFileInputChange(input)` | file-input change | 多文件 addAttachment |
@@ -264,12 +267,18 @@ radio change → setThemePref(mode)
 | `deleteNode(id)` | main → store | 删除节点 |
 | `reorderNode(did, tid, before)` | main → store | 重排节点 |
 | `moveNodeAsChild(did, pid)` | main → store | 移动节点为子 |
-| `resolveNodeConfig(id)` | main → store | 解析节点配置（含继承） |
+| `resolveNodeConfig(id)` | main → store | 解析节点配置（含继承，并将旧 `directUrl` 归一为 `isFullUrl`；显式 `false` 覆盖父级 `true`） |
 | `findModelById(groups, id)` | main → store | 查找端点（带 ancestors） |
 | `getNode(id)` | main → store | 获取单节点 |
-| `callAllModels(groups, ids, msgs, cb, sid)` | main → shared | 多模型并行调用 |
-| `callEmbedding(style, url, key, model, text)` | main → shared | 嵌入向量调用 |
-| `getSessionGenerations(sid)` | main → shared | 获取生成状态 Map |
+| `callAllModels(groups, ids, msgs, cb, sid)` | main → shared | 多模型并行调用，内部传递解析后的 `isFullUrl` |
+| `callEmbedding(style, url, key, model, text, isFullUrl, params, signal)` | main → shared | 嵌入向量调用；完整 URL、参数和会话取消信号由配置/编排层传入 |
+| `callImageGeneration(style, url, key, model, messages, isFullUrl, params, signal)` | main → shared | 生图调用和会话取消 |
+| `callVideoGeneration(style, url, key, model, messages, isFullUrl, params, signal)` | main → shared | 视频调用和会话取消 |
+| `callTTS(style, url, key, model, input, voice, instruction, isFullUrl, signal)` | main → shared | TTS 调用和会话取消 |
+| `callASR(style, url, key, model, audio, params, isFullUrl, signal)` | main → shared | ASR 调用和会话取消 |
+| `getSessionGenerations(sid)` | main → api | 获取 chat 生成状态 Map |
+| `getSessionAbortController(sid)` | main → api | 获取本轮非流式请求共享 AbortController |
+| `finishSessionAbortController(sid, controller)` | main → api | 正常完成后按引用计数释放 controller |
 | `clearSessionGenerations(sid)` | main → shared | 清除生成状态 |
 | `deleteSessionGenerations(sid)` | main → shared | 删除生成状态 |
 | `stopAllGenerations()` | main → shared | 停止所有生成 |
@@ -310,3 +319,7 @@ radio change → setThemePref(mode)
 | 2026-07-28 | 新增组/子节点使用 `addNode` 的返回对象局部插入，并用 `skipEndpointTree` 刷新其余 UI | 避免并发完整重绘与局部插入同时发生而重复插入；首子节点同步树形状态、筛选和祖先批量测试状态 |
 | 2026-07-28 | 子节点保存后若父 DOM 已被重绘，按 nodeId 重新定位；定位失败时完整刷新 | 异步保存不能依赖已失效的 DOM 引用，完整刷新为无法局部恢复时的一致性回退 |
 | 2026-08-03 | 会话标题和会话级参数改经 `updateSession` 持久化；创建会话时将工作区参数传给 `createSession` | 将缓存对象的变更和持久化纳入 store 的串行队列与失败回滚，避免先改缓存再异步保存留下不一致状态 |
+| 2026-08-06 | 编排层统一传递 `isFullUrl` | `resolveNodeConfig` 集中兼容并归一化旧 `directUrl`；main 及其所有请求分支只传递 `isFullUrl`，不再在调用链中分散处理旧字段。 |
+| 2026-08-06 | 嵌入调用传递解析后的 `params` | `callEmbedding` 与其他请求路径一样接收配置参数并合并到请求体，修复未声明变量且保留完整 URL 分支。 |
+| 2026-08-10 | 删除会话采用 invalidate-first + 双 AbortController | 先使 session 失效，再取消 chat generation 和非流式共享 controller；成功、失败和迟到结果均不得回写已失效会话。 |
+| 2026-08-11 | 流式卡片清理限定在消息容器内 | 会话列表项与回复卡片都带有 `data-session-id`；清理旧回复时必须限定 `.msg.list`，避免误删会话记录项。 |

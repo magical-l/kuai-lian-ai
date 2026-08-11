@@ -140,9 +140,18 @@ function loadExtensionStorageHarness(overrides = {}) {
 }
 
 function createStoreHarness(options = {}) {
+    let loadEndpointsCalls = 0;
+    let saveEndpointsCalls = 0;
+    const consoleErrors = [];
+    const testConsole = {
+        error(...args) { consoleErrors.push(args); },
+        info: console.info,
+        log: console.log,
+        warn: console.warn
+    };
     const context = vm.createContext({
         alert() {},
-        console,
+        console: testConsole,
 
         ...(options.omitSelectedEndpoints ? {} : {
             selectedEndpoints: []
@@ -179,7 +188,16 @@ function createStoreHarness(options = {}) {
                     throw options.clearAllError;
             },
 
+            async loadEndpoints() {
+                loadEndpointsCalls += 1;
+                if (options.loadEndpoints)
+                    return options.loadEndpoints();
+
+                return options.loadedEndpoints;
+            },
+
             async saveEndpoints(data) {
+                saveEndpointsCalls += 1;
                 if (options.saveEndpoints)
                     return options.saveEndpoints(data);
 
@@ -213,6 +231,7 @@ globalThis.__storeTestApi = {
     deleteSession,
     getAllSessions,
     getEndpointsData() { return endpointsData; },
+    loadEndpoints,
     getGroups,
     getNode,
     getSelectedEndpoints() { return selectedEndpoints; },
@@ -232,9 +251,57 @@ globalThis.__storeTestApi = {
     }).runInContext(context);
 
     return {
-        api: context.__storeTestApi
+        api: context.__storeTestApi,
+        getLoadEndpointsCalls() { return loadEndpointsCalls; },
+        getSaveEndpointsCalls() { return saveEndpointsCalls; },
+        getConsoleErrors() { return consoleErrors; }
     };
 }
+
+test('loadEndpoints normalizes legacy full URL fields and saves exactly once', async () => {
+    const harness = createStoreHarness({
+        loadedEndpoints: {
+            nodes: [{ id: 'legacy', directUrl: true, children: [] }]
+        }
+    });
+
+    const loaded = await harness.api.loadEndpoints();
+
+    assert.equal(loaded.nodes[0].isFullUrl, true);
+    assert.equal(Object.hasOwn(loaded.nodes[0], 'directUrl'), false);
+    assert.equal(harness.getLoadEndpointsCalls(), 1);
+    assert.equal(harness.getSaveEndpointsCalls(), 1);
+});
+
+test('loadEndpoints normalizes without saving endpoint data when no legacy full URL fields exist', async () => {
+    const harness = createStoreHarness({
+        loadedEndpoints: {
+            nodes: [{ id: 'inherited', children: [] }]
+        }
+    });
+
+    const loaded = await harness.api.loadEndpoints();
+
+    assert.equal(Object.hasOwn(loaded.nodes[0], 'isFullUrl'), false);
+    assert.equal(harness.getSaveEndpointsCalls(), 0);
+});
+
+test('loadEndpoints keeps normalized data available when migration save fails', async () => {
+    const harness = createStoreHarness({
+        loadedEndpoints: {
+            nodes: [{ id: 'legacy', directUrl: false, children: [] }]
+        },
+        saveEndpointsError: new Error('migration save failed')
+    });
+
+    const loaded = await harness.api.loadEndpoints();
+
+    assert.equal(loaded.nodes[0].isFullUrl, false);
+    assert.equal(Object.hasOwn(loaded.nodes[0], 'directUrl'), false);
+    assert.equal(harness.getSaveEndpointsCalls(), 1);
+    assert.equal(harness.getConsoleErrors().length, 1);
+    assert.match(harness.getConsoleErrors()[0][0], /保存端点字段迁移失败/);
+});
 
 test('disconnectDirectory releases the handle without deleting directory data', async () => {
     const calls = [];

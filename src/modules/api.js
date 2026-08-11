@@ -1,4 +1,48 @@
 // ========== API Functions ==========
+const invalidatedSessionIds = new Set();
+
+function invalidateSession(sessionId) {
+	invalidatedSessionIds.add(sessionId);
+}
+
+function isSessionInvalidated(sessionId) {
+	return invalidatedSessionIds.has(sessionId);
+}
+
+function clearSessionInvalidation(sessionId) {
+	invalidatedSessionIds.delete(sessionId);
+}
+
+const sessionAbortControllers = new Map();
+
+function getSessionAbortController(sessionId) {
+	let state = sessionAbortControllers.get(sessionId);
+	if (!state || state.controller.signal.aborted) {
+		state = {
+			controller: new AbortController(),
+			count: 0
+		};
+		sessionAbortControllers.set(sessionId, state);
+	}
+	state.count += 1;
+	return state.controller;
+}
+
+function abortSessionRequests(sessionId) {
+	const state = sessionAbortControllers.get(sessionId);
+	if (state) state.controller.abort();
+	sessionAbortControllers.delete(sessionId);
+}
+
+function finishSessionAbortController(sessionId, controller) {
+	const state = sessionAbortControllers.get(sessionId);
+	if (!state || state.controller !== controller) return;
+	state.count -= 1;
+	if (state.count <= 0) {
+		sessionAbortControllers.delete(sessionId);
+	}
+}
+
 function getSessionGenerations(sessionId) {
 	if (!sessionGenerations.has(sessionId)) {
 		sessionGenerations.set(sessionId, new Map());
@@ -34,6 +78,7 @@ function stopSingleGeneration(sessionId, endpointId) {
 }
 
 function stopSessionGenerations(sessionId) {
+	abortSessionRequests(sessionId);
 	clearSessionGenerations(sessionId);
 }
 
@@ -129,4 +174,3 @@ function toGeminiContent(contentArray) {
 		return { text: `[附件 ${item.name || '未知'}，不支持此类型]` };
 	});
 }
-

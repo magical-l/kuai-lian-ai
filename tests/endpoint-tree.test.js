@@ -11,6 +11,8 @@ const mainSourcePath = path.join(__dirname, '..', 'src', 'modules', 'main.js');
 const storeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'store.js');
 const sessionListSourcePath = path.join(__dirname, '..', 'src', 'modules', 'session-list.js');
 const selectedEndpointsSourcePath = path.join(__dirname, '..', 'src', 'modules', 'selected-endpoints.js');
+const attachmentsSourcePath = path.join(__dirname, '..', 'src', 'modules', 'attachments.js');
+const apiSourcePath = path.join(__dirname, '..', 'src', 'modules', 'api.js');
 
 class FakeEventTarget {
 	constructor() {
@@ -142,11 +144,659 @@ function createEndpointTreeHarness(handlerSpies) {
 	};
 }
 
-function createStoreHarness(initialTree) {
-	let saveCount = 0;
+function createGenerationApiHarness() {
 	const context = vm.createContext({
 		console,
+		AbortController,
+		currentSession: { id: 'session-1' },
+		invalidatedSessionIds: new Set(),
+		sessionGenerations: new Map()
+	});
+	const source = fs.readFileSync(apiSourcePath, 'utf8');
+	const exposedSource = [
+		extractFunctionDeclaration(source, 'invalidateSession'),
+		extractFunctionDeclaration(source, 'isSessionInvalidated'),
+		extractFunctionDeclaration(source, 'clearSessionInvalidation'),
+		'const sessionAbortControllers = new Map();',
+		extractFunctionDeclaration(source, 'getSessionAbortController'),
+		extractFunctionDeclaration(source, 'abortSessionRequests'),
+		extractFunctionDeclaration(source, 'finishSessionAbortController'),
+		extractFunctionDeclaration(source, 'getSessionGenerations'),
+		extractFunctionDeclaration(source, 'clearSessionGenerations'),
+		extractFunctionDeclaration(source, 'stopSessionGenerations'),
+		extractFunctionDeclaration(source, 'stopAllGenerations'),
+		extractFunctionDeclaration(source, 'deleteSessionGenerations'),
+		'globalThis.__generationApi = { getSessionGenerations, deleteSessionGenerations, stopSessionGenerations, stopAllGenerations, invalidateSession, isSessionInvalidated, getSessionAbortController, abortSessionRequests, finishSessionAbortController };'
+	].join('\n');
+
+	new vm.Script(exposedSource, { filename: apiSourcePath }).runInContext(context);
+	return { api: context.__generationApi };
+}
+
+function createGenerationStartHarness(options = {}) {
+	const generationStarts = [];
+	const context = vm.createContext({
+		console,
+		currentSession: { id: 'session-1', messages: [] },
+		defaultSelectedEndpointParams: {},
+		invalidatedSessionIds: new Set(),
+		lastUserMessage: '',
+		pendingAttachments: [],
+		selectedEndpoints: ['endpoint-1'],
+		sessionGenerations: new Map(),
+		addMessage: async function(sessionId, role, content) {
+			if (role === 'user') {
+				context.currentSession.messages.push({ role, content });
+				if (options.afterUserMessage) await options.afterUserMessage(context);
+			}
+		},
+		appendUserMessage() {},
+		callAllModels: async function(groups, endpointIds, messages, onChunk, sessionId) {
+			generationStarts.push({ endpointIds: [...endpointIds], messages, sessionId, isSessionInvalidated: context.isSessionInvalidated(sessionId) });
+			return [];
+		},
+		clearAttachments() {},
+		clearInput() {},
+		createSession: async function() {
+			throw new Error('existing session must be reused');
+		},
+		findModelById() { return null; },
+		getGroups() { return []; },
+		getInputMessage: async function() {
+			return [{ type: 'text', text: 'Hello' }];
+		},
+		isSessionInvalidated: null,
+		loadSession: async function() {
+			return context.currentSession;
+		},
+		normalizeMessageContent(content) { return content; },
+		renderSelectedEndpoints() {},
+		resolveNodeConfig() { return { type: 'chat' }; },
+		reorderCardsBySpeed() {},
+		reorderSelectorTagsBySpeed() {},
+		setButtonState() {},
+		showThinkingCards() {},
+		toOpenAIContent(content) { return content; },
+		updateStreamingCard() {},
+		refreshUI: async function() {},
+		$$() { return []; }
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const harnessSource = [
+		extractFunctionDeclaration(apiSource, 'invalidateSession'),
+		extractFunctionDeclaration(apiSource, 'isSessionInvalidated'),
+		extractFunctionDeclaration(apiSource, 'clearSessionInvalidation'),
+		'async ' + extractFunctionDeclaration(mainSource, 'handleSend'),
+		'globalThis.__generationStartApi = { clearSessionInvalidation, handleSend, invalidateSession, isSessionInvalidated };'
+	].join('\n');
+
+	new vm.Script(harnessSource, { filename: mainSourcePath }).runInContext(context);
+	return {
+		api: context.__generationStartApi,
+		generationStarts
+	};
+}
+
+function createNonStreamGenerationHarness() {
+	const controller = new AbortController();
+	const calls = {
+		addAssistant: 0,
+		embeddingSignal: null,
+		updateEmbedding: 0
+	};
+	const context = vm.createContext({
+		console,
+		AbortController,
+		currentSession: { id: 'session-1', messages: [] },
+		defaultSelectedEndpointParams: {},
+		lastUserMessage: '',
+		pendingAttachments: [],
+		selectedEndpoints: ['endpoint-1'],
+		sessionGenerations: new Map(),
+		addMessage: async function(sessionId, role, content) {
+			if (role === 'user') context.currentSession.messages.push({ role, content });
+			if (role === 'assistant') calls.addAssistant += 1;
+		},
+		appendUserMessage() {},
+		callEmbedding: async function(style, baseUrl, apiKey, model, input, isFullUrl, params, signal) {
+			calls.embeddingSignal = signal;
+			context.invalidateSession('session-1');
+			return { embedding: [0.1], model: 'model-1' };
+		},
+		clearAttachments() {},
+		clearInput() {},
+		createSession: async function() {
+			throw new Error('existing session must be reused');
+		},
+		findModelById() { return { node: { id: 'endpoint-1', modelId: 'model-1', name: 'model-1' } }; },
+		getGroups() { return []; },
+		getInputMessage: async function() {
+			return [{ type: 'text', text: 'Hello' }];
+		},
+		getSessionAbortController() { return controller; },
+		loadSession: async function() { return context.currentSession; },
+		normalizeMessageContent(content) { return content; },
+		renderSelectedEndpoints() {},
+		resolveNodeConfig() { return { type: 'embedding', style: 'openai', baseUrl: '', key: '', params: {} }; },
+		reorderCardsBySpeed() {},
+		reorderSelectorTagsBySpeed() {},
+		setButtonState() {},
+		showThinkingCards() {},
+		toOpenAIContent(content) { return content; },
+		updateCardAsEmbedding() { calls.updateEmbedding += 1; },
+		updateCardStatus() {},
+		refreshUI: async function() {},
+		$$() { return []; }
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const harnessSource = [
+		'const invalidatedSessionIds = new Set();',
+		extractFunctionDeclaration(apiSource, 'invalidateSession'),
+		extractFunctionDeclaration(apiSource, 'isSessionInvalidated'),
+		extractFunctionDeclaration(apiSource, 'clearSessionInvalidation'),
+		'async ' + extractFunctionDeclaration(mainSource, 'handleSend'),
+		'globalThis.__nonStreamGenerationApi = { handleSend };'
+	].join('\n');
+
+	new vm.Script(harnessSource, { filename: mainSourcePath }).runInContext(context);
+	return { api: context.__nonStreamGenerationApi, calls, controller };
+}
+
+function createDeferredNonStreamGenerationHarness() {
+	let resolveEmbedding;
+	let signalEmbeddingStarted;
+	const embeddingResult = new Promise(function(resolve) {
+		resolveEmbedding = resolve;
+	});
+	const embeddingStarted = new Promise(function(resolve) {
+		signalEmbeddingStarted = resolve;
+	});
+	const controller = new AbortController();
+	const calls = {
+		addAssistant: 0,
+		embeddingSignal: null,
+		updateEmbedding: 0
+	};
+	const context = vm.createContext({
+		console,
+		AbortController,
+		currentSession: { id: 'session-1', messages: [] },
+		defaultSelectedEndpointParams: {},
+		lastUserMessage: '',
+		pendingAttachments: [],
+		selectedEndpoints: ['endpoint-1'],
+		sessionGenerations: new Map(),
+		addMessage: async function(sessionId, role, content) {
+			if (role === 'user') context.currentSession.messages.push({ role, content });
+			if (role === 'assistant') calls.addAssistant += 1;
+		},
+		appendUserMessage() {},
+		callEmbedding: async function(style, baseUrl, apiKey, model, input, isFullUrl, params, signal) {
+			calls.embeddingSignal = signal;
+			signalEmbeddingStarted();
+			return embeddingResult;
+		},
+		clearAttachments() {},
+		clearInput() {},
+		createSession: async function() {
+			throw new Error('existing session must be reused');
+		},
+		findModelById() { return { node: { id: 'endpoint-1', modelId: 'model-1', name: 'model-1' } }; },
+		getGroups() { return []; },
+		getInputMessage: async function() {
+			return [{ type: 'text', text: 'Hello' }];
+		},
+		getSessionAbortController() { return controller; },
+		loadSession: async function() { return context.currentSession; },
+		normalizeMessageContent(content) { return content; },
+		renderSelectedEndpoints() {},
+		resolveNodeConfig() { return { type: 'embedding', style: 'openai', baseUrl: '', key: '', params: {} }; },
+		reorderCardsBySpeed() {},
+		reorderSelectorTagsBySpeed() {},
+		setButtonState() {},
+		showThinkingCards() {},
+		toOpenAIContent(content) { return content; },
+		updateCardAsEmbedding() { calls.updateEmbedding += 1; },
+		updateCardStatus() {},
+		refreshUI: async function() {},
+		$$() { return []; }
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const harnessSource = [
+		'const invalidatedSessionIds = new Set();',
+		extractFunctionDeclaration(apiSource, 'invalidateSession'),
+		extractFunctionDeclaration(apiSource, 'isSessionInvalidated'),
+		extractFunctionDeclaration(apiSource, 'clearSessionInvalidation'),
+		'async ' + extractFunctionDeclaration(mainSource, 'handleSend'),
+		'globalThis.__deferredNonStreamGenerationApi = { handleSend };'
+	].join('\n');
+
+	new vm.Script(harnessSource, { filename: mainSourcePath }).runInContext(context);
+	return {
+		api: context.__deferredNonStreamGenerationApi,
+		calls,
+		controller,
+		embeddingStarted,
+		resolveEmbedding
+	};
+}
+
+function createUpdateCardStatusHarness() {
+	const animationFrames = [];
+	const calls = {
+		cardSelectorMatches: 0,
+		domWrites: []
+	};
+	const card = {};
+	const stopButton = {
+		classList: {
+			remove(className) {
+				calls.domWrites.push('stop-button.remove:' + className);
+			}
+		}
+	};
+	const contentEl = { textContent: 'already rendered' };
+	const icon = {
+		classList: {
+			add(className) {
+				calls.domWrites.push('icon.add:' + className);
+			},
+			remove(className) {
+				calls.domWrites.push('icon.remove:' + className);
+			}
+		},
+		set textContent(value) {
+			calls.domWrites.push('icon.textContent:' + value);
+		}
+	};
+	const meta = {};
+	const context = vm.createContext({
+		assert,
+		getStatusText() { return 'completed'; },
+		requestAnimationFrame(callback) {
+			animationFrames.push(callback);
+			return animationFrames.length;
+		},
+		'$': function(selector, scope) {
+			if (!scope) {
+				assert.equal(selector, '.one.response.msg[data-session-id="session-1"][data-endpoint-id="endpoint-1"]');
+				calls.cardSelectorMatches += 1;
+				return card;
+			}
+			if (scope === card) {
+				if (selector === '.stop-one-response') return stopButton;
+				if (selector === '.say') return contentEl;
+				if (selector === 'header') return meta;
+			}
+			if (scope === meta && selector === '.status.loading') return icon;
+			throw new Error('Unexpected selector: ' + selector);
+		}
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const harnessSource = [
+		'const invalidatedSessionIds = new Set();',
+		extractFunctionDeclaration(apiSource, 'invalidateSession'),
+		extractFunctionDeclaration(apiSource, 'isSessionInvalidated'),
+		extractFunctionDeclaration(mainSource, 'updateCardStatus'),
+		'globalThis.__updateCardStatusApi = { invalidateSession, updateCardStatus };'
+	].join('\n');
+
+	new vm.Script(harnessSource, { filename: mainSourcePath }).runInContext(context);
+	return {
+		api: context.__updateCardStatusApi,
+		calls,
+		runNextAnimationFrame() {
+			assert.equal(animationFrames.length, 1);
+			animationFrames.shift()();
+		}
+	};
+}
+
+function createCallEmbeddingSignalHarness() {
+	const calls = [];
+	const context = vm.createContext({
+		console,
+		providers: {
+			openai: {
+				buildEmbeddingRequest() {
+					return { url: 'https://example.test/v1/embeddings', headers: {}, body: {} };
+				},
+				parseEmbeddingResponse(data) { return data; }
+			}
+		},
+		mergeParams() {},
+		fetchWithTimeout: async function(url, options) {
+			calls.push({ url, options });
+			return {
+				ok: true,
+				headers: { get() { return 'application/json'; } },
+				text: async function() { return '{"embedding":[0.1]}'; }
+			};
+		}
+	});
+	const sharedSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'shared.js'), 'utf8');
+	new vm.Script(`async ${extractFunctionDeclaration(sharedSource, 'callEmbedding')}\nglobalThis.__callEmbedding = callEmbedding;`, {
+		filename: sharedSource
+	}).runInContext(context);
+	return { callEmbedding: context.__callEmbedding, calls };
+}
+
+function createCallProviderHarness(options = {}) {
+	const context = vm.createContext({
+		AbortController,
+		Response,
+		createInitialState() {
+			return { content: '', thinking: '', thinkingDuration: null };
+		},
+		createTagParser() { return null; },
+		currentAbortController: null,
+		fetchWithTimeout: async function() {
+			if (options.abort) {
+				const error = new Error('stopped');
+				error.name = 'AbortError';
+				throw error;
+			}
+			return new Response('data: {"choices":[{"delta":{"content":"Hello"}}]}\n\ndata: [DONE]\n\n', {
+				status: 200,
+				headers: { 'content-type': 'application/json' }
+			});
+		},
+		finalizeState() {},
+		mergeParams() {},
+		processSSEStream: async function(response, provider, state, tagParser, onChunk) {
+			assert.equal(response.body instanceof ReadableStream, true);
+			state.content = 'Hello';
+			onChunk(state);
+		}
+	});
+	const sharedSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'shared.js'), 'utf8');
+	const callProviderSource = extractFunctionDeclaration(sharedSource, 'callProvider');
+	new vm.Script(`async ${callProviderSource}\nglobalThis.__callProvider = callProvider;`, {
+		filename: sharedSource
+	}).runInContext(context);
+	return context.__callProvider;
+}
+
+function createMediaDownloadHarness(functionName, resultField) {
+	const context = vm.createContext({
+		console: { warn() {} },
+		fetch: async function(url, options) {
+			if (url === 'https://download.example/media') {
+				const error = new Error('stopped');
+				error.name = 'AbortError';
+				throw error;
+			}
+			return {
+				ok: true,
+				headers: { get() { return 'application/json'; } },
+				text: async function() { return JSON.stringify({ data: [{ url: 'https://download.example/media' }] }); }
+			};
+		},
+		fetchWithTimeout: async function() {
+			return context.fetch('https://api.example/generate');
+		},
+		mergeParams() {},
+		providers: {
+			openai: {
+				buildImageRequest() { return { url: 'https://api.example/generate', headers: {}, body: {} }; },
+				buildVideoRequest() { return { url: 'https://api.example/generate', headers: {}, body: {} }; }
+			}
+		}
+	});
+	const sharedSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'shared.js'), 'utf8');
+	const functionSource = extractFunctionDeclaration(sharedSource, functionName);
+	new vm.Script(`async ${functionSource}\nglobalThis.__mediaDownload = ${functionName};`, {
+		filename: sharedSource
+	}).runInContext(context);
+	return context.__mediaDownload;
+}
+
+
+function createHandleSendFinallyRaceHarness() {
+	let resolveLoadSession;
+	let signalLoadSessionStarted;
+	const loadSessionPromise = new Promise(function(resolve) {
+		resolveLoadSession = resolve;
+	});
+	const loadSessionStarted = new Promise(function(resolve) {
+		signalLoadSessionStarted = resolve;
+	});
+	let refreshUICount = 0;
+	const context = vm.createContext({
+		AbortController,
+		currentSession: { id: 'session-1', messages: [] },
+		defaultSelectedEndpointParams: {},
+		lastUserMessage: '',
+		pendingAttachments: [],
+		selectedEndpoints: ['endpoint-1'],
+		sessionGenerations: new Map(),
+		addMessage: async function(sessionId, role, content) {
+			if (role === 'user') context.currentSession.messages.push({ role, content });
+		},
+		appendUserMessage() {},
+		callAllModels: async function() { return []; },
+		clearAttachments() {},
+		clearInput() {},
+		createSession: async function() {
+			throw new Error('existing session must be reused');
+		},
+		findModelById() { return null; },
+		getGroups() { return []; },
+		getInputMessage: async function() {
+			return [{ type: 'text', text: 'Hello' }];
+		},
+		getSessionAbortController() { return new AbortController(); },
+		isSessionInvalidated: null,
+		loadSession: async function() {
+			signalLoadSessionStarted();
+			return loadSessionPromise;
+		},
+		normalizeMessageContent(content) { return content; },
+		renderSelectedEndpoints() {},
+		resolveNodeConfig() { return { type: 'chat' }; },
+		reorderCardsBySpeed() {},
+		reorderSelectorTagsBySpeed() {},
+		setButtonState() {},
+		showThinkingCards() {},
+		toOpenAIContent(content) { return content; },
+		updateStreamingCard() {},
+		refreshUI: async function() { refreshUICount += 1; },
+		$$() { return []; }
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const harnessSource = [
+		'const invalidatedSessionIds = new Set();',
+		extractFunctionDeclaration(apiSource, 'invalidateSession'),
+		extractFunctionDeclaration(apiSource, 'isSessionInvalidated'),
+		'async ' + extractFunctionDeclaration(mainSource, 'handleSend'),
+		'globalThis.__finallyRaceApi = { handleSend, invalidateSession, getCurrentSession() { return currentSession; } };'
+	].join('\n');
+
+	new vm.Script(harnessSource, { filename: mainSourcePath }).runInContext(context);
+	return {
+		api: context.__finallyRaceApi,
+		loadSessionStarted,
+		resolveLoadSession,
+		getRefreshUICount() { return refreshUICount; },
+		setCurrentSession(session) { context.currentSession = session; }
+	};
+}
+
+function createCallAllModelsHarness(options = {}) {
+	const generationStarts = [];
+	const context = vm.createContext({
+		AbortController,
+		Date,
+		currentSession: { id: 'session-1' },
+		defaultSelectedEndpointParams: {},
+		findModelById() { return { node: { id: 'endpoint-1', modelId: 'model-1' } }; },
+		isSessionInvalidated: null,
+		clearSessionGenerations() {},
+		getSessionGenerations(sessionId) {
+			if (!context.sessionGenerations.has(sessionId)) context.sessionGenerations.set(sessionId, new Map());
+			return context.sessionGenerations.get(sessionId);
+		},
+		callAPI: async function(_style, _baseUrl, _apiKey, _model, _messages, onChunk) {
+			generationStarts.push('callAPI');
+			if (options.abort) {
+				onChunk({
+					content: 'partial',
+					thinking: '',
+					phase: 'content',
+					firstContentTokenTime: Date.now()
+				});
+				const error = new Error('stopped');
+				error.name = 'AbortError';
+				throw error;
+			}
+			return { content: '', thinking: '', thinkingDuration: null };
+		},
+		renderSelectedEndpoints() {},
+		resolveNodeConfig() { return { style: 'openai', baseUrl: '', key: '', params: {} }; },
+		selectedEndpoints: [],
+		sessionGenerations: new Map(),
+		updateCardStatus() {}
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const sharedSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'shared.js'), 'utf8');
+	const harnessSource = [
+		'const invalidatedSessionIds = new Set();',
+		extractFunctionDeclaration(apiSource, 'invalidateSession'),
+		extractFunctionDeclaration(apiSource, 'isSessionInvalidated'),
+		extractFunctionDeclaration(sharedSource, 'callAllModels'),
+		'globalThis.__callAllModelsApi = { callAllModels, invalidateSession };'
+	].join('\n');
+
+	new vm.Script(harnessSource, { filename: sharedSource }).runInContext(context);
+	return { api: context.__callAllModelsApi, generationStarts };
+}
+
+function createSessionDeleteHarness() {
+	const events = [];
+	let rejectDeleteSession;
+	let resolveDeleteSession;
+	const deleteSessionPromise = new Promise(function(resolve, reject) {
+		resolveDeleteSession = resolve;
+		rejectDeleteSession = reject;
+	});
+	const context = vm.createContext({
+		currentSession: { id: 'session-1' },
+		deleteSession() {
+			events.push('deleteSession');
+			return deleteSessionPromise;
+		},
+		deleteSessionGenerations() {
+			events.push('deleteSessionGenerations');
+		},
+		refreshUI: async function() {
+			events.push('refreshUI');
+		}
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const sessionInvalidationSource = apiSource.slice(0, apiSource.indexOf('function getSessionGenerations'));
+	const handleSessionDeleteSource = extractFunctionDeclaration(mainSource, 'handleSessionDelete');
+
+	new vm.Script(`${sessionInvalidationSource}\nasync ${handleSessionDeleteSource}\nglobalThis.__sessionDeleteApi = { handleSessionDelete, isSessionInvalidated };`, {
+		filename: mainSourcePath
+	}).runInContext(context);
+	return {
+		events,
+		handleSessionDelete: context.__sessionDeleteApi.handleSessionDelete,
+		isSessionInvalidated: context.__sessionDeleteApi.isSessionInvalidated,
+		rejectDeleteSession,
+		resolveDeleteSession
+	};
+}
+
+function createShowThinkingCardsHarness() {
+	const removed = {
+		sessionItem: false,
+		responseCard: false
+	};
+	const sessionItem = {
+		remove() {
+			removed.sessionItem = true;
+		}
+	};
+	const responseCard = {
+		remove() {
+			removed.responseCard = true;
+		}
+	};
+	const container = {
+		addChild() {}
+	};
+	const hint = {
+		dataset: {},
+		appendChild() {},
+		querySelectorAll() {
+			return [];
+		}
+	};
+	const context = vm.createContext({
+		document: {
+			querySelector(selector) {
+				assert.equal(selector, '.msg.list');
+				return container;
+			}
+		},
+		findModelById() {
+			return { ancestors: [], node: { name: 'Endpoint' } };
+		},
+		fromTemplate() {
+			return {
+				dataset: {},
+				querySelector() {
+					return { addEventListener() {}, classList: { add() {} } };
+				}
+			};
+		},
+		ensureStreamingHint() {
+			return hint;
+		},
+		mk() {
+			return { dataset: {}, appendChild() {} };
+		},
+		scrollToBottom() {},
+		$: function(selector, ctx) {
+			if (selector === '.msg.list') return container;
+			if (selector === '.response .name') return { textContent: '' };
+			return null;
+		},
+		$$: function(selector, ctx) {
+			if (!ctx) return [sessionItem, responseCard];
+			assert.equal(ctx, container);
+			return [responseCard];
+		}
+	});
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const showSource = extractFunctionDeclaration(mainSource, 'showThinkingCards');
+	new vm.Script(`${showSource}\nglobalThis.__showThinkingCards = showThinkingCards;`, {
+		filename: mainSourcePath
+	}).runInContext(context);
+	return {
+		showThinkingCards: context.__showThinkingCards,
+		removed
+	};
+}
+
+function createStoreHarness(initialTree) {
+	let saveCount = 0;
+	let nextGeneratedId = 0;
+	const context = vm.createContext({
+		console,
+		generateUUID() {
+			nextGeneratedId += 1;
+			return `generated-${nextGeneratedId}`;
+		},
 		storage: {
+			mode: 'browser',
 			async saveEndpoints() {
 				saveCount += 1;
 			}
@@ -155,6 +805,13 @@ function createStoreHarness(initialTree) {
 	const source = fs.readFileSync(storeSourcePath, 'utf8');
 	const exposedSource = `${source}\n
 globalThis.__storeTestApi = {
+	addNode,
+	batchAddNodes,
+	cloneNode,
+	migrateEndpoints,
+	normalizeEndpointFullUrlFlags,
+	resolveNodeConfig,
+	updateNode,
 	reorderNode,
 	moveNodeAsChild,
 	setEndpointsData(data) {
@@ -323,6 +980,542 @@ function assertRejectedWithoutChanges(result, harness, originalTree) {
 	assert.equal(harness.getSaveCount(), 0);
 }
 
+
+class MiniClassList {
+	constructor(element) {
+		this.element = element;
+		this.values = new Set();
+	}
+
+	add(...names) {
+		names.forEach(name => this.values.add(name));
+	}
+
+	remove(...names) {
+		names.forEach(name => this.values.delete(name));
+	}
+
+	contains(name) {
+		return this.values.has(name) || this.element.className.split(/[\s,]+/).includes(name);
+	}
+
+	toggle(name, force) {
+		const next = force === undefined ? !this.contains(name) : force;
+		if (next) this.add(name);
+		else this.remove(name);
+		return next;
+	}
+}
+
+class MiniElement {
+	constructor(tagName, className = '') {
+		this.tagName = tagName.toUpperCase();
+		this.className = className;
+		this.classList = new MiniClassList(this);
+		this.children = [];
+		this.parentNode = null;
+		this.parentElement = null;
+		this.style = {};
+		this.value = '';
+		this.checked = false;
+		this.type = tagName === 'input' ? 'text' : '';
+		this.name = '';
+		this.textContent = '';
+		this.childNodes = [];
+		this.listeners = new Map();
+	}
+
+	get firstChild() {
+		return this.children[0] || null;
+	}
+
+	appendChild(child) {
+		if (child.parentNode) child.parentNode.removeChild(child);
+		child.parentNode = this;
+		child.parentElement = this;
+		this.children.push(child);
+		this.childNodes = this.children;
+		return child;
+	}
+
+	insertBefore(child, reference) {
+		if (child.parentNode) child.parentNode.removeChild(child);
+		child.parentNode = this;
+		child.parentElement = this;
+		const index = this.children.indexOf(reference);
+		if (index < 0) this.children.push(child);
+		else this.children.splice(index, 0, child);
+		this.childNodes = this.children;
+		return child;
+	}
+
+	removeChild(child) {
+		const index = this.children.indexOf(child);
+		if (index >= 0) this.children.splice(index, 1);
+		child.parentNode = null;
+		child.parentElement = null;
+		this.childNodes = this.children;
+	}
+
+	remove() {
+		if (this.parentNode) this.parentNode.removeChild(this);
+	}
+
+	addEventListener(type, listener) {
+		this.listeners.set(type, listener);
+	}
+
+	closest(selector) {
+		let current = this;
+		while (current) {
+			if (current.matches(selector)) return current;
+			current = current.parentElement;
+		}
+		return null;
+	}
+
+	matches(selector) {
+		const simple = selector.split(':')[0];
+		if (simple && simple !== '*' && !this.matchesSimple(simple)) return false;
+		if (selector.includes(':checked') && !this.checked) return false;
+		return true;
+	}
+
+	matchesSimple(selector) {
+		const tagMatch = selector.match(/^[a-z][a-z0-9-]*/i);
+		if (tagMatch && this.tagName !== tagMatch[0].toUpperCase()) return false;
+		for (const className of selector.matchAll(/\.([\w-]+)/g)) {
+			if (!this.classList.contains(className[1])) return false;
+		}
+		for (const attr of selector.matchAll(/\[([\w-]+)(?:=["']([^"']*)["'])?\]/g)) {
+			const actual = this[attr[1]] === undefined ? '' : String(this[attr[1]]);
+			if (attr[2] !== undefined && actual !== attr[2]) return false;
+		}
+		return true;
+	}
+
+	querySelector(selector) {
+		const found = this.querySelectorAll(selector)[0] || null;
+		if (found) return found;
+		if (selector === '.inheriting-val') {
+			const placeholder = new MiniElement('span', 'inheriting-val');
+			this.appendChild(placeholder);
+			return placeholder;
+		}
+		return null;
+	}
+
+	querySelectorAll(selector) {
+		const parts = selector.trim().split(/\s+/);
+		const result = [];
+		const visit = element => {
+			for (const child of element.children) {
+				if (child.matches(parts[parts.length - 1])) {
+					let ancestor = child.parentElement;
+					let index = parts.length - 2;
+					while (ancestor && index >= 0) {
+						if (ancestor.matches(parts[index])) index -= 1;
+						ancestor = ancestor.parentElement;
+					}
+					if (index < 0) result.push(child);
+				}
+				visit(child);
+			}
+		};
+		visit(this);
+		return result;
+	}
+}
+
+function createEditDialogHarness(tree) {
+	const dialog = new MiniElement('dialog', 'editing endpoint');
+	const header = new MiniElement('header');
+	const title = new MiniElement('h3');
+	const sourceHint = new MiniElement('div', 'inherit-source hint');
+	const tabContainer = new MiniElement('div', 'tab container');
+	const singleTab = new MiniElement('label', 'btn tab');
+	const singleRadio = new MiniElement('input');
+	singleRadio.name = 'dialog-tab';
+	singleRadio.value = 'single';
+	singleRadio.type = 'radio';
+	singleRadio.checked = true;
+	singleTab.appendChild(singleRadio);
+	tabContainer.appendChild(singleTab);
+	const form = new MiniElement('form');
+	const nameInput = new MiniElement('input');
+	nameInput.name = 'name';
+	const modelInput = new MiniElement('input');
+	modelInput.name = 'model-id';
+	const typeField = new MiniElement('span', 'field-control');
+	const typeGroup = new MiniElement('div', 'btn-group');
+	const typeInputs = ['','chat'].map(value => {
+		const label = new MiniElement('label', 'option btn');
+		const input = new MiniElement('input');
+		input.name = 'type';
+		input.value = value;
+		input.type = 'radio';
+		label.appendChild(input);
+		if (value === '') label.appendChild(new MiniElement('span', 'inheriting-val'));
+		typeGroup.appendChild(label);
+		return input;
+	});
+	const typeHint = new MiniElement('span', 'hint');
+	typeField.appendChild(typeGroup);
+	typeField.appendChild(typeHint);
+	const styleGroup = new MiniElement('div', 'btn-group');
+	const styleInputs = ['','openai'].map(value => {
+		const label = new MiniElement('label', 'option btn');
+		const input = new MiniElement('input');
+		input.name = 'style';
+		input.value = value;
+		input.type = 'radio';
+		label.appendChild(input);
+		if (value === '') label.appendChild(new MiniElement('span', 'inheriting-val'));
+		styleGroup.appendChild(label);
+		return input;
+	});
+	const urlRow = new MiniElement('span', 'url-row');
+	const urlFlex = new MiniElement('span', 'flex');
+	const urlInput = new MiniElement('input');
+	urlInput.name = 'url';
+	const pathSuffix = new MiniElement('span', 'path-suffix');
+	const fullUrlToggle = new MiniElement('label', 'btn direct-url toggle');
+	const fullUrlCheckbox = new MiniElement('input');
+	fullUrlCheckbox.type = 'checkbox';
+	fullUrlToggle.appendChild(fullUrlCheckbox);
+	urlFlex.appendChild(urlInput);
+	urlFlex.appendChild(pathSuffix);
+	urlFlex.appendChild(fullUrlToggle);
+	urlRow.appendChild(urlFlex);
+	const originalDialogQuerySelector = dialog.querySelector.bind(dialog);
+	dialog.querySelector = selector => selector === '.path-suffix' ? pathSuffix : originalDialogQuerySelector(selector);
+	const keyInput = new MiniElement('input');
+	keyInput.name = 'apikey';
+	const apiToggle = new MiniElement('label', 'toggle apikey');
+	const apiCheckbox = new MiniElement('input');
+	apiCheckbox.type = 'checkbox';
+	apiToggle.appendChild(apiCheckbox);
+	const remarkInput = new MiniElement('input');
+	remarkInput.name = 'remark';
+	const okButton = new MiniElement('button', 'ok');
+	okButton.click = function() { if (this.onclick) this.onclick(); };
+	const closeButton = new MiniElement('button', 'close');
+	form.appendChild(nameInput);
+	form.appendChild(modelInput);
+	form.appendChild(typeField);
+	form.appendChild(styleGroup);
+	form.appendChild(urlRow);
+	form.appendChild(keyInput);
+	form.appendChild(apiToggle);
+	form.appendChild(remarkInput);
+	header.appendChild(title);
+	header.appendChild(sourceHint);
+	dialog.appendChild(header);
+	dialog.appendChild(tabContainer);
+	dialog.appendChild(form);
+	dialog.appendChild(okButton);
+	dialog.appendChild(closeButton);
+	dialog.show = function() { this.open = true; };
+	dialog.close = function() { this.open = false; };
+
+	function findNodeWithAncestors(nodes, nodeId, ancestors = []) {
+		for (const node of nodes) {
+			if (node.id === nodeId) return { node, ancestors };
+			if (node.children) {
+				const found = findNodeWithAncestors(node.children, nodeId, [...ancestors, node]);
+				if (found) return found;
+			}
+		}
+		return null;
+	}
+
+	const document = {
+		querySelector(selector) {
+			if (selector === 'dialog.editing.endpoint' || selector === 'dialog.editing.endpoint') return dialog;
+			return dialog.querySelector(selector);
+		},
+		createElement(tagName) {
+			return new MiniElement(tagName);
+		},
+		addEventListener() {},
+		removeEventListener() {}
+	};
+	const context = vm.createContext({
+		console,
+		document,
+		doc: document,
+		dialog,
+		endpointsData: tree,
+		findNodeWithAncestors,
+		getNode(nodeId) {
+			const result = findNodeWithAncestors(tree.nodes, nodeId);
+			return result ? result.node : null;
+		},
+		detectModelType(name) {
+			return name && name.includes('embedding') ? 'embedding' : 'chat';
+		},
+		resolveNodeConfig(nodeId) {
+			const result = findNodeWithAncestors(tree.nodes, nodeId);
+			if (!result) return null;
+			const config = {};
+			['baseUrl', 'style', 'key', 'modelId', 'type'].forEach(field => {
+				config[field] = result.node[field] || '';
+			});
+			for (let index = result.ancestors.length - 1; index >= 0; index -= 1) {
+				const ancestor = result.ancestors[index];
+				['baseUrl', 'style', 'key', 'modelId', 'type'].forEach(field => {
+					if (!config[field] && ancestor[field]) config[field] = ancestor[field];
+				});
+			}
+			let fullUrl;
+			for (const candidate of [result.node, ...result.ancestors.slice().reverse()]) {
+				if (Object.hasOwn(candidate, 'isFullUrl')) {
+					fullUrl = !!candidate.isFullUrl;
+					break;
+				}
+			}
+			config.isFullUrl = fullUrl || false;
+			if (!config.type) config.type = context.detectModelType(config.modelId);
+			if (!config.style) config.style = 'openai';
+			return config;
+		},
+		$(selector, ctx = dialog) {
+			if (selector === 'dialog.editing.endpoint') return dialog;
+			return ctx.querySelector(selector);
+		},
+		setValues(ctx, values) {
+			Object.entries(values).forEach(([selector, value]) => {
+				ctx.querySelector(selector).value = value || '';
+			});
+		},
+		onClick(handlers, ctx = dialog) {
+			Object.entries(handlers).forEach(([selector, handler]) => {
+				const target = ctx.querySelector(selector);
+				if (target) target.onclick = handler;
+			});
+		},
+		getParamDefs() {
+			return [];
+		}
+	});
+
+	const attachmentsSource = fs.readFileSync(attachmentsSourcePath, 'utf8');
+	const source = [
+		extractFunctionDeclaration(attachmentsSource, 'addInheritIcon'),
+		extractFunctionDeclaration(attachmentsSource, 'shouldSaveIsFullUrl'),
+		extractFunctionDeclaration(attachmentsSource, 'showEditGroupDialog'),
+		'globalThis.__showEditGroupDialog = showEditGroupDialog;'
+	].join('\n');
+	new vm.Script(source, { filename: attachmentsSourcePath }).runInContext(context);
+	return { context, dialog, urlInput, pathSuffix, fullUrlCheckbox, okButton };
+}
+
+
+test('deleting a generating session invalidates it before aborting generation', () => {
+	const harness = createGenerationApiHarness();
+	const controller = new AbortController();
+	harness.api.getSessionGenerations('session-1').set('endpoint-1', {
+		abortController: controller,
+		status: 'generating'
+	});
+
+	harness.api.invalidateSession('session-1');
+	harness.api.deleteSessionGenerations('session-1');
+
+	assert.equal(harness.api.isSessionInvalidated('session-1'), true);
+	assert.equal(controller.signal.aborted, true);
+});
+
+test('stopping a session aborts its non-stream requests', () => {
+	const harness = createGenerationApiHarness();
+	const controller = harness.api.getSessionAbortController('session-1');
+
+	harness.api.stopSessionGenerations('session-1');
+
+	assert.equal(controller.signal.aborted, true);
+});
+
+test('stopping all generations aborts the active session non-stream requests', () => {
+	const harness = createGenerationApiHarness();
+	const controller = harness.api.getSessionAbortController('session-1');
+
+	harness.api.stopAllGenerations();
+
+	assert.equal(controller.signal.aborted, true);
+});
+
+test('overlapping non-stream sends retain the session abort controller until all sends finish', () => {
+	const harness = createGenerationApiHarness();
+	const firstController = harness.api.getSessionAbortController('session-1');
+	const secondController = harness.api.getSessionAbortController('session-1');
+
+	harness.api.finishSessionAbortController('session-1', firstController);
+	harness.api.abortSessionRequests('session-1');
+
+	assert.equal(firstController, secondController);
+	assert.equal(secondController.signal.aborted, true);
+});
+
+test('non-stream requests receive the session signal and invalidated results skip UI and assistant persistence', async () => {
+	const embeddingHarness = createCallEmbeddingSignalHarness();
+	const signal = new AbortController().signal;
+
+	await embeddingHarness.callEmbedding('openai', '', '', 'model-1', 'Hello', false, {}, signal);
+
+	assert.equal(embeddingHarness.calls[0].options.signal, signal);
+
+	const generationHarness = createNonStreamGenerationHarness();
+	await generationHarness.api.handleSend();
+
+	assert.equal(generationHarness.calls.embeddingSignal, generationHarness.controller.signal);
+	assert.equal(generationHarness.calls.updateEmbedding, 0);
+	assert.equal(generationHarness.calls.addAssistant, 0);
+});
+
+test('an aborted non-stream embedding that resolves successfully does not update its card or persist an assistant response', async () => {
+	const harness = createDeferredNonStreamGenerationHarness();
+	const sending = harness.api.handleSend();
+
+	await harness.embeddingStarted;
+	harness.controller.abort();
+	harness.resolveEmbedding({ embedding: [0.1], model: 'model-1' });
+	await sending;
+
+	assert.equal(harness.calls.embeddingSignal, harness.controller.signal);
+	assert.equal(harness.controller.signal.aborted, true);
+	assert.equal(harness.calls.updateEmbedding, 0);
+	assert.equal(harness.calls.addAssistant, 0);
+});
+
+test('updateCardStatus skips queued DOM writes after its target session invalidates', () => {
+	const harness = createUpdateCardStatusHarness();
+
+	harness.api.updateCardStatus('endpoint-1', 'completed', null, null, 'session-1');
+	harness.api.invalidateSession('session-1');
+	harness.runNextAnimationFrame();
+
+	assert.equal(harness.calls.cardSelectorMatches, 1);
+	assert.deepEqual(harness.calls.domWrites, []);
+});
+
+test('an invalidated session does not start a new chat generation', async () => {
+	const harness = createGenerationStartHarness();
+	harness.api.invalidateSession('session-1');
+
+	await harness.api.handleSend();
+
+	assert.equal(harness.api.isSessionInvalidated('session-1'), true);
+	assert.equal(harness.generationStarts.length, 0);
+});
+
+test('handleSessionDelete invalidates and aborts before its deferred storage deletion resolves', async () => {
+	const harness = createSessionDeleteHarness();
+	const deletion = harness.handleSessionDelete('session-1');
+
+	assert.deepEqual(harness.events, ['deleteSessionGenerations', 'deleteSession']);
+	assert.equal(harness.isSessionInvalidated('session-1'), true);
+	harness.resolveDeleteSession();
+	await deletion;
+});
+
+test('handleSessionDelete keeps invalidation when storage deletion rejects', async () => {
+	const harness = createSessionDeleteHarness();
+	const deletion = harness.handleSessionDelete('session-1');
+	const deleteError = new Error('storage delete failed');
+
+	harness.rejectDeleteSession(deleteError);
+	await assert.rejects(deletion, deleteError);
+
+	assert.equal(harness.isSessionInvalidated('session-1'), true);
+});
+
+test('deletion during user-message persistence prevents a late chat start', async () => {
+	let resolveUserMessage;
+	let started = false;
+	const userMessagePersistence = new Promise(function(resolve) {
+		resolveUserMessage = resolve;
+	});
+	const harness = createGenerationStartHarness({
+		afterUserMessage() {
+			started = true;
+			return userMessagePersistence;
+		}
+	});
+
+	const sending = harness.api.handleSend();
+	while (!started) await Promise.resolve();
+	harness.api.invalidateSession('session-1');
+	resolveUserMessage();
+	await sending;
+
+	assert.equal(harness.generationStarts.length, 0);
+});
+
+test('callAllModels rejects an invalidated session before starting requests', async () => {
+	const harness = createCallAllModelsHarness();
+	harness.api.invalidateSession('session-1');
+
+	const results = await harness.api.callAllModels([], ['endpoint-1'], [], () => {}, 'session-1');
+
+	assert.equal(results.length, 0);
+	assert.equal(harness.generationStarts.length, 0);
+});
+
+test('callProvider handles an HTTP 200 JSON response without assigning to a const', async () => {
+	const callProvider = createCallProviderHarness();
+	const chunks = [];
+	const provider = {
+		buildRequest() { return { url: 'https://api.example/chat', headers: {}, body: {} }; },
+		needsTagParsing: false
+	};
+
+	const state = await callProvider(provider, '', '', '', [], chunk => chunks.push(chunk), null, 'openai', {}, false);
+
+	assert.equal(state.content, 'Hello');
+	assert.equal(chunks.length, 1);
+});
+
+test('callProvider rethrows AbortError so chat dispatch can mark it stopped', async () => {
+	const callProvider = createCallProviderHarness({ abort: true });
+	const provider = {
+		buildRequest() { return { url: 'https://api.example/chat', headers: {}, body: {} }; },
+		needsTagParsing: false
+	};
+
+	await assert.rejects(callProvider(provider, '', '', '', [], () => {}, new AbortController().signal, 'openai', {}, false), { name: 'AbortError' });
+});
+
+test('callAllModels marks a chat AbortError as stopped and preserves partial content', async () => {
+	const harness = createCallAllModelsHarness({ abort: true });
+
+	const [result] = await harness.api.callAllModels([], ['endpoint-1'], [], () => {}, 'session-1');
+
+	assert.equal(result.status, 'stopped');
+	assert.equal(result.content, 'partial');
+});
+
+test('handleSend finally does not restore a session invalidated while loading it', async () => {
+	const harness = createHandleSendFinallyRaceHarness();
+	const sending = harness.api.handleSend();
+
+	await harness.loadSessionStarted;
+	harness.setCurrentSession(null);
+	harness.api.invalidateSession('session-1');
+	harness.resolveLoadSession({ id: 'session-1', messages: [] });
+	await sending;
+
+	assert.equal(harness.api.getCurrentSession(), null);
+	assert.equal(harness.getRefreshUICount(), 0);
+});
+
+test('image and video download AbortError propagate instead of falling back to the source URL', async () => {
+	const imageGeneration = createMediaDownloadHarness('callImageGeneration', 'url');
+	const videoGeneration = createMediaDownloadHarness('callVideoGeneration', 'videoUrl');
+	const signal = new AbortController().signal;
+
+	await assert.rejects(imageGeneration('openai', '', '', '', [], false, {}, signal), { name: 'AbortError' });
+	await assert.rejects(videoGeneration('openai', '', '', '', [], false, {}, signal), { name: 'AbortError' });
+});
 
 test('workspace/session parameter transaction restores workspace state after save and reset session failures', async () => {
 	const endpointId = 'endpoint-1';
@@ -835,6 +2028,66 @@ test('parameter dialog invalidates stale operations after native dialog close', 
 	assert.equal(renders.length, 1, 'old reset completions must not render a dialog reopened after native close');
 	assert.deepEqual(alerts, [], 'old failed saves must not alert in a dialog reopened after native cancel');
 	assert.equal(dialog.open, true, 'old operations must not change the reopened dialog state');
+});
+
+test('showThinkingCards only removes old response cards inside the message list', () => {
+	const harness = createShowThinkingCardsHarness();
+
+	harness.showThinkingCards(['endpoint-1'], [], 'session-1');
+
+	assert.equal(harness.removed.sessionItem, false);
+	assert.equal(harness.removed.responseCard, true);
+});
+
+test('renderSessionList appends each rendered session with standard DOM appendChild', () => {
+	const appendedSessions = [];
+	const titleEl = { textContent: '' };
+	const metaEl = {};
+	const timeEl = { textContent: '' };
+	const editBtn = { dataset: {}, addEventListener() {} };
+	const deleteBtn = { dataset: {}, addEventListener() {} };
+	const sessionEl = {
+		dataset: {},
+		classList: { add() {} },
+		querySelector(selector) {
+			if (selector === '.title') return titleEl;
+			if (selector === '.meta') return metaEl;
+			if (selector === '.time') return timeEl;
+			if (selector === '.edit.title') return editBtn;
+			if (selector === '.remove') return deleteBtn;
+			throw new Error(`Unexpected session selector: ${selector}`);
+		}
+	};
+	const container = {
+		querySelectorAll() { return []; },
+		appendChild(element) { appendedSessions.push(element); }
+	};
+	const sessionListSource = fs.readFileSync(sessionListSourcePath, 'utf8');
+	const renderSource = extractFunctionDeclaration(sessionListSource, 'renderSessionList');
+	const context = vm.createContext({
+		document: {
+			querySelector(selector) {
+				assert.equal(selector, 'aside.session.list > ol');
+				return container;
+			}
+		},
+		fromTemplate(templateName, tagName) {
+			assert.equal(templateName, 'one-session');
+			assert.equal(tagName, 'li');
+			return sessionEl;
+		}
+	});
+	new vm.Script(`
+		${renderSource}
+		globalThis.__renderSessionList = renderSessionList;
+	`, { filename: sessionListSourcePath }).runInContext(context);
+
+	context.__renderSessionList([
+		{ id: 'session-1', title: '会话 1', createdAt: 1 }
+	], null, null, null, null);
+
+	assert.equal(appendedSessions.length, 1);
+	assert.equal(appendedSessions[0], sessionEl);
 });
 
 test('handleEditSessionTitleClick consumes a rejected save Promise after blur while restoring the old title', () => {
@@ -1444,6 +2697,293 @@ test('updateEmptyState shows the filtered-empty state when every endpoint has th
 	assert.equal(emptyHint.textContent, '没有符合筛选的端点。');
 	assert.equal(resetBtn.classList.contains('hidden'), false);
 	assert.equal(addBtn.classList.contains('hidden'), true);
+});
+
+test('new child full URL toggle persists the inherited Base URL and clears inheritance on the next edit', () => {
+	const tree = {
+		nodes: [{
+			id: 'a',
+			name: 'A',
+			baseUrl: 'https://parent.example/v1',
+			style: 'openai',
+			type: 'chat',
+			children: []
+		}]
+	};
+	const harness = createEditDialogHarness(tree);
+	const nameInput = harness.dialog.querySelector('input[name="name"]');
+	let saveData;
+	let child;
+
+	harness.context.__showEditGroupDialog(null, 'a', data => {
+		saveData = data;
+		child = Object.assign({ id: 'b', children: [] }, data);
+		tree.nodes[0].children.push(child);
+	});
+	nameInput.value = 'B';
+
+	assert.equal(harness.urlInput.value, 'https://parent.example/v1');
+	assert.equal(harness.pathSuffix.textContent, '/v1/chat/completions');
+	const directUrlToggle = harness.dialog.querySelector('.direct-url.toggle.btn');
+	const fullUrlCheckbox = directUrlToggle.querySelector('input[type="checkbox"]');
+	fullUrlCheckbox.checked = true;
+	assert.equal(fullUrlCheckbox.listeners.has('change'), true);
+	fullUrlCheckbox.listeners.get('change').call(fullUrlCheckbox, { type: 'change' });
+	assert.equal(harness.urlInput.value, 'https://parent.example/v1', 'the toggle must not edit the Base URL input');
+	assert.equal(harness.pathSuffix.textContent, '', 'the toggle must cancel /v1/chat/completions');
+	harness.okButton.onclick();
+
+	assert.equal(saveData.baseUrl, 'https://parent.example/v1', 'toggling full URL must persist the effective inherited Base URL');
+	assert.equal(saveData.isFullUrl, true);
+
+	harness.context.__showEditGroupDialog(child, null, () => {});
+	assert.equal(harness.urlInput.value, 'https://parent.example/v1');
+	assert.equal(harness.urlInput.parentNode.querySelector('.inherit.icon'), null, 'the saved Base URL must no longer be treated as inherited');
+});
+
+test('editing a child after changing its own Base URL removes the stale inherited icon on the next edit', () => {
+	const tree = {
+		nodes: [{
+			id: 'a',
+			name: 'A',
+			baseUrl: 'https://parent.example/v1',
+			style: 'openai',
+			type: 'chat',
+			children: [{ id: 'b', name: 'B', children: [] }]
+		}]
+	};
+	const harness = createEditDialogHarness(tree);
+	const child = tree.nodes[0].children[0];
+	harness.context.__showEditGroupDialog(child, null, data => Object.assign(child, data));
+	assert.ok(harness.urlInput.parentNode.querySelector('.inherit.icon'), 'the first edit must mark the inherited Base URL');
+
+	harness.urlInput.value = 'https://child.example/v1';
+	harness.urlInput.oninput();
+	assert.equal(harness.urlInput._inheritIconAdded, false, 'changing to an own Base URL must clear the inherited-marker guard');
+	harness.okButton.onclick();
+	harness.context.__showEditGroupDialog(child, null, () => {});
+
+	assert.equal(harness.urlInput.parentNode.querySelector('.inherit.icon'), null, 'an own Base URL must not retain the inherited icon');
+});
+
+test('removeIcon clears the inherited marker when the DOM icon is already absent', () => {
+	const tree = {
+		nodes: [{
+			id: 'a',
+			name: 'A',
+			baseUrl: 'https://parent.example/v1',
+			style: 'openai',
+			type: 'chat',
+			children: [{ id: 'b', name: 'B', children: [] }]
+		}]
+	};
+	const harness = createEditDialogHarness(tree);
+	const child = tree.nodes[0].children[0];
+	harness.context.__showEditGroupDialog(child, null, () => {});
+	const icon = harness.urlInput.parentNode.querySelector('.inherit.icon');
+	assert.ok(icon, 'the inherited Base URL must initially have an icon');
+	icon.remove();
+	assert.equal(harness.urlInput._inheritIconAdded, true, 'the marker remains stale after external DOM removal');
+
+	harness.urlInput.oninput();
+
+	assert.equal(harness.urlInput._inheritIconAdded, false, 'removeIcon must reset the marker even without a DOM icon');
+});
+
+test('new grandchild path display inherits the complete URL state and does not append the chat path', () => {
+	const tree = {
+		nodes: [{
+			id: 'a',
+			name: 'A',
+			baseUrl: 'https://parent.example/v1',
+			style: 'openai',
+			type: 'chat',
+			isFullUrl: false,
+			children: [{
+				id: 'b',
+				name: 'B',
+				baseUrl: 'https://child.example/v1/chat/completions',
+				isFullUrl: true,
+				children: []
+			}]
+		}]
+	};
+	const harness = createEditDialogHarness(tree);
+	harness.context.__showEditGroupDialog(null, 'b', () => {});
+
+	assert.equal(harness.fullUrlCheckbox.checked, true, 'a new child must inherit the parent full URL state');
+	assert.equal(harness.pathSuffix.textContent, '', 'a full URL parent must not display /v1/chat/completions for a new child');
+});
+
+test('edit URL checkbox resolves the effective node configuration instead of raw node fields', () => {
+	const attachmentsSource = fs.readFileSync(attachmentsSourcePath, 'utf8');
+	const getEditIsFullUrlSource = extractFunctionDeclaration(attachmentsSource, 'getEditIsFullUrl');
+	const context = vm.createContext({
+		resolveNodeConfig(nodeId) {
+			return {
+				legacy: { isFullUrl: true },
+				inherited: { isFullUrl: true },
+				falseOverride: { isFullUrl: false }
+			}[nodeId] || null;
+		}
+	});
+	new vm.Script(`${getEditIsFullUrlSource}\nglobalThis.__getEditIsFullUrl = getEditIsFullUrl;`, {
+		filename: attachmentsSourcePath
+	}).runInContext(context);
+
+	assert.equal(context.__getEditIsFullUrl({ id: 'legacy', directUrl: true }), true);
+	assert.equal(context.__getEditIsFullUrl({ id: 'inherited', children: [] }), true);
+	assert.equal(context.__getEditIsFullUrl({ id: 'falseOverride', isFullUrl: false }), false);
+});
+
+test('isFullUrl leaves unset values absent while preserving explicit and legacy values', async () => {
+	const tree = {
+		nodes: [{
+			id: 'parent',
+			name: 'Parent',
+			isFullUrl: true,
+			children: [{
+				id: 'inherit-child',
+				name: 'Inherit child',
+				children: [{ id: 'inherit-grandchild', name: 'Inherit grandchild', children: [] }]
+			}]
+		}]
+	};
+	const harness = createStoreHarness(tree);
+
+	const created = await harness.api.addNode('parent', { name: 'Created' });
+	assert.equal(Object.hasOwn(created, 'isFullUrl'), false);
+	assert.equal(Object.hasOwn(created, 'directUrl'), false);
+
+	const createdFalse = await harness.api.addNode('parent', { name: 'Created false', directUrl: false });
+	assert.equal(createdFalse.isFullUrl, false);
+	assert.equal(Object.hasOwn(createdFalse, 'directUrl'), false);
+
+	const batchIds = await harness.api.batchAddNodes('parent', [{ name: 'Batch root', children: [{ name: 'Batch child' }] }]);
+	const batchRoot = harness.api.getEndpointsData().nodes[0].children.find(function(node) { return node.id === batchIds[0]; });
+	assert.equal(Object.hasOwn(batchRoot, 'isFullUrl'), false);
+	assert.equal(Object.hasOwn(batchRoot.children[0], 'isFullUrl'), false);
+
+	const cloned = await harness.api.cloneNode('inherit-child');
+	assert.equal(Object.hasOwn(cloned, 'isFullUrl'), false);
+	assert.equal(Object.hasOwn(cloned.children[0], 'isFullUrl'), false);
+});
+
+test('normalizeEndpointFullUrlFlags recursively migrates legacy fields without adding absent overrides', () => {
+	const data = { nodes: [{
+		id: 'root',
+		directUrl: true,
+		children: [{
+			id: 'child',
+			isFullUrl: false,
+			directUrl: true,
+			children: [{ id: 'legacy-deep', directUrl: false, children: [] }]
+		}, {
+			id: 'inherit',
+			children: []
+		}]
+	}] };
+	const root = data.nodes[0];
+	const child = root.children[0];
+	const changed = createStoreHarness({ nodes: [] }).api.normalizeEndpointFullUrlFlags(data);
+
+	assert.equal(changed, true);
+	assert.equal(data.nodes[0], root);
+	assert.equal(data.nodes[0].children[0], child);
+	assert.equal(data.nodes[0].isFullUrl, true);
+	assert.equal(Object.hasOwn(data.nodes[0], 'directUrl'), false);
+	assert.equal(data.nodes[0].children[0].isFullUrl, false);
+	assert.equal(Object.hasOwn(data.nodes[0].children[0], 'directUrl'), false);
+	assert.equal(data.nodes[0].children[0].children[0].isFullUrl, false);
+	assert.equal(Object.hasOwn(data.nodes[0].children[1], 'isFullUrl'), false);
+	assert.equal(createStoreHarness({ nodes: [] }).api.normalizeEndpointFullUrlFlags({
+		nodes: [{ id: 'unset', children: [] }]
+	}), false);
+});
+
+test('migrateEndpoints preserves and normalizes direct URL compatibility values', () => {
+	const harness = createStoreHarness({ nodes: [] });
+	const migrated = harness.api.migrateEndpoints({
+		groups: [{
+			id: 'legacy-group',
+			name: 'Legacy group',
+			directUrl: true,
+			models: [{ id: 'legacy-model', name: 'Legacy model', directUrl: false }]
+		}]
+	});
+
+	assert.equal(migrated.nodes[0].isFullUrl, true);
+	assert.equal(Object.hasOwn(migrated.nodes[0], 'directUrl'), false);
+	assert.equal(migrated.nodes[0].children[0].isFullUrl, false);
+	assert.equal(Object.hasOwn(migrated.nodes[0].children[0], 'directUrl'), false);
+});
+
+test('updateNode normalizes legacy directUrl updates without retaining the old field', async () => {
+	const harness = createStoreHarness({ nodes: [{ id: 'node', name: 'Node', children: [] }] });
+	const updated = await harness.api.updateNode('node', { directUrl: true });
+
+	assert.equal(updated.isFullUrl, true);
+	assert.equal(Object.hasOwn(updated, 'directUrl'), false);
+});
+
+test('edit save omits inherited full URL until the checkbox changes', () => {
+	const attachmentsSource = fs.readFileSync(attachmentsSourcePath, 'utf8');
+	const shouldSaveIsFullUrlSource = extractFunctionDeclaration(attachmentsSource, 'shouldSaveIsFullUrl');
+	const context = vm.createContext({});
+	new vm.Script(`${shouldSaveIsFullUrlSource}\nglobalThis.__shouldSaveIsFullUrl = shouldSaveIsFullUrl;`).runInContext(context);
+
+	assert.equal(context.__shouldSaveIsFullUrl({ id: 'child' }, true, true, false), false);
+	assert.equal(context.__shouldSaveIsFullUrl({ id: 'child' }, true, false, true), true);
+	assert.equal(context.__shouldSaveIsFullUrl({ id: 'legacy', directUrl: false }, false, false, false), true);
+	assert.equal(context.__shouldSaveIsFullUrl({ id: 'modern', isFullUrl: true }, true, true, false), true);
+});
+
+test('callEmbedding declares params and main forwards resolved embedding parameters', () => {
+	const sharedSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'shared.js'), 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const signature = extractFunctionDeclaration(sharedSource, 'callEmbedding').slice(0, extractFunctionDeclaration(sharedSource, 'callEmbedding').indexOf('{'));
+
+	assert.match(signature, /input\s*,\s*isFullUrl\s*,\s*params/);
+	assert.match(extractFunctionDeclaration(mainSource, 'handleSend'), /callEmbedding\([^;]*cfg\.isFullUrl\s*,\s*cfg\.params\)/);
+});
+
+test('isFullUrl prefers an explicit child value, falls back to legacy data, and survives new nodes and cloning', async () => {
+	const tree = {
+		nodes: [
+			{
+				id: 'parent',
+				name: 'Parent',
+				isFullUrl: true,
+				children: [
+					{ id: 'child-false', name: 'Explicit false', isFullUrl: false, children: [] },
+					{ id: 'child-inherited', name: 'Inherited', children: [] },
+					{ id: 'legacy', name: 'Legacy', directUrl: true, children: [] },
+					{ id: 'new-wins', name: 'New wins', isFullUrl: false, directUrl: true, children: [] }
+				]
+			}
+		]
+	};
+	const harness = createStoreHarness(tree);
+
+	assert.equal(harness.api.resolveNodeConfig('child-false').isFullUrl, false);
+	assert.equal(harness.api.resolveNodeConfig('child-inherited').isFullUrl, true);
+	assert.equal(harness.api.resolveNodeConfig('legacy').isFullUrl, true);
+	assert.equal(harness.api.resolveNodeConfig('new-wins').isFullUrl, false);
+
+	const created = await harness.api.addNode(null, { name: 'Created', isFullUrl: true });
+	assert.equal(created.isFullUrl, true);
+	assert.equal(Object.hasOwn(created, 'directUrl'), false);
+
+	const legacyUpdated = await harness.api.updateNode('legacy', { isFullUrl: false });
+	assert.equal(legacyUpdated.isFullUrl, false);
+	assert.equal(Object.hasOwn(legacyUpdated, 'directUrl'), false);
+	assert.equal(harness.api.resolveNodeConfig('legacy').isFullUrl, false);
+
+	const cloned = await harness.api.cloneNode('parent');
+	assert.equal(cloned.isFullUrl, true);
+	assert.equal(cloned.children[0].isFullUrl, false);
+	assert.equal(Object.hasOwn(cloned, 'directUrl'), false);
+	assert.equal(Object.hasOwn(cloned.children[2], 'directUrl'), false);
 });
 
 test('reorderNode moves a node to the target position exactly once and persists once', async () => {

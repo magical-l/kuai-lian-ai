@@ -127,15 +127,15 @@ function finalizeState(state) {
 		state.thinkingDuration = Date.now() - state.thinkingStartTime;
 	}
 }
-async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal = null, style, params, directUrl) {
+async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal = null, style, params, isFullUrl) {
 	const config = provider.buildRequest(baseUrl, apiKey, model, messages);
-	if (directUrl) config.url = baseUrl.replace(/\/+$/, '');
+	if (isFullUrl) config.url = baseUrl.replace(/\/+$/, '');
 	mergeParams(config.body, params, style);
 	const useSignal = signal || (currentAbortController = new AbortController()).signal;
 	const state = createInitialState();
 	const tagParser = provider.needsTagParsing === false ? null : createTagParser();
 	try {
-		const res = await fetchWithTimeout(config.url, {
+		let res = await fetchWithTimeout(config.url, {
 			method: 'POST',
 			headers: config.headers,
 			body: JSON.stringify(config.body),
@@ -176,20 +176,17 @@ async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk,
 		await processSSEStream(res, provider, state, tagParser, onChunk);
 		finalizeState(state);
 		return state;
-	} catch (e) {
-		if (e.name === 'AbortError') return state;
-		throw e;
 	} finally {
 		if (!signal) currentAbortController = null;
 	}
 }
-async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal = null, params, directUrl) {
+async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal = null, params, isFullUrl) {
 	const provider = providers[style];
 	if (!provider) throw new Error('不支持的接口风格: ' + style);
-	return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params, directUrl);
+	return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params, isFullUrl);
 }
 
-	async function callEmbedding(style, baseUrl, apiKey, model, input, directUrl) {
+	async function callEmbedding(style, baseUrl, apiKey, model, input, isFullUrl, params, signal) {
         const provider = providers[style];
 
         if (!provider)
@@ -199,14 +196,15 @@ async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal 
             throw new Error("该接口不支持嵌入");
 
         const req = provider.buildEmbeddingRequest(baseUrl, apiKey, model, input);
-		if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
+		if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
         console.log("Embed req:", req.url, JSON.stringify(req.headers));
 
         	if (params) { mergeParams(req.body, params, style); }
 	const res = await fetchWithTimeout(req.url, {
             method: "POST",
             headers: req.headers,
-            body: JSON.stringify(req.body)
+            body: JSON.stringify(req.body),
+			signal
         }, 60000);
 
         if (!res.ok) {
@@ -268,18 +266,19 @@ function base64ToBlob(b64, mimeType) {
 	return new Blob(byteArrays, { type: mimeType || 'audio/mpeg' });
 }
 
-async function callImageGeneration(style, baseUrl, apiKey, model, messages, directUrl, params) {
+async function callImageGeneration(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) {
     const provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
     if (!provider.buildImageRequest) throw new Error('该接口不支持生图');
 
     const req = provider.buildImageRequest(baseUrl, apiKey, model, messages);
-		if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
+		if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
     	if (params) { mergeParams(req.body, params, style); }
 	const res = await fetchWithTimeout(req.url, {
         method: 'POST',
         headers: req.headers,
-        body: JSON.stringify(req.body)
+        body: JSON.stringify(req.body),
+		signal
     }, 120000);
 
     if (!res.ok) {
@@ -334,7 +333,7 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages, dire
     // 下载图片转 blob URL（当前页面快速显示）+ base64（持久化，支持会话记录加载）
     if (result.url && !result.b64_json) {
         try {
-            const imgRes = await fetch(result.url);
+            const imgRes = await fetch(result.url, { signal });
             if (imgRes.ok) {
                 const blob = await imgRes.blob();
                 result.blobUrl = URL.createObjectURL(blob);
@@ -342,6 +341,7 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages, dire
                 result.imageData = await blobToBase64(blob);
             }
         } catch (e) {
+            if (e.name === 'AbortError') throw e;
             console.warn('生图图片下载失败，将使用原始 URL:', e.message);
         }
     } else if (result.b64_json) {
@@ -351,18 +351,19 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages, dire
     return result;
 }
 
-async function callVideoGeneration(style, baseUrl, apiKey, model, messages, directUrl, params) {
+async function callVideoGeneration(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) {
     const provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
     if (!provider.buildVideoRequest) throw new Error('该接口不支持视频生成');
 
     const req = provider.buildVideoRequest(baseUrl, apiKey, model, messages, params);
-    if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
+    if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
     if (params) { mergeParams(req.body, params, style); }
     const res = await fetchWithTimeout(req.url, {
         method: 'POST',
         headers: req.headers,
-        body: JSON.stringify(req.body)
+        body: JSON.stringify(req.body),
+		signal
     }, 180000);
 
     if (!res.ok) {
@@ -400,29 +401,31 @@ async function callVideoGeneration(style, baseUrl, apiKey, model, messages, dire
 
     if (result.videoUrl) {
         try {
-            const vidRes = await fetch(result.videoUrl);
+            const vidRes = await fetch(result.videoUrl, { signal });
             if (vidRes.ok) {
                 const blob = await vidRes.blob();
                 result.blobUrl = URL.createObjectURL(blob);
             }
         } catch (e) {
+            if (e.name === 'AbortError') throw e;
             console.warn('视频下载失败，将使用原始 URL:', e.message);
         }
     }
     return result;
 }
 
-async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction, directUrl) {
+async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction, isFullUrl, signal) {
     var provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
     if (!provider.buildTTSRequest) throw new Error('该接口不支持语音生成');
 
     var req = provider.buildTTSRequest(baseUrl, apiKey, model, input, voice, instruction);
-	if (directUrl) req.url = baseUrl.replace(/\/+$/, '');
+	if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
     var res = await fetchWithTimeout(req.url, {
         method: 'POST',
         headers: req.headers,
-        body: JSON.stringify(req.body)
+        body: JSON.stringify(req.body),
+		signal
     }, 120000);
 
     if (!res.ok) {
@@ -444,7 +447,7 @@ async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction,
     return { blobUrl: blobUrl, audioData: audioData, contentType: ct, size: blob.size };
 }
 
-async function callASR(style, baseUrl, apiKey, model, audioFile, params, directUrl) {
+async function callASR(style, baseUrl, apiKey, model, audioFile, params, isFullUrl, signal) {
     var provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
     // Currently only OpenAI-style ASR (Whisper API) is supported
@@ -458,12 +461,13 @@ async function callASR(style, baseUrl, apiKey, model, audioFile, params, directU
     fd.append('response_format', 'json');
 
     var url = baseUrl.replace(/\/+$/, '') + '/v1/audio/transcriptions';
-    if (directUrl) url = baseUrl.replace(/\/+$/, '');
+    if (isFullUrl) url = baseUrl.replace(/\/+$/, '');
 
     var res = await fetchWithTimeout(url, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + apiKey },
-        body: fd
+        body: fd,
+		signal
     }, 120000);
 
     if (!res.ok) {
@@ -488,6 +492,7 @@ async function callASR(style, baseUrl, apiKey, model, audioFile, params, directU
 }
 
 async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) {
+	if (isSessionInvalidated(sessionId)) return [];
 	const startTime = Date.now();
 	clearSessionGenerations(sessionId);
 	const gens = getSessionGenerations(sessionId);
@@ -560,17 +565,21 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 					}
 				}
 				const firstTokenTime = genState?.firstTokenTime;
-				onChunk(endpointId, chunkState, firstTokenTime);
-			}, state.abortController.signal, config.params, config.directUrl);
+				if (!isSessionInvalidated(sessionId)) {
+					onChunk(endpointId, chunkState, firstTokenTime);
+				}
+			}, state.abortController.signal, config.params, config.isFullUrl);
 			state.status = 'completed';
 			state.content = resultState.content;
 			state.thinking = resultState.thinking;
 			state.thinkingDuration = resultState.thinkingDuration;
 			const completionTime = Date.now();
 			state.totalDuration = completionTime - startTime;
-			// Immediately update UI for this specific model
-			renderSelectedEndpoints(groups, selectedEndpoints, true);
-			updateCardStatus(endpointId, 'completed', null, state, sessionId);
+			if (!isSessionInvalidated(sessionId)) {
+				// Immediately update UI for this specific model
+				renderSelectedEndpoints(groups, selectedEndpoints, true);
+				updateCardStatus(endpointId, 'completed', null, state, sessionId);
+			}
 			return {
 				endpointId: endpointId,
 				status: 'completed',
@@ -586,9 +595,11 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 			const genState = gens.get(endpointId);
 			if (err.name === 'AbortError') {
 				state.status = 'stopped';
-				// Immediately update UI for this specific model
-				renderSelectedEndpoints(groups, selectedEndpoints, true);
-				updateCardStatus(endpointId, 'stopped', null, genState, sessionId);
+				if (!isSessionInvalidated(sessionId)) {
+					// Immediately update UI for this specific model
+					renderSelectedEndpoints(groups, selectedEndpoints, true);
+					updateCardStatus(endpointId, 'stopped', null, genState, sessionId);
+				}
 				return {
 					endpointId: endpointId,
 					status: 'stopped',
@@ -602,9 +613,11 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 			}
 			state.status = 'failed';
 			state.error = err.message;
-			// Immediately update UI for this specific model
-			renderSelectedEndpoints(groups, selectedEndpoints, true);
-			updateCardStatus(endpointId, 'failed', err.message, genState, sessionId);
+			if (!isSessionInvalidated(sessionId)) {
+				// Immediately update UI for this specific model
+				renderSelectedEndpoints(groups, selectedEndpoints, true);
+				updateCardStatus(endpointId, 'failed', err.message, genState, sessionId);
+			}
 			return {
 				endpointId: endpointId,
 				status: 'failed',
