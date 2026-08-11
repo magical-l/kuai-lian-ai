@@ -239,6 +239,7 @@ globalThis.__storeTestApi = {
     migrateSession,
     moveNodeAsChild,
     reorderNode,
+    restoreEndpoints,
     seedEndpoints(data) { endpointsData = data; },
     seedSelectedEndpoints(ids) { selectedEndpoints = ids; },
     seedSession(session) { sessionsCache.set(session.id, session); },
@@ -1425,6 +1426,25 @@ function createMemoryDirectory(initial = {}, options = {}) {
     };
 }
 
+test('restoreEndpoints reconstructs a snapshot node without a live reference', () => {
+	const rootNodes = [];
+	const harness = createStoreHarness();
+	const snapshotNode = { id: 'missing', name: 'restored', children: [] };
+
+	harness.api.restoreEndpoints({
+		data: { nodes: rootNodes },
+		references: new Map(),
+		nodes: rootNodes,
+		snapshot: { nodes: [snapshotNode] }
+	});
+
+	assert.equal(rootNodes.length, 1);
+	assert.equal(rootNodes[0].id, 'missing');
+	assert.equal(rootNodes[0].name, 'restored');
+	assert.deepEqual(rootNodes[0].children, []);
+	assert.notEqual(rootNodes[0], snapshotNode);
+});
+
 test('endpoint mutation treats a missing selection list as empty', async () => {
     const harness = createStoreHarness({ omitSelectedEndpoints: true });
     harness.api.seedEndpoints({
@@ -1461,6 +1481,21 @@ test('Task 1C endpoint rollback updateNode restores held node and children refer
     assert.equal(parent.children, rootNodes[0].children);
     assert.equal(parent.children[0], child);
     assert.deepEqual(parent, { id: 'P', name: 'parent', marker: 'original', children: [child] });
+});
+
+test('endpoint rollback preserves the original save error when an existing node children array is cleared', async () => {
+	const child = { id: 'C', name: 'child', children: [] };
+	const parent = { id: 'P', name: 'parent', children: [child] };
+	const rootNodes = [parent];
+	const saveError = new Error('disk full');
+	const harness = createStoreHarness({ saveEndpointsError: saveError });
+	harness.api.seedEndpoints({ nodes: rootNodes });
+
+	await assert.rejects(harness.api.updateNode('P', { children: [] }), error => error === saveError);
+
+	assert.equal(harness.api.getGroups(), rootNodes);
+	assert.equal(parent.children, rootNodes[0].children);
+	assert.deepEqual(parent.children, [child]);
 });
 
 test('Task 1C endpoint rollback moveNodeAsChild restores held source and target children after persistence failure', async () => {

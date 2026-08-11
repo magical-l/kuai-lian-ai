@@ -326,14 +326,22 @@ function restoreEndpoints(checkpoint) {
 	const { data, references, snapshot } = checkpoint;
 	function restoreNode(nodeSnapshot) {
 		const reference = references.get(nodeSnapshot.id);
-		const node = reference.node;
+		const node = reference ? reference.node : {};
 		for (const key of Object.keys(node)) delete node[key];
 		for (const key of Object.keys(nodeSnapshot)) {
-			node[key] = key === 'children' ? reference.children : snapshotData(nodeSnapshot[key]);
+			if (key !== 'children') node[key] = snapshotData(nodeSnapshot[key]);
 		}
-		if (nodeSnapshot.children) {
-			const restoredChildren = nodeSnapshot.children.map(restoreNode);
-			reference.children.splice(0, reference.children.length, ...restoredChildren);
+		if (Object.prototype.hasOwnProperty.call(nodeSnapshot, 'children')) {
+			const restoredChildren = Array.isArray(nodeSnapshot.children)
+				? nodeSnapshot.children.map(restoreNode).filter(Boolean)
+				: [];
+			if (reference) {
+				const children = Array.isArray(reference.children) ? reference.children : [];
+				node.children = children;
+				children.splice(0, children.length, ...restoredChildren);
+			} else {
+				node.children = restoredChildren;
+			}
 		}
 		return node;
 	}
@@ -341,7 +349,7 @@ function restoreEndpoints(checkpoint) {
 	for (const key of Object.keys(snapshot)) {
 		data[key] = key === 'nodes' ? checkpoint.nodes : snapshotData(snapshot[key]);
 	}
-	checkpoint.nodes.splice(0, checkpoint.nodes.length, ...(snapshot.nodes || []).map(restoreNode));
+	checkpoint.nodes.splice(0, checkpoint.nodes.length, ...(snapshot.nodes || []).map(restoreNode).filter(Boolean));
 }
 
 function persistEndpointsMutation(mutate) {
