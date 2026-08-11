@@ -437,31 +437,23 @@ function handleNodeEdit(nodeId) {
     });
 }
 async function handleNodeDelete(nodeId) {
-	// 清理 selectedEndpoints 中属于该端点的引用
-	selectedEndpoints = selectedEndpoints.filter(id => {
-		const parts = id.split(':');
-		return parts[0] !== nodeId;
-	});
-	saveDefaultSelectedEndpoints(selectedEndpoints);
-	// 收集子孙 ID 用于清理状态
+	// 在事务成功前只记录清理所需的引用，失败时保留当前 UI 状态
 	var allIds = collectDescendantIds(nodeId);
+	var nodeEl = document.querySelector('.one.endpoint[data-node-id="' + nodeId + '"]');
+	var parentContainer = nodeEl ? nodeEl.closest('ol') : null;
+
+	await deleteNode(nodeId);
+
 	allIds.forEach(function(id) {
 		invalidateConnectionTest(id);
 		connectionStatus.delete(id);
 		collapsedEndpoints.delete(id);
 	});
-	// 直接移除 DOM 节点（不触发整树重绘）
-	var nodeEl = document.querySelector('.one.endpoint[data-node-id="' + nodeId + '"]');
-	var parentContainer = nodeEl ? nodeEl.closest('ol') : null;
 	if (nodeEl) nodeEl.remove();
-	// 更新父节点的批量测试按钮状态
 	if (parentContainer) {
 		var parentEndpoint = parentContainer.closest('.one.endpoint');
 		if (parentEndpoint) updateEndpointTestUI(parentEndpoint.dataset.nodeId);
 	}
-	// 数据层删除
-	await deleteNode(nodeId);
-	// 轻量刷新（跳过端点树重绘）
 	await refreshUI({ skipEndpointTree: true });
 	updateEmptyState();
 }

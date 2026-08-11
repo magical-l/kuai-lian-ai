@@ -2030,6 +2030,83 @@ test('parameter dialog invalidates stale operations after native dialog close', 
 	assert.equal(dialog.open, true, 'old operations must not change the reopened dialog state');
 });
 
+function createHandleNodeDeleteFailureHarness() {
+	let removed = false;
+	let clearTestResultsCalls = 0;
+	let refreshUICalls = 0;
+	const selectedEndpoints = ['node-1', 'other-1'];
+	const connectionStatus = new Map([['node-1', 'connected']]);
+	const collapsedEndpoints = new Set(['node-1']);
+	const deleteError = new Error('endpoint persistence failed');
+	const parentContainer = {
+		closest() {
+			return null;
+		}
+	};
+	const nodeElement = {
+		remove() {
+			removed = true;
+		},
+		closest(selector) {
+			assert.equal(selector, 'ol');
+			return parentContainer;
+		}
+	};
+	const context = vm.createContext({
+		collapsedEndpoints,
+		collectDescendantIds() {
+			return ['node-1'];
+		},
+		connectionStatus,
+		deleteNode: async function() {
+			throw deleteError;
+		},
+		document: {
+			querySelector(selector) {
+				assert.equal(selector, '.one.endpoint[data-node-id="node-1"]');
+				return nodeElement;
+			}
+		},
+		invalidateConnectionTest() {},
+		refreshUI: async function() {
+			refreshUICalls += 1;
+		},
+		selectedEndpoints,
+		clearTestResults() {
+			clearTestResultsCalls += 1;
+		},
+		saveDefaultSelectedEndpoints() {}
+	});
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	const handleSource = extractFunctionDeclaration(mainSource, 'handleNodeDelete');
+	new vm.Script(`async ${handleSource}\nglobalThis.__handleNodeDelete = handleNodeDelete;`, {
+		filename: mainSourcePath
+	}).runInContext(context);
+	return {
+		handleNodeDelete: context.__handleNodeDelete,
+		deleteError,
+		selectedEndpoints,
+		connectionStatus,
+		collapsedEndpoints,
+		get removed() { return removed; },
+		get clearTestResultsCalls() { return clearTestResultsCalls; },
+		get refreshUICalls() { return refreshUICalls; }
+	};
+}
+
+test('handleNodeDelete keeps UI state when persistence fails', async () => {
+	const harness = createHandleNodeDeleteFailureHarness();
+
+	await assert.rejects(harness.handleNodeDelete('node-1'), harness.deleteError);
+
+	assert.deepEqual(harness.selectedEndpoints, ['node-1', 'other-1']);
+	assert.equal(harness.connectionStatus.has('node-1'), true);
+	assert.equal(harness.collapsedEndpoints.has('node-1'), true);
+	assert.equal(harness.removed, false);
+	assert.equal(harness.clearTestResultsCalls, 0);
+	assert.equal(harness.refreshUICalls, 0);
+});
+
 test('showThinkingCards only removes old response cards inside the message list', () => {
 	const harness = createShowThinkingCardsHarness();
 
