@@ -3,7 +3,7 @@ title: 数据管理层
 covers_file: [src/modules/store.js]
 depends_on: [storage-core.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, updateSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-08-07
+last_updated: 2026-08-12
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -64,9 +64,9 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
 | `loadEndpoints()` | 从 storage 加载端点，执行迁移、清洗和完整 URL 字段归一化持久化 |
 | `loadAndNormalizeEndpoints()` | 统一执行端点加载后的迁移、清洗和完整 URL 字段归一化；发生旧字段迁移时尝试保存，失败只记录错误 |
 | `normalizeEndpointFullUrlFlags(data)` | 原地递归把 `directUrl` 迁移为 `isFullUrl`，保留显式 `isFullUrl`（含 `false`），返回是否变更 |
-| `saveEndpoints()` | 持久化当前端点内存数据 |
+| `saveEndpoints()` | 持久化当前端点内存数据；清空屏障期间拒绝保存，跨清空 generation 的结果不回写 |
 | `getGroups()` | 返回 `endpointsData.nodes`（根层列表） |
-| `clearDirectory()` | 清空内存 + storage，刷新 UI |
+| `clearDirectory()` | 设置清空屏障；等待已有 endpoint/session mutation 与直接 storage save 完成后清空 storage 和内存，刷新 UI；清空期间拒绝新写入 |
 
 ### 旧数据迁移
 
@@ -109,10 +109,10 @@ stripModels(node)
 |------|------|
 | `loadSessionsIndex()` | 从 storage 加载全部会话到 `sessionsCache` |
 | `getAllSessions()` | 返回 `sessionsCache` 全部值（数组） |
-| `createSession(firstMessage?, targetModels?, modelParams?)` | 创建新会话，自动提取首条消息前 20 字符为标题；可将会话级参数深拷贝写入首个持久化载荷 |
+| `createSession(firstMessage?, targetModels?, modelParams?)` | 创建新会话，自动提取首条消息前 20 字符为标题；可将会话级参数深拷贝写入首个持久化载荷；清空屏障期间或跨清空保存不进入缓存 |
 | `updateSession(sessionId, mutate)` | 串行执行指定会话的缓存变更和持久化；保存失败时恢复变更前的缓存快照；会话进入删除队列后返回 `null`，不再排队写回 |
 | `loadSession(sessionId)` | 加载单会话（先查缓存，miss 则查 storage 并缓存） |
-| `saveSession(session)` | 底层持久化委托；调用方应优先使用 `updateSession` / `addMessage` 等事务性入口修改已缓存会话 |
+| `saveSession(session)` | 底层持久化委托；清空屏障期间拒绝保存，跨清空 generation 的结果返回 `null`；调用方应优先使用 `updateSession` / `addMessage` 等事务性入口修改已缓存会话 |
 | `addMessage(sessionId, role, content, options?)` | 追加消息，自动处理首条消息标题更新 |
 | `getSession(sessionId)` | 从缓存获取会话 |
 | `deleteSession(sessionId)` | 标记会话进入删除状态，串行从 storage 和缓存删除；删除完成或失败后解除标记 |
@@ -168,7 +168,7 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 2026-08-03: 已缓存会话的修改经 `persistSessionMutation` 串行化，公开为 `updateSession` | 每次写入前保留深拷贝；持久化失败时恢复相同缓存对象，且同会话后续操作在恢复后继续执行，避免 UI 与持久层分叉 |
 | 2026-08-11 | 会话删除期间拒绝新的 `updateSession` | `deleteSession` 入队前加入内存删除标记，更新入口发现标记立即返回 `null`；删除队列成功或失败后清除标记，避免删除后的更新排队复活会话。 |
 | 2026-08-11 | 端点回滚兼容缺失 live reference | `restoreEndpoints` 对 checkpoint 中没有 live reference 的 snapshot 节点创建独立副本；已有节点仍原地恢复并保留 `children` 数组引用，避免回滚异常遮蔽原始持久化错误。 |
-| 2026-08-11 | 清空期间建立 store mutation 屏障 | `clearDirectory` 在持久化清空完成前拒绝 endpoint/session mutation 和新建 session；已有 mutation 允许先完成并由 storage queue 排在清空之前，避免清空完成后新写入复活数据。 |
+| 2026-08-11 | 清空期间建立 store mutation 屏障 | `clearDirectory` 先设置 `clearInProgress`/`clearGeneration`，等待已有 endpoint/session mutation 与直接 storage save，再清空持久化数据；清空期间拒绝新写入，跨清空保存不回写 cache，避免清空完成后数据复活。 |
 | `migrateEndpoints` 在 `loadEndpoints` 和 `tryRestoreDirectory` 中各执行一次 | 双重保障确保旧格式数据在首次加载时被迁移；幂等（第二次 `data.groups` 已不存在） |
 | 继承链解析不含 `modelId` 空值检查 | 空 `modelId` 表示分组节点，继承父节点 `modelId` 无意义；调用方在 `api.js` 中会过滤无 `modelId` 的节点 |
 | 2026-07-17: assistant 消息改为 flat 格式，每条 response 是独立消息 | 原 `msg.responses` 嵌套冗余，`msg.content` 始终为空；新格式直接 `{role:"assistant", endpointId, content, status, ...}`，无 `responses` 中间层。`migrateSession` 在 `loadSession`/`loadSessionsIndex`/`tryRestoreDirectory` 三入口各执行一次 |
@@ -187,3 +187,4 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 2026-08-06 | 完整 URL 直连字段统一为 `isFullUrl` | 旧 `directUrl` 只在解析边界读取兼容；新建、更新、复制和请求链路只使用 `isFullUrl`。继承按字段存在性而非 truthy 判断，使子节点显式 `false` 能覆盖父节点的 `true`。 |
 | 2026-08-06 | 完整 URL 覆盖字段仅在源节点显式设置时持久化 | 未设置并非 `false`，而是继承父级；新增、批量新增、复制与旧 groups/models 迁移保留此三态。`updateNode` 把兼容写入的 `directUrl` 一次性归一，避免双字段继续分叉。 |
 | 2026-08-07 | 端点加载时递归归一化并持久化完整 URL 字段 | `loadEndpoints` 与 `tryRestoreDirectory` 共用加载后处理；检测到旧 `directUrl` 或非布尔 `isFullUrl` 时原地修复并尝试保存，保存失败不阻塞加载，保留内存结果供下次重试。 |
+| 2026-08-11 | restoreEndpoints 防御 checkpoint/live reference 不一致 | 已有节点原地恢复并保留 children 引用；缺失 live reference 的 snapshot 节点独立重建，避免回滚异常遮蔽原始持久化错误。 |

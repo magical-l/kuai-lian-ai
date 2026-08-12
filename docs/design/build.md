@@ -3,7 +3,7 @@ title: 构建流程
 covers_file: [build.js, src/layout.html, src/extension/manifest.json]
 depends_on: [architecture.md, data-model.md]
 api_signature: node build.js / MODULE_ORDER / DEV_MODE
-last_updated: 2026-07-28
+last_updated: 2026-08-12
 why_exists: 定义从源码到双产物的构建流程，确保构建可复现、产物可预测
 ---
 
@@ -90,7 +90,8 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 
 ### 版本管理
 
-- 版本号存在于三处：manifest.json 的 `version` 字段为 `6.32.4`；layout.html 中 `<span class="version">v6.32.4</span>`；根目录测试单页面 kuai-lian-ai.html 为 `6.32.4`
+- 版本号存在于三处：manifest.json 的 `version` 字段、layout.html 中 `<span class="version">vX.Y.Z</span>`、构建后的根目录单页面 `kuai-lian-ai.html`
+- 当前版本：`6.32.11`
 - 每次验收通过后三处均需同步更新
 - 版本号递增遵循语义化版本（MAJOR.MINOR.PATCH）
 
@@ -117,3 +118,4 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 
 - 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`（路径从 `/css/name.css` 简化为 `/name.css`）
 - 2026-07-28: 本次验收后将页面、扩展 manifest 和文档版本同步到 v6.32.4
+- 2026-08-12: 同步 v6.32.11 的清空屏障、端点回滚防御和存储审查修复产物；根单页与 dist 单页构建后保持一致

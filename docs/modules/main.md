@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-08-11
+last_updated: 2026-08-12
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -38,7 +38,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `saveDefaultSelectedEndpoints` | 持久化默认端点到 localStorage |
 | `init` | 应用初始化入口 |
 | `handleDeleteDirectory` | 清除存储配置 |
-| `handleWipeDirectory` | 清空所有数据 |
+| `handleWipeDirectory` | 二次确认后调用 `clearDirectory()` 清空所有数据；清空屏障期间阻止并发写入，完成后提示并刷新目录状态 |
 | `updateDirectoryDisplay` | 更新状态栏存储路径显示 |
 | `refreshUI` | 全局 UI 重绘（端点树 + 标签栏 + 会话列表 + 消息） |
 | `updateChatTitleDisplay` | 更新会话标题 |
@@ -312,6 +312,7 @@ radio change → setThemePref(mode)
 | 2026-07-22 | TTS handler 新增会话参数覆盖合并（与 image generation 模式一致） | 修复 TTS 端点绕过会话级 voice/instruction 覆盖的 bug |
 | 2026-07-22 | TTS 播放器从 `.content > .audio-result` 移到 `.say` 内部 | `(无内容)` 占位文本被 `<audio controls>` 播放器取代；updateCardAsAudio 和 messages.js 音频渲染同步修改 |
 | 2026-07-22 | 新增消息分叉功能（handleFork） | 用户消息 header 新增分叉按钮，点击后以该消息为分叉点创建新会话（复制之前的历史消息），消息文本填入输入框，等待编辑/重发 |
+| 2026-08-11 | 清空期间保护分叉保存 | `handleFork` 检查 `saveSession` 返回值；清空屏障拒绝或跨清空完成的保存不会把新会话放回缓存，避免清空操作后分叉会话复活。 |
 | 2026-07-23 | `handleNodeDelete` 直接移除 DOM 节点，`refreshUI` 新增 `{ skipEndpointTree: true }` 选项 | 删除端点后不触发整个端点树重绘，保持滚动位置不丢失 |
 | 2026-07-23 | 录音按钮添加 aria-pressed 属性，CSS 切换图标（🎤→⏹）+ 脉冲动画 | 录音中无视觉反馈，用户无法区分是否正在录音 |
 | 2026-07-23 | 录音按钮改为 label.toggle 模式（checkbox 驱动），声波可视化替代脉冲动画 | 移除 JS 手工 class 管理，改用 :has(:checked) 纯 CSS 驱动；AnalyserNode + raf 驱动 10 根频率条柱 |
