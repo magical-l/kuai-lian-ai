@@ -42,7 +42,8 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `getInputMessage` | messages.js | 获取输入文本 + 附件（转换后） |
 | `renderSessionList` | session-list.js | 渲染左侧会话列表 |
 | `renderSelectedEndpoints` | selected-endpoints.js | 渲染选中端点标签栏 |
-| `toggleEndpointSelection` | selected-endpoints.js | 勾选/取消勾选端点 |
+| `toggleEndpointSelection` | selected-endpoints.js | 勾选/取消勾选端点，并在取消时清理 workspace 参数覆盖 |
+| `removeWorkspaceEndpointParams` | selected-endpoints.js | 删除指定 endpointId 的 workspace 参数覆盖，不修改会话参数 |
 | `syncJoinBtnState` | selected-endpoints.js | 同步树中 checkbox 状态 |
 | `handleSelectedEndpointClick` | selected-endpoints.js | 端点标签点击切换选中 |
 | `handleSelectedEndpointRemoveClick` | selected-endpoints.js | 端点标签叉号强制移除 |
@@ -163,7 +164,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 **renderSelectedEndpoints** (行 2)：根据 `selectedEndpoints` 数组生成 `<li>` 列表。每个标签显示完整路径（`ancestors + node.name`）、remark、移除按钮。空状态显示 `<span class="empty hint">请选择端点`。
 
-**toggleEndpointSelection** (行 55)：在 `selectedEndpoints` 中添加/移除 ID。正在生成时阻止操作。触发 `syncJoinBtnState` 同步树中 checkbox。
+**toggleEndpointSelection** (行 55)：在 `selectedEndpoints` 中添加/移除 ID。正在生成时阻止操作；取消端点时调用 `removeWorkspaceEndpointParams` 清理对应 workspace 覆盖，但不修改已有会话的 `modelParams`。触发 `syncJoinBtnState` 同步树中 checkbox。
 
 事件绑定已移至 HTML 模板 `#template-selected-endpoint` 的内联 onclick/onmouseover/onmouseleave 属性，对应的 handler 为 `handleSelectedEndpointClick` / `handleSelectedEndpointRemoveClick` / `handleSelectedEndpointMouseover` / `handleSelectedEndpointMouseleave`。标签内容含 tooltip（`createTooltip`），hover 显示节点配置。
 
@@ -306,5 +307,6 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-07-23 | 用户消息 header 新增分叉按钮（handleForkClick） | renderMessages 设 data-msg-index 供分叉定位；appendUserMessage 通过 indexOf 获取消息索引；fork 按钮事件绑定在 meta.querySelector('.fork') |
 | 2026-08-03 | 会话参数弹窗保存/重置改为等待 `updateSession` | 会话级参数必须由 store 的串行持久化队列与失败回滚维护，避免 UI 直接修改缓存对象后异步保存 |
 | 2026-08-05 | 参数 workspace/session 双写增加局部事务队列、会话目标快照和 dialog 生命周期代际保护；连接测试增加单飞 Promise 与 generation 失效 | 非空 `sessionId` 的 `updateSession()` 返回 `null` 也视为失败，抛出“目标会话不存在或未保存”并恢复 workspace；空 `sessionId` 不调用 `updateSession()`。失效仅增加 generation，不取消 fetch 或删除 in-flight P1；清除后同节点再测复用 P1，P1 settled 的 `finally` 清理后才允许 P2，且 P1 结果因过期 generation 被丢弃；不扩大 storage 全局事务。 |
+| 2026-08-12 | 取消端点选择时清理 workspace 参数覆盖 | 标签栏移除和端点树 checkbox 取消必须保持一致；清理按 endpointId 进行，不影响已有会话的 `modelParams`。 |
 | 2026-08-06 | 编辑对话框的完整 URL 直连开关统一写入 `isFullUrl` | `isFullUrl` 明确表达 Base URL 已是最终请求 URL；旧 `directUrl` 仅由配置读取层兼容，UI 和连接测试请求链路不再写入或使用它。 |
 | 2026-08-06 | 编辑未改完整 URL 开关时保留字段缺失 | 弹窗必须回显有效继承值，但不能把它固化为子节点覆盖；仅在节点原有字段或用户实际修改 checkbox 时写入显式布尔值。 |

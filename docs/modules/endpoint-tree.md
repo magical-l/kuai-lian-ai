@@ -45,7 +45,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 | `handleSummaryTooltipClick` | summary click 切换 tooltip 显隐 |
 | `handleAddChildClick` | 添加子节点：使用保存回调返回的节点对象局部插入 DOM，随后跳过端点树重绘刷新其他 UI |
 | `handleBatchTestClick` | 批量测试按钮，触发所有可测试子节点的 testConnection，并同步其可测 ID 集合和状态提示 |
-| `handleJoinSessionChange` | join-session checkbox change，操作 selectedEndpoints 数组 |
+| `handleJoinSessionChange` | join-session checkbox change，更新 selectedEndpoints；取消选择时清理对应 workspace 参数覆盖 |
 | `handleEditNodeClick` | 编辑节点按钮，委托到 handleNodeEdit |
 | `handleDuplicateNodeClick` | 复刻节点按钮，cloneNode + refreshUI |
 | `handleRemoveNodeClick` | 删除节点按钮，confirmAction 后 handleNodeDelete |
@@ -85,7 +85,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
      - **实际请求能力（`attachments.js:testConnection`）**：按 type 选择 provider 的 `testConfig`、`testEmbeddingConfig`、`testTTSConfig` 或 `testASRConfig`；provider 缺少对应函数时，测试进入失败状态并显示“不支持连接测试”。因此 UI 资格和 provider 能力是上下游两层，不是两个并列待办。
      - 节点新增后，所有受影响祖先的批量测试按钮同步 `data-testable-ids`、`hidden` 和 `title`；确保新子节点立即纳入测试范围。
      - 点击触发所有子节点 `onTestConnection(id)`，按钮 title 显示汇总统计："✓ 全部成功" / "✗ N个失败：错误信息"
-   - **加入会话**：checkbox 的 `change` 事件操作 `selectedEndpoints` 数组，并由 `applyJoinBtnUI` 同步选中状态。
+   - **加入会话**：checkbox 的 `change` 事件更新 `selectedEndpoints`；取消已选端点时调用 `removeWorkspaceEndpointParams(nodeId)` 清理该端点的 workspace 参数覆盖，再由 `applyJoinBtnUI` 同步选中状态。该清理不修改已有会话的 `modelParams`。
    - **编辑/复刻/删除**：编辑委托到 `onNodeEdit`；复刻调用 `cloneNode(node.id)` 后刷新；删除委托到 `onNodeDelete`
 6. **拖放排序**：
    - `dragover` 根据鼠标在 summary 区域的位置，在 `nodeEl` 上添加三类 drop zone class：
@@ -131,7 +131,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 每个叶子节点（有 modelId 的端点）显示 `join-session` 按钮，内含 checkbox：
 
 - `applyJoinBtnUI` 根据 `selectedEndpoints` 数组决定 checkbox checked + title 文案 + SVG fill 颜色
-- checkbox `change` 事件直接操作 `selectedEndpoints` 数组 + `saveDefaultSelectedEndpoints` + `renderSelectedEndpoints` 重绘标签栏
+- checkbox `change` 事件更新 `selectedEndpoints`，并调用 `saveDefaultSelectedEndpoints` + `renderSelectedEndpoints` 重绘标签栏；取消已选端点时同步删除该端点的 workspace 参数覆盖
 - 无 modelId 的中间节点隐藏 join 按钮（`joinBtn.style.display = 'none'`）
 
 ### 6. 右键菜单

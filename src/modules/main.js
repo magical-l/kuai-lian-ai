@@ -442,7 +442,9 @@ async function handleNodeDelete(nodeId) {
 	var nodeEl = document.querySelector('.one.endpoint[data-node-id="' + nodeId + '"]');
 	var parentContainer = nodeEl ? nodeEl.closest('ol') : null;
 
-	await deleteNode(nodeId);
+	var deleted = await deleteNode(nodeId);
+	if (!deleted) return;
+	allIds.forEach(removeWorkspaceEndpointParams);
 
 	allIds.forEach(function(id) {
 		invalidateConnectionTest(id);

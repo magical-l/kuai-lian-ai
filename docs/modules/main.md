@@ -47,7 +47,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 | `handleSessionDelete` | 删除会话 |
 | `handleAddGroup` | 新增端点组：局部插入返回节点并跳过端点树重绘 |
 | `handleNodeEdit` | 编辑端点节点；保存期间父 DOM 被重绘时按 nodeId 重新定位，找不到则完整刷新 |
-| `handleNodeDelete` | 等待 `deleteNode` 持久化成功后，再对目标节点及其后代清除连接/折叠状态并局部移除 DOM；失败时保留 UI 和选择状态 |
+| `handleNodeDelete` | 仅在 `deleteNode` 返回成功后，清理目标节点及其全部后代的 workspace 参数覆盖、连接/折叠状态并局部移除 DOM；异常或 false/null 失败结果均保留 UI、选择状态和 workspace 参数 |
 | `handleCopy` | 复制内容到剪贴板 |
 | `handleReorderNode` | 同级拖拽重排 |
 | `handleMoveNodeAsChild` | 跨级拖拽降级 |
@@ -202,7 +202,7 @@ showThinkingCards(idList, groups, sessionId)
 | `handleSessionDelete(id)` | 删除按钮 | invalidateSession → deleteSessionGenerations → abortSessionRequests → deleteSession → refreshUI |
 | `handleAddGroup()` | 添加组 | showEditGroupDialog → addNode 返回节点对象 → 局部插入 → refreshUI({ skipEndpointTree: true }) |
 | `handleNodeEdit(id)` | 编辑节点 | clearTestResults → showEditGroupDialog → updateNode；保存期间父 DOM 已重绘则按 nodeId 重新定位，找不到则完整 refreshUI |
-| `handleNodeDelete(id)` | 删除节点 | `deleteNode(id)` 成功后对目标节点及其后代清除连接/折叠状态、失效连接测试并局部移除 DOM → `refreshUI`；失败时保留 UI 和选择状态 |
+| `handleNodeDelete(id)` | 删除节点 | 删除前收集目标及后代 ID；仅当 `deleteNode(id)` 返回成功时清理这些节点的 workspace 参数覆盖、连接/折叠状态、失效连接测试并局部移除 DOM → `refreshUI`；抛异常或返回 false/null 时保留 UI、选择状态和 workspace 参数 |
 | `handleCopy(content)` | 复制按钮 | navigator.clipboard.writeText |
 | `handleReorderNode` | 拖拽排序 | clearTestResults → reorderNode → refreshUI |
 | `handleMoveNodeAsChild` | 跨级降级 | clearTestResults → moveNodeAsChild → refreshUI |
@@ -325,3 +325,4 @@ radio change → setThemePref(mode)
 | 2026-08-10 | 删除会话采用 invalidate-first + 双 AbortController | 先使 session 失效，再取消 chat generation 和非流式共享 controller；成功、失败和迟到结果均不得回写已失效会话。 |
 | 2026-08-11 | 流式卡片清理限定在消息容器内 | 会话列表项与回复卡片都带有 `data-session-id`；清理旧回复时必须限定 `.msg.list`，避免误删会话记录项。 |
 | 2026-08-11 | 端点删除成功后再清理 UI 副作用 | `deleteNode()` 负责端点树和选中列表的持久化事务；删除失败时主流程不应提前移除 DOM、连接状态或折叠状态。 |
+| 2026-08-12 | 端点删除成功后清理整个子树的 workspace 参数覆盖 | 删除前保存 `collectDescendantIds()` 结果，只有 `deleteNode()` 返回非 false/null 且未抛异常时才逐个清理根节点及全部后代的 workspace 覆盖；删除失败时保留这些参数，且不修改会话级 `modelParams`。 |

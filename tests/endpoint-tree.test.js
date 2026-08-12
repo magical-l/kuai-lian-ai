@@ -864,10 +864,28 @@ function createSelectedEndpointsHarness(options) {
 		}
 	};
 	let currentSession = cloneJson(options.currentSession);
+	let savedSelectedEndpoints = null;
 	const context = vm.createContext({
 		console,
 		currentSession,
 		localStorage,
+		selectedEndpoints: options.selectedEndpoints || [],
+		sessionGenerations: new Map(),
+		saveDefaultSelectedEndpoints(selectedEndpoints) {
+			savedSelectedEndpoints = [...selectedEndpoints];
+		},
+		renderSelectedEndpoints() {},
+		getGroups() {
+			return [];
+		},
+		$() {
+			return null;
+		},
+		document: {
+			querySelector() {
+				return null;
+			}
+		},
 		updateSession: async function(sessionId, mutator) {
 			updateSessionCallCount += 1;
 			if (options.updateSession) {
@@ -890,7 +908,7 @@ function createSelectedEndpointsHarness(options) {
 		}
 	});
 	const source = fs.readFileSync(selectedEndpointsSourcePath, 'utf8');
-	const exposedSource = source + '\n\nglobalThis.__selectedEndpointsTestApi = {\n\tpersistEndpointParamsTransaction,\n\tgetDefaultSelectedEndpointParams() {\n\t\treturn JSON.parse(JSON.stringify(defaultSelectedEndpointParams));\n\t}\n};';
+	const exposedSource = source + '\n\nglobalThis.__selectedEndpointsTestApi = {\n\tpersistEndpointParamsTransaction,\n\ttoggleEndpointSelection,\n\tgetSelectedEndpoints() {\n\t\treturn [...selectedEndpoints];\n\t},\n\tgetDefaultSelectedEndpointParams() {\n\t\treturn JSON.parse(JSON.stringify(defaultSelectedEndpointParams));\n\t}\n};';
 
 	new vm.Script(exposedSource, { filename: selectedEndpointsSourcePath }).runInContext(context);
 
@@ -915,6 +933,9 @@ function createSelectedEndpointsHarness(options) {
 		},
 		getUpdateSessionCallCount() {
 			return updateSessionCallCount;
+		},
+		getSavedSelectedEndpoints() {
+			return savedSelectedEndpoints ? [...savedSelectedEndpoints] : null;
 		},
 		wasUpdateSessionMutated() {
 			return updateSessionMutated;
@@ -1517,6 +1538,45 @@ test('image and video download AbortError propagate instead of falling back to t
 	await assert.rejects(videoGeneration('openai', '', '', '', [], false, {}, signal), { name: 'AbortError' });
 });
 
+test('deselecting an endpoint clears its workspace parameters without changing session parameters', () => {
+	const endpointId = 'endpoint-1';
+	const sessionBefore = {
+		id: 'session-1',
+		modelParams: {
+			[endpointId]: { temperature: 0.6 }
+		}
+	};
+	const harness = createSelectedEndpointsHarness({
+		currentSession: sessionBefore,
+		selectedEndpoints: [endpointId, 'other-endpoint'],
+		workspaceRaw: '{"endpoint-1":{"temperature":0.2},"other-endpoint":{"topP":0.4}}'
+	});
+
+	harness.api.toggleEndpointSelection(endpointId, true);
+
+	assert.deepEqual(cloneJson(harness.api.getDefaultSelectedEndpointParams()), {
+		'other-endpoint': { topP: 0.4 }
+	});
+	assert.deepEqual(harness.currentSession.modelParams, sessionBefore.modelParams);
+	assert.deepEqual(cloneJson(harness.api.getSelectedEndpoints()), ['other-endpoint']);
+	assert.deepEqual(cloneJson(harness.getSavedSelectedEndpoints()), ['other-endpoint']);
+	assert.equal(harness.localStorage.getItem('defaultSelectedEndpointParams'), '{"other-endpoint":{"topP":0.4}}');
+});
+
+test('deselecting an endpoint without workspace parameters does not write workspace storage', () => {
+	const harness = createSelectedEndpointsHarness({
+		currentSession: { id: 'session-1', modelParams: { 'endpoint-1': { temperature: 0.6 } } },
+		selectedEndpoints: ['endpoint-1'],
+		workspaceRaw: '{}'
+	});
+
+	harness.api.toggleEndpointSelection('endpoint-1', true);
+
+	assert.deepEqual(cloneJson(harness.api.getDefaultSelectedEndpointParams()), {});
+	assert.equal(harness.getSetItemCallCount(), 0);
+	assert.equal(harness.localStorage.getItem('defaultSelectedEndpointParams'), '{}');
+});
+
 test('workspace/session parameter transaction restores workspace state after save and reset session failures', async () => {
 	const endpointId = 'endpoint-1';
 	const workspaceBefore = {
@@ -2030,14 +2090,94 @@ test('parameter dialog invalidates stale operations after native dialog close', 
 	assert.equal(dialog.open, true, 'old operations must not change the reopened dialog state');
 });
 
-function createHandleNodeDeleteFailureHarness() {
+function createJoinSessionChangeHarness() {
+	const selectedEndpoints = ['endpoint-1', 'other-endpoint'];
+	const workspaceParams = {
+		'endpoint-1': { temperature: 0.2 },
+		'other-endpoint': { topP: 0.4 }
+	};
+	let removeWorkspaceEndpointParamsCalls = 0;
+	let savedSelectedEndpoints = null;
+	let renderSelectedEndpointsCalls = 0;
+	let applyJoinBtnUICalls = 0;
+	const nodeElement = {
+		dataset: { nodeId: 'endpoint-1' }
+	};
+	const joinSession = {
+		closest(selector) {
+			assert.equal(selector, '.one.endpoint');
+			return nodeElement;
+		}
+	};
+	const checkbox = {
+		closest(selector) {
+			if (selector === '.one.endpoint') return nodeElement;
+			assert.equal(selector, '.join-session');
+			return joinSession;
+		}
+	};
+	const context = vm.createContext({
+		selectedEndpoints,
+		removeWorkspaceEndpointParams(endpointId) {
+			removeWorkspaceEndpointParamsCalls += 1;
+			delete workspaceParams[endpointId];
+		},
+		saveDefaultSelectedEndpoints(nextSelectedEndpoints) {
+			savedSelectedEndpoints = [...nextSelectedEndpoints];
+		},
+		renderSelectedEndpoints() {
+			renderSelectedEndpointsCalls += 1;
+		},
+		getGroups() {
+			return [];
+		},
+		applyJoinBtnUI(joinButton, endpointId) {
+			assert.equal(joinButton, joinSession);
+			assert.equal(endpointId, 'endpoint-1');
+			applyJoinBtnUICalls += 1;
+		}
+	});
+	const source = fs.readFileSync(endpointTreeSourcePath, 'utf8');
+	const handlerSource = extractFunctionDeclaration(source, 'handleJoinSessionChange');
+	new vm.Script(`${handlerSource}\nglobalThis.__handleJoinSessionChange = handleJoinSessionChange;`, {
+		filename: endpointTreeSourcePath
+	}).runInContext(context);
+	return {
+		handleJoinSessionChange: context.__handleJoinSessionChange,
+		checkbox,
+		getSelectedEndpoints() {
+			return [...context.selectedEndpoints];
+		},
+		workspaceParams,
+		get removeWorkspaceEndpointParamsCalls() { return removeWorkspaceEndpointParamsCalls; },
+		get savedSelectedEndpoints() { return savedSelectedEndpoints; },
+		get renderSelectedEndpointsCalls() { return renderSelectedEndpointsCalls; },
+		get applyJoinBtnUICalls() { return applyJoinBtnUICalls; }
+	};
+}
+
+function createHandleNodeDeleteFailureHarness(options = {}) {
 	let removed = false;
 	let clearTestResultsCalls = 0;
 	let refreshUICalls = 0;
+	let removeWorkspaceEndpointParamsCalls = 0;
 	const selectedEndpoints = ['node-1', 'other-1'];
-	const connectionStatus = new Map([['node-1', 'connected']]);
-	const collapsedEndpoints = new Set(['node-1']);
-	const deleteError = new Error('endpoint persistence failed');
+	const connectionStatus = new Map([['node-1', 'connected'], ['child-1', 'connected']]);
+	const collapsedEndpoints = new Set(['node-1', 'child-1']);
+	const workspaceParams = {
+		'node-1': { temperature: 0.7 },
+		'child-1': { temperature: 0.5 },
+		'other-1': { topP: 0.4 }
+	};
+	const currentSession = {
+		modelParams: {
+			'node-1': { temperature: 0.2 }
+		}
+	};
+	const deleteError = options.deleteError === undefined
+		? new Error('endpoint persistence failed')
+		: options.deleteError;
+	const deleteResult = options.deleteResult === undefined ? true : options.deleteResult;
 	const parentContainer = {
 		closest() {
 			return null;
@@ -2055,11 +2195,12 @@ function createHandleNodeDeleteFailureHarness() {
 	const context = vm.createContext({
 		collapsedEndpoints,
 		collectDescendantIds() {
-			return ['node-1'];
+			return ['node-1', 'child-1'];
 		},
 		connectionStatus,
 		deleteNode: async function() {
-			throw deleteError;
+			if (deleteError) throw deleteError;
+			return deleteResult;
 		},
 		document: {
 			querySelector(selector) {
@@ -2071,11 +2212,16 @@ function createHandleNodeDeleteFailureHarness() {
 		refreshUI: async function() {
 			refreshUICalls += 1;
 		},
+		removeWorkspaceEndpointParams(endpointId) {
+			removeWorkspaceEndpointParamsCalls += 1;
+			delete workspaceParams[endpointId];
+		},
 		selectedEndpoints,
 		clearTestResults() {
 			clearTestResultsCalls += 1;
 		},
-		saveDefaultSelectedEndpoints() {}
+		saveDefaultSelectedEndpoints() {},
+		updateEmptyState() {}
 	});
 	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
 	const handleSource = extractFunctionDeclaration(mainSource, 'handleNodeDelete');
@@ -2088,11 +2234,29 @@ function createHandleNodeDeleteFailureHarness() {
 		selectedEndpoints,
 		connectionStatus,
 		collapsedEndpoints,
+		workspaceParams,
+		currentSession,
 		get removed() { return removed; },
 		get clearTestResultsCalls() { return clearTestResultsCalls; },
-		get refreshUICalls() { return refreshUICalls; }
+		get refreshUICalls() { return refreshUICalls; },
+		get removeWorkspaceEndpointParamsCalls() { return removeWorkspaceEndpointParamsCalls; }
 	};
 }
+
+test('endpoint tree checkbox deselection clears workspace params without changing session params', () => {
+	const harness = createJoinSessionChangeHarness();
+
+	harness.handleJoinSessionChange(harness.checkbox);
+
+	assert.equal(harness.removeWorkspaceEndpointParamsCalls, 1);
+	assert.deepEqual(harness.workspaceParams, {
+		'other-endpoint': { topP: 0.4 }
+	});
+	assert.deepEqual(harness.getSelectedEndpoints(), ['other-endpoint']);
+	assert.deepEqual(harness.savedSelectedEndpoints, ['other-endpoint']);
+	assert.equal(harness.renderSelectedEndpointsCalls, 1);
+	assert.equal(harness.applyJoinBtnUICalls, 1);
+});
 
 test('handleNodeDelete keeps UI state when persistence fails', async () => {
 	const harness = createHandleNodeDeleteFailureHarness();
@@ -2105,6 +2269,51 @@ test('handleNodeDelete keeps UI state when persistence fails', async () => {
 	assert.equal(harness.removed, false);
 	assert.equal(harness.clearTestResultsCalls, 0);
 	assert.equal(harness.refreshUICalls, 0);
+});
+
+test('handleNodeDelete keeps workspace params when delete fails', async () => {
+	const harness = createHandleNodeDeleteFailureHarness();
+
+	await assert.rejects(harness.handleNodeDelete('node-1'), harness.deleteError);
+
+	assert.equal(harness.removeWorkspaceEndpointParamsCalls, 0);
+	assert.deepEqual(harness.workspaceParams, {
+		'node-1': { temperature: 0.7 },
+		'child-1': { temperature: 0.5 },
+		'other-1': { topP: 0.4 }
+	});
+	assert.deepEqual(harness.currentSession.modelParams, {
+		'node-1': { temperature: 0.2 }
+	});
+});
+
+test('handleNodeDelete keeps workspace params when delete returns false', async () => {
+	const harness = createHandleNodeDeleteFailureHarness({ deleteError: null, deleteResult: false });
+
+	await harness.handleNodeDelete('node-1');
+
+	assert.equal(harness.removeWorkspaceEndpointParamsCalls, 0);
+	assert.deepEqual(harness.workspaceParams, {
+		'node-1': { temperature: 0.7 },
+		'child-1': { temperature: 0.5 },
+		'other-1': { topP: 0.4 }
+	});
+	assert.equal(harness.removed, false);
+	assert.equal(harness.refreshUICalls, 0);
+});
+
+test('handleNodeDelete clears workspace params for the deleted subtree after success', async () => {
+	const harness = createHandleNodeDeleteFailureHarness({ deleteError: null });
+
+	await harness.handleNodeDelete('node-1');
+
+	assert.equal(harness.removeWorkspaceEndpointParamsCalls, 2);
+	assert.deepEqual(harness.workspaceParams, {
+		'other-1': { topP: 0.4 }
+	});
+	assert.deepEqual(harness.currentSession.modelParams, {
+		'node-1': { temperature: 0.2 }
+	});
 });
 
 test('showThinkingCards only removes old response cards inside the message list', () => {

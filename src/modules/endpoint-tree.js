@@ -128,6 +128,7 @@ function handleJoinSessionChange(cb) {
 	var nodeId = nodeEl.dataset.nodeId;
 	if (selectedEndpoints.includes(nodeId)) {
 		selectedEndpoints = selectedEndpoints.filter(function(x) { return x !== nodeId; });
+		removeWorkspaceEndpointParams(nodeId);
 	} else {
 		selectedEndpoints.push(nodeId);
 	}

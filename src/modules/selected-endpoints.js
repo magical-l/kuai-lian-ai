@@ -201,6 +201,12 @@ function openSessionParamEditor(endpointId) {
 		}
 	};
 }
+function removeWorkspaceEndpointParams(endpointId) {
+	if (!Object.prototype.hasOwnProperty.call(defaultSelectedEndpointParams, endpointId)) return;
+	delete defaultSelectedEndpointParams[endpointId];
+	saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
+}
+
 function handleSelectedEndpointRemoveClick(btn) {
 	toggleEndpointSelection(btn.dataset.endpoint, true);
 }
@@ -292,6 +298,7 @@ function toggleEndpointSelection(id, forceRemove) {
     if (isGenerating) return;
     if (forceRemove || selectedEndpoints.includes(id)) {
         selectedEndpoints = selectedEndpoints.filter(x => x !== id);
+        removeWorkspaceEndpointParams(id);
     } else {
         if (!selectedEndpoints.includes(id)) {
             selectedEndpoints.push(id);

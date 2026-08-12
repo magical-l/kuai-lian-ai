@@ -91,6 +91,8 @@ content 字段统一使用 content blocks 数组格式（[{type, text}]）。字
 - 端点 ID 列表：`localStorage key 'defaultSelectedEndpoints'`
 - 参数覆盖：`localStorage key 'defaultSelectedEndpointParams'`，以 endpointId 为 key
 - 无会话时设置的参数仅存于工作空间，刷新不丢失
+- 取消选择端点时删除该 endpointId 的 workspace 参数覆盖；端点树删除成功时删除目标节点及全部后代的覆盖，删除失败时保留覆盖
+- 上述清理只作用于 workspace 参数，不修改已有会话的 `modelParams`
 - 发首条消息创建新会话时，工作空间 `defaultSelectedEndpointParams` 整体同步到新会话的 `modelParams`；本轮实际发送范围由首条消息的 `targetEndpoints` 单独记录
 - 打开已有会话时，仅使用会话自身的 `modelParams`，不混入工作空间参数
 
@@ -161,3 +163,4 @@ function migrateEndpoints(data) {
 - 2026-07-23: 新增 asr 端点类型（Whisper API），detectModelType 加 whisper/transcribe/asr 关键词
 - 2026-07-22: 会话新增 `modelParams` 字段（API 参数覆盖），新增工作空间参数覆盖系统（localStorage + `defaultSelectedEndpointParams`），用于无会话时/新建会话时的参数持久化
 - 2026-08-12: 明确新会话参数快照范围 | `createSession()` 整体复制 workspace 参数覆盖；`targetEndpoints` 独立记录首条消息实际发送端点；已有会话不读取当前 workspace 参数
+- 2026-08-12: 明确 workspace 参数覆盖生命周期 | 取消选择删除对应 endpointId 覆盖，删除分组递归删除根节点及后代覆盖；删除失败和已有会话 `modelParams` 均不受影响

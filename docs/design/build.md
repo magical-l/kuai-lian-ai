@@ -92,8 +92,8 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 ### 版本管理
 
 - 发布版本涉及三处：`src/extension/manifest.json` 的 `version` 字段、`src/layout.html` 中 `<span class="version">vX.Y.Z</span>`、构建后的根目录单页面 `kuai-lian-ai.html`
-- 当前页面/构建文档版本：`6.32.11`
-- 当前 manifest 仍为 `6.32.4`，待发布元数据任务决定是否同步到 `6.32.11`；完成后重新构建扩展并核对三处一致
+- 当前页面/构建文档版本：`6.32.12`
+- 当前 manifest 已同步为 `6.32.12`；构建后需核对源码 manifest、扩展 manifest 与页面版本一致
 - 每次正式发布验收后三处均需同步更新
 - 版本号递增遵循语义化版本（MAJOR.MINOR.PATCH）
 
@@ -121,3 +121,4 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 - 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`（路径从 `/css/name.css` 简化为 `/name.css`）
 - 2026-07-28: 当时验收后将页面、扩展 manifest 和文档版本同步到 v6.32.4（历史记录）
 - 2026-08-12: 同步 v6.32.11 的清空屏障、端点回滚防御和存储审查修复产物；根单页与 dist 单页构建后保持一致
+- 2026-08-12: 验收 workspace 参数生命周期修复并发布 v6.32.12；页面、扩展 manifest 与构建产物版本一致
