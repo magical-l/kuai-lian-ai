@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-08-06
+last_updated: 2026-08-12
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -199,7 +199,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 流程：
 1. `resolveNodeConfig` 获取解析后的端点配置，并由 `isEndpointTestable` 统一判断资格。
 2. 同一 `nodeId` 已有进行中的测试时复用同一个 Promise，避免节点按钮、父级批量按钮和全局按钮重复发请求；失效仅递增 generation，不取消 fetch 或移除该 Promise，因此清除后对同节点的再测仍复用 P1，待 P1 settled 的 `finally` 清理记录后才可发起 P2。
-3. 根据解析后的类型选择 chat、embedding、TTS 或 ASR 测试函数，发起 POST 请求（30s 超时 + AbortController）。
+3. 根据解析后的类型选择 chat、embedding、TTS 或 ASR 测试函数，发起 POST 请求（30s 超时 + AbortController）；video/image/reranking 不进入连接测试集合，provider 缺少对应测试函数时进入失败状态。
 4. 响应验证：
    - HTTP 非 200 → 提取错误信息
    - content-type `text/html` → 提取 `<title>` 或截取 < 100 字符

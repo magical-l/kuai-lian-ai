@@ -3,7 +3,7 @@ title: API 层
 covers_file: [src/modules/api.js, src/modules/shared.js]
 depends_on: [providers.md]
 api_signature: callAllModels, callAPI, callProvider, callEmbedding, stopAllGenerations
-last_updated: 2026-08-10
+last_updated: 2026-08-12
 why_exists: 流式 SSE 处理、多模型并发调度、停止机制和 Provider 格式转换
 ---
 
@@ -11,7 +11,7 @@ why_exists: 流式 SSE 处理、多模型并发调度、停止机制和 Provider
 
 ## 设计意图
 
-API 层将"构建请求 -> 发送 HTTP -> 解析 SSE 流 -> 提取内容"的管线与 Provider 抽象解耦。`providers` 对象只负责格式差异（openai/claude/gemini 各自如何构造请求体、如何解析 chunk），API 层负责通用的流处理、并发调度、取消、错误恢复和首 token 计时。
+API 层将"构建请求 -> 发送 HTTP -> 解析 SSE 流 -> 提取内容"的管线与 Provider 抽象解耦。`providers` 对象负责格式差异（openai/claude/gemini 的聊天/生图格式，以及 jimeng 的视频请求构造），API 层负责通用的流处理、并发调度、取消、错误恢复和首 token 计时。
 
 核心流水线：
 
@@ -268,3 +268,4 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 | 2026-08-06 | 请求函数的完整 URL 开关统一为 `isFullUrl` | 所有流式和非流式请求在 Provider 构造默认路径后，仅在 `isFullUrl` 为真时将 URL 替换为 `baseUrl`；旧 `directUrl` 的兼容集中在 store 配置解析边界，避免请求链路分散兼容。 |
 | 2026-08-06 | `callEmbedding` 接收并合并解析后的 `params` | 嵌入请求此前引用未声明变量，且主编排层未传参数；签名显式接收 `params`，使行为与其他非流式请求一致。 |
 | 2026-08-10 | 会话失效统一覆盖 chat 与非流式请求 | 删除或停止会话时通过 session-level AbortController 取消 embedding/image/video/TTS/ASR；迟到结果在卡片、assistant 持久化和 finally 刷新边界丢弃。 |
+| 2026-08-12 | Provider 能力按协议分层 | API 层不把 Jimeng 当作聊天 provider；Jimeng 视频请求由 `buildVideoRequest` 单独构造，连接测试由端点资格层和 provider `test*Config` 能力共同决定。 |

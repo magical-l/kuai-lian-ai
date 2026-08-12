@@ -74,25 +74,27 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 模块加载顺序（由 build.js 第16-29行定义）：
 
 1. storage-core.js — 存储抽象
-2. providers.js — DOM 辅助
-3. ui-utils.js — 通用 UI 工具
-4. selected-endpoints.js — 选中端点管理
-5. endpoint-tree.js — 端点树渲染
-6. messages.js — 消息渲染
-7. session-list.js — 会话列表渲染
-8. attachments.js — 附件管理
-9. store.js — 数据/状态管理
-10. api.js — API 请求 + SSE
-11. shared.js — 共享逻辑
-12. main.js — 主入口
+2. providers.js — Provider/API 格式与 DOM 辅助
+3. params-registry.js — 按端点 type/style 提供参数定义
+4. ui-utils.js — 通用 UI 工具
+5. selected-endpoints.js — 选中端点管理
+6. endpoint-tree.js — 端点树渲染
+7. messages.js — 消息渲染
+8. session-list.js — 会话列表渲染
+9. attachments.js — 附件管理
+10. store.js — 数据/状态管理
+11. api.js — API 请求 + SSE
+12. shared.js — 共享逻辑
+13. main.js — 主入口
 
 严格线性顺序，不可乱。每个文件依赖前序文件暴露的全局函数/变量。
 
 ### 版本管理
 
-- 版本号存在于三处：manifest.json 的 `version` 字段、layout.html 中 `<span class="version">vX.Y.Z</span>`、构建后的根目录单页面 `kuai-lian-ai.html`
-- 当前版本：`6.32.11`
-- 每次验收通过后三处均需同步更新
+- 发布版本涉及三处：`src/extension/manifest.json` 的 `version` 字段、`src/layout.html` 中 `<span class="version">vX.Y.Z</span>`、构建后的根目录单页面 `kuai-lian-ai.html`
+- 当前页面/构建文档版本：`6.32.11`
+- 当前 manifest 仍为 `6.32.4`，待发布元数据任务决定是否同步到 `6.32.11`；完成后重新构建扩展并核对三处一致
+- 每次正式发布验收后三处均需同步更新
 - 版本号递增遵循语义化版本（MAJOR.MINOR.PATCH）
 
 ## 函数索引
@@ -117,5 +119,5 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 - 2026-07-15: 筛选按钮 class 从 `endpoint-type.chat`/`embedding`/`image-generation`/`reranking` 改为 `chat`/`digits`/`palette`/`chart`，对齐 common.css 抽象图标
 
 - 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`（路径从 `/css/name.css` 简化为 `/name.css`）
-- 2026-07-28: 本次验收后将页面、扩展 manifest 和文档版本同步到 v6.32.4
+- 2026-07-28: 当时验收后将页面、扩展 manifest 和文档版本同步到 v6.32.4（历史记录）
 - 2026-08-12: 同步 v6.32.11 的清空屏障、端点回滚防御和存储审查修复产物；根单页与 dist 单页构建后保持一致

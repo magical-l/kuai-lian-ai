@@ -2,16 +2,16 @@
 title: Provider 抽象层 + DOM 工具集
 covers_file: [src/modules/providers.js]
 depends_on: []
-api_signature: providers.openai, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip, handleCopyValueClick
-last_updated: 2026-07-24
-why_exists: 三种 Provider 格式差异的封装和公共 DOM 辅助函数的复用
+api_signature: providers.openai, providers.jimeng, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip, handleCopyValueClick
+last_updated: 2026-08-12
+why_exists: 四种 Provider 格式差异的封装（Jimeng 专用于视频生成）和公共 DOM 辅助函数的复用
 ---
 
 # Provider 抽象层 + DOM 工具集（src/modules/providers.js）
 
 ## 设计意图
 
-`providers` 对象将 API 格式差异封装在三个 provider 内部，使 API 层（`callProvider`/`callAllModels`）无需感知具体格式。每个 provider 实现三个核心方法：
+`providers` 对象将 API 格式差异封装在四个 provider 内部：`openai`、`jimeng`、`claude`、`gemini`。其中 Jimeng 目前只提供视频生成请求构造，聊天/连接测试等通用方法不在该 provider 中；API 层（`callProvider`/`callAllModels`）无需感知具体格式。通用聊天 provider 通常实现以下核心方法：
 
 - **`buildRequest`** — 将通用参数（baseUrl, apiKey, model, messages）转换为该 API 的 fetch 请求结构 `{url, headers, body}`
 - **`parseChunk`** — 将 SSE 流中的单行 JSON 解析为统一结构 `{content?, reasoning?, event?}`
@@ -43,6 +43,16 @@ claude 和 gemini provider 不实现此方法。
 
 claude 和 gemini provider 不实现此方法。
 
+## 视频生成支持
+
+### OpenAI 兼容视频
+
+`openai.buildVideoRequest()` 请求 `{baseUrl}/v1/videos`，body 为 `{ model, prompt, n: 1 }`，并可合并 `duration`、`ratio`、`resolution` 参数。
+
+### Jimeng / Seedance
+
+`jimeng` provider 只实现 `buildVideoRequest()`，请求 `{baseUrl}/v1/videos/generations`，body 结构与 OpenAI 兼容视频相同，并支持相同的三个视频参数。它没有 `buildRequest` 或 `testConfig`，因此视频发送可用，但当前连接测试资格层不会把 `video-generation` 纳入可测试集合，也不会把 Jimeng 当成聊天接口测试。
+
 ## 生图支持
 
 ### OpenAI
@@ -57,7 +67,9 @@ Gemini 额外实现了 `parseImageResponse(data)` 方法，供 `callImageGenerat
 
 claude provider 不实现此方法，`callImageGeneration` 通过 `if (!provider.buildImageRequest) throw` 做前置检查。
 
-## 三 Provider 对比
+## 聊天/生图 Provider 对比
+
+以下对比覆盖实现聊天或生图通用方法的 OpenAI、Claude、Gemini；Jimeng 只提供视频生成构造器，单独见“视频生成支持”。
 
 ### buildRequest
 
@@ -84,7 +96,7 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 | 事件标记 | 无 | `content_block_start(type:'thinking')` → `{event:'thinking_start'}`<br>`content_block_start(type:'text')` → `{event:'content_start'}` | 无 |
 | 空 chunk | `json.choices[0].delta` 为空时返回 null | 不匹配的事件返回 null | `candidates[0].content` 不存在时返回 null |
 
-三个 provider 的 parseChunk 输出格式统一为 `{content: string|null, reasoning: string|null, event: string|null}`，使 `handleParsedChunk` 可以统一处理。
+OpenAI、Claude、Gemini 三个聊天 provider 的 `parseChunk` 输出格式统一为 `{content: string|null, reasoning: string|null, event: string|null}`，使 `handleParsedChunk` 可以统一处理；Jimeng 不提供聊天流解析。
 
 ### testConfig
 
@@ -121,6 +133,8 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 | 方法 | provider | 签名 |
 |---|---|---|
 | `buildRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
+| `buildVideoRequest` | openai | `(baseUrl, apiKey, model, messages, params?) => {url, headers, body}` |
+| `buildVideoRequest` | jimeng | `(baseUrl, apiKey, model, messages, params?) => {url, headers, body}` |
 | `buildImageRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `buildTTSRequest` | openai | `(baseUrl, apiKey, model, input, voice?, instruction?) => {url, headers, body}` |
 | `parseChunk` | openai | `(json) => {content?, reasoning?} | null` |
@@ -194,7 +208,7 @@ tooltip 内含 copy 按钮（`button.copy`），复制按钮点击已移至模�
 
 | 日期 | 决策 | 理由 |
 |---|---|---|
-| 2026-04-23 | Provider 用对象字面量而非 class | 三个 provider 固定，无运行时扩展需求，对象字面量更简单 |
+| 2026-04-23 | Provider 用对象字面量而非 class | Provider 数量固定且无运行时扩展需求，对象字面量更简单 |
 | 2026-04-23 | Claude 同时发 `x-api-key` 和 `Authorization` | 兼容不同代理实现，部分代理只认其中一个 |
 | 2026-04-23 | Gemini 的 apiKey 放在 URL query param | Gemini API 规范要求 key 在 URL 而非 header |
 | 2026-04-23 | Gemini 合并相邻同角色消息 | Gemini API 不允许相邻同 role 消息，UI 层不保证消息交替 |
@@ -210,3 +224,4 @@ tooltip 内含 copy 按钮（`button.copy`），复制按钮点击已移至模�
 | 2026-07-20 | Gemini apiKey 从 URL query param 改为 `X-Goog-Api-Key` header | URL 中的 API key 可能被日志/历史记录泄露，header 更安全 |
 | 2026-07-20 | Gemini 新增 `buildImageRequest` / `parseImageResponse` | 支持 Gemini 生图模型（如 gemini-3.1-flash-lite-image），使用同 `generateContent` 端点 + `response_modalities: ["IMAGE"]` |
 | 2026-07-24 | 新增 `jimeng` provider + `buildVideoRequest` | 即梦/Seedance 视频生成用 `/v1/videos/generations`；openai 视频用 `/v1/videos`；gemini 用 `:generateContent` + `VIDEO` |
+| 2026-08-12 | 明确 Jimeng 的 provider 边界 | `jimeng` 只实现视频生成构造器，不实现聊天或连接测试方法；视频发送可用，但连接测试不会把 `video-generation` 当作 chat 测试 |

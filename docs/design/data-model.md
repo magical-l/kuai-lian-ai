@@ -3,7 +3,7 @@ title: 数据模型
 covers_file: [src/modules/store.js, src/modules/storage-core.js, src/extension/storage-core.js]
 depends_on: [architecture.md]
 api_signature: endpointsData / sessionsCache / storage.loadEndpoints / storage.saveEndpoints / storage.loadSession / storage.saveSession
-last_updated: 2026-07-23
+last_updated: 2026-08-12
 why_exists: 定义端点树、会话和消息的数据结构及存储抽象层，确保前后端存储迁移的正确性
 ---
 
@@ -47,7 +47,7 @@ why_exists: 定义端点树、会话和消息的数据结构及存储抽象层�
 
 一个节点可以作为"端点容器"（有 children 但自身无 modelId），也可以作为"端点叶子"（无 children，有 modelId），或同时兼具两者。
 
-**节点有效性判断**（isNodeTestable）：resolveNodeConfig 返回的配置中 baseUrl、key、modelId 均非空，且 config.type 为 chat、embedding 或 asr。
+**节点测试资格判断**（`isEndpointTestable`）：`resolveNodeConfig()` 返回的 `baseUrl` 非空、`key` 不是 `undefined/null`、`modelId` 非空，且 `type` 为 `chat`、`embedding/embed`、`tts` 或 `asr`。该判断只决定节点是否进入连接测试 UI/批量 ID 集合；实际请求还要经过 provider 对应 `test*Config` 方法检查。`video-generation`、image、reranking 当前不进入连接测试集合。
 
 ### 会话和消息结构
 
@@ -62,12 +62,16 @@ why_exists: 定义端点树、会话和消息的数据结构及存储抽象层�
   },
   "messages": [
     {
-      "role": "user | assistant | system",
+      "role": "user",
       "timestamp": 1700000000000,
       "content": [{ "type": "text", "text": "内容" }],
-      "targetEndpoints": ["uuid1", "uuid2"],
-      "responses": [{ "endpointId": "uuid1", "content": "...", "usage": {} }],
-      "endpointId": "uuid",
+      "targetEndpoints": ["uuid1", "uuid2"]
+    },
+    {
+      "role": "assistant",
+      "timestamp": 1700000000000,
+      "endpointId": "uuid1",
+      "status": "completed",
       "usage": { "prompt_tokens": 10, "completion_tokens": 20 }
     }
   ]
@@ -76,9 +80,9 @@ why_exists: 定义端点树、会话和消息的数据结构及存储抽象层�
 
 content 字段统一使用 content blocks 数组格式（[{type, text}]）。字符串和数组的兼容由 normalizeMessageContent 处理。旧格式的 content 字符串在加载时归一化为数组。
 
-多端点对话时，user 消息记录 targetEndpoints 指明发送给哪些端点；assistant 消息通过 responses 数组存储各端点的独立回复。单端点模式则使用 endpointId 字段。
+多端点对话时，user 消息记录 `targetEndpoints` 指明发送给哪些端点；每个端点回复持久化为独立的 flat assistant 消息，并通过 `endpointId` 标识。旧数据中的 `responses` 聚合消息只作为迁移输入，`migrateSession()` 加载时拆平为多条 assistant 消息。
 
-`modelParams` 字段存储该会话的 API 参数覆盖（如 temperature、max_tokens），以 endpointId 为 key。该字段在发首条消息时从工作空间同步，也可在会话参数弹窗中手动修改。API 调用时，会话级参数优先于工作空间级和端点默认值。
+`modelParams` 字段存储该会话的 API 参数覆盖（如 temperature、max_tokens），以 endpointId 为 key。创建新会话时，`createSession()` 将 workspace 的 `defaultSelectedEndpointParams` 整体深拷贝到会话首个持久化载荷，因此它包含 workspace 中已有的所有 endpointId 覆盖，不只包含本次首条消息的 `targetEndpoints`；首条 user 消息另以 `targetEndpoints` 记录本轮实际发送端点。会话参数弹窗可以继续修改或删除单个 endpointId 的会话覆盖。API 调用时，会话级参数优先于 workspace 级和端点默认值。打开已有会话时只读取会话自身覆盖，不把当前 workspace 参数混入。
 
 ### 工作空间参数覆盖
 
@@ -87,7 +91,7 @@ content 字段统一使用 content blocks 数组格式（[{type, text}]）。字
 - 端点 ID 列表：`localStorage key 'defaultSelectedEndpoints'`
 - 参数覆盖：`localStorage key 'defaultSelectedEndpointParams'`，以 endpointId 为 key
 - 无会话时设置的参数仅存于工作空间，刷新不丢失
-- 发首条消息时，工作空间参数自动同步到新会话的 `modelParams`
+- 发首条消息创建新会话时，工作空间 `defaultSelectedEndpointParams` 整体同步到新会话的 `modelParams`；本轮实际发送范围由首条消息的 `targetEndpoints` 单独记录
 - 打开已有会话时，仅使用会话自身的 `modelParams`，不混入工作空间参数
 
 ### 存储后端切换模式
@@ -156,3 +160,4 @@ function migrateEndpoints(data) {
 - 2026-07-23: 新增 asr 端点类型（Whisper 风格 API），detectModelType 加 whisper/transcribe/asr 关键词
 - 2026-07-23: 新增 asr 端点类型（Whisper API），detectModelType 加 whisper/transcribe/asr 关键词
 - 2026-07-22: 会话新增 `modelParams` 字段（API 参数覆盖），新增工作空间参数覆盖系统（localStorage + `defaultSelectedEndpointParams`），用于无会话时/新建会话时的参数持久化
+- 2026-08-12: 明确新会话参数快照范围 | `createSession()` 整体复制 workspace 参数覆盖；`targetEndpoints` 独立记录首条消息实际发送端点；已有会话不读取当前 workspace 参数

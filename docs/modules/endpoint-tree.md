@@ -3,7 +3,7 @@ title: 端点树
 covers_file: [src/modules/endpoint-tree.js]
 depends_on: [ui.md]
 api_signature: renderEndpointList, collapseAllEndpointNodes, updateEndpointTestUI, updateEmptyState
-last_updated: 2026-07-28
+last_updated: 2026-08-12
 why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试状态更新
 ---
 
@@ -81,7 +81,8 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 5. **操作栏**：所有按钮事件在节点构建时通过 `addEventListener` 绑定。
    - **添加子**：`handleAddChildClick` → `showEditGroupDialog(null, node.id, ...)`。保存成功后将回调返回的节点对象用 `buildEndpointNodeEl` 局部插入父节点；再以 `refreshUI({ skipEndpointTree: true })` 同步其余 UI，避免并发的完整重绘与局部插入造成重复节点。
    - **批量测试**：
-     - 判断可测试节点（recursive `collectTestable`）：需有 `baseUrl + key + modelId`，且 `config.type` 为 chat/embedding
+     - **UI 纳入测试集合（`isEndpointTestable`）**：解析后的 `baseUrl` 必须非空，`key` 不能为 `undefined/null`，`modelId` 必须非空，且 `type` 必须为 `chat`、`embedding/embed`、`tts` 或 `asr`。这是“哪些节点显示测试入口/进入批量 ID 集合”的资格层，不代表 provider 一定实现了对应请求。
+     - **实际请求能力（`attachments.js:testConnection`）**：按 type 选择 provider 的 `testConfig`、`testEmbeddingConfig`、`testTTSConfig` 或 `testASRConfig`；provider 缺少对应函数时，测试进入失败状态并显示“不支持连接测试”。因此 UI 资格和 provider 能力是上下游两层，不是两个并列待办。
      - 节点新增后，所有受影响祖先的批量测试按钮同步 `data-testable-ids`、`hidden` 和 `title`；确保新子节点立即纳入测试范围。
      - 点击触发所有子节点 `onTestConnection(id)`，按钮 title 显示汇总统计："✓ 全部成功" / "✗ N个失败：错误信息"
    - **加入会话**：checkbox 的 `change` 事件操作 `selectedEndpoints` 数组，并由 `applyJoinBtnUI` 同步选中状态。
@@ -122,7 +123,7 @@ why_exists: 端点配置的树形展示、递归渲染、拖拽排序和测试�
 三段式更新：
 
 1. **单节点**：按 `data-node-id` 定位 DOM，根据 `connectionStatus.get(nodeId)` 更新按钮 class（`.testing` / `.connected` / `.failed`）+ title（`getConnectionStatusText`）
-2. **全局 test-all 按钮**：遍历所有可测试节点，汇总状态
+2. **全局 test-all 按钮**：遍历所有通过 `isEndpointTestable` 资格层的节点，再由 `testConnection` 的 provider type 分派层决定实际请求；缺少 provider 测试函数时记录失败，不静默当作 chat 测试
 3. **所有祖先 batch 测试按钮**（while 循环爬升 DOM 链）：对每个祖先节点，用 `collectTestableIds` 收集其全部可测子孙节点，从 `connectionStatus` 检查状态（testing/connected/failed），同步祖先按钮。测试中有子孙则设 `.busy`，全部通过则 `.connected`，有失败则 `.failed`。
 
 ### 5. 加入会话勾选 (join-session)
