@@ -92,8 +92,8 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 ### 版本管理
 
 - 发布版本涉及三处：`src/extension/manifest.json` 的 `version` 字段、`src/layout.html` 中 `<span class="version">vX.Y.Z</span>`、构建后的根目录单页面 `kuai-lian-ai.html`
-- 当前页面/构建文档版本：`6.32.12`
-- 当前 manifest 已同步为 `6.32.12`；构建后需核对源码 manifest、扩展 manifest 与页面版本一致
+- 当前页面/构建文档版本：`6.32.13`
+- 当前 manifest 已同步为 `6.32.13`；构建后需核对源码 manifest、扩展 manifest 与页面版本一致
 - 每次正式发布验收后三处均需同步更新
 - 版本号递增遵循语义化版本（MAJOR.MINOR.PATCH）
 

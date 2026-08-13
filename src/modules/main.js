@@ -381,6 +381,7 @@ async function handleSessionDelete(sessionId) {
 	await deleteSession(sessionId);
 	if (currentSession?.id === sessionId) {
 		currentSession = null;
+		setButtonState(false, false);
 	}
 	await refreshUI();
 }
@@ -598,7 +599,10 @@ async function handleSend() {
 					cfg.params = cfg.params || {};
 					for (var sk in imgOvr) { if (imgOvr.hasOwnProperty(sk) && sk !== '_custom') cfg.params[sk] = imgOvr[sk]; }
 				}
-				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.isFullUrl, cfg.params, signal);
+				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.isFullUrl, cfg.params, signal, initialResult => {
+					if (signal.aborted || isSessionInvalidated(targetSessionId)) return;
+					updateCardAsImage(id, initialResult, targetSessionId, false);
+				});
 				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
 				updateCardAsImage(id, result, targetSessionId);
 				return {
@@ -939,7 +943,7 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 			contentEl.textContent = '(无内容)';
 		}
 		if (status === 'failed') {
-			const cw = $('.content', card);
+			const cw = $('.one.response.msg > .content', card);
 			if (cw) {
 				cw.innerHTML = '';
 				cw.classList.add('failed');
@@ -1116,7 +1120,7 @@ function updateCardAsEmbedding(endpointId, result, sessionId) {
 	if (!card) return;
 	const sayEl = $('.say', card);
 	if (sayEl) sayEl.textContent = '';
-	const contentWrapper = $('.content', card);
+	const contentWrapper = $('.one.response.msg > .content', card);
 	if (contentWrapper) {
 				var embDiv = $('.embedding-result', contentWrapper);
 		embDiv.classList.remove('hidden');
@@ -1128,12 +1132,12 @@ function updateCardAsEmbedding(endpointId, result, sessionId) {
 	updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }
 
-function updateCardAsImage(endpointId, result, sessionId) {
+function updateCardAsImage(endpointId, result, sessionId, markCompleted = true) {
 	const card = $(`.one.response.msg[data-session-id="${sessionId}"][data-endpoint-id="${endpointId}"]`);
 	if (!card) return;
 	const sayEl = $('.say', card);
 	if (sayEl) sayEl.textContent = '';
-	const contentWrapper = $('.content', card);
+	const contentWrapper = $('.one.response.msg > .content', card);
 	if (contentWrapper) {
 		const existing = $('.image-result', contentWrapper);
 		if (existing) existing.remove();
@@ -1165,7 +1169,7 @@ function updateCardAsImage(endpointId, result, sessionId) {
 		}
 		contentWrapper.addChild(imgDiv);
 	}
-	updateCardStatus(endpointId, 'completed', null, null, sessionId);
+	if (markCompleted) updateCardStatus(endpointId, 'completed', null, null, sessionId);
 }
 
 function updateCardAsVideo(endpointId, result, sessionId) {
@@ -1173,7 +1177,7 @@ function updateCardAsVideo(endpointId, result, sessionId) {
 	if (!card) return;
 	var sayEl = $('.say', card);
 	if (sayEl) sayEl.textContent = '';
-	var contentWrapper = $('.content', card);
+	var contentWrapper = $('.one.response.msg > .content', card);
 	if (contentWrapper) {
 		var existing = $('.video-result', contentWrapper);
 		if (existing) existing.remove();

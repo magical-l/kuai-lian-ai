@@ -413,12 +413,47 @@ function createUpdateCardStatusHarness() {
 		}
 	};
 	const meta = {};
+	// 卡片正文内容区（`$('.one.response.msg > .content')` 应命中它，而不是 header 的 `.copy.content` 按钮）
+	const bodyContent = {
+		innerHTML: '',
+		children: [],
+		classList: {
+			add(className) {
+				calls.domWrites.push('bodyContent.classList.add:' + className);
+			},
+			remove(className) {
+				calls.domWrites.push('bodyContent.classList.remove:' + className);
+			}
+		},
+		addChild(el) {
+			this.children.push(el);
+			calls.domWrites.push('bodyContent.addChild:' + (el.className || el.tagName));
+		}
+	};
+	const copyButton = {
+		classList: {
+			add(className) {
+				calls.domWrites.push('copyButton.classList.add:' + className);
+			},
+			remove() {}
+		}
+	};
 	const context = vm.createContext({
 		assert,
 		getStatusText() { return 'completed'; },
 		requestAnimationFrame(callback) {
 			animationFrames.push(callback);
 			return animationFrames.length;
+		},
+		mk: function(tag, className) {
+			calls.domWrites.push('mk:' + tag + ':' + className);
+			return {
+				tagName: tag,
+				className: className,
+				textContent: '',
+				classList: { add() {} },
+				addChild() {}
+			};
 		},
 		'$': function(selector, scope) {
 			if (!scope) {
@@ -430,6 +465,8 @@ function createUpdateCardStatusHarness() {
 				if (selector === '.stop-one-response') return stopButton;
 				if (selector === '.say') return contentEl;
 				if (selector === 'header') return meta;
+				if (selector === '.one.response.msg > .content') return bodyContent;
+				if (selector === '.copy.content') return copyButton;
 			}
 			if (scope === meta && selector === '.status.loading') return icon;
 			throw new Error('Unexpected selector: ' + selector);
@@ -449,6 +486,7 @@ function createUpdateCardStatusHarness() {
 	return {
 		api: context.__updateCardStatusApi,
 		calls,
+		bodyContent,
 		runNextAnimationFrame() {
 			assert.equal(animationFrames.length, 1);
 			animationFrames.shift()();
@@ -521,6 +559,55 @@ function createCallProviderHarness(options = {}) {
 	return context.__callProvider;
 }
 
+function createEarlyImagePreviewHarness() {
+	let signalImageDownloadStarted;
+	let resolveImageDownload;
+	const imageDownloadStarted = new Promise(function(resolve) {
+		signalImageDownloadStarted = resolve;
+	});
+	const imageDownload = new Promise(function(resolve) {
+		resolveImageDownload = resolve;
+	});
+	let requestCount = 0;
+	const context = vm.createContext({
+		console: { warn() {} },
+		URL: { createObjectURL() { return 'blob:generated'; } },
+		FileReader: class {
+			readAsDataURL() {
+				this.result = 'data:image/png;base64,encoded';
+				this.onload();
+			}
+		},
+		fetch: async function() {
+			requestCount += 1;
+			if (requestCount === 2) {
+				signalImageDownloadStarted();
+				return imageDownload;
+			}
+			return {
+				ok: true,
+				headers: { get() { return 'application/json'; } },
+				text: async function() { return JSON.stringify({ data: [{ url: 'https://download.example/media' }] }); }
+			};
+		},
+		fetchWithTimeout: async function() {
+			return context.fetch();
+		},
+		mergeParams() {},
+		providers: {
+			openai: {
+				buildImageRequest() { return { url: 'https://api.example/generate', headers: {}, body: {} }; }
+			}
+		}
+	});
+	const sharedSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'shared.js'), 'utf8');
+	const functionSource = extractFunctionDeclaration(sharedSource, 'callImageGeneration');
+	new vm.Script(`async ${functionSource}\nglobalThis.__earlyImagePreview = callImageGeneration;`, {
+		filename: sharedSource
+	}).runInContext(context);
+	return { callImageGeneration: context.__earlyImagePreview, imageDownloadStarted, resolveImageDownload };
+}
+
 function createMediaDownloadHarness(functionName, resultField) {
 	const context = vm.createContext({
 		console: { warn() {} },
@@ -554,7 +641,6 @@ function createMediaDownloadHarness(functionName, resultField) {
 	}).runInContext(context);
 	return context.__mediaDownload;
 }
-
 
 function createHandleSendFinallyRaceHarness() {
 	let resolveLoadSession;
@@ -678,6 +764,7 @@ function createCallAllModelsHarness(options = {}) {
 
 function createSessionDeleteHarness() {
 	const events = [];
+	const buttonStates = [];
 	let rejectDeleteSession;
 	let resolveDeleteSession;
 	const deleteSessionPromise = new Promise(function(resolve, reject) {
@@ -693,6 +780,9 @@ function createSessionDeleteHarness() {
 		deleteSessionGenerations() {
 			events.push('deleteSessionGenerations');
 		},
+		setButtonState(sendDisabled, stopEnabled) {
+			buttonStates.push({ sendDisabled, stopEnabled });
+		},
 		refreshUI: async function() {
 			events.push('refreshUI');
 		}
@@ -707,6 +797,7 @@ function createSessionDeleteHarness() {
 	}).runInContext(context);
 	return {
 		events,
+		buttonStates,
 		handleSessionDelete: context.__sessionDeleteApi.handleSessionDelete,
 		isSessionInvalidated: context.__sessionDeleteApi.isSessionInvalidated,
 		rejectDeleteSession,
@@ -1419,6 +1510,23 @@ test('updateCardStatus skips queued DOM writes after its target session invalida
 	assert.deepEqual(harness.calls.domWrites, []);
 });
 
+test('updateCardStatus failed writes the error into the body content, not the header copy button', () => {
+	const harness = createUpdateCardStatusHarness();
+
+	harness.api.updateCardStatus('endpoint-1', 'failed', 'boom', null, 'session-1');
+	harness.runNextAnimationFrame();
+
+	// 错误信息必须进入正文 `.content`（`.one.response.msg > .content`），
+	// 而不能误写进 header 里带 `content` class 的 `.copy.content` 复制按钮（它加载中被 display:none 隐藏）
+	assert.ok(harness.calls.domWrites.includes('bodyContent.classList.add:failed'), '正文 content 必须标记 failed');
+	const failChildren = harness.bodyContent.children.map(c => c.className);
+	assert.ok(failChildren.includes('fail-icon'), '✗ 图标必须渲染在正文 content');
+	assert.ok(failChildren.includes('fail-msg'), '错误文本必须渲染在正文 content');
+	assert.ok(harness.calls.domWrites.includes('copyButton.classList.add:hidden'), '复制按钮应被隐藏');
+	assert.ok(harness.calls.domWrites.includes('mk:span:fail-icon'), 'fail-icon 由 mk 创建');
+	assert.ok(harness.calls.domWrites.includes('mk:span:fail-msg'), 'fail-msg 由 mk 创建');
+});
+
 test('an invalidated session does not start a new chat generation', async () => {
 	const harness = createGenerationStartHarness();
 	harness.api.invalidateSession('session-1');
@@ -1437,6 +1545,7 @@ test('handleSessionDelete invalidates and aborts before its deferred storage del
 	assert.equal(harness.isSessionInvalidated('session-1'), true);
 	harness.resolveDeleteSession();
 	await deletion;
+	assert.deepEqual(harness.buttonStates, [{ sendDisabled: false, stopEnabled: false }]);
 });
 
 test('handleSessionDelete keeps invalidation when storage deletion rejects', async () => {
@@ -1527,6 +1636,23 @@ test('handleSend finally does not restore a session invalidated while loading it
 
 	assert.equal(harness.api.getCurrentSession(), null);
 	assert.equal(harness.getRefreshUICount(), 0);
+});
+
+test('image generation exposes the initial image before URL persistence finishes', async () => {
+	const harness = createEarlyImagePreviewHarness();
+	const previews = [];
+	const generation = harness.callImageGeneration('openai', '', '', '', [], false, {}, null, function(result) {
+		previews.push(result.url);
+	});
+
+	await harness.imageDownloadStarted;
+	assert.deepEqual(previews, ['https://download.example/media']);
+
+	harness.resolveImageDownload({
+		ok: true,
+		blob: async function() { return new Blob(['image'], { type: 'image/png' }); }
+	});
+	await generation;
 });
 
 test('image and video download AbortError propagate instead of falling back to the source URL', async () => {

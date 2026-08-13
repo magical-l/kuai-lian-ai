@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-08-12
+last_updated: 2026-08-13
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -124,6 +124,7 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
   │         └─ updateCardAsText()
   │
   └─ 合并结果 → 未失效时 addMessage('assistant', null, { responses }) [持久化]
+       ├─ 生图 URL 初始结果先更新当前卡片，图片下载/base64 持久化在后台完成
        ├─ 正常完成或停止时释放 session controller
        ├─ 已失效会话跳过卡片、assistant 和 finally 刷新
        └─ 正常会话恢复按钮、端点状态并 refreshUI()
@@ -164,7 +165,7 @@ showThinkingCards(idList, groups, sessionId)
       └─ requestAnimationFrame 内执行（批量 DOM 写入）
 ```
 
-卡片完成/失败后，`refreshUI` 检测到流式卡片（`[data-session-id]` 存在）时调用 `renderResponse` 增量更新，将 `.say` 从 textContent 升级为 `innerHTML`（Markdown 渲染）。无流式卡片时调用 `renderMessages` 全量重建。
+每个端点完成后立即更新自己的卡片。生图端点在图片 URL 或 base64 初始结果解析后先显示预览；URL 的图片下载和 base64 持久化完成后再更新最终完成状态。所有端点结果仍由 `handleSend` 在整轮完成后统一持久化，最终 `refreshUI` 通过 `renderMessages` 全量重建。
 
 `handleSend` 发送消息时不再调用 `renderMessages` 全量重建，改用 `appendUserMessage` 只追加新用户消息，并清除旧回复卡片的 `data-endpoint-id`/`data-session-id` 防止冲突。
 
@@ -199,7 +200,7 @@ showThinkingCards(idList, groups, sessionId)
 |---------|------|------|
 | `handleSessionSelect(id)` | 点击会话 | 加载会话、恢复端点、恢复生成状态 |
 | `handleSessionEdit(id, title)` | 编辑标题 | 原地更新 title → saveSession → refreshUI |
-| `handleSessionDelete(id)` | 删除按钮 | invalidateSession → deleteSessionGenerations → abortSessionRequests → deleteSession → refreshUI |
+| `handleSessionDelete(id)` | 删除按钮 | invalidateSession → deleteSessionGenerations → abortSessionRequests → deleteSession；删除当前会话时清空 currentSession 并恢复发送按钮；最后 refreshUI |
 | `handleAddGroup()` | 添加组 | showEditGroupDialog → addNode 返回节点对象 → 局部插入 → refreshUI({ skipEndpointTree: true }) |
 | `handleNodeEdit(id)` | 编辑节点 | clearTestResults → showEditGroupDialog → updateNode；保存期间父 DOM 已重绘则按 nodeId 重新定位，找不到则完整 refreshUI |
 | `handleNodeDelete(id)` | 删除节点 | 删除前收集目标及后代 ID；仅当 `deleteNode(id)` 返回成功时清理这些节点的 workspace 参数覆盖、连接/折叠状态、失效连接测试并局部移除 DOM → `refreshUI`；抛异常或返回 false/null 时保留 UI、选择状态和 workspace 参数 |
@@ -309,6 +310,7 @@ radio change → setThemePref(mode)
 | 2026-07-09 | 内联样式迁移到 utility class + classList。`style.display` → `classList.remove('hidden')`；移除无定义的 `.mb-1` 查询及冗余 inline 样式设置 | 与 CSS 分离，用 classList 而非 style.display 控制显隐；`.mb-1` 无对应 CSS 定义
 | 2026-07-11 | handleSend 改用 appendUserMessage 替代 renderMessages | 发送消息时不清空 `.msg.list`，避免全量 DOM 重建；旧回复卡片保留，清除 `data-endpoint-id`/`data-session-id` 防止与新 streaming cards 冲突 |
 | 2026-07-13 | 事件绑定统一回到 JS 的 `.on()` 和 `addEventListener` | Chrome 扩展 CSP 禁止内联脚本；静态与模板元素分别在初始化和克隆后绑定，兼容两种运行形态 |
+| 2026-08-13 | updateCardStatus/updateCardAsImage 等流式更新改用 `$('.one.response.msg > .content', card)` 定位正文内容区 | 原 `$('.content', card)` 会误命中 header 里带 `content` class 的 `.copy.content` 复制按钮（CSS `:has(.status.loading)` 下 `display:none`），导致失败信息/图片被写进隐藏按钮、正文一直停留在"等待回复..."；`.one.response.msg > .content` 是卡片正文内容区的正确语义选择器（正文 div 是卡片的直接子节点，而复制按钮的父级是 header），统一后生图提前显示与失败提示立即生效 |
 | 2026-07-22 | TTS handler 新增会话参数覆盖合并（与 image generation 模式一致） | 修复 TTS 端点绕过会话级 voice/instruction 覆盖的 bug |
 | 2026-07-22 | TTS 播放器从 `.content > .audio-result` 移到 `.say` 内部 | `(无内容)` 占位文本被 `<audio controls>` 播放器取代；updateCardAsAudio 和 messages.js 音频渲染同步修改 |
 | 2026-07-22 | 新增消息分叉功能（handleFork） | 用户消息 header 新增分叉按钮，点击后以该消息为分叉点创建新会话（复制之前的历史消息），消息文本填入输入框，等待编辑/重发 |
@@ -323,6 +325,7 @@ radio change → setThemePref(mode)
 | 2026-08-06 | 编排层统一传递 `isFullUrl` | `resolveNodeConfig` 集中兼容并归一化旧 `directUrl`；main 及其所有请求分支只传递 `isFullUrl`，不再在调用链中分散处理旧字段。 |
 | 2026-08-06 | 嵌入调用传递解析后的 `params` | `callEmbedding` 与其他请求路径一样接收配置参数并合并到请求体，修复未声明变量且保留完整 URL 分支。 |
 | 2026-08-10 | 删除会话采用 invalidate-first + 双 AbortController | 先使 session 失效，再取消 chat generation 和非流式共享 controller；成功、失败和迟到结果均不得回写已失效会话。 |
+| 2026-08-12 | 生图初始结果先更新卡片，删除当前会话时显式恢复按钮 | 图片 URL 的二次下载/base64 转换不应阻塞用户看到已返回的图片；失效保护会跳过生成 finally，因此删除当前会话入口负责恢复发送/停止按钮。 |
 | 2026-08-11 | 流式卡片清理限定在消息容器内 | 会话列表项与回复卡片都带有 `data-session-id`；清理旧回复时必须限定 `.msg.list`，避免误删会话记录项。 |
 | 2026-08-11 | 端点删除成功后再清理 UI 副作用 | `deleteNode()` 负责端点树和选中列表的持久化事务；删除失败时主流程不应提前移除 DOM、连接状态或折叠状态。 |
 | 2026-08-12 | 端点删除成功后清理整个子树的 workspace 参数覆盖 | 删除前保存 `collectDescendantIds()` 结果，只有 `deleteNode()` 返回非 false/null 且未抛异常时才逐个清理根节点及全部后代的 workspace 覆盖；删除失败时保留这些参数，且不修改会话级 `modelParams`。 |

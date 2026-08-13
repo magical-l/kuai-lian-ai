@@ -179,7 +179,7 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 
 | 函数 | 所在文件 | 签名 |
 |---|---|---|
-| `callImageGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) => Promise<{url?, b64_json?, imageData?, revised_prompt?}>` |
+| `callImageGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal, onInitialResult?) => Promise<{url?, b64_json?, imageData?, revised_prompt?}>` |
 
 非流式请求路径，用于图片生成：
 1. 按 style 查 provider，检查 `buildImageRequest` 方法存在
@@ -189,7 +189,7 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 5. 验证非 200 / text/html → 抛错
 6. JSON parse 响应，检查 `data.error`
 7. 优先调用 `provider.parseImageResponse(data)`（Gemini 自定义格式解析），fallback 到 OpenAI 标准格式 `data.data[0].url` / `data.data[0].b64_json`
-8. 若返回 URL 则 fetch 下载转 blob URL + base64，若直接返回 base64 则拼接 data URL
+8. 解析出 URL/base64 初始结果后调用可选 `onInitialResult(result)`，让 UI 先显示已返回的图片；若返回 URL 则继续 fetch 下载转 blob URL + base64，若直接返回 base64 则拼接 data URL
 
 ### 嵌入请求
 
@@ -266,6 +266,7 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 | 2026-07-20 | `mergeParams` 新增 Gemini keyMap | Gemini `generationConfig` 字段名是 camelCase，注册表用 snake_case，需要映射（`max_tokens`→`maxOutputTokens`, `top_p`→`topP` 等） |
 | 2026-07-20 | `callImageGeneration` 新增 `provider.parseImageResponse` 优先路径 | Gemini 生图响应格式不同于 OpenAI（`candidates[0].content.parts[].inlineData` 而非 `data.data[0].url`），由各 provider 自定义解析 |
 | 2026-08-06 | 请求函数的完整 URL 开关统一为 `isFullUrl` | 所有流式和非流式请求在 Provider 构造默认路径后，仅在 `isFullUrl` 为真时将 URL 替换为 `baseUrl`；旧 `directUrl` 的兼容集中在 store 配置解析边界，避免请求链路分散兼容。 |
+| 2026-08-12 | 生图请求增加初始结果回调 | 生图 URL 的二次下载和 base64 转换可能较慢；解析出初始 URL/base64 后先通知 UI 显示预览，再返回完整结果供会话持久化。 |
 | 2026-08-06 | `callEmbedding` 接收并合并解析后的 `params` | 嵌入请求此前引用未声明变量，且主编排层未传参数；签名显式接收 `params`，使行为与其他非流式请求一致。 |
 | 2026-08-10 | 会话失效统一覆盖 chat 与非流式请求 | 删除或停止会话时通过 session-level AbortController 取消 embedding/image/video/TTS/ASR；迟到结果在卡片、assistant 持久化和 finally 刷新边界丢弃。 |
 | 2026-08-12 | Provider 能力按协议分层 | API 层不把 Jimeng 当作聊天 provider；Jimeng 视频请求由 `buildVideoRequest` 单独构造，连接测试由端点资格层和 provider `test*Config` 能力共同决定。 |

@@ -266,7 +266,7 @@ function base64ToBlob(b64, mimeType) {
 	return new Blob(byteArrays, { type: mimeType || 'audio/mpeg' });
 }
 
-async function callImageGeneration(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) {
+async function callImageGeneration(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal, onInitialResult) {
     const provider = providers[style];
     if (!provider) throw new Error('不支持的接口风格: ' + style);
     if (!provider.buildImageRequest) throw new Error('该接口不支持生图');
@@ -318,6 +318,7 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages, isFu
             if (parsed.imageData) {
                 result.imageData = parsed.imageData;
             }
+            if (onInitialResult) onInitialResult(result);
             return result;
         }
     }
@@ -330,6 +331,7 @@ async function callImageGeneration(style, baseUrl, apiKey, model, messages, isFu
         b64_json: data.data[0].b64_json || null,
         revised_prompt: data.data[0].revised_prompt || null
     };
+    if (onInitialResult) onInitialResult(result);
     // 下载图片转 blob URL（当前页面快速显示）+ base64（持久化，支持会话记录加载）
     if (result.url && !result.b64_json) {
         try {

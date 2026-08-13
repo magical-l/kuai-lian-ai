@@ -308,7 +308,7 @@ function appendUserMessage(msg) {
 
         // 无内容且未完成：清空 .content，显示 ✗ + 错误
         if (!r.content && r.status !== 'completed') {
-            const cw = existing.querySelector(':scope > .content');
+            const cw = existing.querySelector('.one.response.msg > .content');
             if (cw) {
                 cw.innerHTML = '';
                 cw.classList.add('failed');
@@ -373,10 +373,10 @@ function appendUserMessage(msg) {
         // 错误信息：放到 .content 中（在 .say 后面），有错误时隐藏复制按钮
         // 注意：failed handler 已处理过（.content.failed），跳过避免重复
         let errorEl = $('.error', existing);
-        if (r.error && !existing.querySelector(':scope > .content')?.classList.contains('failed')) {
+        if (r.error && !existing.querySelector('.one.response.msg > .content')?.classList.contains('failed')) {
             if (!errorEl) {
                 errorEl = mk('span', 'error');
-                const contentWrapper = $(':scope > .content', existing);
+                const contentWrapper = $('.one.response.msg > .content', existing);
                 if (contentWrapper) {
                     const sayEl = $('.say', contentWrapper);
                     if (sayEl) {
@@ -388,7 +388,7 @@ function appendUserMessage(msg) {
             }
             errorEl.textContent = r.error;
             errorEl.classList.remove('hidden');
-        } else if (errorEl && !existing.querySelector(':scope > .content')?.classList.contains('failed')) {
+        } else if (errorEl && !existing.querySelector('.one.response.msg > .content')?.classList.contains('failed')) {
             errorEl.classList.add('hidden');
         }
 
@@ -418,7 +418,7 @@ function appendUserMessage(msg) {
                 thinkBlock.addChild(thinkSummary);
                 const thinkContent = mk('div', 'text');
                 thinkBlock.addChild(thinkContent);
-                const contentWrapper = $(':scope > .content', existing);
+                const contentWrapper = $('.one.response.msg > .content', existing);
                 if (contentWrapper) contentWrapper.insertBefore(thinkBlock, $('.say', existing));
             }
             thinkBlock.classList.remove('hidden');
