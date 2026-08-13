@@ -747,7 +747,7 @@ main {
 				scroll-padding-bottom: 130px;
 				gap: var(--space-5);
 				background: var(--bg-subtle);
-				min-height: 100px;
+				min-height: 50px;
 
 				& > .streaming-hint {
 					order: 999;
@@ -781,12 +781,12 @@ main {
 				z-index: calc(var(--divider-z) + 10);
 				border-top: 1px solid var(--border-subtle);
 				background: var(--bg-base);
-				flex: 1;
+				flex: 0 0 auto;
 				min-height: 160px;
-
 				& > #chat-input {
 					width: 100%;
-					height: 100%;
+					height: auto;
+					flex: 0 0 auto;
 					min-height: 56px;
 					padding: var(--space-2) var(--space-3);
 					border: 1px solid var(--border-default);
@@ -1033,7 +1033,9 @@ aside.endpoint.list {
 	gap: var(--space-1);
 	flex-wrap: wrap;
 	min-width: 0;
-	overflow: hidden;
+	/* 已选区高度上限：由 ui-utils.js syncSelectedAreaLimit 动态设置（撑到极限，消息区让位到仅剩提示行）；200px 为 CSS 兜底 */
+	max-height: 200px;
+	overflow: hidden auto;
 
 	& .empty.hint {
 		color: var(--danger);

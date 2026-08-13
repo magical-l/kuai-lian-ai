@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-08-12
+last_updated: 2026-08-13
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -25,6 +25,8 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 |------|------|------|
 | `initDividers` | ui-utils.js | 初始化 3 个分隔条（左/右/水平）的拖动系统 |
 | `clampSavedHeight` | ui-utils.js | 视口变化时重新钳制消息区高度 |
+| `clampMessagesHeight` | ui-utils.js | 输入区内容增高（选端点/加附件）时，重新收紧被拖拽固定的消息区高度，防止输入区向上撑溢出盖住 streaming-hint |
+| `syncSelectedAreaLimit` | ui-utils.js | 动态设置已选区 `.selected.endpoint.list` 的 max-height：消息区压缩到仅剩 streaming-hint（50px）后，剩余高度全给已选区；resize / 输入区内容变化时同步 |
 | `scrollToBottom` | ui-utils.js | 消息容器滚动到底部 |
 | `initScrollNav` | ui-utils.js | 绑定滚动导航按钮（top/bottom） |
 | `syncScrollPadding` | ui-utils.js | 同步 sticky 区高度到 messages scroll-padding |
@@ -310,3 +312,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-08-12 | 取消端点选择时清理 workspace 参数覆盖 | 标签栏移除和端点树 checkbox 取消必须保持一致；清理按 endpointId 进行，不影响已有会话的 `modelParams`。 |
 | 2026-08-06 | 编辑对话框的完整 URL 直连开关统一写入 `isFullUrl` | `isFullUrl` 明确表达 Base URL 已是最终请求 URL；旧 `directUrl` 仅由配置读取层兼容，UI 和连接测试请求链路不再写入或使用它。 |
 | 2026-08-06 | 编辑未改完整 URL 开关时保留字段缺失 | 弹窗必须回显有效继承值，但不能把它固化为子节点覆盖；仅在节点原有字段或用户实际修改 checkbox 时写入显式布尔值。 |
+| 2026-08-13 | `stickyMinHeight()` 从只读 CSS min-height 改为 `max(CSS min-height, 内容所需高度)` | 输入区内容（选中端点列表/附件/发送按钮行）可超过 160px，拖到 CSS min-height 时发送按钮行被挤出视口；内容所需用 scrollHeight 测并减去 textarea 被 flex:1 撑满的部分，避免未拖拽时高估。拖拽 clamp（doDrag / clampSavedHeight）自动受益。 |
+| 2026-08-13 | 输入区布局改为"内容自适应"模型：`.chat-input-area` 从 `flex:1` 改为 `flex:0 0 auto`，`stickyMinHeight()` 移除 textarea 补偿、简化为 `max(minHeight, scrollHeight)` | 用户确认布局模型：输入区（输入框+发送按钮行）固定高度、已选区由内容撑住（限高滚动兜底）、剩余高度全归消息区 `.msg.list`。输入区不再 flex:1 撑满、textarea 高度固定，原"减去 textarea 被撑满部分"的补偿逻辑已无意义，移除。 |
+| 2026-08-13 | 新增 `clampMessagesHeight()`，`initScrollPaddingObserver` 的 ResizeObserver 回调同时调用它 | 用户拖拽分隔条把消息区设为固定高度后，继续选端点/加附件使输入区向上撑高，但消息区高度未重新收紧，总高度超出视口 → 输入区（sticky bottom）侵入消息区盖住 `.streaming-hint`。输入区高度变化时（ResizeObserver）重新 clamp 消息区到 `可用空间 - 输入区内容高`；仅对拖拽固定（flex:0 0 auto）生效，未拖拽（flex:1）由布局自动伸缩。 |
+| 2026-08-13 | 新增 `syncSelectedAreaLimit()` 动态设置已选区 max-height；消息区 clamp 下限从 100 统一改为 50 | 用户要求已选区"撑到极限"：尽可能向上撑（挤压消息区），消息区压缩到仅剩 streaming-hint（约 50px）才让已选区滚动。`.msg.list` min-height 100→50；已选区 max-height = `.main-content` 高 − toolbar − 50 − 输入区其他部分，由 resize + ResizeObserver 双触发同步。 |
