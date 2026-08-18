@@ -3,7 +3,7 @@ title: API 层
 covers_file: [src/modules/api.js, src/modules/shared.js]
 depends_on: [providers.md]
 api_signature: callAllModels, callAPI, callProvider, callEmbedding, stopAllGenerations
-last_updated: 2026-08-12
+last_updated: 2026-08-18
 why_exists: 流式 SSE 处理、多模型并发调度、停止机制和 Provider 格式转换
 ---
 
@@ -11,7 +11,7 @@ why_exists: 流式 SSE 处理、多模型并发调度、停止机制和 Provider
 
 ## 设计意图
 
-API 层将"构建请求 -> 发送 HTTP -> 解析 SSE 流 -> 提取内容"的管线与 Provider 抽象解耦。`providers` 对象负责格式差异（openai/claude/gemini 的聊天/生图格式，以及 jimeng 的视频请求构造），API 层负责通用的流处理、并发调度、取消、错误恢复和首 token 计时。
+API 层将“构建请求 → 发送 HTTP → 解析 SSE 流 → 提取内容”的管线与 Provider 抽象解耦。`providers` 对象负责格式差异（openai/claude/gemini 的聊天/生图格式、OpenAI Responses 聊天格式，以及 jimeng 的视频请求构造），API 层负责通用的流处理、并发调度、取消、错误恢复和首 token 计时。
 
 核心流水线：
 
@@ -21,7 +21,7 @@ callAllModels → callAPI → callProvider → mergeParams(config.body, params, 
                                        └─ createInitialState / createTagParser / processWithTagParser
 ```
 
-参数配置（temperature、max_tokens 等）通过 `mergeParams()` 在 `buildRequest` 之后注入请求 body。Gemini 风格的参数放入 `body.generationConfig`，其他风格直接 merge 到顶层。完整 URL 开关统一接收解析后的 `isFullUrl`：为 `true` 时以去除末尾 `/` 的 `baseUrl` 覆盖 Provider 构造的默认路径，为 `false` 时保留 Provider 路径；API 请求函数不兼容旧 `directUrl`，兼容归一化集中在配置解析边界。
+参数配置（temperature、max_tokens 等）通过 `mergeParams(body, params, style)` 在 `buildRequest` 之后注入请求 body。参数为 `null` 或空字符串时跳过；Gemini 风格的参数放入 `body.generationConfig`，其他风格直接 merge 到顶层。Responses 风格把 `max_tokens` 映射为 `max_output_tokens`，把具体的 `reasoning_effort` 合并为 `body.reasoning.effort`；不为 `null`/空字符串创建空 `reasoning`，已有普通 `body.reasoning` 对象的可枚举字段会保留。特殊键通过 own-property 检查，避免 `__proto__`、`constructor` 等键改变合并语义。完整 URL 开关统一接收解析后的 `isFullUrl`：为 `true` 时以去除末尾 `/` 的 `baseUrl` 覆盖 Provider 构造的默认路径，为 `false` 时保留 Provider 路径；API 请求函数不兼容旧 `directUrl`，兼容归一化集中在配置解析边界。
 
 所有逻辑集中在这两个文件中，不分散到 UI 层。
 
@@ -62,6 +62,11 @@ callAllModels → callAPI → callProvider → mergeParams(config.body, params, 
 | `callAPI` | shared.js | `(style, baseUrl, apiKey, model, messages, onChunk, signal = null, params, isFullUrl) => Promise<ThinkingState>` |
 | `callProvider` | shared.js | `(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params, isFullUrl) => Promise<ThinkingState>` |
 | `mergeParams` | shared.js | `(body, params, style) => void` |
+| `callImageGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal, onInitialResult) => Promise<ImageResult>` |
+| `callEmbedding` | shared.js | `(style, baseUrl, apiKey, model, input, isFullUrl, params, signal) => Promise<EmbeddingResult>` |
+| `callVideoGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) => Promise<VideoResult>`；当前响应读取按 OpenAI `data[0]` 形态，Gemini `candidates[].content.parts[]` 尚未完整解析 |
+| `callTTS` | shared.js | `(style, baseUrl, apiKey, model, input, voice, instruction, isFullUrl, signal) => Promise<TTSResult>` |
+| `callASR` | shared.js | `(style, baseUrl, apiKey, model, audioFile, params, isFullUrl, signal) => Promise<ASRResult>` |
 | `invalidateSession` | api.js | `(sessionId) => void` |
 | `isSessionInvalidated` | api.js | `(sessionId) => boolean` |
 | `clearSessionInvalidation` | api.js | `(sessionId) => void` |
@@ -201,11 +206,11 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 1. 按 style 查 provider，检查 `buildEmbeddingRequest` 方法存在
 2. `provider.buildEmbeddingRequest` 构造请求
 3. `isFullUrl === true` 时用去掉末尾 `/` 的 `baseUrl` 覆盖请求 URL；否则保留 Provider 默认路径
-4. 将解析后的 `params` 合并进请求体（与其他请求路径一致）
+4. 将调用方传入的解析后端点 `params` 合并进请求体；当前 `main.js` 的 embedding 分支不读取 session/workspace 参数覆盖
 5. `fetchWithTimeout` 发送（60s 超时）
-5. 验证 content-type 非 HTML、是 JSON
-6. 验证 JSON 无 `error` 字段
-7. `provider.parseEmbeddingResponse` 提取 embedding 向量
+6. 验证 content-type 非 HTML、是 JSON
+7. 验证 JSON 无 `error` 字段
+8. `provider.parseEmbeddingResponse` 提取 embedding 向量
 
 ### TTS 语音合成请求
 
@@ -230,10 +235,10 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 
 | 函数 | 所在文件 | 签名 |
 |---|---|---|
-| `callVideoGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) => Promise<VideoResult>` |
+| `callVideoGeneration` | shared.js | `(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) => Promise<VideoResult>`；当前响应读取按 OpenAI `data[0]` 形态，Gemini `candidates[].content.parts[]` 尚未完整解析 |
 | `callASR` | shared.js | `(style, baseUrl, apiKey, model, audioFile, params, isFullUrl, signal) => Promise<ASRResult>` |
 
-两者均为非流式请求：先由 Provider 构造默认请求 URL，再仅在 `isFullUrl === true` 时改用去除末尾 `/` 的 `baseUrl`。该布尔值已由 store 归一化，API 层不读取旧 `directUrl`。
+两者均为非流式请求：先由 Provider 构造默认请求 URL，再仅在 `isFullUrl === true` 时改用去除末尾 `/` 的 `baseUrl`。该布尔值已由 store 归一化，API 层不读取旧 `directUrl`。当前 ASR 的 `language`、`prompt`、`temperature` 仅在 truthy 时发送，`response_format` 固定为 `json`；因此注册表中的 `temperature: 0` 不会通过当前 ASR 请求链路发送。TTS 的注册参数 `speed` 当前也未传入 `callTTS` 或 Provider body。
 
 ## 错误处理策略
 
@@ -270,3 +275,4 @@ if (chunkState.phase === 'thinking' && genState.firstTokenTime === null) {
 | 2026-08-06 | `callEmbedding` 接收并合并解析后的 `params` | 嵌入请求此前引用未声明变量，且主编排层未传参数；签名显式接收 `params`，使行为与其他非流式请求一致。 |
 | 2026-08-10 | 会话失效统一覆盖 chat 与非流式请求 | 删除或停止会话时通过 session-level AbortController 取消 embedding/image/video/TTS/ASR；迟到结果在卡片、assistant 持久化和 finally 刷新边界丢弃。 |
 | 2026-08-12 | Provider 能力按协议分层 | API 层不把 Jimeng 当作聊天 provider；Jimeng 视频请求由 `buildVideoRequest` 单独构造，连接测试由端点资格层和 provider `test*Config` 能力共同决定。 |
+| 2026-08-18 | `mergeParams` 统一处理显式参数与 Responses 特殊键 | 空字符串和 `null` 不进入请求；Responses 的 `max_tokens` 映射到 `max_output_tokens`，具体 `reasoning_effort` 合并到 `reasoning.effort`，并用 own-property 检查保护特殊键。按最终调用链记录 embedding、TTS、ASR 的参数覆盖边界；不将附件或失败事件未完成项写成已解决。 |

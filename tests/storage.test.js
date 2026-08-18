@@ -1486,6 +1486,76 @@ test('Task 1C endpoint rollback updateNode restores held node and children refer
     assert.deepEqual(parent, { id: 'P', name: 'parent', marker: 'original', children: [child] });
 });
 
+test('Task 1C updateNode rollback preserves own __proto__ data property without prototype pollution', async () => {
+    const child = { id: 'C', name: 'child', children: [] };
+    const protoPayload = { polluted: true };
+    const protoPayloadSnapshot = structuredClone(protoPayload);
+    const constructorPayload = { kind: 'constructor payload' };
+    const constructorPayloadSnapshot = structuredClone(constructorPayload);
+    const hasOwnPropertyPayload = { kind: 'hasOwnProperty payload' };
+    const hasOwnPropertyPayloadSnapshot = structuredClone(hasOwnPropertyPayload);
+    const parent = { id: 'P', name: 'parent', children: [child] };
+    const originalChildren = parent.children;
+    const originalPrototype = Object.getPrototypeOf(parent);
+    const saveError = new Error('disk full');
+    Object.defineProperty(parent, '__proto__', {
+        configurable: true,
+        enumerable: true,
+        value: protoPayload,
+        writable: true
+    });
+    Object.defineProperty(parent, 'constructor', {
+        configurable: true,
+        enumerable: true,
+        value: constructorPayload,
+        writable: true
+    });
+    Object.defineProperty(parent, 'hasOwnProperty', {
+        configurable: true,
+        enumerable: true,
+        value: hasOwnPropertyPayload,
+        writable: true
+    });
+    const harness = createStoreHarness({ saveEndpointsError: saveError });
+    harness.api.seedEndpoints({ nodes: [parent] });
+
+    await assert.rejects(harness.api.updateNode('P', { name: 'changed' }), error => error === saveError);
+
+    assert.equal(harness.api.getNode('P'), parent);
+    assert.equal(parent.children, originalChildren);
+    assert.equal(parent.children[0], child);
+    assert.equal(parent.name, 'parent');
+    for (const [key, expectedValue] of [
+        ['constructor', constructorPayloadSnapshot],
+        ['hasOwnProperty', hasOwnPropertyPayloadSnapshot]
+    ]) {
+        const descriptor = Object.getOwnPropertyDescriptor(parent, key);
+        assert.ok(descriptor);
+        assert.equal(Object.hasOwn(parent, key), true);
+        assert.equal(descriptor.enumerable, true);
+        assert.equal(descriptor.writable, true);
+        assert.equal(descriptor.configurable, true);
+        assert.equal(descriptor.get, undefined);
+        assert.equal(descriptor.set, undefined);
+        assert.deepEqual(descriptor.value, expectedValue);
+    }
+    const descriptor = Object.getOwnPropertyDescriptor(parent, '__proto__');
+    assert.ok(descriptor);
+    assert.equal(descriptor.enumerable, true);
+    assert.equal(descriptor.writable, true);
+    assert.equal(descriptor.configurable, true);
+    assert.equal(descriptor.get, undefined);
+    assert.equal(descriptor.set, undefined);
+    assert.deepEqual(descriptor.value, protoPayloadSnapshot);
+    assert.equal(Object.getPrototypeOf(parent), originalPrototype);
+    assert.equal(parent.polluted, undefined);
+    assert.equal(Object.hasOwn(parent, 'polluted'), false);
+    assert.deepEqual(protoPayload, protoPayloadSnapshot);
+    assert.deepEqual(constructorPayload, constructorPayloadSnapshot);
+    assert.deepEqual(hasOwnPropertyPayload, hasOwnPropertyPayloadSnapshot);
+    assert.equal(Object.getPrototypeOf(protoPayload), Object.prototype);
+});
+
 test('endpoint rollback preserves the original save error when an existing node children array is cleared', async () => {
 	const child = { id: 'C', name: 'child', children: [] };
 	const parent = { id: 'P', name: 'parent', children: [child] };
@@ -1781,6 +1851,69 @@ test('cloneNode recursively copies params and customParams without shared refere
 	assert.deepEqual(cloned.children[0].customParams, [{ name: 'speed', value: 2 }]);
 	assert.deepEqual(harness.api.getNode('P').params, { generation: { temperature: 0.2 } });
 	assert.deepEqual(harness.api.getNode('P').children[0].customParams, [{ name: 'speed', value: 1 }]);
+});
+
+test('cloneNode preserves top-level params presence, null, empty object, and special keys', async () => {
+	const harness = createStoreHarness();
+	const concreteParams = JSON.parse('{"nested":{"value":"source"},"__proto__":{"polluted":"proto"},"constructor":{"prototype":{"polluted":"constructor"}}}');
+	const missingSource = { id: 'missing', name: 'missing params', children: [] };
+	const nullSource = { id: 'null', name: 'null params', params: null, children: [] };
+	const emptySource = { id: 'empty', name: 'empty params', params: {}, children: [] };
+	const concreteSource = { id: 'concrete', name: 'concrete params', params: concreteParams, children: [] };
+	const toHostValue = value => JSON.parse(JSON.stringify(value));
+	const concreteParamsSnapshot = toHostValue(concreteParams);
+	harness.api.seedEndpoints({
+		nodes: [missingSource, nullSource, emptySource, concreteSource]
+	});
+
+	const missingClone = await harness.api.cloneNode('missing');
+	const nullClone = await harness.api.cloneNode('null');
+	const emptyClone = await harness.api.cloneNode('empty');
+	const concreteClone = await harness.api.cloneNode('concrete');
+
+	assert.deepEqual(toHostValue(emptyClone.params), {});
+	assert.deepEqual(toHostValue(concreteClone.params), toHostValue(concreteParams));
+	assert.notEqual(concreteClone.params, concreteParams);
+	assert.notEqual(concreteClone.params.nested, concreteParams.nested);
+	assert.notEqual(concreteClone.params.__proto__, concreteParams.__proto__);
+	assert.notEqual(concreteClone.params.constructor, concreteParams.constructor);
+	assert.notEqual(concreteClone.params.constructor.prototype, concreteParams.constructor.prototype);
+
+	for (const key of ['__proto__', 'constructor']) {
+		assert.equal(Object.prototype.hasOwnProperty.call(concreteClone.params, key), true);
+		assert.equal(Object.prototype.propertyIsEnumerable.call(concreteClone.params, key), true);
+	}
+	const serializedParams = JSON.parse(JSON.stringify(concreteClone.params));
+	for (const key of ['__proto__', 'constructor']) {
+		assert.equal(Object.prototype.hasOwnProperty.call(serializedParams, key), true);
+		assert.equal(Object.prototype.propertyIsEnumerable.call(serializedParams, key), true);
+	}
+	assert.equal(Object.prototype.polluted, undefined);
+	assert.equal(({}).polluted, undefined);
+	assert.equal(Object.getPrototypeOf(concreteClone.params).polluted, undefined);
+
+	concreteClone.params.nested.value = 'clone';
+	concreteClone.params.__proto__.polluted = 'clone proto';
+	concreteClone.params.constructor.prototype.polluted = 'clone constructor';
+	assert.deepEqual(toHostValue(concreteParams), concreteParamsSnapshot);
+
+	assert.deepEqual({
+		missing: {
+			hasOwnParams: Object.prototype.hasOwnProperty.call(missingClone, 'params')
+		},
+		null: {
+			hasOwnParams: Object.prototype.hasOwnProperty.call(nullClone, 'params'),
+			value: toHostValue(nullClone.params)
+		},
+		empty: {
+			hasOwnParams: Object.prototype.hasOwnProperty.call(emptyClone, 'params'),
+			value: toHostValue(emptyClone.params)
+		}
+	}, {
+		missing: { hasOwnParams: false },
+		null: { hasOwnParams: true, value: null },
+		empty: { hasOwnParams: true, value: {} }
+	});
 });
 
 test('queued moveNodeAsChild keeps the dragged node when a prior mutation deletes its target', async () => {

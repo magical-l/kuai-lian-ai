@@ -1,9 +1,9 @@
 ---
 title: UI 层
-covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js]
+covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js, src/modules/main.js, src/modules/endpoint-tree.js, src/modules/providers.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-08-13
+last_updated: 2026-08-18
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -52,6 +52,8 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `handleSelectedEndpointMouseover` | selected-endpoints.js | 端点标签 hover 显示 tooltip |
 | `handleSelectedEndpointMouseleave` | selected-endpoints.js | 端点标签 mouseleave 隐藏 tooltip |
 | `openSessionParamEditor` | selected-endpoints.js | 打开会话参数对话框；保存/重置通过局部事务同步工作区参数与会话覆盖，失败时保持弹窗打开 |
+| `renderModelParamControls(container, definitions, ownParams, fallbackParams, options)` | ui-utils.js | 按参数定义渲染端点/会话参数控件；`ownParams` 决定当前层三态，`fallbackParams` 只用于显示沿用后的值 |
+| `collectModelParamControls(container, originalParams)` | ui-utils.js | 只收集 `dataset.changed === 'true'` 的参数，按决定方式删除字段、保存具体值或保存 `null` |
 | `handleEditSessionTitleClick` | session-list.js | 会话标题编辑按钮，创建 input 替换标题 |
 | `handleRemoveSessionClick` | session-list.js | 会话删除按钮，confirmAction 后删除 |
 | `handleSessionListItemClick` | session-list.js | 会话列表项点击，切换当前会话 |
@@ -69,7 +71,7 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `clearAttachments` | attachments.js | 清空附件列表 |
 | `clearInput` | attachments.js | 清空输入框 |
 | `setButtonState` | attachments.js | 切换发送/停止按钮状态 |
-| `addInheritIcon` | attachments.js | 继承值旁添加 🜍 图标（icon + inherit + char-style 类，CSS 控制样式） |
+| `addInheritIcon` | attachments.js | 继承值旁添加 🜍 图标（icon + inherit + char-style 类；行布局仍会设置必要的 JS 内联 flex 样式） |
 | `showEditGroupDialog` | attachments.js | 显示端点编辑对话框，含继承来源提示 |
 | `buildBatchFields` | attachments.js | 批量创建表单字段构建（style/type '继承'选项+互斥逻辑） |
 | `addTagFromInput` | attachments.js | 批量字段：输入框添加 tag |
@@ -95,6 +97,16 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | `createTooltip` | providers.js | tooltip 工厂函数 |
 
 ---
+
+## 参数控件与三态
+
+`renderModelParamControls(container, definitions, ownParams, fallbackParams, options)` 将“当前层自己保存的字段”和“沿用后可见的结果”分开处理：`ownParams` 只决定缺失/具体值/`null` 三态，`fallbackParams` 只用于在“继承上级”或“沿用端点设置”旁显示当前结果，不会被合并进待保存对象。`collectModelParamControls(container, originalParams)` 只处理 `dataset.changed === 'true'` 的行；未改变的行保留 `originalParams` 的原始字段状态。
+
+端点参数的三态是：字段缺失=继承最近祖先，具体值=当前层自己设置，`null`=由模型决定并阻断继承。顶层端点没有上级，因此缺失和 `null` 都显示“由模型决定”，但未操作时分别保持缺失和 `null`。子端点根据自身 `node.params` 判断状态，而不是根据解析后的合并结果判断。
+
+会话参数使用“沿用端点设置/自己设置/由模型决定”。当前会话存在时，编辑器读取该会话在 endpoint 上的覆盖；没有当前会话时读取 workspace 覆盖。端点解析结果只用于显示沿用后的值。保存由 `persistEndpointParamsTransaction(endpointId, nextWorkspaceParams, sessionId, updateSessionParams)` 串行更新 workspace 和快照会话，失败时恢复 workspace 内存对象与 localStorage 原文并保持弹窗打开；非空 sessionId 时 `updateSession()` 返回 `null` 也视为失败。
+
+Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat 的 `_custom`；生图、视频、TTS、ASR 会合并普通覆盖键但不展开 `_custom`；embedding 当前只接收解析后的端点 `params`，不读取 session/workspace 覆盖。这里记录的是当前实现边界，不代表附件或失败事件链路已经统一。
 
 ## 核心系统详解
 
@@ -156,9 +168,9 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 从 `<aside.session.list > ol>` 清空并克隆 `<template id="one-session">`。按 `createdAt` 降序排列。每个会话项：
 
-- 点击 → `handleSessionListItemClick`（HTML `onclick` 绑定） → `onSessionSelect(sessionId)`
-- 编辑按钮 → `handleEditSessionTitleClick`（HTML `onclick` 绑定） → 创建 `<input class="editing title">` 内联替换标题文字，Enter/blur 保存，Escape 恢复
-- 删除按钮 → `handleRemoveSessionClick`（HTML `onclick` 绑定） → `confirmAction` 确认后调用 `onSessionDelete`
+- 点击 → `handleSessionListItemClick`（`addEventListener` 绑定） → `onSessionSelect(sessionId)`
+- 编辑按钮 → `handleEditSessionTitleClick`（`addEventListener` 绑定） → 创建 `<input class="editing title">` 内联替换标题文字，Enter/blur 保存，Escape 恢复
+- 删除按钮 → `handleRemoveSessionClick`（`addEventListener` 绑定） → `confirmAction` 确认后调用 `onSessionDelete`
 
 ### 5. 端点标签栏 (renderSelectedEndpoints / toggleEndpointSelection)
 
@@ -168,13 +180,13 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 **toggleEndpointSelection** (行 55)：在 `selectedEndpoints` 中添加/移除 ID。正在生成时阻止操作；取消端点时调用 `removeWorkspaceEndpointParams` 清理对应 workspace 覆盖，但不修改已有会话的 `modelParams`。触发 `syncJoinBtnState` 同步树中 checkbox。
 
-事件绑定已移至 HTML 模板 `#template-selected-endpoint` 的内联 onclick/onmouseover/onmouseleave 属性，对应的 handler 为 `handleSelectedEndpointClick` / `handleSelectedEndpointRemoveClick` / `handleSelectedEndpointMouseover` / `handleSelectedEndpointMouseleave`。标签内容含 tooltip（`createTooltip`），hover 显示节点配置。
+标签由模板克隆后通过 `addEventListener` 绑定 click/mouseover/mouseleave，对应 handler 为 `handleSelectedEndpointClick` / `handleSelectedEndpointRemoveClick` / `handleSelectedEndpointMouseover` / `handleSelectedEndpointMouseleave`。标签内容含 tooltip（`createTooltip`），hover 显示节点配置。
 
 ### 5.1 会话参数对话框 (`openSessionParamEditor`)
 
 文件：`selected-endpoints.js`
 
-点击已选端点标签后，弹窗按“会话参数 > 工作区参数 > 端点默认参数”合并显示。保存或重置经 `persistEndpointParamsTransaction` 串行执行：先快照 endpoint 的 workspace 内存值与 `localStorage` 原始字符串，写入工作区后，仅在打开弹窗时快照的 `sessionId` 非空时调用 `updateSession` 写入或移除 `modelParams` 覆盖；该调用返回 `null` 同样视为失败（目标会话不存在或未保存）。任一步骤失败则恢复 workspace 两份状态，由 store 负责 session 回滚，弹窗保持打开并显示错误。每次打开、关闭、取消和操作开始均递增 dialog generation，已排队操作只能影响其原始会话，旧操作成功后也不得关闭重新打开的弹窗。
+点击已选端点标签后，弹窗不把三层对象预先合并为待保存值：有当前会话时，`ownParams` 是该会话 endpoint 覆盖；无当前会话时，`ownParams` 是 workspace endpoint 覆盖；解析后的端点参数单独作为 `fallbackParams`，只显示“沿用端点设置”会得到什么。保存或重置经 `persistEndpointParamsTransaction` 串行执行：先快照 endpoint 的 workspace 内存值与 `localStorage` 原始字符串，写入工作区后，仅在打开弹窗时快照的 `sessionId` 非空时调用 `updateSession` 写入或移除 `modelParams` 覆盖；该调用返回 `null` 同样视为失败（目标会话不存在或未保存）。任一步骤失败则恢复 workspace 两份状态，由 store 负责 session 回滚，弹窗保持打开并显示错误。每次打开、关闭、取消和操作开始均递增 dialog generation，已排队操作只能影响其原始会话，旧操作成功后也不得关闭重新打开的弹窗。
 
 ### 6. 附件系统
 
@@ -224,13 +236,17 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
   - openai: chat→`/v1/chat/completions`, embedding→`/v1/embeddings`, 生图→`/v1/images/generations`, tts→`/v1/audio/speech`, 重排序→`/v1/rerank`
   - claude: chat→`/v1/messages`
   - gemini: chat→`:streamGenerateContent?alt=sse`, embedding→`:embedContent`, 生图/TTS→`:generateContent`（均前缀 `/v1beta/models/{modelId}`）
+  - responses: chat→`/v1/responses`
 - 路径后缀与 ✕/ toggle 按钮包裹在 `.path-group` 容器中，视觉上联为一体。toggle 用 checkbox 驱动（`common.css` `.toggle` 模式），✕（`.remove`）表示追加路径，`/` 表示 Base URL 已是完整 URL 的直连模式。点击仅隐藏路径文本，按钮始终可见，保存时只写入 `isFullUrl`；旧节点的 `directUrl` 仅由配置读取层兼容，UI 不再写入或传递该字段
 - 类型字段自动从 modelId 检测（chat/embedding/rerank），用户可手动覆盖（覆盖后停止自动检测）
 - 继承值图标（↑）：空字段自动填入祖先值，`addInheritIcon` 添加继承标记
 - Enter 在字段间切换焦点，最后一个字段 Enter 触发保存
 - API Key 显隐切换按钮
-- 保存时区分"节点已有值"和"来自继承"，避免无覆盖继承值；完整 URL checkbox 未被编辑且节点自身没有 `isFullUrl`/旧 `directUrl` 时不写该字段，保留父级继承
-- 显示继承来源：dialog 标题下方显示"继承自: [父节点名称]"，顶级节点无此提示
+- 打开时为当前节点建立 dialog 草稿：普通参数的 `ownParams` 与父级 `fallbackParams` 分离，自定义参数读取 `customParams`，旧 TTS 顶层 `voice`/`instruction` 只作为兼容输入
+- 保存时只采纳用户实际改变的参数行；字段缺失、`null`、具体值原样保真，避免把建议值或继承值固化为当前节点覆盖
+- 自定义参数以 `{key, value}` 数组收集；当前代码仅在仍有非空自定义行时写入 `customParams`，删除全部行时不会显式写入空数组，因此旧数组是否清除取决于后续更新语义
+- 保存时区分“节点已有值”和“来自继承”；完整 URL checkbox 未被编辑且节点自身没有 `isFullUrl`/旧 `directUrl` 时不写该字段，保留父级继承
+- dialog 每次打开都会重建必要草稿和状态，清理旧事件处理器，避免上一轮 UI 状态残留；端点保存的异步 `onSave` 当前不会等待，也没有会话参数 dialog 那样的 generation guard，因此文档不把端点弹窗描述为具备异步代际隔离。显示继承来源为“继承自: [父节点名称]”，顶级节点无此提示
 
 ### 9. 帮助/存储对话框 (showHelpDialog / showDirectoryPrompt)
 
@@ -316,3 +332,5 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 | 2026-08-13 | 输入区布局改为"内容自适应"模型：`.chat-input-area` 从 `flex:1` 改为 `flex:0 0 auto`，`stickyMinHeight()` 移除 textarea 补偿、简化为 `max(minHeight, scrollHeight)` | 用户确认布局模型：输入区（输入框+发送按钮行）固定高度、已选区由内容撑住（限高滚动兜底）、剩余高度全归消息区 `.msg.list`。输入区不再 flex:1 撑满、textarea 高度固定，原"减去 textarea 被撑满部分"的补偿逻辑已无意义，移除。 |
 | 2026-08-13 | 新增 `clampMessagesHeight()`，`initScrollPaddingObserver` 的 ResizeObserver 回调同时调用它 | 用户拖拽分隔条把消息区设为固定高度后，继续选端点/加附件使输入区向上撑高，但消息区高度未重新收紧，总高度超出视口 → 输入区（sticky bottom）侵入消息区盖住 `.streaming-hint`。输入区高度变化时（ResizeObserver）重新 clamp 消息区到 `可用空间 - 输入区内容高`；仅对拖拽固定（flex:0 0 auto）生效，未拖拽（flex:1）由布局自动伸缩。 |
 | 2026-08-13 | 新增 `syncSelectedAreaLimit()` 动态设置已选区 max-height；消息区 clamp 下限从 100 统一改为 50 | 用户要求已选区"撑到极限"：尽可能向上撑（挤压消息区），消息区压缩到仅剩 streaming-hint（约 50px）才让已选区滚动。`.msg.list` min-height 100→50；已选区 max-height = `.main-content` 高 − toolbar − 50 − 输入区其他部分，由 resize + ResizeObserver 双触发同步。 |
+| 2026-08-14 | 编辑/批量创建弹窗新增 Responses式 风格选项 | 单节点对话框（layout.html radio）与批量创建（buildBatchFields options）均加 `responses` 选项，路径后缀映射 `chat→/v1/responses`（attachments.js `apiPath` 的 paths 表）；`styleLabels` 显示名加 "Responses"。 |
+| 2026-08-18 | 端点和会话参数 UI 统一为缺失/具体值/`null` 三态，严格分离 `ownParams` 与 `fallbackParams` | 建议值只在用户选择“自己设置”时出现；保存仅处理 `changed` 行，避免只改名称时固化默认参数。会话事务继续按快照 session/workspace 保存并由 dialog generation 隔离旧操作；端点 dialog 每次打开重建草稿并兼容旧 TTS 顶层字段，但端点保存异步回调当前没有同等 generation guard。 |

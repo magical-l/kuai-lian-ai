@@ -3,7 +3,7 @@ title: 构建流程
 covers_file: [build.js, src/layout.html, src/extension/manifest.json]
 depends_on: [architecture.md, data-model.md]
 api_signature: node build.js / MODULE_ORDER / DEV_MODE
-last_updated: 2026-08-12
+last_updated: 2026-08-18
 why_exists: 定义从源码到双产物的构建流程，确保构建可复现、产物可预测
 ---
 
@@ -75,7 +75,7 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 
 1. storage-core.js — 存储抽象
 2. providers.js — Provider/API 格式与 DOM 辅助
-3. params-registry.js — 按端点 type/style 提供参数定义
+3. params-registry.js — 按端点 type/style 提供参数定义，供端点与会话三态参数 UI 共用
 4. ui-utils.js — 通用 UI 工具
 5. selected-endpoints.js — 选中端点管理
 6. endpoint-tree.js — 端点树渲染
@@ -92,8 +92,9 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 ### 版本管理
 
 - 发布版本涉及三处：`src/extension/manifest.json` 的 `version` 字段、`src/layout.html` 中 `<span class="version">vX.Y.Z</span>`、构建后的根目录单页面 `kuai-lian-ai.html`
-- 当前页面/构建文档版本：`6.32.14`
-- 当前 manifest 已同步为 `6.32.14`；构建后需核对源码 manifest、扩展 manifest 与页面版本一致
+- 当前源码页面与源码 manifest 版本：`6.33.0`
+- 当前工作树根目录构建单页仍显示 `6.32.14`，尚未按本次源码重建；本轮仅同步文档，不改构建产物
+- 下次构建后需核对源码 manifest、`dist/extension/manifest.json`、`dist/kuai-lian-ai.html` 与根目录单页面版本一致
 - 每次正式发布验收后三处均需同步更新
 - 版本号递增遵循语义化版本（MAJOR.MINOR.PATCH）
 
@@ -122,3 +123,4 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 - 2026-07-28: 当时验收后将页面、扩展 manifest 和文档版本同步到 v6.32.4（历史记录）
 - 2026-08-12: 同步 v6.32.11 的清空屏障、端点回滚防御和存储审查修复产物；根单页与 dist 单页构建后保持一致
 - 2026-08-12: 验收 workspace 参数生命周期修复并发布 v6.32.12；页面、扩展 manifest 与构建产物版本一致
+- 2026-08-18: 源码页面与源码 extension manifest 已为 v6.33.0；Responses、参数注册表和三态 UI 随现有模块顺序进入双产物，无需新增构建分支。当前根目录构建单页仍为 v6.32.14，记录为待下次构建同步的真实状态。

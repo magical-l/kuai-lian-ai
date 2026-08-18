@@ -439,6 +439,78 @@ const providers = {
 			}
 			return null;
 		}
+	},
+	responses: {
+		buildRequest(baseUrl, apiKey, model, messages) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
+			const transformed = this.transformMessages(messages);
+			const body = { model, input: transformed.input, stream: true };
+			if (transformed.instructions) body.instructions = transformed.instructions;
+			return {
+				url: baseUrl + '/v1/responses',
+				headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+				body
+			};
+		},
+		// 内部消息是 OpenAI 聊天格式（content 为 string 或 [{type:'text'|'image_url'}]），
+		// Responses API 输入用 input_text / input_image / output_text 类型，system 走顶层 instructions
+		transformMessages(messages) {
+			const input = [];
+			const instructions = [];
+			messages.forEach(m => {
+				if (m.role === 'system') {
+					if (typeof m.content === 'string') instructions.push(m.content);
+					else if (Array.isArray(m.content)) {
+						const text = m.content.filter(p => p.type === 'text' || p.type === 'file_text').map(p => p.text || '').join('\n');
+						if (text) instructions.push(text);
+					}
+					return;
+				}
+				const isAssistant = m.role === 'assistant';
+				let parts;
+				if (typeof m.content === 'string') {
+					parts = [{ type: isAssistant ? 'output_text' : 'input_text', text: m.content }];
+				} else if (Array.isArray(m.content)) {
+					parts = m.content.map(p => {
+						if (p.type === 'text' || p.type === 'file_text') {
+							return { type: isAssistant ? 'output_text' : 'input_text', text: p.text || '' };
+						}
+						if (p.type === 'image_url' && p.image_url) {
+							return { type: 'input_image', image_url: typeof p.image_url === 'string' ? p.image_url : p.image_url.url };
+						}
+						if (p.type === 'image' || p.type === 'file') {
+							const src = p.source;
+							if (!src) return { type: 'input_text', text: '[附件 数据缺失]' };
+							const url = src.type === 'url' ? src.url : `data:${src.media_type};base64,${src.data}`;
+							return { type: 'input_image', image_url: url };
+						}
+						return { type: isAssistant ? 'output_text' : 'input_text', text: '[附件 不支持的类型]' };
+					});
+				} else {
+					parts = [{ type: isAssistant ? 'output_text' : 'input_text', text: String(m.content == null ? '' : m.content) }];
+				}
+				input.push({ type: 'message', role: m.role, content: parts });
+			});
+			return { input, instructions: instructions.join('\n') };
+		},
+		parseChunk(json) {
+			if (json.type === 'response.output_text.delta' && json.delta) {
+				return { content: json.delta };
+			}
+			if ((json.type === 'response.reasoning_summary_text.delta' || json.type === 'response.reasoning_text.delta') && json.delta) {
+				return { reasoning: json.delta };
+			}
+			return null;
+		},
+		testConfig(baseUrl, apiKey, model) {
+			baseUrl = baseUrl.replace(/\/+$/, '');
+			return {
+				url: baseUrl + '/v1/responses',
+				headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+				body: { model, input: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: 'hi' }] }], max_output_tokens: 3 }
+			};
+		},
+		needsTagParsing: false
 	}
 };
 // 从模板克隆元素

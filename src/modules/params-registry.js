@@ -22,6 +22,9 @@ var PARAMS_REGISTRY = {
       { key: "stop_sequences",     label: "停止序列",           type: "text",    placeholder: "逗号分隔多个" },
       { key: "max_output_tokens",  label: "最大输出 Token 数",  type: "integer", min: 1, default: 2048 },
     ],
+    responses: [
+      { key: "reasoning_effort", label: "思考强度", type: "select", options: ["low", "medium", "high"], default: "high" },
+    ],
   },
   tts: {
     common: [

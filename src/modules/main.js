@@ -489,7 +489,7 @@ async function handleSend() {
 	if (!currentSession) {
 		const initialModelParams = typeof defaultSelectedEndpointParams !== 'undefined'
 			&& Object.keys(defaultSelectedEndpointParams).length > 0
-			? defaultSelectedEndpointParams
+			? snapshotData(defaultSelectedEndpointParams)
 			: null;
 		currentSession = await createSession(content, [...selectedEndpoints], initialModelParams);
 		isNewSession = true;
@@ -590,14 +590,15 @@ async function handleSend() {
 				const cfg = resolveNodeConfig(id);
 				// Merge param overrides for image generation
 				var imgOvr = null;
-				if (currentSession && currentSession.modelParams && currentSession.modelParams[id]) {
-					imgOvr = currentSession.modelParams[id];
-				} else if (typeof defaultSelectedEndpointParams !== 'undefined' && defaultSelectedEndpointParams[id]) {
-					imgOvr = defaultSelectedEndpointParams[id];
+				if (currentSession && hasOwnEndpointParams(currentSession.modelParams, id)) {
+					imgOvr = readOwnEndpointParams(currentSession.modelParams, id);
+				} else if (typeof defaultSelectedEndpointParams !== 'undefined'
+					&& hasOwnEndpointParams(defaultSelectedEndpointParams, id)) {
+					imgOvr = readOwnEndpointParams(defaultSelectedEndpointParams, id);
 				}
 				if (imgOvr) {
 					cfg.params = cfg.params || {};
-					for (var sk in imgOvr) { if (imgOvr.hasOwnProperty(sk) && sk !== '_custom') cfg.params[sk] = imgOvr[sk]; }
+					for (var sk in imgOvr) { if (Object.prototype.hasOwnProperty.call(imgOvr, sk) && sk !== '_custom') setOwnEnumerableDataProperty(cfg.params, sk, imgOvr[sk]); }
 				}
 				const result = await callImageGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.isFullUrl, cfg.params, signal, initialResult => {
 					if (signal.aborted || isSessionInvalidated(targetSessionId)) return;
@@ -633,14 +634,15 @@ async function handleSend() {
 			try {
 				const cfg = resolveNodeConfig(id);
 				var videoOvr = null;
-				if (currentSession && currentSession.modelParams && currentSession.modelParams[id]) {
-					videoOvr = currentSession.modelParams[id];
-				} else if (typeof defaultSelectedEndpointParams !== 'undefined' && defaultSelectedEndpointParams[id]) {
-					videoOvr = defaultSelectedEndpointParams[id];
+				if (currentSession && hasOwnEndpointParams(currentSession.modelParams, id)) {
+					videoOvr = readOwnEndpointParams(currentSession.modelParams, id);
+				} else if (typeof defaultSelectedEndpointParams !== 'undefined'
+					&& hasOwnEndpointParams(defaultSelectedEndpointParams, id)) {
+					videoOvr = readOwnEndpointParams(defaultSelectedEndpointParams, id);
 				}
 				if (videoOvr) {
 					cfg.params = cfg.params || {};
-					for (var sk in videoOvr) { if (videoOvr.hasOwnProperty(sk) && sk !== '_custom') cfg.params[sk] = videoOvr[sk]; }
+					for (var sk in videoOvr) { if (Object.prototype.hasOwnProperty.call(videoOvr, sk) && sk !== '_custom') setOwnEnumerableDataProperty(cfg.params, sk, videoOvr[sk]); }
 				}
 				const result = await callVideoGeneration(cfg.style || 'openai', cfg.baseUrl, cfg.key, (info.node.modelId || info.node.name), messages, cfg.isFullUrl, cfg.params, signal);
 				if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
@@ -668,14 +670,15 @@ async function handleSend() {
 				var cfg = resolveNodeConfig(id);
 				// Merge param overrides for TTS
 				var ttsOvr = null;
-				if (currentSession && currentSession.modelParams && currentSession.modelParams[id]) {
-					ttsOvr = currentSession.modelParams[id];
-				} else if (typeof defaultSelectedEndpointParams !== "undefined" && defaultSelectedEndpointParams[id]) {
-					ttsOvr = defaultSelectedEndpointParams[id];
+				if (currentSession && hasOwnEndpointParams(currentSession.modelParams, id)) {
+					ttsOvr = readOwnEndpointParams(currentSession.modelParams, id);
+				} else if (typeof defaultSelectedEndpointParams !== 'undefined'
+					&& hasOwnEndpointParams(defaultSelectedEndpointParams, id)) {
+					ttsOvr = readOwnEndpointParams(defaultSelectedEndpointParams, id);
 				}
 				if (ttsOvr) {
 					cfg.params = cfg.params || {};
-					for (var sk in ttsOvr) { if (ttsOvr.hasOwnProperty(sk) && sk !== "_custom") cfg.params[sk] = ttsOvr[sk]; }
+					for (var sk in ttsOvr) { if (Object.prototype.hasOwnProperty.call(ttsOvr, sk) && sk !== "_custom") setOwnEnumerableDataProperty(cfg.params, sk, ttsOvr[sk]); }
 				}
 				var input = '';
 				for (var i = messages.length - 1; i >= 0; i--) {
@@ -723,14 +726,15 @@ async function handleSend() {
 				var cfg = resolveNodeConfig(id);
 				// Merge param overrides for ASR
 				var asrOvr = null;
-				if (currentSession && currentSession.modelParams && currentSession.modelParams[id]) {
-					asrOvr = currentSession.modelParams[id];
-				} else if (typeof defaultSelectedEndpointParams !== "undefined" && defaultSelectedEndpointParams[id]) {
-					asrOvr = defaultSelectedEndpointParams[id];
+				if (currentSession && hasOwnEndpointParams(currentSession.modelParams, id)) {
+					asrOvr = readOwnEndpointParams(currentSession.modelParams, id);
+				} else if (typeof defaultSelectedEndpointParams !== 'undefined'
+					&& hasOwnEndpointParams(defaultSelectedEndpointParams, id)) {
+					asrOvr = readOwnEndpointParams(defaultSelectedEndpointParams, id);
 				}
 				if (asrOvr) {
 					cfg.params = cfg.params || {};
-					for (var sk in asrOvr) { if (asrOvr.hasOwnProperty(sk) && sk !== "_custom") cfg.params[sk] = asrOvr[sk]; }
+					for (var sk in asrOvr) { if (Object.prototype.hasOwnProperty.call(asrOvr, sk) && sk !== "_custom") setOwnEnumerableDataProperty(cfg.params, sk, asrOvr[sk]); }
 				}
 				// Process each audio file through the ASR endpoint
 				var transcriptions = [];
@@ -1044,7 +1048,7 @@ async function handleNewSession() {
 			title: currentSession.title + '（分叉）',
 			createdAt: Date.now(),
 			messages: JSON.parse(JSON.stringify(contextMessages)),
-			modelParams: currentSession.modelParams ? JSON.parse(JSON.stringify(currentSession.modelParams)) : {}
+			modelParams: currentSession.modelParams ? snapshotData(currentSession.modelParams) : {}
 		};
 		const saved = await saveSession(newSession);
 		if (saved === null) return;

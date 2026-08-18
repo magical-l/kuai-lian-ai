@@ -268,6 +268,20 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var dialog = $('dialog.editing.endpoint');
 	var isEdit = !!node;
 	var tabContainer = $('.tab.container', dialog);
+	if (!isEdit) {
+		var batchRootNameInput = dialog.querySelector('input[name="batch-root-name"]');
+		if (batchRootNameInput) batchRootNameInput.value = '';
+		var batchFieldList = $('.field-list', dialog);
+		if (batchFieldList) {
+			clearBatchDragDrop(batchFieldList, true);
+			while (batchFieldList.firstChild) batchFieldList.removeChild(batchFieldList.firstChild);
+		}
+		if (tabContainer) {
+			tabContainer.querySelectorAll('input[name="dialog-tab"]').forEach(function(radio) {
+				radio.checked = radio.value === 'single';
+			});
+		}
+	}
 	$('h3', dialog).textContent = isEdit ? '编辑节点' : '新增节点';
 	// tab 容器：编辑时隐藏按钮条，新增时显示
 	if (tabContainer) {
@@ -329,7 +343,8 @@ function showEditGroupDialog(node, parentId, onSave) {
 				openai: { chat: '/v1/chat/completions', embedding: '/v1/embeddings', 'image-generation': '/v1/images/generations', 'video-generation': '/v1/videos', tts: '/v1/audio/speech', reranking: '/v1/rerank', asr: '/v1/audio/transcriptions' },
 				jimeng: { 'video-generation': '/v1/videos/generations' },
 				claude: { chat: '/v1/messages' },
-				gemini: { chat: '/v1beta/models/' + (modelId || '{modelId}') + ':streamGenerateContent?alt=sse', embedding: '/v1beta/models/' + (modelId || '{modelId}') + ':embedContent', 'image-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', 'video-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', tts: '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent' }
+				gemini: { chat: '/v1beta/models/' + (modelId || '{modelId}') + ':streamGenerateContent?alt=sse', embedding: '/v1beta/models/' + (modelId || '{modelId}') + ':embedContent', 'image-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', 'video-generation': '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent', tts: '/v1beta/models/' + (modelId || '{modelId}') + ':generateContent' },
+				responses: { chat: '/v1/responses' }
 			};
 			var map = paths[style];
 			if (map && map[type]) return map[type];
@@ -343,6 +358,16 @@ function showEditGroupDialog(node, parentId, onSave) {
 	var typeHint = dialog.querySelector('input[name="type"]').closest('.field-control').querySelector('.hint');
 		function setRadio(name, val, ctx) { ctx.querySelectorAll('input[name="' + name + '"]').forEach(function(r) { r.checked = r.value === val; }); }
 		function getRadio(name, ctx) { var r = ctx.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
+		function getEffectiveType() {
+			return getRadio('type', dialog)
+				|| (typeof rcfg !== 'undefined' && rcfg && rcfg.type)
+				|| detectModelType(modelidInput.value.trim());
+		}
+		function getEffectiveStyle() {
+			return getRadio('style', dialog)
+				|| (typeof rcfg !== 'undefined' && rcfg && rcfg.style)
+				|| 'openai';
+		}
 		function updatePathDisplay(styleVal) {
 			// isFullUrl 态：path 被用户显式清空，不显示路径后缀
 			if (isFullUrlCheckbox && isFullUrlCheckbox.checked) {
@@ -409,83 +434,92 @@ function showEditGroupDialog(node, parentId, onSave) {
 		else paramList.appendChild(div);
 	}
 
-	function renderParamControls(type, style, existingParams, customParams) {
+	var originalParams = node && node.params ? node.params : {};
+	var existingParams = buildExistingParams(node) || {};
+	var parameterDrafts = {};
+	var activeParameterDraftKey = null;
+	var customParamDraft = node && node.customParams
+		? node.customParams.map(function(cp) { return { key: cp.key, value: cp.value }; })
+		: [];
+	var hasParent = false;
+	var fallbackParams = {};
+
+	function getParameterDraftKey(type, style) {
+		return type + '\u0000' + style;
+	}
+
+	function snapshotParamDraft() {
+		if (!paramList) return;
+		var rows = paramList.querySelectorAll('.registered.param-row');
+		var addButton = paramList.querySelector('.add-custom-param.btn');
+		if (rows.length === 0 && !addButton) return;
+		customParamDraft = [];
+		paramList.querySelectorAll('.param-row.custom').forEach(function(row) {
+			var inputs = row.querySelectorAll('input');
+			var key = inputs[0] ? inputs[0].value : '';
+			var value = inputs[1] ? inputs[1].value : '';
+			customParamDraft.push({ key: key, value: value });
+		});
+		if (!activeParameterDraftKey) return;
+		if (rows.length === 0) return;
+		var draft = {};
+		rows.forEach(function(row) {
+			var control = row.querySelector('.own.param.control').querySelector('input, select');
+			draft[row.dataset.paramKey] = {
+				state: row.dataset.state,
+				changed: row.dataset.changed === 'true',
+				value: control ? control.value : ''
+			};
+		});
+		parameterDrafts[activeParameterDraftKey] = draft;
+	}
+
+	function restoreParamDraft(draft) {
+		if (!draft) return;
+		paramList.querySelectorAll('.registered.param-row').forEach(function(row) {
+			var item = draft[row.dataset.paramKey];
+			if (!item) return;
+			row.dataset.state = item.state;
+			row.dataset.changed = item.changed ? 'true' : 'false';
+			row.querySelectorAll('input[type="radio"]').forEach(function(radio) {
+				radio.checked = radio.value === item.state;
+			});
+			var ownControl = row.querySelector('.own.param.control');
+			var inherited = row.querySelector('.inherited.param.hint');
+			ownControl.classList.toggle('hidden', item.state !== 'own');
+			inherited.classList.toggle('hidden', item.state !== 'inherit');
+			var control = ownControl.querySelector('input, select');
+			if (control) control.value = item.value;
+			var valueLabel = ownControl.querySelector('.param.val');
+			if (valueLabel && control) valueLabel.textContent = control.value;
+		});
+	}
+
+	function renderParamControls(type, style) {
 		var defs = typeof getParamDefs === 'function' ? getParamDefs(type, style) : [];
 		if (!paramSection || !paramList) return;
+		activeParameterDraftKey = getParameterDraftKey(type, style);
+		paramList.innerHTML = '';
 		if (defs.length === 0) {
 			paramSection.style.display = 'none';
 			return;
 		}
 		paramSection.style.display = '';
-		paramList.innerHTML = '';
-		_customParamId = 0;
-		defs.forEach(function(def) {
-			var label_ = doc.createElement('label');
-			label_.className = 'form-row , param-row , flex items-go-x items-y-near-center';
-			var nameSpan = doc.createElement('span');
-			nameSpan.className = 'field-label';
-			nameSpan.textContent = def.label + ':';
-			label_.appendChild(nameSpan);
-			var ctrlSpan = doc.createElement('span');
-			ctrlSpan.className = 'field-control';
-			var val = existingParams && existingParams.hasOwnProperty(def.key)
-				? existingParams[def.key]
-				: (def.hasOwnProperty('default') ? def.default : '');
-			if (def.type === 'range') {
-				var input = doc.createElement('input');
-				input.type = 'range';
-				input.name = 'param-' + def.key;
-				if (def.min !== undefined) input.min = def.min;
-				if (def.max !== undefined) input.max = def.max;
-				if (def.step !== undefined) input.step = def.step;
-				input.value = val !== '' ? val : def.default;
-				var valSpan = doc.createElement('span');
-				valSpan.className = 'param , val';
-				valSpan.textContent = input.value;
-				input.addEventListener('input', function() { valSpan.textContent = this.value; });
-				ctrlSpan.appendChild(input);
-				ctrlSpan.appendChild(valSpan);
-			} else if (def.type === 'integer') {
-				var input = doc.createElement('input');
-				input.type = 'number';
-				input.name = 'param-' + def.key;
-				if (def.min !== undefined) input.min = def.min;
-				if (def.max !== undefined) input.max = def.max;
-				if (val !== '') input.value = val;
-				else if (def.hasOwnProperty('default')) input.value = def.default;
-				ctrlSpan.appendChild(input);
-			} else if (def.type === 'text') {
-				var input = doc.createElement('input');
-				input.type = 'text';
-				input.name = 'param-' + def.key;
-				if (def.placeholder) input.placeholder = def.placeholder;
-				if (val !== '' && val !== null && val !== undefined) input.value = val;
-				ctrlSpan.appendChild(input);
-			} else if (def.type === 'select') {
-				var sel = doc.createElement('select');
-				sel.name = 'param-' + def.key;
-				(def.options || []).forEach(function(opt) {
-					var optEl = doc.createElement('option');
-					optEl.value = opt;
-					optEl.textContent = opt;
-					if (opt === val || (val === '' && opt === def.default)) optEl.selected = true;
-					sel.appendChild(optEl);
-				});
-				ctrlSpan.appendChild(sel);
-			}
-			label_.appendChild(ctrlSpan);
-			paramList.appendChild(label_);
+		renderModelParamControls(paramList, defs, existingParams, fallbackParams, {
+			allowInherit: hasParent,
+			inheritLabel: '继承上级',
+			inheritValueLabel: '当前为',
+			modelLabel: '由模型决定'
 		});
-		// 自定义参数按钮 + 已存的自定义参数
+		restoreParamDraft(parameterDrafts[activeParameterDraftKey]);
+		_customParamId = 0;
 		var addBtn = doc.createElement('button');
 		addBtn.type = 'button';
 		addBtn.className = 'add-custom-param btn';
 		addBtn.textContent = '+ 自定义参数';
 		addBtn.onclick = function() { addCustomParamRow('', ''); };
 		paramList.appendChild(addBtn);
-		if (customParams && customParams.length) {
-			customParams.forEach(function(cp) { addCustomParamRow(cp.key, cp.value); });
-		}
+		customParamDraft.forEach(function(cp) { addCustomParamRow(cp.key, cp.value); });
 	}
 	setValues(dialog, {
 		'input[name="name"]': node ? node.name : '',
@@ -519,9 +553,6 @@ function showEditGroupDialog(node, parentId, onSave) {
 	}
 	typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
 	updateTypeHint(detectedType);
-	var initialType = getRadio('type', dialog) || detectModelType(node ? node.modelId || '' : '');
-	var initialStyle = getRadio('style', dialog);
-	renderParamControls(initialType, initialStyle, buildExistingParams(node), node ? node.customParams : null);
 
 	// 继承值填入
 	// 对编辑：从 node.id 走 resolveNodeConfig（沿祖先链往上找）
@@ -534,6 +565,13 @@ function showEditGroupDialog(node, parentId, onSave) {
 			hasParent = isEdit ? (_r && _r.ancestors.length > 0) : !!parentId;
 		} catch(e) { hasParent = !!parentId; }
 		var rcfg = resolveNodeConfig(inheritId);
+		if (isEdit && _r && _r.ancestors.length > 0) {
+			var nearestParent = _r.ancestors[_r.ancestors.length - 1];
+			var parentConfig = resolveNodeConfig(nearestParent.id);
+			fallbackParams = parentConfig && parentConfig.params ? parentConfig.params : {};
+		} else if (!isEdit && parentId && rcfg && rcfg.params) {
+			fallbackParams = rcfg.params;
+		}
 		if (rcfg) {
 			(function applyInherit(inputEl, ownVal, rcfgVal) {
 				if (!ownVal && rcfgVal) {
@@ -619,6 +657,7 @@ function showEditGroupDialog(node, parentId, onSave) {
 			});
 			setRadio('style', node ? node.style || 'openai' : 'openai', dialog);
 		}
+	renderParamControls(getEffectiveType(), getEffectiveStyle());
 	// 初始路径显示（等 style 最终确定后）
 	updatePathDisplay(getRadio('style', dialog) || '');
 
@@ -645,66 +684,78 @@ function showEditGroupDialog(node, parentId, onSave) {
 		}
 		// type 自动检测（仅在用户未手动修改过 type 时）
 		if (!_typeUserEdited) {
+			snapshotParamDraft();
 			var detected = detectModelType(this.value);
 			setRadio('type', detected, dialog);
 			updateTypeHint(detected);
 			typeSel = dialog.querySelector('input[name="type"]:checked') || dialog.querySelector('input[name="type"]');
+			renderParamControls(getEffectiveType(), getEffectiveStyle());
 		}
 		updatePathDisplay(getRadio('style', dialog));
 	};
-	typeSel.onchange = function() { _typeUserEdited = true; };
 		function buildExistingParams(n) {
-	if (!n) return null;
-	var p = {};
-	if (n.params) { for (var k in n.params) { if (n.params.hasOwnProperty(k)) p[k] = n.params[k]; } }
-	if (n.voice) p.voice = n.voice;
-	if (n.instruction) p.instruction = n.instruction;
-	return Object.keys(p).length > 0 ? p : null;
-}
-dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventListener('change', function() { _typeUserEdited = true; typeSel = this; renderParamControls(this.value, getRadio('style', dialog), buildExistingParams(node), node ? node.customParams : null); updatePathDisplay(getRadio('style', dialog)); }); });
-		dialog.querySelectorAll('input[name="style"]').forEach(function(r) { r.addEventListener('change', function() { var sv = this.value; renderParamControls(getRadio('type', dialog), sv, buildExistingParams(node), node ? node.customParams : null); updatePathDisplay(sv); }); });
+			if (!n) return null;
+			var p = {};
+			if (n.params) {
+				for (var k in n.params) {
+					if (Object.prototype.hasOwnProperty.call(n.params, k)) setOwnEnumerableDataProperty(p, k, n.params[k]);
+				}
+			}
+			['voice', 'instruction'].forEach(function(key) {
+				if (Object.prototype.hasOwnProperty.call(p, key)
+					|| !Object.prototype.hasOwnProperty.call(n, key)) return;
+				var value = n[key];
+				if (value === '') setOwnEnumerableDataProperty(p, key, null);
+				else if (value !== undefined && value !== null) setOwnEnumerableDataProperty(p, key, value);
+			});
+			return Object.keys(p).length > 0 ? p : null;
+		}
+	dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.onchange = function() { _typeUserEdited = true; typeSel = this; snapshotParamDraft(); renderParamControls(getEffectiveType(), getEffectiveStyle()); updatePathDisplay(getRadio('style', dialog)); }; });
+		dialog.querySelectorAll('input[name="style"]').forEach(function(r) { r.onchange = function() { snapshotParamDraft(); renderParamControls(getEffectiveType(), getEffectiveStyle()); updatePathDisplay(getRadio('style', dialog)); }; });
 	urlInput.oninput = function() { removeIcon(this); };
 	keyInput.oninput = function() { removeIcon(this); };
 
 	dialog.show();
-	// show() 不自动处理 Escape，用闭包注册一次性 document 监听
+	if (!dialog._endpointDialogNativeClose) dialog._endpointDialogNativeClose = dialog.close.bind(dialog);
+	if (dialog._endpointDialogEscHandler) doc.removeEventListener('keydown', dialog._endpointDialogEscHandler);
 	var escHandler = function(e) {
-		if (e.key === 'Escape' && dialog.hasAttribute('open')) {
-			dialog.close();
-			doc.removeEventListener('keydown', escHandler);
-		}
+		if (e.key === 'Escape' && dialog.hasAttribute('open')) dialog.close();
 	};
+	dialog._endpointDialogEscHandler = escHandler;
 	doc.addEventListener('keydown', escHandler);
-	// 关闭时清理监听器
-	var origClose = dialog.close.bind(dialog);
 	dialog.close = function() {
-		doc.removeEventListener('keydown', escHandler);
-		origClose();
-	};
+			var activeEscHandler = dialog._endpointDialogEscHandler;
+			if (activeEscHandler) {
+				doc.removeEventListener('keydown', activeEscHandler);
+				dialog._endpointDialogEscHandler = null;
+			}
+			clearBatchDragDrop($('.field-list', dialog), true);
+			dialog._endpointDialogNativeClose();
+		};
 	toggleCheckbox = dialog.querySelector('.toggle.apikey input');
 	if (toggleCheckbox) {
-		toggleCheckbox.addEventListener('change', function() {
+		toggleCheckbox.onchange = function() {
 			keyInput.type = this.checked ? 'text' : 'password';
-		});
+		};
 	}
 	if (isFullUrlCheckbox) {
-			isFullUrlCheckbox.addEventListener('change', function() {
-				isFullUrlChanged = true;
-				urlRow.classList.toggle('direct', this.checked);
-				// 同步清空/恢复路径后缀，而非仅靠 CSS 遮挡
-				if (this.checked) {
-					pathSuffix.textContent = '';
-					pathSuffix.style.display = 'none';
-				} else {
-					updatePathDisplay(getRadio('style', dialog));
-				}
-			});
-		}
+		isFullUrlCheckbox.onchange = function() {
+			isFullUrlChanged = true;
+			urlRow.classList.toggle('direct', this.checked);
+			// 同步清空/恢复路径后缀，而非仅靠 CSS 遮挡
+			if (this.checked) {
+				pathSuffix.textContent = '';
+				pathSuffix.style.display = 'none';
+			} else {
+				updatePathDisplay(getRadio('style', dialog));
+			}
+		};
+	}
 	// Enter → 切到下一个输入框
 	var formFields = [nameInput, modelidInput, urlInput, keyInput, remarkInput];
 	var form = dialog.querySelector('form');
 	if (form) {
-		form.addEventListener('keydown', function(e) {
+		form.onkeydown = function(e) {
 			if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey) return;
 			var idx = formFields.indexOf(document.activeElement);
 			if (idx >= 0 && idx < formFields.length - 1) {
@@ -717,7 +768,7 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 				var saveBtn = $('.ok', dialog);
 				if (saveBtn) saveBtn.click();
 			}
-		});
+		};
 	}
 	onClick({
 		'.close': function() { dialog.close(); },
@@ -759,25 +810,29 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 			if (theRemark) saveData.remark = theRemark;
 			else saveData.remark = '';
 			// 收集 params
-			var params = {};
-			if (paramList) {
-				var inputs = paramList.querySelectorAll('input, select');
-				inputs.forEach(function(el) {
-					var key = el.name.replace(/^param-/, '');
-					if (el.type === 'number') {
-						var numVal = parseFloat(el.value);
-						if (!isNaN(numVal)) params[key] = numVal;
-					} else if (el.type === 'range') {
-						params[key] = parseFloat(el.value);
-					} else {
-						params[key] = el.value;
-					}
-				});
+			var collected = collectModelParamControls(paramList, originalParams);
+			if (!collected.valid) {
+				if (collected.firstInvalidControl) collected.firstInvalidControl.focus();
+				return;
 			}
+			var params = collected.params;
 			if (Object.keys(params).length > 0) saveData.params = params;
-			// 向后兼容：voice/instruction 同步到顶层字段
-			saveData.voice = params.voice || '';
-			saveData.instruction = params.instruction || '';
+			else if (node && node.params) saveData.params = {};
+			// 向后兼容：具体值同步；已有 legacy 字段切 inherit/model/空值时请求删除顶层字段
+			var removeFields = [];
+			['voice', 'instruction'].forEach(function(key) {
+				var hasLegacyField = !!node && Object.prototype.hasOwnProperty.call(node, key);
+				var row = paramList
+					? Array.prototype.find.call(paramList.querySelectorAll('.registered.param-row'), function(candidate) {
+						return candidate.dataset.paramKey === key;
+					})
+					: null;
+				if (!row || row.dataset.changed !== 'true') return;
+				var value = params[key];
+				if (value !== undefined && value !== null && value !== '') setOwnEnumerableDataProperty(saveData, key, value);
+				else if (hasLegacyField) removeFields.push(key);
+			});
+			if (removeFields.length > 0) saveData._removeLegacyParamFields = removeFields;
 				// 收集自定义参数
 				var customRows = paramList ? paramList.querySelectorAll('.param-row.custom') : [];
 				if (customRows.length > 0) {
@@ -793,17 +848,17 @@ dialog.querySelectorAll('input[name="type"]').forEach(function(r) { r.addEventLi
 			dialog.close();
 		}
 	}, dialog);
-	// 批量 tab — 惰性构建字段块
-	if (!isEdit && tabContainer) {
+	// 批量 tab — 惰性构建字段块；编辑时同步清除新增窗口遗留处理器
+	if (tabContainer) {
 		tabContainer.querySelectorAll('input[name="dialog-tab"]').forEach(function(radio) {
-			radio.addEventListener('change', function() {
-				if (this.value === 'batch' && this.checked) {
-					var list = $('.field-list', dialog);
-					if (list && !list.hasChildNodes()) {
-						buildBatchFields(dialog, parentId);
+			radio.onchange = !isEdit
+				? function() {
+					if (this.value === 'batch' && this.checked) {
+						var list = $('.field-list', dialog);
+						if (list && !list.hasChildNodes()) buildBatchFields(dialog, parentId);
 					}
 				}
-			});
+				: null;
 		});
 	}
 }
@@ -819,7 +874,8 @@ function buildBatchFields(dialog, parentId) {
 			{ value: 'openai', text: 'ChatGPT式', hint: 'OpenAI、国内主流<br>/v1/chat/completions' },
 			{ value: 'jimeng', text: '即梦式', hint: '即梦/Seedance<br>/v1/videos/generations' },
 			{ value: 'claude', text: 'Claude式', hint: 'Anthropic<br>/v1/messages' },
-			{ value: 'gemini', text: 'Gemini式', hint: 'Google<br>/v1beta/models/……' }
+			{ value: 'gemini', text: 'Gemini式', hint: 'Google<br>/v1beta/models/……' },
+			{ value: 'responses', text: 'Responses式', hint: 'OpenAI 新一代<br>/v1/responses' }
 		]},
 		{ key: 'type', label: '类型', options: [
 			{ value: '', text: '继承', inherit: true },
@@ -959,42 +1015,53 @@ function addTagToField(tagContainer, value, displayText) {
 	tag.appendChild(removeBtn);
 	tagContainer.appendChild(tag);
 }
+function clearBatchDragDrop(list, clearHandlers) {
+	if (!list) return;
+	list._batchDragSrc = null;
+	list.querySelectorAll('.dragging').forEach(function(el) { el.classList.remove('dragging'); });
+	list.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+	if (!clearHandlers) return;
+	list.ondragstart = null;
+	list.ondragover = null;
+	list.ondrop = null;
+	list.ondragend = null;
+}
 function setupBatchDragDrop(list) {
-	var dragSrc = null;
-	list.addEventListener('dragstart', function(e) {
+	clearBatchDragDrop(list, false);
+	list.ondragstart = function(e) {
 		var block = e.target.closest('.batch-field');
-		if (!block || !e.target.closest('.handle')) { e.preventDefault(); return; }
-		dragSrc = block;
+		if (!block || !e.target.closest('.handle')) {
+			e.preventDefault();
+			clearBatchDragDrop(list, false);
+			return;
+		}
+		list._batchDragSrc = block;
 		block.classList.add('dragging');
 		e.dataTransfer.effectAllowed = 'move';
-	});
-	list.addEventListener('dragend', function() {
-		list.querySelectorAll('.dragging').forEach(function(el) { el.classList.remove('dragging'); });
-		list.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
-	});
-	list.addEventListener('dragover', function(e) {
+	};
+	list.ondragover = function(e) {
 		e.preventDefault();
 		e.dataTransfer.dropEffect = 'move';
 		var block = e.target.closest('.batch-field');
-		if (!block || block === dragSrc) return;
+		if (!block || block === list._batchDragSrc) return;
 		list.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
 		block.classList.add('drag-over');
-	});
-	list.addEventListener('drop', function(e) {
+	};
+	list.ondrop = function(e) {
 		e.preventDefault();
-		list.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
-		if (!dragSrc) return;
+		var dragSrc = list._batchDragSrc;
 		var target = e.target.closest('.batch-field');
-		if (!target || target === dragSrc) return;
-		var rect = target.getBoundingClientRect();
-		var midY = rect.top + rect.height / 2;
-		if (e.clientY < midY) {
-			list.insertBefore(dragSrc, target);
-		} else {
-			list.insertBefore(dragSrc, target.nextSibling);
+		if (dragSrc && target && target !== dragSrc) {
+			var rect = target.getBoundingClientRect();
+			var midY = rect.top + rect.height / 2;
+			if (e.clientY < midY) list.insertBefore(dragSrc, target);
+			else list.insertBefore(dragSrc, target.nextSibling);
 		}
-		dragSrc = null;
-	});
+		clearBatchDragDrop(list, false);
+	};
+	list.ondragend = function() {
+		clearBatchDragDrop(list, false);
+	};
 }
 function collectBatchFieldValues(dialog) {
 	var result = {};
@@ -1229,12 +1296,14 @@ function testConnection(nodeId) {
 			var tcfg = testFn.call(provider, rcfg.baseUrl, rcfg.key, modelName);
 			if (rcfg.isFullUrl) tcfg.url = rcfg.baseUrl.replace(/\/+$/, '');
 			// Workspace param override (test connection)
-			var ovr2 = typeof defaultSelectedEndpointParams !== 'undefined' ? defaultSelectedEndpointParams[nodeId] : null;
+			var ovr2 = typeof defaultSelectedEndpointParams !== 'undefined'
+				? readOwnEndpointParams(defaultSelectedEndpointParams, nodeId)
+				: null;
 			if (ovr2) {
 				rcfg.params = rcfg.params || {};
-				for (var sk in ovr2) { if (ovr2.hasOwnProperty(sk) && sk !== '_custom') rcfg.params[sk] = ovr2[sk]; }
+				for (var sk in ovr2) { if (Object.prototype.hasOwnProperty.call(ovr2, sk) && sk !== '_custom') setOwnEnumerableDataProperty(rcfg.params, sk, ovr2[sk]); }
 				if (ovr2._custom && ovr2._custom.length) {
-					ovr2._custom.forEach(function(cp) { if (cp && cp.key && cp.key.trim()) rcfg.params[cp.key.trim()] = cp.value; });
+					ovr2._custom.forEach(function(cp) { if (cp && cp.key && cp.key.trim()) setOwnEnumerableDataProperty(rcfg.params, cp.key.trim(), cp.value); });
 				}
 			}
 			mergeParams(tcfg.body, rcfg.params, rcfg.style);

@@ -18,6 +18,15 @@ function createTagParser() {
 	};
 }
 
+function setOwnEnumerableDataProperty(target, key, value) {
+	Object.defineProperty(target, key, {
+		value,
+		writable: true,
+		enumerable: true,
+		configurable: true
+	});
+}
+
 function processWithTagParser(chunk, state, parser, onChunk) {
 	parser.buffer += chunk;
 	if (!parser.inThinking) {
@@ -185,62 +194,49 @@ async function callAPI(style, baseUrl, apiKey, model, messages, onChunk, signal 
 	if (!provider) throw new Error('不支持的接口风格: ' + style);
 	return await callProvider(provider, baseUrl, apiKey, model, messages, onChunk, signal, style, params, isFullUrl);
 }
-
-	async function callEmbedding(style, baseUrl, apiKey, model, input, isFullUrl, params, signal) {
-        const provider = providers[style];
-
-        if (!provider)
-            throw new Error("不支持的接口风格: " + style);
-
-        if (!provider.buildEmbeddingRequest)
-            throw new Error("该接口不支持嵌入");
-
-        const req = provider.buildEmbeddingRequest(baseUrl, apiKey, model, input);
-		if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
-        console.log("Embed req:", req.url, JSON.stringify(req.headers));
-
-        	if (params) { mergeParams(req.body, params, style); }
+async function callEmbedding(style, baseUrl, apiKey, model, input, isFullUrl, params, signal) {
+	const provider = providers[style];
+	if (!provider) throw new Error("不支持的接口风格: " + style);
+	if (!provider.buildEmbeddingRequest) throw new Error("该接口不支持嵌入");
+	const req = provider.buildEmbeddingRequest(baseUrl, apiKey, model, input);
+	if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
+	console.log("Embed req:", req.url, JSON.stringify(req.headers));
+	if (params) {
+		mergeParams(req.body, params, style);
+	}
 	const res = await fetchWithTimeout(req.url, {
-            method: "POST",
-            headers: req.headers,
-            body: JSON.stringify(req.body),
-			signal
-        }, 60000);
-
-        if (!res.ok) {
-            const err = await res.text().catch(() => "");
-            throw new Error("嵌入请求失败: " + res.status + (err ? " - " + err : ""));
-        }
-
-        const ct = res.headers.get("content-type") || "";
-
-        if (ct.includes("text/html")) {
-            const body = await res.text().catch(() => "");
-            const m = body.match(/<title>([^<]+)<\/title>/i);
-            throw new Error("嵌入请求失败: 服务器返回了HTML页面 — " + (m ? m[1] : body.slice(0, 100)));
-        }
-
-        if (!ct.includes("application/json")) {
-            const preview = await res.text().catch(() => "");
-            throw new Error("嵌入请求失败: 响应类型不是 JSON (" + ct + ") — " + preview.slice(0, 100));
-        }
-
-        const text = await res.text();
-        let data;
-
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            throw new Error("嵌入请求失败: 响应体不是有效 JSON — " + text.slice(0, 100));
-        }
-
-        if (data.error) {
-            const msg = data.error.message || data.error.code || JSON.stringify(data.error);
-            throw new Error("嵌入请求失败: " + msg);
-        }
-
-        return provider.parseEmbeddingResponse(data);
-    }
+		method: 'POST',
+		headers: req.headers,
+		body: JSON.stringify(req.body),
+		signal
+	}, 60000);
+	if (!res.ok) {
+		const err = await res.text().catch(() => "");
+		throw new Error("嵌入请求失败: " + res.status + (err ? " - " + err : ""));
+	}
+	const ct = res.headers.get("content-type") || "";
+	if (ct.includes("text/html")) {
+		const body = await res.text().catch(() => "");
+		const m = body.match(/<title>([^<]+)<\/title>/i);
+		throw new Error("嵌入请求失败: 服务器返回了HTML页面 — " + (m ? m[1] : body.slice(0, 100)));
+	}
+	if (!ct.includes("application/json")) {
+		const preview = await res.text().catch(() => "");
+		throw new Error("嵌入请求失败: 响应类型不是 JSON (" + ct + ") — " + preview.slice(0, 100));
+	}
+	const text = await res.text();
+	let data;
+	try {
+		data = JSON.parse(text);
+	} catch (e) {
+		throw new Error("嵌入请求失败: 响应体不是有效 JSON — " + text.slice(0, 100));
+	}
+	if (data.error) {
+		const msg = data.error.message || data.error.code || JSON.stringify(data.error);
+		throw new Error("嵌入请求失败: " + msg);
+	}
+	return provider.parseEmbeddingResponse(data);
+}
 
 function blobToBase64(blob) {
 	return new Promise((resolve, reject) => {
@@ -263,236 +259,233 @@ function base64ToBlob(b64, mimeType) {
 		}
 		byteArrays.push(new Uint8Array(byteNumbers));
 	}
-	return new Blob(byteArrays, { type: mimeType || 'audio/mpeg' });
+	return new Blob(byteArrays, {
+		type: mimeType || 'audio/mpeg'
+	});
 }
-
 async function callImageGeneration(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal, onInitialResult) {
-    const provider = providers[style];
-    if (!provider) throw new Error('不支持的接口风格: ' + style);
-    if (!provider.buildImageRequest) throw new Error('该接口不支持生图');
-
-    const req = provider.buildImageRequest(baseUrl, apiKey, model, messages);
-		if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
-    	if (params) { mergeParams(req.body, params, style); }
-	const res = await fetchWithTimeout(req.url, {
-        method: 'POST',
-        headers: req.headers,
-        body: JSON.stringify(req.body),
-		signal
-    }, 120000);
-
-    if (!res.ok) {
-        const err = await res.text().catch(() => '');
-        throw new Error('生图请求失败: ' + res.status + (err ? ' - ' + err : ''));
-    }
-
-    const ct = res.headers.get('content-type') || '';
-    if (ct.includes('text/html')) {
-        const body = await res.text().catch(() => '');
-        const m = body.match(/<title>([^<]+)<\/title>/i);
-        throw new Error('生图请求失败: 服务器返回了HTML页面 — ' + (m ? m[1] : body.slice(0, 100)));
-    }
-
-    const text = await res.text();
-    let data;
-    try {
-        data = JSON.parse(text);
-    } catch (e) {
-        throw new Error('生图请求失败: 响应体不是有效 JSON — ' + text.slice(0, 100));
-    }
-
-    if (data.error) {
-        const msg = data.error.message || data.error.code || JSON.stringify(data.error);
-        throw new Error('生图请求失败: ' + msg);
-    }
-
-    // 优先用 provider 自定义解析（Gemini inlineData 等格式）
-    if (typeof provider.parseImageResponse === 'function') {
-        var parsed = provider.parseImageResponse(data);
-        if (parsed) {
-            const result = {
-                url: null,
-                b64_json: null,
-                revised_prompt: parsed.revised_prompt || null
-            };
-            if (parsed.imageData) {
-                result.imageData = parsed.imageData;
-            }
-            if (onInitialResult) onInitialResult(result);
-            return result;
-        }
-    }
-
-    if (!data.data || !data.data[0]) {
-        throw new Error('生图响应格式错误: 缺少 data[0]');
-    }
-    const result = {
-        url: data.data[0].url || null,
-        b64_json: data.data[0].b64_json || null,
-        revised_prompt: data.data[0].revised_prompt || null
-    };
-    if (onInitialResult) onInitialResult(result);
-    // 下载图片转 blob URL（当前页面快速显示）+ base64（持久化，支持会话记录加载）
-    if (result.url && !result.b64_json) {
-        try {
-            const imgRes = await fetch(result.url, { signal });
-            if (imgRes.ok) {
-                const blob = await imgRes.blob();
-                result.blobUrl = URL.createObjectURL(blob);
-                // 转 base64 用于持久化存储
-                result.imageData = await blobToBase64(blob);
-            }
-        } catch (e) {
-            if (e.name === 'AbortError') throw e;
-            console.warn('生图图片下载失败，将使用原始 URL:', e.message);
-        }
-    } else if (result.b64_json) {
-        // API 直接返回了 base64，也存为 imageData
-        result.imageData = 'data:image/png;base64,' + result.b64_json;
-    }
-    return result;
-}
-
-async function callVideoGeneration(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) {
-    const provider = providers[style];
-    if (!provider) throw new Error('不支持的接口风格: ' + style);
-    if (!provider.buildVideoRequest) throw new Error('该接口不支持视频生成');
-
-    const req = provider.buildVideoRequest(baseUrl, apiKey, model, messages, params);
-    if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
-    if (params) { mergeParams(req.body, params, style); }
-    const res = await fetchWithTimeout(req.url, {
-        method: 'POST',
-        headers: req.headers,
-        body: JSON.stringify(req.body),
-		signal
-    }, 180000);
-
-    if (!res.ok) {
-        const err = await res.text().catch(() => '');
-        throw new Error('视频生成请求失败: ' + res.status + (err ? ' - ' + err : ''));
-    }
-
-    const ct = res.headers.get('content-type') || '';
-    if (ct.includes('text/html')) {
-        const body = await res.text().catch(() => '');
-        const m = body.match(/<title>([^<]+)<\/title>/i);
-        throw new Error('视频生成请求失败: 服务器返回了HTML页面 — ' + (m ? m[1] : body.slice(0, 100)));
-    }
-
-    const text = await res.text();
-    let data;
-    try {
-        data = JSON.parse(text);
-    } catch (e) {
-        throw new Error('视频生成请求失败: 响应体不是有效 JSON — ' + text.slice(0, 100));
-    }
-
-    if (data.error) {
-        const msg = data.error.message || data.error.code || JSON.stringify(data.error);
-        throw new Error('视频生成请求失败: ' + msg);
-    }
-
-    if (!data.data || !data.data[0]) {
-        throw new Error('视频生成响应格式错误: 缺少 data[0]');
-    }
-
-    const result = {
-        videoUrl: data.data[0].url || data.data[0].video_url || null
-    };
-
-    if (result.videoUrl) {
-        try {
-            const vidRes = await fetch(result.videoUrl, { signal });
-            if (vidRes.ok) {
-                const blob = await vidRes.blob();
-                result.blobUrl = URL.createObjectURL(blob);
-            }
-        } catch (e) {
-            if (e.name === 'AbortError') throw e;
-            console.warn('视频下载失败，将使用原始 URL:', e.message);
-        }
-    }
-    return result;
-}
-
-async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction, isFullUrl, signal) {
-    var provider = providers[style];
-    if (!provider) throw new Error('不支持的接口风格: ' + style);
-    if (!provider.buildTTSRequest) throw new Error('该接口不支持语音生成');
-
-    var req = provider.buildTTSRequest(baseUrl, apiKey, model, input, voice, instruction);
+	const provider = providers[style];
+	if (!provider) throw new Error('不支持的接口风格: ' + style);
+	if (!provider.buildImageRequest) throw new Error('该接口不支持生图');
+	const req = provider.buildImageRequest(baseUrl, apiKey, model, messages);
 	if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
-    var res = await fetchWithTimeout(req.url, {
-        method: 'POST',
-        headers: req.headers,
-        body: JSON.stringify(req.body),
+	if (params) {
+		mergeParams(req.body, params, style);
+	}
+	const res = await fetchWithTimeout(req.url, {
+		method: 'POST',
+		headers: req.headers,
+		body: JSON.stringify(req.body),
 		signal
-    }, 120000);
-
-    if (!res.ok) {
-        var errText = await res.text().catch(function() { return ''; });
-        throw new Error('TTS请求失败: ' + res.status + (errText ? ' - ' + errText : ''));
-    }
-
-    var ct = res.headers.get('content-type') || '';
-    if (ct.includes('text/html')) {
-        var body = await res.text().catch(function() { return ''; });
-        var m = body.match(/<title>([^<]+)<\/title>/i);
-        throw new Error('TTS请求失败: 返回了HTML — ' + (m ? m[1] : body.slice(0, 100)));
-    }
-
-    var blob = await res.blob();
-    var audioData = (await blobToBase64(blob)).split(',')[1] || '';
-    var blobUrl = URL.createObjectURL(blob);
-
-    return { blobUrl: blobUrl, audioData: audioData, contentType: ct, size: blob.size };
+	}, 120000);
+	if (!res.ok) {
+		const err = await res.text().catch(() => '');
+		throw new Error('生图请求失败: ' + res.status + (err ? ' - ' + err : ''));
+	}
+	const ct = res.headers.get('content-type') || '';
+	if (ct.includes('text/html')) {
+		const body = await res.text().catch(() => '');
+		const m = body.match(/<title>([^<]+)<\/title>/i);
+		throw new Error('生图请求失败: 服务器返回了HTML页面 — ' + (m ? m[1] : body.slice(0, 100)));
+	}
+	const text = await res.text();
+	let data;
+	try {
+		data = JSON.parse(text);
+	} catch (e) {
+		throw new Error('生图响应失败: 响应体不是有效 JSON — ' + text.slice(0, 100));
+	}
+	if (data.error) {
+		const msg = data.error.message || data.error.code || JSON.stringify(data.error);
+		throw new Error('生图请求失败: ' + msg);
+	}
+	// 优先用 provider 自定义解析（Gemini inlineData 等格式）
+	if (typeof provider.parseImageResponse === 'function') {
+		var parsed = provider.parseImageResponse(data);
+		if (parsed) {
+			const result = {
+				url: null,
+				b64_json: null,
+				revised_prompt: parsed.revised_prompt || null
+			};
+			if (parsed.imageData) {
+				result.imageData = parsed.imageData;
+			}
+			if (onInitialResult) onInitialResult(result);
+			return result;
+		}
+	}
+	if (!data.data || !data.data[0]) {
+		throw new Error('生图响应格式错误: 缺少 data[0]');
+	}
+	const result = {
+		url: data.data[0].url || null,
+		b64_json: data.data[0].b64_json || null,
+		revised_prompt: data.data[0].revised_prompt || null
+	};
+	if (onInitialResult) onInitialResult(result);
+	// 下载图片转 blob URL（当前页面快速显示）+ base64（持久化，支持会话记录加载）
+	if (result.url && !result.b64_json) {
+		try {
+			const imgRes = await fetch(result.url, {
+				signal
+			});
+			if (imgRes.ok) {
+				const blob = await imgRes.blob();
+				result.blobUrl = URL.createObjectURL(blob);
+				// 转 base64 用于持久化存储
+				result.imageData = await blobToBase64(blob);
+			}
+		} catch (e) {
+			if (e.name === 'AbortError') throw e;
+			console.warn('生图图片下载失败，将使用原始 URL:', e.message);
+		}
+	} else if (result.b64_json) {
+		// API 直接返回了 base64，也存为 imageData
+		result.imageData = 'data:image/png;base64,' + result.b64_json;
+	}
+	return result;
 }
-
+async function callVideoGeneration(style, baseUrl, apiKey, model, messages, isFullUrl, params, signal) {
+	const provider = providers[style];
+	if (!provider) throw new Error('不支持的接口风格: ' + style);
+	if (!provider.buildVideoRequest) throw new Error('该接口不支持视频生成');
+	const req = provider.buildVideoRequest(baseUrl, apiKey, model, messages, params);
+	if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
+	if (params) {
+		mergeParams(req.body, params, style);
+	}
+	const res = await fetchWithTimeout(req.url, {
+		method: 'POST',
+		headers: req.headers,
+		body: JSON.stringify(req.body),
+		signal
+	}, 180000);
+	if (!res.ok) {
+		const err = await res.text().catch(() => '');
+		throw new Error('视频生成请求失败: ' + res.status + (err ? ' - ' + err : ''));
+	}
+	const ct = res.headers.get('content-type') || '';
+	if (ct.includes('text/html')) {
+		const body = await res.text().catch(() => '');
+		const m = body.match(/<title>([^<]+)<\/title>/i);
+		throw new Error('视频生成请求失败: 服务器返回了HTML页面 — ' + (m ? m[1] : body.slice(0, 100)));
+	}
+	const text = await res.text();
+	let data;
+	try {
+		data = JSON.parse(text);
+	} catch (e) {
+		throw new Error('视频生成请求失败: 响应体不是有效 JSON — ' + text.slice(0, 100));
+	}
+	if (data.error) {
+		const msg = data.error.message || data.error.code || JSON.stringify(data.error);
+		throw new Error('视频生成请求失败: ' + msg);
+	}
+	if (!data.data || !data.data[0]) {
+		throw new Error('视频生成响应格式错误: 缺少 data[0]');
+	}
+	const result = {
+		videoUrl: data.data[0].url || data.data[0].video_url || null
+	};
+	if (result.videoUrl) {
+		try {
+			const vidRes = await fetch(result.videoUrl, {
+				signal
+			});
+			if (vidRes.ok) {
+				const blob = await vidRes.blob();
+				result.blobUrl = URL.createObjectURL(blob);
+			}
+		} catch (e) {
+			if (e.name === 'AbortError') throw e;
+			console.warn('视频下载失败，将使用原始 URL:', e.message);
+		}
+	}
+	return result;
+}
+async function callTTS(style, baseUrl, apiKey, model, input, voice, instruction, isFullUrl, signal) {
+	var provider = providers[style];
+	if (!provider) throw new Error('不支持的接口风格: ' + style);
+	if (!provider.buildTTSRequest) throw new Error('该接口不支持语音生成');
+	var req = provider.buildTTSRequest(baseUrl, apiKey, model, input, voice, instruction);
+	if (isFullUrl) req.url = baseUrl.replace(/\/+$/, '');
+	var res = await fetchWithTimeout(req.url, {
+		method: 'POST',
+		headers: req.headers,
+		body: JSON.stringify(req.body),
+		signal
+	}, 120000);
+	if (!res.ok) {
+		var errText = await res.text().catch(function() {
+			return '';
+		});
+		throw new Error('TTS请求失败: ' + res.status + (errText ? ' - ' + errText : ''));
+	}
+	var ct = res.headers.get('content-type') || '';
+	if (ct.includes('text/html')) {
+		var body = await res.text().catch(function() {
+			return '';
+		});
+		var m = body.match(/<title>([^<]+)<\/title>/i);
+		throw new Error('TTS请求失败: 返回了HTML — ' + (m ? m[1] : body.slice(0, 100)));
+	}
+	var blob = await res.blob();
+	var audioData = (await blobToBase64(blob)).split(',')[1] || '';
+	var blobUrl = URL.createObjectURL(blob);
+	return {
+		blobUrl: blobUrl,
+		audioData: audioData,
+		contentType: ct,
+		size: blob.size
+	};
+}
 async function callASR(style, baseUrl, apiKey, model, audioFile, params, isFullUrl, signal) {
-    var provider = providers[style];
-    if (!provider) throw new Error('不支持的接口风格: ' + style);
-    // Currently only OpenAI-style ASR (Whisper API) is supported
-
-    var fd = new FormData();
-    fd.append('file', audioFile, audioFile.name || 'audio.wav');
-    fd.append('model', model);
-    if (params && params.language) fd.append('language', params.language);
-    if (params && params.prompt) fd.append('prompt', params.prompt);
-    if (params && params.temperature) fd.append('temperature', String(params.temperature));
-    fd.append('response_format', 'json');
-
-    var url = baseUrl.replace(/\/+$/, '') + '/v1/audio/transcriptions';
-    if (isFullUrl) url = baseUrl.replace(/\/+$/, '');
-
-    var res = await fetchWithTimeout(url, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + apiKey },
-        body: fd,
+	var provider = providers[style];
+	if (!provider) throw new Error('不支持的接口风格: ' + style);
+	// Currently only OpenAI-style ASR (Whisper API) is supported
+	var fd = new FormData();
+	fd.append('file', audioFile, audioFile.name || 'audio.wav');
+	fd.append('model', model);
+	if (params && params.language) fd.append('language', params.language);
+	if (params && params.prompt) fd.append('prompt', params.prompt);
+	if (params && params.temperature) fd.append('temperature', String(params.temperature));
+	fd.append('response_format', 'json');
+	var url = baseUrl.replace(/\/+$/, '') + '/v1/audio/transcriptions';
+	if (isFullUrl) url = baseUrl.replace(/\/+$/, '');
+	var res = await fetchWithTimeout(url, {
+		method: 'POST',
+		headers: {
+			'Authorization': 'Bearer ' + apiKey
+		},
+		body: fd,
 		signal
-    }, 120000);
-
-    if (!res.ok) {
-        var errText = await res.text().catch(function() { return ''; });
-        throw new Error('ASR请求失败: ' + res.status + (errText ? ' - ' + errText : ''));
-    }
-
-    var ct = res.headers.get('content-type') || '';
-    if (ct.includes('text/html')) {
-        var body = await res.text().catch(function() { return ''; });
-        var m = body.match(/<title>([^<]+)<\/title>/i);
-        throw new Error('ASR请求失败: 返回了HTML — ' + (m ? m[1] : body.slice(0, 100)));
-    }
-
-    var json = await res.json();
-    if (json.error) {
-        var msg = json.error.message || json.error.code || JSON.stringify(json.error);
-        throw new Error('ASR请求失败: ' + msg);
-    }
-
-    return { text: json.text || '', duration: json.duration, language: json.language };
+	}, 120000);
+	if (!res.ok) {
+		var errText = await res.text().catch(function() {
+			return '';
+		});
+		throw new Error('ASR请求失败: ' + res.status + (errText ? ' - ' + errText : ''));
+	}
+	var ct = res.headers.get('content-type') || '';
+	if (ct.includes('text/html')) {
+		var body = await res.text().catch(function() {
+			return '';
+		});
+		var m = body.match(/<title>([^<]+)<\/title>/i);
+		throw new Error('ASR请求失败: 返回了HTML — ' + (m ? m[1] : body.slice(0, 100)));
+	}
+	var json = await res.json();
+	if (json.error) {
+		var msg = json.error.message || json.error.code || JSON.stringify(json.error);
+		throw new Error('ASR请求失败: ' + msg);
+	}
+	return {
+		text: json.text || '',
+		duration: json.duration,
+		language: json.language
+	};
 }
-
 async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) {
 	if (isSessionInvalidated(sessionId)) return [];
 	const startTime = Date.now();
@@ -525,33 +518,34 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 		}
 		try {
 			const config = resolveNodeConfig(info.node.id);
-				// 自定义参数合并到 params
-				var customParams = info.node.customParams;
-				if (customParams && customParams.length) {
-					config.params = config.params || {};
-					for (var ci = 0; ci < customParams.length; ci++) {
-						var cp = customParams[ci];
-						if (cp && cp.key && cp.key.trim()) config.params[cp.key.trim()] = cp.value;
-					}
+			// 自定义参数合并到 params
+			var customParams = info.node.customParams;
+			if (customParams && customParams.length) {
+				config.params = config.params || {};
+				for (var ci = 0; ci < customParams.length; ci++) {
+					var cp = customParams[ci];
+					if (cp && cp.key && cp.key.trim()) setOwnEnumerableDataProperty(config.params, cp.key.trim(), cp.value);
 				}
-				// Param override: session params > workspace params > endpoint defaults
-				var ovr = null;
-				if (currentSession && currentSession.modelParams && currentSession.modelParams[endpointId]) {
-					ovr = currentSession.modelParams[endpointId];
-				} else if (typeof defaultSelectedEndpointParams !== 'undefined' && defaultSelectedEndpointParams[endpointId]) {
-					ovr = defaultSelectedEndpointParams[endpointId];
+			}
+			// Param override: session params > workspace params > endpoint defaults
+			var ovr = null;
+			if (currentSession && hasOwnEndpointParams(currentSession.modelParams, endpointId)) {
+				ovr = readOwnEndpointParams(currentSession.modelParams, endpointId);
+			} else if (typeof defaultSelectedEndpointParams !== 'undefined'
+				&& hasOwnEndpointParams(defaultSelectedEndpointParams, endpointId)) {
+				ovr = readOwnEndpointParams(defaultSelectedEndpointParams, endpointId);
+			}
+			if (ovr) {
+				config.params = config.params || {};
+				for (var sk in ovr) {
+					if (Object.prototype.hasOwnProperty.call(ovr, sk) && sk !== '_custom') setOwnEnumerableDataProperty(config.params, sk, ovr[sk]);
 				}
-				if (ovr) {
-					config.params = config.params || {};
-					for (var sk in ovr) {
-						if (ovr.hasOwnProperty(sk) && sk !== '_custom') config.params[sk] = ovr[sk];
-					}
-					if (ovr._custom && ovr._custom.length) {
-						ovr._custom.forEach(function(cp) {
-							if (cp && cp.key && cp.key.trim()) config.params[cp.key.trim()] = cp.value;
-						});
-					}
+				if (ovr._custom && ovr._custom.length) {
+					ovr._custom.forEach(function(cp) {
+						if (cp && cp.key && cp.key.trim()) setOwnEnumerableDataProperty(config.params, cp.key.trim(), cp.value);
+					});
 				}
+			}
 			const resultState = await callAPI(config.style || 'openai', config.baseUrl, config.key, (info.node.modelId || info.node.name), messages, chunkState => {
 				const genState = gens.get(endpointId);
 				if (genState) {
@@ -632,6 +626,7 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 	});
 	return Promise.all(promises);
 }
+
 function mergeParams(body, params, style) {
 	if (!params || Object.keys(params).length === 0) return;
 	var target = body;
@@ -639,7 +634,6 @@ function mergeParams(body, params, style) {
 		body.generationConfig = body.generationConfig || {};
 		target = body.generationConfig;
 	}
-	// Gemini generationConfig 字段名是 camelCase，映射 snake_case → camelCase
 	var keyMap = style === 'gemini' ? {
 		max_tokens: 'maxOutputTokens',
 		max_output_tokens: 'maxOutputTokens',
@@ -648,15 +642,47 @@ function mergeParams(body, params, style) {
 		stop_sequences: 'stopSequences',
 		presence_penalty: 'presencePenalty',
 		frequency_penalty: 'frequencyPenalty'
-	} : null;
+	} : (style === 'responses' ? {
+		max_tokens: 'max_output_tokens'
+	} : null);
+	var reasoningEffort;
+	var hasReasoningEffort = false;
 	for (var pk in params) {
-		if (params.hasOwnProperty(pk)) {
-			var mappedKey = keyMap && keyMap[pk] || pk;
+		if (Object.prototype.hasOwnProperty.call(params, pk)) {
+			if (style === 'responses' && pk === 'reasoning_effort') {
+				if (params[pk] !== null && params[pk] !== '') {
+					reasoningEffort = params[pk];
+					hasReasoningEffort = true;
+				}
+				continue;
+			}
+			var mappedKey = keyMap && Object.prototype.hasOwnProperty.call(keyMap, pk) ? keyMap[pk] : pk;
+			if (params[pk] === null || params[pk] === '') continue;
 			if ((pk === 'stop_sequences' || mappedKey === 'stopSequences') && typeof params[pk] === 'string') {
-				target[mappedKey] = params[pk].split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-			} else if (params[pk] !== null && params[pk] !== '') {
-				target[mappedKey] = params[pk];
+				var stopSequences = params[pk].split(',').map(function(s) {
+					return s.trim();
+				}).filter(Boolean);
+				if (stopSequences.length > 0) {
+					setOwnEnumerableDataProperty(target, mappedKey, stopSequences);
+				}
+			} else {
+				setOwnEnumerableDataProperty(target, mappedKey, params[pk]);
 			}
 		}
+	}
+	if (hasReasoningEffort) {
+		var reasoning = {};
+		if (body.reasoning && typeof body.reasoning === 'object' && !Array.isArray(body.reasoning)) {
+			for (var reasoningKey of Reflect.ownKeys(body.reasoning)) {
+				var reasoningDescriptor = Object.getOwnPropertyDescriptor(body.reasoning, reasoningKey);
+				if (reasoningDescriptor
+					&& reasoningDescriptor.enumerable
+					&& Object.prototype.hasOwnProperty.call(reasoningDescriptor, 'value')) {
+					setOwnEnumerableDataProperty(reasoning, reasoningKey, reasoningDescriptor.value);
+				}
+			}
+		}
+		setOwnEnumerableDataProperty(body, 'reasoning', reasoning);
+		setOwnEnumerableDataProperty(reasoning, 'effort', reasoningEffort);
 	}
 }

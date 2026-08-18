@@ -3,7 +3,7 @@ title: 技术架构
 covers_file: [src/layout.html, src/style.css, src/modules/storage-core.js, src/modules/providers.js, src/modules/boot.js, src/modules/main.js, src/modules/shared.js, src/modules/attachments.js, src/modules/messages.js, src/modules/params-registry.js, src/modules/selected-endpoints.js, src/modules/endpoint-tree.js, src/modules/store.js]
 depends_on: []
 api_signature: window.__STORAGE__ / window.__IS_EXTENSION__ / window.__EXTENSION_FETCH__
-last_updated: 2026-07-25
+last_updated: 2026-08-18
 why_exists: 定义快连AI的技术选型、模块依赖关系和数据流向，作为所有代码改动的架构参照
 ---
 
@@ -27,13 +27,16 @@ main.js（事件处理入口）
     │             ├─→ DirectoryStorage（File System Access API）
     │             └─→ BrowserStorage（IndexedDB / chrome.storage）
     │
-    ├─→ api.js（API请求 + SSE流式处理）
+    ├─→ params-registry.js（按 type/style 提供参数定义）
+    │
+    ├─→ api.js + shared.js（API 请求、SSE、并发与非流式请求）
     │      │
-    │      └─→ 三种格式转换（toOpenAIContent / toClaudeContent / toGeminiContent）
+    │      ├─→ 四种聊天接口：OpenAI Chat / OpenAI Responses / Claude / Gemini
+    │      └─→ 内容转换（toOpenAIContent / toClaudeContent / toGeminiContent）
     │
     └─→ endpoint-tree.js + messages.js + session-list.js（UI渲染）
            │
-           └─→ providers.js（DOM辅助：$ / $$ / mk / fromTemplate / setValues）
+           └─→ providers.js（OpenAI/Claude/Gemini/Responses/Jimeng 格式与 DOM 辅助）
 ```
 
 各层对应的模块文档：[存储层](../modules/storage-core.md) · [数据管理](../modules/store.md) · [API 层](../modules/api.md) · [Provider 格式](../modules/providers.md) · [UI 组件](../modules/ui.md) · [端点树](../modules/endpoint-tree.md) · [主逻辑](../modules/main.md)
@@ -43,16 +46,14 @@ main.js（事件处理入口）
 严格的线性依赖，无循环引用。顺序由 build.js 中的 MODULE_ORDER 数组定义：
 
 ```
-storage-core.js  ──→  providers.js  ──→  ui-utils.js  ──→  selected-endpoints.js
-     │
-     ▼
-endpoint-tree.js  ──→  messages.js  ──→  session-list.js  ──→  attachments.js
-     │
-     ▼
-store.js  ──→  api.js  ──→  shared.js  ──→  main.js
+storage-core.js → providers.js → params-registry.js → ui-utils.js → selected-endpoints.js
+    → endpoint-tree.js → messages.js → session-list.js → attachments.js
+    → store.js → api.js → shared.js → main.js
 ```
 
-storage-core 是最底层，不依赖任何其他模块；main.js 是最顶层，依赖所有下层模块。
+storage-core 是最底层，不依赖任何其他模块；main.js 是最顶层，依赖所有下层模块。`params-registry.js` 在 UI 工具之前加载，使端点和会话弹窗共用同一参数定义。
+
+参数层边界：端点 `params` 先按树继承解析；会话 endpoint 覆盖存在时优先于 workspace，整个会话 endpoint 覆盖缺失时当前请求代码仍回退 workspace，最后才使用端点结果。单个参数字段缺失表示继续查找，具体值表示覆盖，`null` 表示阻断并不发送。动态 endpointId/参数键通过 own-property helper 判断，避免 `__proto__`、`constructor` 等特殊键被原型链误判。Chat 会完整展开 `_custom`，embedding 和其他非聊天路径目前尚未统一。
 
 ### 双产物架构
 
@@ -96,7 +97,7 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 | getBackend | src/modules/storage-core.js | 路由到当前存储后端 | 内部 | 目录模式→DirectoryStorage，其他→BrowserStorage |
 | buildSinglePage | build.js | 构建单页HTML产物 | 内部 | 内联CSS/JS/vendor |
 | buildExtension | build.js | 构建扩展HTML产物 | 内部 | 拆分外部JS文件 |
-| detectModelType | src/modules/store.js | 从模型名自动推断类型 | 全局 | 返回 chat/embedding/rerank |
+| detectModelType | src/modules/store.js | 从模型名自动推断类型 | 全局 | 返回 chat/embedding/reranking/asr/tts/image-generation/video-generation |
 
 ## 决策日志
 
@@ -115,3 +116,4 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 - 2026-07-23: 新增 asr 端点类型（Whisper API），支持音频上传和麦克风录制转写；新增 --char-mic 图标
 - 2026-07-15: icon 系统 bug 修复：选中端点类型图标补 `char-style` 类；3 处 SVG 补 `viewBox`；嵌入结果展开按钮替换为原生 `<details>/<summary>`，删除 `handleExpandJsonClick` 及相关 JS
 - 2026-07-23: 新增 asr 端点类型（OpenAI Whisper API），支持音频文件上传和麦克风录制转写；新增 --char-mic 图标；录音按钮放"添加附件"右侧
+- 2026-08-18: 架构纳入 OpenAI Responses，聊天接口现为 OpenAI Chat/Responses/Claude/Gemini 四种；参数注册表与端点/会话共用参数 UI 独立成层，特殊 endpointId/参数键由 own-property helper 保护。按最终代码记录已有会话缺少 endpoint 覆盖时仍回退 workspace，以及非聊天 `_custom`/embedding 覆盖尚未统一的边界。

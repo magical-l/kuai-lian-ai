@@ -3,7 +3,7 @@ title: 快连AI 项目文档入口
 covers_file: [所有 src/ 下源文件]
 depends_on: []
 api_signature: 无（项目文档索引）
-last_updated: 2026-07-28
+last_updated: 2026-08-18
 why_exists: 浏览器端大模型端点管理+多模型对话工具，纯原生JS单页面及Chrome扩展
 ---
 
@@ -11,7 +11,7 @@ why_exists: 浏览器端大模型端点管理+多模型对话工具，纯原生J
 
 ## 项目目的
 
-浏览器端大模型端点管理工具。核心功能：管理多个AI提供商（OpenAI/Claude/Gemini）的端点配置，支持多模型同时对话、流式响应对比、嵌入请求。
+浏览器端大模型端点管理工具。核心功能：管理多个AI提供商（OpenAI Chat/Responses、Claude、Gemini，以及视频 provider）的端点配置，支持多模型同时对话、流式响应对比、嵌入请求和多种非流式请求。
 
 ## 架构概览
 
@@ -41,7 +41,7 @@ UI Layer（分隔条布局/消息渲染/端点树）→ Store Layer（数据CRUD
 | [CSS 体系](design/css-architecture.md) | 需要改样式时——变量体系、布局系统、类名命名 |
 | [Chrome 扩展架构](extension/overview.md) | 处理扩展相关的问题——环境检测、CORS 代理、权限 |
 
-当前版本: 6.32.14
+当前版本: 6.33.0
 
 ## 决策日志
 
@@ -51,3 +51,4 @@ UI Layer（分隔条布局/消息渲染/端点树）→ Store Layer（数据CRUD
 - 2026-08-12: 验收 workspace 参数取消选择与递归删除清理修复，发布 v6.32.12
 - 2026-08-13: 修复流式卡片正文选择器歧义——`$('.content', card)` 误命中 header 的 `.copy.content` 按钮，导致生图/失败提示写进隐藏元素、正文停留在"等待回复..."；改用 `.one.response.msg > .content`，生图提前显示与失败提示立即生效。发布 v6.32.13
 - 2026-08-13: 修复 bug3（发送按钮行/streaming-hint 被挤出视口）。输入区布局从 `flex:1` 撑满改为 `flex:0 0 auto` 纯"向上撑"（输入区完整、绝不滚动，消息区让位）；已选区 `max-height` 由 JS `syncSelectedAreaLimit()` 动态设置（消息区压缩到仅剩提示行后剩余全给已选区），CSS 200px 兜底；消息区 `min-height` 100→50；新增 `clampMessagesHeight()`（拖拽固定消息区后输入区增高时自动收紧）、`stickyMinHeight()` 简化为 `max(minHeight, scrollHeight)`。发布 v6.32.14
+- 2026-08-18: 验收大功能 9，发布 v6.33.0：新增 OpenAI `/v1/responses` 接口格式；端点和会话参数改为“继承/沿用、自己设置、由模型决定”三态，未明确设置的建议值不保存、不发送；补齐参数空值过滤、Responses `reasoning` 合并、特殊参数键及持久化失败回滚安全。

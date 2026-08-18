@@ -3,7 +3,7 @@ title: 数据管理层
 covers_file: [src/modules/store.js]
 depends_on: [storage-core.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, updateSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-08-12
+last_updated: 2026-08-18
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -32,8 +32,10 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
   key: "sk-...",           // API key
   modelId: "gpt-4",       // 叶子节点：实际模型 ID；父节点：空
   remark: "备注文本",
-  type: "chat",           // chat | embedding | image-generation | video-generation | reranking；空串=自动检测
+  type: "chat",           // chat | embedding | image-generation | video-generation | reranking | tts | asr；空串=自动检测
   isFullUrl?: false,       // 可选覆盖：缺失时继承父级；true 时 baseUrl 已是最终请求 URL
+  params?: { temperature: 0.7, max_tokens: null },
+  customParams: [{ key: "vendor_option", value: "value" }],
   children: [ /* 子节点 */ ]
 }
 ```
@@ -49,12 +51,12 @@ why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命�
 
 | 函数 | 功能 | 复杂度 |
 |------|------|--------|
-| `findNodeWithAncestors(nodes, nodeId, ancestors?)` | 递归查找节点，返回 `{ node, ancestors }`（祖先链从近到远） | O(n) DFS |
+| `findNodeWithAncestors(nodes, nodeId, ancestors?)` | 递归查找节点，返回 `{ node, ancestors }`；祖先数组顺序为根到最近父节点，解析时反向读取 | O(n) DFS |
 | `findNodeInTree(nodes, nodeId)` | 只查找节点对象，不返回祖先链 | O(n) |
 | `resolveTreeMove(nodes, draggedId, targetId)` | 在修改树前解析源和目标；拒绝不存在、自身或源子树内的目标 | O(n) DFS |
-| `resolveNodeConfig(nodeId)` | 合并节点自身及祖先链的配置字段，归一化旧 `directUrl` 后返回 `{ baseUrl, style, key, modelId, type, isFullUrl, params }` | O(n + d) |
+| `resolveNodeConfig(nodeId)` | 合并节点自身及祖先链的配置字段，归一化旧 `directUrl` 后返回 `{ baseUrl, style, key, modelId, type, isFullUrl, params }`；参数字段缺失时继承、具体值覆盖、`null` 阻断 | O(n + d) |
 | `findModelById(nodes, nodeId)` | 同 `findNodeWithAncestors`，语义别名 | O(n) |
-| `detectModelType(name)` | 从模型名推断 `chat` / `embedding` / `image-generation` / `video-generation` / `reranking` | 字符串匹配 |
+| `detectModelType(name)` | 从模型名推断 `chat` / `embedding` / `reranking` / `asr` / `tts` / `image-generation` / `video-generation` | 字符串匹配 |
 
 ### 数据加载与迁移
 
@@ -90,10 +92,10 @@ stripModels(node)
 
 | 函数 | 功能 | 持久化 |
 |------|------|--------|
-| `addNode(parentId, data)` | 在指定父节点下新增子节点（parentId 为空则加到根），生成 UUID；仅 source 显式提供开关时写入归一化的 `isFullUrl`，否则保留字段缺失；成功返回创建的节点对象，失败返回 `null` | 实时 save |
-| `updateNode(nodeId, updates)` | 更新节点字段；`isFullUrl` 优先，旧 `directUrl` 更新归一化为 `isFullUrl`，两种情况都会删除旧字段 | 实时 save |
+| `addNode(parentId, data)` | 在指定父节点下新增子节点（parentId 为空则加到根），生成 UUID；`params` 按字段存在性深拷贝，`customParams` 缺失或 `null` 归一为空数组；仅 source 显式提供开关时写入归一化的 `isFullUrl`；成功返回创建的节点对象，失败返回 `null` | 实时 save |
+| `updateNode(nodeId, updates)` | 更新节点字段；`isFullUrl` 优先，旧 `directUrl` 更新归一化为 `isFullUrl`，两种情况都会删除旧字段；动态属性通过 own-property 判断，避免特殊 endpointId 或原型键误判 | 实时 save |
 | `deleteNode(nodeId)` | 递归删除节点及其所有子代，同步清理 `selectedEndpoints` 中的引用 | 实时 save |
-| `cloneNode(nodeId)` | 深拷贝节点及其所有子代，保留每个源节点的 `isFullUrl` 字段存在性、重新生成每个节点 UUID，并把根副本插到原节点之后；不生成 `directUrl` | 实时 save |
+| `cloneNode(nodeId)` | 深拷贝节点及其所有子代；`params` 保留字段缺失、`null`、空对象和普通对象状态，`customParams` 缺失或 `null` 按当前代码复制为空数组；重新生成每个节点 UUID，并把根副本插到原节点之后；根副本名称追加“（副本）”，不生成 `directUrl` | 实时 save |
 | `reorderNode(draggedId, targetId, insertBefore)` | 同级重排序：校验移动关系后，从当前位置移除 dragged，插入到 target 前/后 | 合法时 save |
 | `moveNodeAsChild(draggedId, targetParentId)` | 跨级移动：校验移动关系后，移除 dragged 并追加到 targetParentId 的 children 中 | 合法时 save |
 
@@ -129,14 +131,15 @@ stripModels(node)
 
 ## 继承链解析（resolveNodeConfig）
 
-`resolveNodeConfig` 是树形结构的核心能力。给定一个节点 ID，它：
+`resolveNodeConfig(nodeId)` 是树形结构的核心能力。给定一个节点 ID，它：
 
 1. 在树中找到该节点及其所有祖先（`findNodeWithAncestors`）
-2. 先从节点自身读取 `{ baseUrl, style, key, modelId, type }`，并将完整 URL 开关归一为 `isFullUrl`
+2. 先从节点自身读取 `{ baseUrl, style, key, modelId, type, params }`，并将完整 URL 开关归一为 `isFullUrl`
 3. 从最近祖先向根遍历，对每个空字符串配置字段尝试继承；`isFullUrl` 按字段是否存在判断，节点显式 `false` 与 `true` 都会覆盖父级值
-4. 节点未设置 `isFullUrl` 时，读取旧 `directUrl` 作为兼容值；解析结果只暴露统一后的 `isFullUrl`
-5. type 继承后仍为空 → 从 modelId 启发式推断（`detectModelType`）
-6. 类型别名规范化：`img-generate`/`image` → `image-generation`，`embed` → `embedding`，`rerank` → `reranking`
+4. 参数按 key 使用 own-property 判断：当前节点有具体值或 `null` 时停止该 key 的祖先查找，缺失时继续查找；因此 `null` 是阻断继承而不是普通空值
+5. 节点未设置 `isFullUrl` 时，读取旧 `directUrl` 作为兼容值；旧顶层 `voice`/`instruction` 在 `params` 缺少对应键时作为兼容参数，解析结果只暴露统一后的 `isFullUrl` 与 `params`
+6. type 继承后仍为空 → 从 modelId 启发式推断（`detectModelType`）
+7. 类型别名规范化：`img-generate`/`image` → `image-generation`，`embed` → `embedding`，`rerank` → `reranking`
 
 **示例**：
 
@@ -149,7 +152,7 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 - `resolveNodeConfig("GPT-3.5")` → `{ baseUrl: "https://api.openai.com/v1", style: "openai", key: "", modelId: "gpt-3.5-turbo", type: "chat", isFullUrl: false }`
 - `resolveNodeConfig("GPT-4")` → `{ baseUrl: "https://api.openai.com/v1", style: "openai", key: "sk-xxx", modelId: "gpt-4", type: "chat", isFullUrl: false }`
 
-树中节点可以任意深度，继承链按长度决定优先级（近者优先）。
+树中节点可以任意深度，继承链按长度决定优先级（近者优先）。对 Chat/生图/视频/TTS/ASR 请求，参数覆盖优先级是：当前会话 `modelParams[endpointId]`（存在该 endpoint 覆盖时） > workspace `defaultSelectedEndpointParams[endpointId]` > 端点解析结果；整个会话覆盖缺失时，当前请求代码仍会回退到 workspace 覆盖。embedding 当前只使用端点解析参数，不读取 session/workspace。每一层的字段缺失/具体值/`null` 分别表示继续查找/覆盖/阻断。workspace 和 session 的 `_custom` 仅在 Chat 路径完整展开，非聊天路径不统一展开。
 
 ## 全局状态
 
@@ -188,3 +191,4 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 2026-08-06 | 完整 URL 覆盖字段仅在源节点显式设置时持久化 | 未设置并非 `false`，而是继承父级；新增、批量新增、复制与旧 groups/models 迁移保留此三态。`updateNode` 把兼容写入的 `directUrl` 一次性归一，避免双字段继续分叉。 |
 | 2026-08-07 | 端点加载时递归归一化并持久化完整 URL 字段 | `loadEndpoints` 与 `tryRestoreDirectory` 共用加载后处理；检测到旧 `directUrl` 或非布尔 `isFullUrl` 时原地修复并尝试保存，保存失败不阻塞加载，保留内存结果供下次重试。 |
 | 2026-08-11 | restoreEndpoints 防御 checkpoint/live reference 不一致 | 已有节点原地恢复并保留 children 引用；缺失 live reference 的 snapshot 节点独立重建，避免回滚异常遮蔽原始持久化错误。 |
+| 2026-08-18 | 节点参数容器与动态属性按存在性保真 | `params` 在 add/clone 中保留字段缺失、`null`、空对象和普通对象；`customParams` 是数组，缺失/null 在 add/clone 中归一为空数组。参数按 key 使用缺失/具体值/`null` 三态解析，旧顶层 TTS 字段只在解析边界兼容；update/restore 与 endpoint 覆盖使用 own-property 判断，避免特殊动态键触发原型链语义。 |

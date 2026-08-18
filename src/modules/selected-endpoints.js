@@ -1,4 +1,28 @@
 // ========== Selected Endpoint Functions ==========
+function hasOwnEndpointParams(map, endpointId) {
+	return map !== null
+		&& typeof map === 'object'
+		&& Object.prototype.hasOwnProperty.call(map, endpointId);
+}
+
+function readOwnEndpointParams(map, endpointId) {
+	return hasOwnEndpointParams(map, endpointId) ? map[endpointId] : undefined;
+}
+
+function writeOwnEndpointParams(map, endpointId, value) {
+	Object.defineProperty(map, endpointId, {
+		value: value,
+		writable: true,
+		configurable: true,
+		enumerable: true
+	});
+}
+
+function deleteOwnEndpointParams(map, endpointId) {
+	if (!hasOwnEndpointParams(map, endpointId)) return false;
+	return delete map[endpointId];
+}
+
 // Workspace-level model param overrides (localStorage, survives refresh)
 function loadDefaultSelectedEndpointParams() {
 	try { return JSON.parse(localStorage.getItem('defaultSelectedEndpointParams')) || {}; } catch(e) { return {}; }
@@ -11,21 +35,23 @@ var endpointParamsTransactionQueue = Promise.resolve();
 
 async function persistEndpointParamsTransaction(endpointId, nextWorkspaceParams, sessionId, updateSessionParams) {
 	const transaction = endpointParamsTransactionQueue.then(async function() {
-		const previousWorkspaceParams = Object.prototype.hasOwnProperty.call(defaultSelectedEndpointParams, endpointId)
-			? JSON.parse(JSON.stringify(defaultSelectedEndpointParams[endpointId]))
-			: undefined;
+		const hadPreviousWorkspaceParams = hasOwnEndpointParams(defaultSelectedEndpointParams, endpointId);
+		const previousWorkspaceParams = readOwnEndpointParams(defaultSelectedEndpointParams, endpointId);
+		const previousWorkspaceSnapshot = previousWorkspaceParams === undefined
+			? undefined
+			: JSON.parse(JSON.stringify(previousWorkspaceParams));
 		const previousWorkspaceRaw = localStorage.getItem('defaultSelectedEndpointParams');
 		try {
-			if (nextWorkspaceParams === undefined) delete defaultSelectedEndpointParams[endpointId];
-			else defaultSelectedEndpointParams[endpointId] = JSON.parse(JSON.stringify(nextWorkspaceParams));
+			if (nextWorkspaceParams === undefined) deleteOwnEndpointParams(defaultSelectedEndpointParams, endpointId);
+			else writeOwnEndpointParams(defaultSelectedEndpointParams, endpointId, JSON.parse(JSON.stringify(nextWorkspaceParams)));
 			saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
 			if (sessionId) {
 				var updatedSession = await updateSession(sessionId, updateSessionParams);
 				if (updatedSession === null) throw new Error('目标会话不存在或未保存');
 			}
 		} catch (error) {
-			if (previousWorkspaceParams === undefined) delete defaultSelectedEndpointParams[endpointId];
-			else defaultSelectedEndpointParams[endpointId] = previousWorkspaceParams;
+			if (hadPreviousWorkspaceParams) writeOwnEndpointParams(defaultSelectedEndpointParams, endpointId, previousWorkspaceSnapshot);
+			else deleteOwnEndpointParams(defaultSelectedEndpointParams, endpointId);
 			try {
 				if (previousWorkspaceRaw === null) localStorage.removeItem('defaultSelectedEndpointParams');
 				else localStorage.setItem('defaultSelectedEndpointParams', previousWorkspaceRaw);
@@ -44,78 +70,14 @@ function handleSelectedEndpointClick(tag) {
 	if (tag._tooltip) tag._tooltip.hide();
 }
 
-function renderParamControlsInDialog(dialog, rcfg, existingParams) {
-	var paramList = dialog.querySelector('.param-control.list');
-	if (!paramList) return;
-	var defs = typeof getParamDefs === 'function' ? getParamDefs(rcfg.type || 'chat', rcfg.style || 'openai') : [];
-	paramList.innerHTML = '';
-	if (defs.length === 0) { paramList.innerHTML = '<div style="padding:8px;color:var(--text-muted);font-size:13px">This model type has no configurable parameters</div>'; return; }
-	defs.forEach(function(def) {
-		var row = document.createElement('div');
-		row.className = 'param-row , flex items-go-x items-y-near-center';
-		row.style.gap = 'var(--space-2)';
-		row.style.marginBottom = 'var(--space-1)';
-		var label = document.createElement('span');
-		label.className = 'field-label';
-		label.style.cssText = 'font-size:13px;font-weight:500;color:var(--text-secondary);width:120px;text-align:right;flex-shrink:0';
-		label.textContent = def.label + ':';
-		row.appendChild(label);
-		var ctrl = document.createElement('span');
-		ctrl.className = 'field-control';
-		ctrl.style.cssText = 'display:flex;flex-direction:row;align-items:center;gap:var(--space-2);flex:1;min-width:0';
-		var val = existingParams && existingParams.hasOwnProperty(def.key) ? existingParams[def.key] : (def.hasOwnProperty('default') ? def.default : '');
-		if (def.type === 'range') {
-			var input = document.createElement('input');
-			input.type = 'range'; input.name = 'param-' + def.key;
-			if (def.min !== undefined) input.min = def.min;
-			if (def.max !== undefined) input.max = def.max;
-			if (def.step !== undefined) input.step = def.step;
-			input.value = val !== '' ? val : def.default;
-			input.style.cssText = 'flex:1;min-width:60px';
-			var valSpan = document.createElement('span');
-			valSpan.className = 'param val';
-			valSpan.style.cssText = 'font-size:13px;color:var(--text-secondary);min-width:3em;text-align:right;font-variant-numeric:tabular-nums';
-			valSpan.textContent = input.value;
-			input.addEventListener('input', function() { valSpan.textContent = this.value; });
-			ctrl.appendChild(input); ctrl.appendChild(valSpan);
-		} else if (def.type === 'integer') {
-			var input = document.createElement('input');
-			input.type = 'number'; input.name = 'param-' + def.key;
-			if (def.min !== undefined) input.min = def.min;
-			if (def.max !== undefined) input.max = def.max;
-			if (val !== '') input.value = val;
-			else if (def.hasOwnProperty('default')) input.value = def.default;
-			ctrl.appendChild(input);
-		} else if (def.type === 'text') {
-			var input = document.createElement('input');
-			input.type = 'text'; input.name = 'param-' + def.key;
-			if (def.placeholder) input.placeholder = def.placeholder;
-			if (val !== '') input.value = val;
-			input.style.cssText = 'flex:1;min-width:0';
-			ctrl.appendChild(input);
-		} else if (def.type === 'select') {
-			var sel = document.createElement('select');
-			sel.name = 'param-' + def.key;
-			(def.options || []).forEach(function(opt) {
-				var optEl = document.createElement('option');
-				optEl.value = opt; optEl.textContent = opt;
-				if (opt === val || (val === '' && opt === def.default)) optEl.selected = true;
-				sel.appendChild(optEl);
-			});
-			ctrl.appendChild(sel);
-		}
-		row.appendChild(ctrl);
-		paramList.appendChild(row);
-	});
-}
-
 function openSessionParamEditor(endpointId) {
 	var dialog = document.querySelector('dialog.session-param-editor');
 	if (!dialog) return;
 	var info = findModelById(getGroups(), endpointId);
 	var rcfg = resolveNodeConfig(endpointId);
 	if (!info || !rcfg) return;
-	var sessionId = currentSession ? currentSession.id : null;
+	var openedSession = currentSession;
+	var sessionId = openedSession ? openedSession.id : null;
 	if (!dialog._paramLifecycleGuardBound && typeof dialog.addEventListener === 'function') {
 		dialog._paramLifecycleGuardBound = true;
 		function invalidateParamOperations() {
@@ -137,20 +99,35 @@ function openSessionParamEditor(endpointId) {
 	var fullName = [...(info.ancestors || []).map(function(a) { return a.name; }), info.node.name].join('/');
 	var nameEl = dialog.querySelector('.model-path');
 	if (nameEl) nameEl.textContent = fullName;
-	// Merge defaults: session params > workspace params > endpoint defaults
-	var defaults = {};
-	if (rcfg.params) { for (var k in rcfg.params) { if (rcfg.params.hasOwnProperty(k)) defaults[k] = rcfg.params[k]; } }
 	var overrideSrc = null;
-	if (currentSession && currentSession.modelParams && currentSession.modelParams[endpointId]) {
-		overrideSrc = currentSession.modelParams[endpointId];
-	} else if (defaultSelectedEndpointParams[endpointId]) {
-		overrideSrc = defaultSelectedEndpointParams[endpointId];
+	if (openedSession) {
+		if (hasOwnEndpointParams(openedSession.modelParams, endpointId)) {
+			overrideSrc = readOwnEndpointParams(openedSession.modelParams, endpointId);
+		}
+	} else if (hasOwnEndpointParams(defaultSelectedEndpointParams, endpointId)) {
+		overrideSrc = readOwnEndpointParams(defaultSelectedEndpointParams, endpointId);
 	}
-	if (overrideSrc) { for (var k in overrideSrc) { if (overrideSrc.hasOwnProperty(k) && k !== '_custom') defaults[k] = overrideSrc[k]; } }
-	renderParamControlsInDialog(dialog, rcfg, Object.keys(defaults).length > 0 ? defaults : null);
+	var ownOverride = overrideSrc ? JSON.parse(JSON.stringify(overrideSrc)) : {};
+	var endpointParams = rcfg.params ? JSON.parse(JSON.stringify(rcfg.params)) : {};
+	var paramList = dialog.querySelector('.param-control.list');
+	function renderControls() {
+		if (!paramList) return;
+		renderModelParamControls(
+			paramList,
+			getParamDefs(rcfg.type || 'chat', rcfg.style || 'openai'),
+			ownOverride,
+			endpointParams,
+			{
+				allowInherit: true,
+				inheritLabel: '沿用端点设置',
+				inheritValueLabel: '当前为',
+				modelLabel: '由模型决定'
+			}
+		);
+	}
+	renderControls();
 	dialog.showModal();
 
-	// Bind buttons
 	dialog.querySelector('.close').onclick = function() {
 		beginOperation();
 		dialog.close();
@@ -158,27 +135,31 @@ function openSessionParamEditor(endpointId) {
 
 	dialog.querySelector('.ok').onclick = async function() {
 		var generation = beginOperation();
-		var paramList = dialog.querySelector('.param-control.list');
 		if (!paramList) {
 			if (isCurrentOperation(generation)) dialog.close();
 			return;
 		}
-		var params = {};
-		var inputs = paramList.querySelectorAll('input, select');
-		inputs.forEach(function(el) {
-			var key = el.name.replace(/^param-/, '');
-			if (!key) return;
-			if (el.type === 'number') { var n = parseFloat(el.value); if (!isNaN(n)) params[key] = n; }
-			else if (el.type === 'range') { params[key] = parseFloat(el.value); }
-			else if (el.type === 'text' || el.type === 'password') { params[key] = el.value; }
-			else { params[key] = el.value; }
-		});
+		var collected = collectModelParamControls(paramList, ownOverride);
+		if (!collected.valid) {
+			if (collected.firstInvalidControl) collected.firstInvalidControl.focus();
+			return;
+		}
+		var params = collected.params;
+		var nextWorkspaceParams = Object.keys(params).length > 0 ? params : undefined;
 		try {
-			await persistEndpointParamsTransaction(endpointId, params, sessionId, session => {
-				if (!session.modelParams) session.modelParams = {};
-				session.modelParams[endpointId] = JSON.parse(JSON.stringify(params));
+			await persistEndpointParamsTransaction(endpointId, nextWorkspaceParams, sessionId, function(session) {
+				if (nextWorkspaceParams === undefined) {
+					deleteOwnEndpointParams(session.modelParams, endpointId);
+				} else {
+					if (!session.modelParams) session.modelParams = {};
+					writeOwnEndpointParams(session.modelParams, endpointId, JSON.parse(JSON.stringify(params)));
+				}
+				if (session.modelParams && Object.keys(session.modelParams).length === 0) delete session.modelParams;
 			});
-			if (isCurrentOperation(generation)) dialog.close();
+			if (!isCurrentOperation(generation)) return;
+			ownOverride = JSON.parse(JSON.stringify(params));
+			renderControls();
+			dialog.close();
 		} catch (error) {
 			if (isCurrentOperation(generation)) alert('参数保存失败：' + error.message);
 		}
@@ -187,23 +168,21 @@ function openSessionParamEditor(endpointId) {
 	dialog.querySelector('.reset').onclick = async function() {
 		var generation = beginOperation();
 		try {
-			await persistEndpointParamsTransaction(endpointId, undefined, sessionId, session => {
+			await persistEndpointParamsTransaction(endpointId, undefined, sessionId, function(session) {
 				if (!session.modelParams) return;
-				delete session.modelParams[endpointId];
+				deleteOwnEndpointParams(session.modelParams, endpointId);
 				if (Object.keys(session.modelParams).length === 0) delete session.modelParams;
 			});
 			if (!isCurrentOperation(generation)) return;
-			defaults = {};
-			if (rcfg && rcfg.params) { for (var k in rcfg.params) { if (rcfg.params.hasOwnProperty(k)) defaults[k] = rcfg.params[k]; } }
-			renderParamControlsInDialog(dialog, rcfg, Object.keys(defaults).length > 0 ? defaults : null);
+			ownOverride = {};
+			renderControls();
 		} catch (error) {
 			if (isCurrentOperation(generation)) alert('参数重置失败：' + error.message);
 		}
 	};
 }
 function removeWorkspaceEndpointParams(endpointId) {
-	if (!Object.prototype.hasOwnProperty.call(defaultSelectedEndpointParams, endpointId)) return;
-	delete defaultSelectedEndpointParams[endpointId];
+	if (!deleteOwnEndpointParams(defaultSelectedEndpointParams, endpointId)) return;
 	saveDefaultSelectedEndpointParams(defaultSelectedEndpointParams);
 }
 
@@ -337,7 +316,8 @@ function buildTooltipHTML(node, rcfg, nameOverride) {
 		var styleLabels = {
 			"openai": "OpenAI",
 			"claude": "Claude",
-			"gemini": "Gemini"
+			"gemini": "Gemini",
+			"responses": "Responses"
 		};
 		function inherited(val, own) {
 			return val && val !== own ? "↑ " : "";

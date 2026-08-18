@@ -30,7 +30,7 @@
 				<img alt="快连AI Logo" src="../logo.svg" width="24" height="28">
 			</div>
 			<span class="brand">快<del>恋爱</del>连AI</span>
-			<span class="version">v6.32.14</span>
+			<span class="version">v6.33.0</span>
 		</div>
 		<div class="workspace-setting , flex items-go-x">
 			<span class="label">当前存储目录：</span>
@@ -86,7 +86,7 @@
 					<section>
 						<h4>左侧栏：管理端点</h4>
 						<p>端点是线上部署的大模型服务。不同端点有不同地址，同一模型可部署在多个地址，成为不同端点。一个端点可以提供多个模型。</p>
-						<p>* 目前支持ChatGPT/OpenAI式、Claude/Anthropic式、Gemini/Google式三种接口格式。国产大模型基本都是ChatGPT/OpenAI格式。</p>
+						<p>* 目前支持ChatGPT/OpenAI式、Claude/Anthropic式、Gemini/Google式、Responses式（OpenAI 新一代）四种接口格式。国产大模型基本都是ChatGPT/OpenAI格式。</p>
 						<p>* 不支持的格式快来贡献代码呀！</p>
 						<p>可以测试连接端点，也可以测试一个端点下添加的所有模型。</p>
 						<p>* 有些服务端点没开CORS，浏览器访问会被拒。我们区分了这种情况，免得以为是服务挂了。</p>
@@ -540,6 +540,15 @@
 									/v1/videos/generations
 								</span>
 							</label>
+							<label class="option btn">
+								<input type="radio" name="style" value="responses">
+								Responses式
+								<span class="hint">
+									OpenAI 新一代
+									<br>
+									/v1/responses
+								</span>
+							</label>
 						</div>
 					</span>
 				</div>
@@ -578,7 +587,7 @@
 				</label>
 				<details class="param , section">
 					<summary>参数设置</summary>
-					<div class="param-control , list" data-type-bound></div>
+					<div class="param-control , list" data-type-bound=""></div>
 				</details>
 				<div class="hint">若 baseUrl、接口风格、API Key、模型名都存在（含继承），则该节点可作为端点使用</div>
 			</form>
@@ -606,9 +615,9 @@
 			</button>
 		</header>
 		<div class="body">
-			<div class="hint" style="margin-bottom:var(--space-2);font-size:0.85em;color:var(--text-secondary)">以下 API 参数仅在本次会话生效，留空=使用端点默认值</div>
+			<div class="hint" style="margin-bottom:var(--space-2);font-size:0.85em;color:var(--text-secondary)">每项参数可以沿用端点设置、自己设置，或明确交给模型决定。</div>
 			<div class="param section">
-				<div class="param-control list" data-type-bound></div>
+				<div class="param-control list" data-type-bound=""></div>
 			</div>
 		</div>
 		<footer class="flex items-go-x">
@@ -616,6 +625,21 @@
 			<button type="button" class="char-style btn : ok , primary , icon-only" title="保存参数" style="margin-left:auto"></button>
 		</footer>
 	</dialog>
+	<template id="model-param-row">
+	<div class="registered param-row">
+		<span class="field-label"></span>
+		<span class="field-control">
+			<span class="param-decision btn-group , flex items-go-x">
+				<label class="option btn : inherit"><input type="radio" value="inherit"><span class="text"></span></label>
+				<label class="option btn : own"><input type="radio" value="own">自己设置</label>
+				<label class="option btn : model"><input type="radio" value="model"><span class="text">由模型决定</span></label>
+			</span>
+			<span class="inherited param hint"></span>
+			<span class="own param control"></span>
+			<span class="validation error"></span>
+		</span>
+	</div>
+</template>
 	<template id="batch-field-block">
 		<div class="batch-field" data-field="">
 			<span class="handle btn : drag , square shape , bare" draggable="true" title="拖动排序">

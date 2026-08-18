@@ -3,8 +3,8 @@ title: CSS 架构
 covers_file: [src/style.css, layout.css (外部), common.css (外部)]
 depends_on: [architecture.md, external-css-utils]
 api_signature: 无（纯样式，无 JS 接口）
-last_updated: 2026-08-13
-why_exists: style.css 是单文件 ~1200 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
+last_updated: 2026-08-18
+why_exists: style.css 是单文件约 1900 行，无预处理器，无 postCSS —— 需要文档说明结构分层和命名惯例
 ---
 
 ## 设计意图
@@ -157,7 +157,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 
 基础变量（`--bg-base`、`--radius-*`、`--shadow-*`、`--space-{1..8}`、`--transition-fast` 等）全部来自 common.css，style.css 只定义项目专有覆盖。
 
-## 文件结构（style.css，~1710 行）
+## 文件结构（style.css，约 1900 行）
 
 | 章节 | 内容 |
 |------|------|
@@ -199,7 +199,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - main: `flex: 1; overflow: hidden` → `.main-row` → `.main-content`
 - .chat-input-area: `position: sticky; bottom: 0; z-index: calc(var(--divider-z) + 10); flex: 0 0 auto; min-height: 160px`
 
-分隔条的拖拽宽度由 `ui-utils.js` 的 `initDividers()` 管理，通过设置 `flex-basis` 覆盖 aside 的 width。
+分隔条的拖拽尺寸由 `ui-utils.js` 的 `initDividers()` 管理：左右侧栏直接写入 `style.width` 并设 `style.flex = 'none'`，水平分隔条写入消息区高度，不依赖 `flex-basis`。
 
 ### 消息区布局
 
@@ -216,6 +216,10 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
   │     └── .stop.all.btn
   └──（流式卡片：.one.msg.response.streaming）
 ```
+
+### 参数控件与验证行
+
+模型参数编辑器复用共享参数行结构，不按接口风格复制表单。决定方式按钮与具体值控件放在同一行，三态按钮统一使用 32px 高度，验证提示行使用全宽布局，避免错误文本被挤在值控件旁。参数决定按钮不依赖难以感知的 `color` transition；当前通用小删除按钮仍保留 `background` 与 `color` transition，这是现有 CSS 的事实。
 
 ### 输入区布局
 
@@ -267,11 +271,15 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 
 ## `:has()` 使用情况
 
-共 3 处，全部在按钮上下文：
+当前约 22 处，主要集中在按钮、表单和状态上下文：
+
+典型用法包括：
 
 1. 发送模式选项高亮：`.split.btn-group .option.btn:has(input:checked)` → 切换文字颜色
 2. 加入会话勾选：`.btn.join-session:has(input:checked)` → 切换 `--btn-text-color` 为 success（char-style 图标继承颜色）
 3. 侧栏 toggle：`body:has(.toggle.sidebar.near-right > input:checked) aside.near-right` → 控制侧栏显示/隐藏
+
+其余 `:has()` 用于表单 tab、按钮状态和结构互斥；上面列的是代表性选择器，不是完整清单。
 
 ## Transition / Animation 策略
 
@@ -302,8 +310,8 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 
 | JS 文件 | 交互方式 | 内容 |
 |---------|----------|------|
-| ui-utils.js | 设置 flex-basis | `initDividers()` 通过覆盖 aside 的 width + flex-basis 实现拖拽分割 |
-| ui-utils.js | 读取 CSS 变量 | `stickyMinHeight()` 返回 `max(CSS min-height, 内容所需高度)`（内容用 scrollHeight 测，减去 textarea 被 flex 撑满的部分） |
+| ui-utils.js | 设置显式尺寸 | `initDividers()` 通过覆盖 aside 的 `style.width`、`style.flex = 'none'` 和消息区高度实现拖拽分割 |
+| ui-utils.js | 读取 CSS 变量 | `stickyMinHeight()` 返回 `max(CSS min-height, 内容所需高度)`；当前输入区不再需要减去 textarea 被 flex 撑满的部分 |
 | endpoint-tree.js | 切换类 | 拖拽时添加/移除 `.dragging`, `.drag-over-before`, `.drag-over-child` |
 | endpoint-tree.js | 切换状态 | 测试完成后添加 `.connected` / `.failed` |
 | main.js | View Transition | `document.startViewTransition()` 触发 `view-transition-name` 命名的元素过渡 |
@@ -312,7 +320,7 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 
 ## 决策日志
 
-- 2026-07-01: 初始文档创建。确认 style.css 实际 ~1200 行（非预估的 3000+）、:has() 共 3 处（非"大量"）
+- 2026-07-01: 初始文档创建。确认 style.css 实际约 1710 行（非预估的 3000+）、:has() 共 3 处（非“大量”）
 - 2026-07-10: 新增第 4 处 `:has()` 使用——侧栏 toggle，CSS 变量驱动，JS 仅做 localStorage 持久化
 - 2026-07-24: `--selector-bg/--selector-color/--selector-font-weight` → `--checked-*`。`.join-session` 选中态从 `--btn-text-color: var(--success)`（对图标按钮无效）改为 `--checked-bg: var(--accent-primary)`。`.btn.busy + .status.icon.wait` 从 `button, .btn` 嵌套中抽出为独立规则。`.join-session` 内冗余的 `& input[type=checkbox] { opacity:0; ... }` 删除（已由 `label.btn > input { display:none }` 覆盖）。
 - 2026-07-01: 暗色模式实现。采用 `html.dark` class 覆写全部 CSS 变量，而非 `prefers-color-scheme` 媒体查询。交互三态（亮→暗→跟随系统），偏好持久化到 settings。html.dark 块约 40 行，新增 4 个 SVG icon 符号。版本 6.3.2。
@@ -344,9 +352,9 @@ style.css 中的组件类与 layout.css 的 utility class 用空格混合：
 - 2026-07-21: 修复 style.css 花括号嵌套缺陷。`.one.msg` 块的 `& .status/.usage/.think/.embedding-*` 因多了一个 `}` 跳出作用域成为顶层 `:scope` 选择器。`& .error` 逃出 `&.response`。修复：删除多余 `}`（原 606 行），在 `.embedding-full-json` 后补 `}` 闭合 `.one.msg`。同时删除 `#themePop` 中被立即覆盖的 `border: none`。版本 v6.25.2。
 - 2026-07-22: `aside.endpoint.list` 空状态改为 CSS `:has()` 驱动。移除 JS 维护的 `show-empty-state` class，用 `&:not(:has(> ol > .one.endpoint))` 自动控制 ol/empty-state 显隐。JS 仅保留文案和按钮显隐控制。`.empty-state` 默认 `display: none`。版本 v6.25.3。
 - 2026-07-28: `.empty-state:not(.hidden)` 显式设为 `display: block`，补足筛选无结果场景；节点仍存在时不会触发“无节点”的 `:has()` 规则，必须由 JS 移除 `.hidden` 后显示空态。
-t- 2026-07-24: 端点树名字/备注压缩优先级反转。`.one.endpoint .remark` 新增 `overflow: hidden; text-overflow: ellipsis; min-width: 0;` 允许截断；`aside.endpoint.list .name` 移除 `word-break: break-all; overflow-wrap: break-word; min-width: 0;`，新增 `min-width: 3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`。备注优先压缩，名字 `3em` 保护不压到 0。版本 v6.32.2.
-- 2026-08-13: 修复 bug3（发送按钮行被挤出视口下沿）。三层修复：① `ui-utils.js` `stickyMinHeight()` 从返回 CSS `min-height:160px` 改为 `max(160px, 内容所需高度)`（用 scrollHeight 减 textarea 被 flex 撑满的部分补偿，绕开"scrollHeight 在 flex:1 子元素被撑满时不正确"的坑），拖拽 clamp 时输入区不再被压到容纳不下内容；② `.selected.endpoint.list` 加 `max-height: 100px` + `overflow-y: auto`，已选端点多时内部滚动而非无限增高；③ `.chat-input-area` 加 `overflow-y: auto` + `> menu` `position: sticky; bottom: 0` 兜底，窄视口/大量已选端点时输入区内部滚动、发送按钮行始终贴住视口下沿。
-- 2026-08-13: 输入区布局改为「内容自适应 + 已选区限高滚动」模型，替代上一版「overflow-y + menu sticky 兜底」方案。`.chat-input-area` 从 `flex: 1`（撑满）改为 `flex: 0 0 auto`（高度=内容，不撑满不收缩），删除 `overflow-y: auto` 和 `> menu` 的 `position: sticky; bottom: 0` 兜底；`textarea#chat-input` 从 `height: 100%` 改为 `height: auto` 并新增 `flex: 0 0 auto`（`min-height: 56px` 保留）。剩余高度全归 `.msg.list`（`flex: 1`）：选更多端点 → 已选区增高（`max-height: 100px` 内部滚动）→ 输入区增高 → 消息区自动压缩，发送按钮行始终在视口底部，无需输入区内部滚动。`.selected.endpoint.list` 的 `max-height: 100px` + `overflow-y: auto` 保留不动。
-- 2026-08-13: 输入区加「滚动兜底」，补充上面「内容自适应」模型。`.chat-input-area` 从 `flex: 0 0 auto` 改为 `flex: 0 1 auto`（允许收缩），新增 `overflow-y: auto`；`> menu` 新增 `position: sticky; bottom: 0; background: var(--bg-base); z-index: 1`（贴底 + 实底色遮挡滚动到 menu 下方的已选区/textarea）。正常视口输入区仍内容自适应向上撑；视口过小（≤~420px）或输入区内容过高时，消息区被压到 `min-height: 100px` 后输入区收缩内部滚动、menu 贴底，消息区底部 `.streaming-hint`（"内容由AI生成"行）不再被输入区盖住。`.selected.endpoint.list` 的 `max-height` 与 `.msg.list` 的 `flex` 不动。不走此前被移除的 `flex: 1` 撑满方案。
-- 2026-08-13: **撤销滚动兜底，回归纯"向上撑"**。用户确认：输入区（已选区+输入框+发送按钮行）必须整体完整显示、绝不内部滚动——"向上撑"是输入区挤压消息区，不是输入区自己滚。`.chat-input-area` 从 `flex: 0 1 auto` + `overflow-y: auto` 改回 `flex: 0 0 auto`（不收缩不滚动），删除 `overflow-y: auto` 和 `> menu` 的 `position: sticky; bottom: 0; background; z-index`。视口 ≥480px 下 `.streaming-hint` 实测恒在输入区上方 24px 不被盖（含流式高状态、滚动到底）；<480px 时消息区压到 `min-height: 100px` 后输入区超可用空间属物理极限（需放大窗口）。`.selected.endpoint.list` max-height 与 `.msg.list` flex 不变。
-- 2026-08-13: **已选区"撑到极限"**。用户要求已选区向上撑贯彻更久（而非 3 行就滚动）。`.msg.list` `min-height` 100→50px（消息区压缩到仅剩 `.streaming-hint`）；`.selected.endpoint.list` 的 max-height 改由 ui-utils.js `syncSelectedAreaLimit()` 动态设置（= `.main-content` 高 − toolbar − 50 − 输入区其他部分），CSS 保留 200px 兜底；所有消息区 clamp 下限（clampSavedHeight / clampMessagesHeight / initDividers 恢复拖拽高度）统一 100→50。效果：已选区在任意视口向上撑到物理极限（消息区仅剩提示行）才滚动，`.streaming-hint` 始终可见。
+- 2026-07-24: 端点树名字/备注压缩优先级反转。`.one.endpoint .remark` 新增 `overflow: hidden; text-overflow: ellipsis; min-width: 0;` 允许截断；`aside.endpoint.list .name` 移除 `word-break: break-all; overflow-wrap: break-word; min-width: 0;`，新增 `min-width: 3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`。备注优先压缩，名字 `3em` 保护不压到 0。版本 v6.32.2.
+- 2026-08-13: 修复 bug3（发送按钮行被挤出视口下沿）。历史方案曾尝试输入区内部滚动和 menu sticky 兜底，但随后被撤销；当前 `stickyMinHeight()` 仅返回 `max(160px, 内容所需高度)`，不再做 textarea flex 补偿，已选区由动态 max-height 和自身滚动承接极端高度。
+- 2026-08-13: 输入区布局改为「内容自适应 + 已选区限高滚动」模型，替代上一版「overflow-y + menu sticky 兜底」方案。`.chat-input-area` 从 `flex: 1`（撑满）改为 `flex: 0 0 auto`（高度=内容，不撑满不收缩），删除 `overflow-y: auto` 和 `> menu` 的 `position: sticky; bottom: 0` 兜底；`textarea#chat-input` 从 `height: 100%` 改为 `height: auto` 并新增 `flex: 0 0 auto`（`min-height: 56px` 保留）。剩余高度全归 `.msg.list`（`flex: 1`）：选更多端点 → 已选区增高（由 `syncSelectedAreaLimit()` 动态限制，CSS 200px 兜底）→ 输入区增高 → 消息区自动压缩，发送按钮行始终在视口底部，无需输入区内部滚动。
+- 2026-08-13: （已撤销）输入区加「滚动兜底」方案。该方案曾让 `.chat-input-area` 允许收缩并内部滚动、让 menu sticky，但最终被纯“向上撑”方案替代，当前代码不再采用。
+- 2026-08-13: **撤销滚动兜底，回归纯“向上撑”**。用户确认：输入区（已选区+输入框+发送按钮行）必须整体完整显示、绝不内部滚动——“向上撑”是输入区挤压消息区，不是输入区自己滚。`.chat-input-area` 从 `flex: 0 1 auto` + `overflow-y: auto` 改回 `flex: 0 0 auto`（不收缩不滚动），删除 `overflow-y: auto` 和 menu 的 sticky 兜底；当前实现仍可能受极矮视口的物理空间限制。`.selected.endpoint.list` 由 JS 动态 max-height 控制，`.msg.list` 相关 clamp 下限当前分路径存在 50/100 差异。
+- 2026-08-13: **已选区“撑到极限”**。用户要求已选区向上撑贯彻更久（而非 3 行就滚动）。`.msg.list` CSS `min-height` 为 50px，`.selected.endpoint.list` 的 max-height 由 `syncSelectedAreaLimit()` 动态设置，CSS 保留 200px 兜底；`clampSavedHeight()`/`clampMessagesHeight()` 使用 50px 下限，但 `doDrag()` 当前仍使用 `minMessages = 100`，因此不能把所有消息区下限概括为同一个值。

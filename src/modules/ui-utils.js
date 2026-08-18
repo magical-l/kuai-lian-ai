@@ -199,3 +199,232 @@ function initScrollPaddingObserver() {
 		syncSelectedAreaLimit();
 	}).observe(sticky);
 }
+// ========== Model Parameter Decision Controls ==========
+function createModelParamValueControl(def, value, onValueChange) {
+	const control = doc.createElement('span');
+	function markChanged() {
+		if (typeof onValueChange === 'function') onValueChange();
+	}
+	if (def.type === 'range') {
+		const input = doc.createElement('input');
+		input.type = 'range';
+		input.name = 'param-' + def.key;
+		if (def.min !== undefined) input.min = def.min;
+		if (def.max !== undefined) input.max = def.max;
+		if (def.step !== undefined) input.step = def.step;
+		input.value = value;
+		const valueLabel = doc.createElement('span');
+		valueLabel.className = 'param val';
+		valueLabel.textContent = input.value;
+		input.addEventListener('input', function () {
+			valueLabel.textContent = this.value;
+			markChanged();
+		});
+		input.addEventListener('change', markChanged);
+		control.appendChild(input);
+		control.appendChild(valueLabel);
+	} else if (def.type === 'integer') {
+		const input = doc.createElement('input');
+		input.type = 'number';
+		input.name = 'param-' + def.key;
+		if (def.min !== undefined) input.min = def.min;
+		if (def.max !== undefined) input.max = def.max;
+		if (def.step !== undefined) input.step = def.step;
+		input.value = value;
+		input.addEventListener('input', markChanged);
+		input.addEventListener('change', markChanged);
+		control.appendChild(input);
+	} else if (def.type === 'select') {
+		const select = doc.createElement('select');
+		select.name = 'param-' + def.key;
+		(def.options || []).forEach(function (option) {
+			const optionEl = doc.createElement('option');
+			optionEl.value = option;
+			optionEl.textContent = option;
+			if (option === value) optionEl.selected = true;
+			select.appendChild(optionEl);
+		});
+		select.value = value;
+		select.addEventListener('change', markChanged);
+		control.appendChild(select);
+	} else {
+		const input = doc.createElement('input');
+		input.type = 'text';
+		input.name = 'param-' + def.key;
+		if (def.placeholder) input.placeholder = def.placeholder;
+		input.value = value;
+		input.addEventListener('input', markChanged);
+		input.addEventListener('change', markChanged);
+		control.appendChild(input);
+	}
+	return control;
+}
+function renderModelParamControls(container, definitions, ownParams, fallbackParams, options) {
+	if (!container) return;
+	const config = options || {};
+	const allowInherit = config.allowInherit !== false;
+	const inheritLabel = config.inheritLabel || '继承上级';
+	const inheritValueLabel = config.inheritValueLabel || '当前为';
+	const modelLabel = config.modelLabel || '由模型决定';
+	const params = ownParams || {};
+	const fallback = fallbackParams || {};
+	container.innerHTML = '';
+	(definitions || []).forEach(function (def) {
+		const row = fromTemplate('model-param-row', '.registered.param-row');
+		row.dataset.paramKey = def.key;
+		row.dataset.originalState = Object.prototype.hasOwnProperty.call(params, def.key) ? params[def.key] === null ? 'model' : 'own' : 'absent';
+		row.dataset.changed = 'false';
+		row._modelParamDefinition = def;
+		const hasOwnValue = Object.prototype.hasOwnProperty.call(params, def.key);
+		const sourceValue = hasOwnValue ? params[def.key] : undefined;
+		const state = hasOwnValue ? sourceValue === null ? 'model' : 'own' : allowInherit ? 'inherit' : 'model';
+		row.querySelector('.field-label').textContent = def.label + '：';
+		const ownControl = row.querySelector('.own.param.control');
+		const initialValue = sourceValue !== undefined && sourceValue !== null ? sourceValue : Object.prototype.hasOwnProperty.call(def, 'default') ? def.default : '';
+		ownControl.appendChild(createModelParamValueControl(def, initialValue, function () {
+			row.dataset.changed = 'true';
+		}));
+		const inherited = row.querySelector('.inherited.param.hint');
+		const hasFallbackValue = Object.prototype.hasOwnProperty.call(fallback, def.key) && fallback[def.key] !== undefined && fallback[def.key] !== null && fallback[def.key] !== '';
+		inherited.textContent = hasFallbackValue ? inheritValueLabel + ' ' + fallback[def.key] : '上级未设置，将由模型决定';
+		const radios = Array.from(row.querySelectorAll('input[type="radio"]'));
+		const inheritRadio = radios.find(function (radio) {
+			return radio.value === 'inherit';
+		});
+		if (inheritRadio) {
+			inheritRadio.parentElement.querySelector('.text').textContent = inheritLabel;
+			if (!allowInherit) inheritRadio.parentElement.parentElement.removeChild(inheritRadio.parentElement);
+		}
+		const modelRadio = radios.find(function (radio) {
+			return radio.value === 'model';
+		});
+		if (modelRadio) modelRadio.parentElement.querySelector('.text').textContent = modelLabel;
+		const availableRadios = Array.from(row.querySelectorAll('input[type="radio"]'));
+		availableRadios.forEach(function (radio) {
+			radio.name = 'param-decision-' + def.key;
+		});
+		function applyState(nextState, changed) {
+			if (!allowInherit && nextState === 'inherit') nextState = 'model';
+			row.dataset.state = nextState;
+			if (changed) row.dataset.changed = 'true';
+			availableRadios.forEach(function (radio) {
+				radio.checked = radio.value === nextState;
+			});
+			ownControl.classList.toggle('hidden', nextState !== 'own');
+			inherited.classList.toggle('hidden', nextState !== 'inherit');
+			row.querySelector('.validation.error').textContent = '';
+		}
+		availableRadios.forEach(function (radio) {
+			function decide() {
+				applyState(radio.value, true);
+			}
+			radio.addEventListener('click', decide);
+			radio.addEventListener('change', decide);
+		});
+		applyState(state, false);
+		container.appendChild(row);
+	});
+}
+function modelParamNumberError(def) {
+	if (def.type === 'integer') {
+		if (def.min !== undefined && def.max !== undefined) return '请输入 ' + def.min + '～' + def.max + ' 之间的整数';
+		if (def.min !== undefined) return '请输入不小于 ' + def.min + ' 的整数';
+		if (def.max !== undefined) return '请输入不大于 ' + def.max + ' 的整数';
+		return '请输入整数';
+	}
+	if (def.min !== undefined && def.max !== undefined) return '请输入 ' + def.min + '～' + def.max + ' 之间的数值';
+	if (def.min !== undefined) return '请输入不小于 ' + def.min + ' 的数值';
+	if (def.max !== undefined) return '请输入不大于 ' + def.max + ' 的数值';
+	return '请输入数值';
+}
+function isValidModelParamNumber(value, def) {
+	if (!Number.isFinite(value)) return false;
+	if (def.min !== undefined && value < def.min) return false;
+	if (def.max !== undefined && value > def.max) return false;
+	if (def.type === 'integer' && !Number.isInteger(value)) return false;
+	if (def.step !== undefined) {
+		const base = def.min !== undefined ? def.min : 0;
+		const steps = (value - base) / def.step;
+		if (Math.abs(steps - Math.round(steps)) > 1e-9) return false;
+	}
+	return true;
+}
+function collectModelParamControls(container, originalParams) {
+	const params = JSON.parse(JSON.stringify(originalParams || {}));
+	let valid = true;
+	let firstInvalidControl = null;
+	if (!container) return {
+		valid,
+		params,
+		firstInvalidControl
+	};
+	container.querySelectorAll('.registered.param-row').forEach(function (row) {
+		if (row.dataset.changed !== 'true') return;
+		const key = row.dataset.paramKey;
+		const def = row._modelParamDefinition;
+		const error = row.querySelector('.validation.error');
+		error.textContent = '';
+		if (row.dataset.state === 'inherit') {
+			delete params[key];
+			return;
+		}
+		if (row.dataset.state === 'model') {
+			Object.defineProperty(params, key, {
+				value: null,
+				writable: true,
+				enumerable: true,
+				configurable: true
+			});
+			return;
+		}
+		const control = row.querySelector('.own.param.control').querySelector('input, select');
+		const rawValue = control ? control.value : '';
+		if (rawValue === '') {
+			if (def.nullable === true) {
+				Object.defineProperty(params, key, {
+					value: '',
+					writable: true,
+					enumerable: true,
+					configurable: true
+				});
+				return;
+			}
+			valid = false;
+			error.textContent = '请填写' + def.label;
+			if (!firstInvalidControl) firstInvalidControl = control;
+			return;
+		}
+		let value = rawValue;
+		if (def.type === 'range' || def.type === 'integer') {
+			value = Number(rawValue);
+			if (def.type === 'range' && rawValue !== String(value)) {
+				valid = false;
+				error.textContent = modelParamNumberError(def);
+				if (!firstInvalidControl) firstInvalidControl = control;
+				return;
+			}
+			if (!isValidModelParamNumber(value, def)) {
+				valid = false;
+				error.textContent = modelParamNumberError(def);
+				if (!firstInvalidControl) firstInvalidControl = control;
+				return;
+			}
+		} else if (def.type === 'select' && (!Array.isArray(def.options) || !def.options.includes(value))) {
+			valid = false;
+			error.textContent = '请选择' + def.label;
+			if (!firstInvalidControl) firstInvalidControl = control;
+			return;
+		}
+		Object.defineProperty(params, key, {
+			value,
+			writable: true,
+			enumerable: true,
+			configurable: true
+		});
+	});
+	return {
+		valid,
+		params: valid ? params : null,
+		firstInvalidControl
+	};
+}

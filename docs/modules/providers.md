@@ -2,16 +2,16 @@
 title: Provider 抽象层 + DOM 工具集
 covers_file: [src/modules/providers.js]
 depends_on: []
-api_signature: providers.openai, providers.jimeng, providers.claude, providers.gemini, $, 43852, mk, fromTemplate, setValues, onClick, createTooltip, handleCopyValueClick
-last_updated: 2026-08-12
-why_exists: 四种 Provider 格式差异的封装（Jimeng 专用于视频生成）和公共 DOM 辅助函数的复用
+api_signature: providers.openai, providers.jimeng, providers.claude, providers.gemini, providers.responses, $, $$, mk, fromTemplate, setValues, onClick, createTooltip, handleCopyValueClick
+last_updated: 2026-08-18
+why_exists: 五种 Provider 格式差异的封装（Jimeng 专用于视频生成）和公共 DOM 辅助函数的复用
 ---
 
 # Provider 抽象层 + DOM 工具集（src/modules/providers.js）
 
 ## 设计意图
 
-`providers` 对象将 API 格式差异封装在四个 provider 内部：`openai`、`jimeng`、`claude`、`gemini`。其中 Jimeng 目前只提供视频生成请求构造，聊天/连接测试等通用方法不在该 provider 中；API 层（`callProvider`/`callAllModels`）无需感知具体格式。通用聊天 provider 通常实现以下核心方法：
+`providers` 对象将 API 格式差异封装在五个 provider 内部：`openai`、`jimeng`、`claude`、`gemini`、`responses`。其中 Jimeng 目前只提供视频生成请求构造，聊天/连接测试等通用方法不在该 provider 中；API 层（`callProvider`/`callAllModels`）无需感知具体格式。通用聊天 provider 通常实现以下核心方法：
 
 - **`buildRequest`** — 将通用参数（baseUrl, apiKey, model, messages）转换为该 API 的 fetch 请求结构 `{url, headers, body}`
 - **`parseChunk`** — 将 SSE 流中的单行 JSON 解析为统一结构 `{content?, reasoning?, event?}`
@@ -32,22 +32,15 @@ DOM 工具集（文件后半部分）提供类 jQuery 简写、模板克隆、�
 
 claude 和 gemini provider 不实现此方法。
 
-## TTS 支持
-
-仅 openai provider 实现了 `buildTTSRequest` / `testTTSConfig` 方法，用于语音合成（`/v1/audio/speech`）。与 `buildRequest` 的区别：
-
-- URL 路径：`{baseUrl}/v1/audio/speech`
-- Body：`{ model, input, response_format: "mp3" }`，可选补 `voice` / `instruction`
-- 非流式调用，由 `callTTS`（shared.js）处理
-- 响应为二进制 audio/mpeg，而非 JSON
-
-claude 和 gemini provider 不实现此方法。
-
 ## 视频生成支持
 
 ### OpenAI 兼容视频
 
 `openai.buildVideoRequest()` 请求 `{baseUrl}/v1/videos`，body 为 `{ model, prompt, n: 1 }`，并可合并 `duration`、`ratio`、`resolution` 参数。
+
+### Gemini 视频
+
+`gemini.buildVideoRequest()` 使用 `{baseUrl}/v1beta/models/{model}:generateContent`，以 `generationConfig.response_modalities: ['VIDEO']` 请求视频响应；当前通用 `callVideoGeneration()` 的响应解析仍按 OpenAI `data[0]` 形态读取，Gemini 视频响应的 `candidates[].content.parts[]` 尚未在 API 层完整接通。
 
 ### Jimeng / Seedance
 
@@ -67,20 +60,45 @@ Gemini 额外实现了 `parseImageResponse(data)` 方法，供 `callImageGenerat
 
 claude provider 不实现此方法，`callImageGeneration` 通过 `if (!provider.buildImageRequest) throw` 做前置检查。
 
+## Responses 支持（OpenAI 新一代接口）
+
+`responses` provider 面向 OpenAI 的 `/v1/responses` 端点，只实现聊天能力（`buildRequest` / `parseChunk` / `testConfig` / `transformMessages`），不实现生图/视频/嵌入/TTS。当前 `responses` 不是参数注册表的独立全量集合，而是 `chat.common + chat.responses`。
+
+与 OpenAI 聊天格式的关键差异在于消息体：
+
+- 端点：`{baseUrl}/v1/responses`，认证同 openai（`Authorization: Bearer {key}`）
+- Body：`{ model, input, stream: true }`，system 角色消息提取到顶层 `instructions` 字段；API 层随后把 `chat.common` 参数注入同一 body
+- **消息变换 `transformMessages`**：内部消息是 OpenAI 聊天格式（content 为 string 或 `[{type:'text'|'image_url'}]`），Responses API 要求 content 部件用 `input_text` / `input_image` / `output_text` 类型，且每条 input item 带 `type: 'message'`：
+  - user / 非 assistant → `{type:'input_text', text}`，图片 → `{type:'input_image', image_url}`
+  - assistant → `{type:'output_text', text}`
+  - system → 不进 input，拼接进 `instructions`
+- `needsTagParsing: false`：reasoning 通过 SSE 事件流式返回，无需 text 标签扫描
+
+Responses 的参数由 API 层 `mergeParams(body, params, 'responses')` 处理：`max_tokens` 映射到 `max_output_tokens`，具体 `reasoning_effort` 合并到 `body.reasoning.effort`；`null` 和空字符串不创建空 reasoning，已有普通 reasoning 对象的自有字段保留。参数合并使用 own-property 判断特殊键，避免 `__proto__`/`constructor` 等键被误当作继承属性。
+
+`parseChunk` 处理的 SSE 事件：
+
+- `response.output_text.delta` → `{content: delta}`
+- `response.reasoning_summary_text.delta` / `response.reasoning_text.delta` → `{reasoning: delta}`
+
+`testConfig` 非流式，body `{model, input:[{type:'message', role:'user', content:[{type:'input_text', text:'hi'}]}], max_output_tokens:3}`。
+
+注意：Responses API 无历史 `system` 消息字段，多轮对话里旧 assistant 回复以 `output_text` 回传，供 API 维护上下文。
+
 ## 聊天/生图 Provider 对比
 
-以下对比覆盖实现聊天或生图通用方法的 OpenAI、Claude、Gemini；Jimeng 只提供视频生成构造器，单独见“视频生成支持”。
+以下对比覆盖实现聊天或生图通用方法的 OpenAI、Claude、Gemini、Responses；Jimeng 只提供视频生成构造器，单独见“视频生成支持”。
 
 ### buildRequest
 
-| 维度 | openai | claude | gemini |
-|---|---|---|---|
-| URL 路径 | `{baseUrl}/v1/chat/completions` | `{baseUrl}/v1/messages` | `{baseUrl}/v1beta/models/{model}:streamGenerateContent?alt=sse` |
-| 认证方式 | `Authorization: Bearer {key}` | `x-api-key: {key}` + `Authorization: Bearer {key}` | `X-Goog-Api-Key` header |
-| 额外头 | 无 | `anthropic-version: 2023-06-01`<br>`anthropic-dangerous-direct-browser-access: true` | 无 |
-| 消息体 | `{model, messages, stream:true}` | `{model, max_tokens:4096, messages: transformMessages(msg), stream:true}` | `{contents: transformMessages(msg)}` |
-| 消息变换 | 直接透传 | `toClaudeContent` 转换 content 数组 | `toGeminiContent` 转换 + 相邻同角色合并 |
-| stream 标记 | `stream: true` | `stream: true` | URL 参数 `alt=sse`（非 body 字段） |
+| 维度 | openai | claude | gemini | responses |
+|---|---|---|---|---|
+| URL 路径 | `{baseUrl}/v1/chat/completions` | `{baseUrl}/v1/messages` | `{baseUrl}/v1beta/models/{model}:streamGenerateContent?alt=sse` | `{baseUrl}/v1/responses` |
+| 认证方式 | `Authorization: Bearer {key}` | `x-api-key: {key}` + `Authorization: Bearer {key}` | `X-Goog-Api-Key` header | `Authorization: Bearer {key}` |
+| 额外头 | 无 | `anthropic-version: 2023-06-01`<br>`anthropic-dangerous-direct-browser-access: true` | 无 | 无 |
+| 消息体 | `{model, messages, stream:true}` | `{model, max_tokens:4096, messages: transformMessages(msg), stream:true}` | `{contents: transformMessages(msg)}` | `{model, input: transformMessages(msg).input, stream:true}`<br>system → 顶层 `instructions` |
+| 消息变换 | 直接透传 | `toClaudeContent` 转换 content 数组 | `toGeminiContent` 转换 + 相邻同角色合并 | `input_text`/`input_image`/`output_text` + item `type:'message'` |
+| stream 标记 | `stream: true` | `stream: true` | URL 参数 `alt=sse`（非 body 字段） | `stream: true` |
 
 Claude 的 `transformMessages` 将内部消息格式转为 claude 期望的角色 + content 格式，content 数组通过 `toClaudeContent`（见 api.md）转换。
 
@@ -88,25 +106,25 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 
 ### parseChunk
 
-| 维度 | openai | claude | gemini |
-|---|---|---|---|
-| 输入 JSON | `choices[0].delta` | `type: 'content_block_delta'` 等事件 | `candidates[0].content.parts[0].text` |
-| content 来源 | `delta.content` | `delta.type==='text_delta' -> delta.text` | `parts[0].text` |
-| reasoning 来源 | `delta.reasoning_content` | `delta.type==='thinking_delta' -> delta.thinking` | 不支持 |
-| 事件标记 | 无 | `content_block_start(type:'thinking')` → `{event:'thinking_start'}`<br>`content_block_start(type:'text')` → `{event:'content_start'}` | 无 |
-| 空 chunk | `json.choices[0].delta` 为空时返回 null | 不匹配的事件返回 null | `candidates[0].content` 不存在时返回 null |
+| 维度 | openai | claude | gemini | responses |
+|---|---|---|---|---|
+| 输入 JSON | `choices[0].delta` | `type: 'content_block_delta'` 等事件 | `candidates[0].content.parts[0].text` | `response.output_text.delta` 等事件 |
+| content 来源 | `delta.content` | `delta.type==='text_delta' -> delta.text` | `parts[0].text` | `json.delta` |
+| reasoning 来源 | `delta.reasoning_content` | `delta.type==='thinking_delta' -> delta.thinking` | 不支持 | `response.reasoning_summary_text.delta` / `response.reasoning_text.delta` 的 `delta` |
+| 事件标记 | 无 | `content_block_start(type:'thinking')` → `{event:'thinking_start'}`<br>`content_block_start(type:'text')` → `{event:'content_start'}` | 无 | 无 |
+| 空 chunk | `json.choices[0].delta` 为空时返回 null | 不匹配的事件返回 null | `candidates[0].content` 不存在时返回 null | 不匹配的事件返回 null |
 
-OpenAI、Claude、Gemini 三个聊天 provider 的 `parseChunk` 输出格式统一为 `{content: string|null, reasoning: string|null, event: string|null}`，使 `handleParsedChunk` 可以统一处理；Jimeng 不提供聊天流解析。
+OpenAI、Claude、Gemini、Responses 四个聊天 provider 的 `parseChunk` 输出格式统一为 `{content: string|null, reasoning: string|null, event: string|null}`，使 `handleParsedChunk` 可以统一处理；Jimeng 不提供聊天流解析。
 
 ### testConfig
 
-| 维度 | openai | claude | gemini |
-|---|---|---|---|
-| URL | `{baseUrl}/v1/chat/completions` | `{baseUrl}/v1/messages` | `{baseUrl}/v1beta/models/{model}:generateContent` |
-| body | `{model, messages:[{role:'user', content:'hi'}], max_tokens:3}` | 同 buildRequest 但 `max_tokens:3` | `{contents:[{role:'user', parts:[{text:'hi'}]}]}` |
-| stream | 否（不设 stream） | 否（不设 stream） | 否（用 `generateContent` 而非 `streamGenerateContent`） |
+| 维度 | openai | claude | gemini | responses |
+|---|---|---|---|---|
+| URL | `{baseUrl}/v1/chat/completions` | `{baseUrl}/v1/messages` | `{baseUrl}/v1beta/models/{model}:generateContent` | `{baseUrl}/v1/responses` |
+| body | `{model, messages:[{role:'user', content:'hi'}], max_tokens:3}` | 同 buildRequest 但 `max_tokens:3` | `{contents:[{role:'user', parts:[{text:'hi'}]}]}` | `{model, input:[{type:'message', role:'user', content:[{type:'input_text', text:'hi'}]}], max_output_tokens:3}` |
+| stream | 否（不设 stream） | 否（不设 stream） | 否（用 `generateContent` 而非 `streamGenerateContent`） | 否（不设 stream） |
 
-三个 testConfig 均设置 `max_tokens:3` 或等价最小输出，确保测试轻量快速。
+四个 testConfig 均设置 `max_tokens:3` 或等价最小输出，确保测试轻量快速。
 
 ### 嵌入方法
 
@@ -125,6 +143,7 @@ OpenAI、Claude、Gemini 三个聊天 provider 的 `parseChunk` 输出格式统�
 | openai | 默认 true | `delta.reasoning_content` 仅标记 thinking 阶段，不包含标签文本；部分第三方 API 会在 content 中嵌入 <thinking> |
 | claude | `false` | claude 使用结构化事件 `thinking_delta`，`handleParsedChunk` 通过 `reasoning` 字段直接处理，无需标签扫描 |
 | gemini | 默认 true | gemini 不支持 reasoning 事件，content 流中不会出现 thinking 标签，但 tag parser 对纯 content 无害 |
+| responses | `false` | reasoning 通过 `response.reasoning_summary_text.delta` / `response.reasoning_text.delta` 事件流式返回，无需标签扫描 |
 
 ## 函数索引
 
@@ -135,11 +154,13 @@ OpenAI、Claude、Gemini 三个聊天 provider 的 `parseChunk` 输出格式统�
 | `buildRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `buildVideoRequest` | openai | `(baseUrl, apiKey, model, messages, params?) => {url, headers, body}` |
 | `buildVideoRequest` | jimeng | `(baseUrl, apiKey, model, messages, params?) => {url, headers, body}` |
+| `buildVideoRequest` | gemini | `(baseUrl, apiKey, model, messages, params?) => {url, headers, body}` |
 | `buildImageRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `buildTTSRequest` | openai | `(baseUrl, apiKey, model, input, voice?, instruction?) => {url, headers, body}` |
 | `parseChunk` | openai | `(json) => {content?, reasoning?} | null` |
 | `testConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `testTTSConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
+| `testASRConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `buildRequest` | claude | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `transformMessages` | claude | `(messages) => Array` |
 | `parseChunk` | claude | `(json) => {content?, reasoning?, event?} | null` |
@@ -150,6 +171,10 @@ OpenAI、Claude、Gemini 三个聊天 provider 的 `parseChunk` 输出格式统�
 | `testConfig` | gemini | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `buildImageRequest` | gemini | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `parseImageResponse` | gemini | `(data) => {imageData, revised_prompt} | null` |
+| `buildRequest` | responses | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
+| `transformMessages` | responses | `(messages) => {input, instructions}` |
+| `parseChunk` | responses | `(json) => {content?, reasoning?} | null` |
+| `testConfig` | responses | `(baseUrl, apiKey, model) => {url, headers, body}` |
 
 ### 嵌入方法
 
@@ -175,7 +200,7 @@ OpenAI、Claude、Gemini 三个聊天 provider 的 `parseChunk` 输出格式统�
 | `toggle` | `(el, visible)` | `el.style.display = visible ? '' : 'none'` |
 | `confirmAction` | `(msg, action)` | `if(confirm(msg)) action()` |
 | `text` | `(el, txt) => el` | `el.textContent = txt`（返回 el 支持链式） |
-| `createTooltip` | `(id, html) => {show, hide, remove, el}` | 通用 tooltip 组件 |
+| `createTooltip` | `(id, triggerEl, populate) => {show, hide, remove}` | 通用 tooltip 组件；由调用方传入触发元素与内容填充函数 |
 
 ### HTMLElement.prototype 扩展
 
@@ -200,7 +225,7 @@ tooltip 是独立的可复用组件，非单例但通常每页只用一个实例
 2. `hide()` — 100ms 延迟隐藏（给鼠标移动到 tooltip 内的时间）
 3. `remove()` — 从 DOM 移除
 
-tooltip 内含 copy 按钮（`button.copy`），复制按钮点击已移至模板 `#tooltip-content` 的 `onclick="handleCopyValueClick(this)"` 属性，JS 不再绑定 click 事件。
+tooltip 内含 copy 按钮（`button.copy`），复制按钮由 `createTooltip()` 创建后通过 `addEventListener` 绑定 `handleCopyValueClick`，不依赖模板内联事件属性。
 
 挂载位置优先选择最近的 `.one.endpoint` 祖先，因为 `<span>` 标签内不允许嵌套 `<div>`（tooltip 是 div），fallback 到 `document.body`。
 
@@ -225,3 +250,5 @@ tooltip 内含 copy 按钮（`button.copy`），复制按钮点击已移至模�
 | 2026-07-20 | Gemini 新增 `buildImageRequest` / `parseImageResponse` | 支持 Gemini 生图模型（如 gemini-3.1-flash-lite-image），使用同 `generateContent` 端点 + `response_modalities: ["IMAGE"]` |
 | 2026-07-24 | 新增 `jimeng` provider + `buildVideoRequest` | 即梦/Seedance 视频生成用 `/v1/videos/generations`；openai 视频用 `/v1/videos`；gemini 用 `:generateContent` + `VIDEO` |
 | 2026-08-12 | 明确 Jimeng 的 provider 边界 | `jimeng` 只实现视频生成构造器，不实现聊天或连接测试方法；视频发送可用，但连接测试不会把 `video-generation` 当作 chat 测试 |
+| 2026-08-14 | 新增 `responses` provider | 支持 OpenAI 新一代 `/v1/responses` 接口；`transformMessages` 将内部 OpenAI 聊天格式转为 `input_text`/`input_image`/`output_text`，system 提取到 `instructions`；`parseChunk` 解析 `output_text.delta` 与 `reasoning_summary_text.delta`/`reasoning_text.delta`；只实现聊天能力 |
+| 2026-08-18 | 按最终代码补齐 Responses 参数映射与 DOM tooltip 契约 | Responses 请求复用 `chat.common`，`max_tokens` 映射到 `max_output_tokens`，`reasoning_effort` 合并到 `reasoning.effort`；`createTooltip(id, triggerEl, populate)` 通过事件监听器绑定复制行为。明确 TTS `speed`、ASR `response_format` 等注册项不代表所有 provider 方法都已完整透传，并记录 Gemini 视频响应尚未接入通用解析。 |

@@ -3,7 +3,7 @@ title: 参数注册表
 covers_file: [src/modules/params-registry.js]
 depends_on: []
 api_signature: PARAMS_REGISTRY, getParamDefs(type, style)
-last_updated: 2026-07-19
+last_updated: 2026-08-18
 why_exists: 定义每种 (模型类型, 接口风格) 组合的可配置 API 参数，驱动编辑弹窗中参数控件的动态渲染
 ---
 
@@ -24,12 +24,21 @@ why_exists: 定义每种 (模型类型, 接口风格) 组合的可配置 API 参
 - `chat.openai` — presence_penalty、frequency_penalty、seed（OpenAI 特色）
 - `chat.claude` — top_k、stop_sequences（Claude 特色）
 - `chat.gemini` — top_k、stop_sequences、max_output_tokens（Gemini 特色）
+- `chat.responses` — reasoning_effort（Responses 特色，low/medium/high；与 `chat.common` 一起返回）
 - `image-generation.common` — size、quality、n
+- `tts.common` — voice、instruction、speed
+- `asr.common` — language、prompt、temperature、response_format
+- `video-generation.common` — duration、ratio、resolution
 - `reranking.common` — top_n
 - `embedding` — 暂未注册参数
-- `tts` — 已有独立字段（voice/instruction），不在注册表重复
 
-数据流向：注册表 → `renderParamControls()` → 用户设定值 → `endpoint.params` → `mergeParams()` → 请求 body。
+`getParamDefs(type, style)` 返回 `common` 定义与当前 style 专属定义的拼接结果。因此 `chat/responses` 实际包含 `temperature`、`top_p`、`max_tokens` 和 `reasoning_effort`。
+
+`default` 只是用户第一次选择“自己设置”时的建议起点；控件未被用户操作时不会因为它存在而保存或发送该值。持久化字段有三态：字段缺失表示沿用上层，具体值表示当前层自己设置，`null` 表示明确由模型决定并阻断上层。请求合并还会跳过 `null` 和空字符串。
+
+注册表描述可配置项，不保证每个定义都已在所有请求路径完整透传：当前 TTS 的 `speed` 尚未进入请求，ASR 的 `response_format` 固定为 `json`，且 ASR 的 `temperature: 0` 会被当前 truthy 判断跳过。
+
+数据流向：注册表 → `renderModelParamControls()` → 用户设定值 → `endpoint.params` → `mergeParams()` → 请求 body。
 
 ## 函数索引
 
@@ -46,11 +55,13 @@ why_exists: 定义每种 (模型类型, 接口风格) 组合的可配置 API 参
 | `type` | enum | ✅ | range / integer / text / select |
 | `min/max` | number | 按需 | 控件边界 |
 | `step` | number | 按需 | range 步进 |
-| `default` | any | 按需 | 默认值 |
+| `default` | any | 按需 | 仅作为首次选择“自己设置”时的建议起点，不代表自动保存或发送 |
 | `placeholder` | string | 按需 | text 输入框提示 |
 | `options` | string[] | select 必填 | 下拉选项 |
-| `nullable` | bool | 按需 | 是否允许空值 |
+| `nullable` | bool | 按需 | 是否允许以空值作为控件输入；参数持久化的 `null` 另表示“由模型决定” |
 
 ## 决策日志
 
 - 2026-07-19: 初始创建，支持 chat/openai/claude/gemini、image-generation、reranking
+- 2026-08-14: chat 新增 responses 专属参数 reasoning_effort（思考强度）——Responses API 用它控制 o 系列模型的思考预算，通过 mergeParams 映射到 body.reasoning.effort
+- 2026-08-18: 补齐 TTS、ASR、视频和重排序注册项；明确 `default` 只是“自己设置”时的建议起点，参数字段按缺失/具体值/`null` 三态保存；Responses 继续合并 `chat.common`，并记录当前 TTS/ASR 请求透传边界。
