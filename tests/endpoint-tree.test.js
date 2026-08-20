@@ -677,6 +677,7 @@ function createUpdateCardStatusHarness() {
 		api: context.__updateCardStatusApi,
 		calls,
 		bodyContent,
+		contentEl,
 		runNextAnimationFrame() {
 			assert.equal(animationFrames.length, 1);
 			animationFrames.shift()();
@@ -1841,6 +1842,116 @@ function createEditDialogHarness(tree, options = {}) {
 		}
 	};
 }
+
+function createTerminalStreamHarness(streamData) {
+	const context = vm.createContext({
+		AbortController,
+		Document: function Document() {},
+		HTMLElement: function HTMLElement() {},
+		Response,
+		TextDecoder,
+		THINKING_TAGS: [],
+		currentAbortController: null,
+		document: {},
+		fetchWithTimeout: async function() {
+			return new Response(streamData, {
+				status: 200,
+				headers: {
+					'content-type': 'text/event-stream'
+				}
+			});
+		},
+		mergeParams() {}
+	});
+	context.HTMLElement.prototype = {};
+	context.Document.prototype = {};
+	const providersSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'providers.js'), 'utf8');
+	const sharedSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'shared.js'), 'utf8');
+	const source = [
+		providersSource,
+		extractFunctionDeclaration(sharedSource, 'createInitialState'),
+		extractFunctionDeclaration(sharedSource, 'createTagParser'),
+		extractFunctionDeclaration(sharedSource, 'processWithTagParser'),
+		extractFunctionDeclaration(sharedSource, 'handleParsedChunk'),
+		'async ' + extractFunctionDeclaration(sharedSource, 'processSSEStream'),
+		'async ' + extractFunctionDeclaration(sharedSource, 'callProvider'),
+		'globalThis.__terminalStreamApi = { callProvider, processSSEStream, providers };'
+	].join('\n');
+	new vm.Script(source, {
+		filename: path.join(__dirname, '..', 'src', 'modules', 'shared.js')
+	}).runInContext(context);
+	return context.__terminalStreamApi;
+}
+
+function createCallAllModelsTerminalHarness() {
+	const context = vm.createContext({
+		AbortController,
+		Date,
+		currentSession: {
+			id: 'session-1'
+		},
+		selectedEndpoints: [],
+		sessionGenerations: new Map(),
+		callAPI: async function(style, baseUrl, apiKey, model, messages, onChunk) {
+			onChunk({
+				content: 'partial answer',
+				thinking: 'partial reasoning',
+				thinkingDuration: 12,
+				phase: 'content',
+				firstContentTokenTime: Date.now()
+			});
+			const error = new Error('响应因输出长度限制而不完整');
+			error.state = {
+				content: 'partial answer',
+				thinking: 'partial reasoning',
+				thinkingDuration: 12
+			};
+			throw error;
+		},
+		clearSessionGenerations() {},
+		findModelById() {
+			return {
+				node: {
+					id: 'endpoint-1',
+					modelId: 'model-1'
+				}
+			};
+		},
+		getSessionGenerations(sessionId) {
+			if (!context.sessionGenerations.has(sessionId)) context.sessionGenerations.set(sessionId, new Map());
+			return context.sessionGenerations.get(sessionId);
+		},
+		hasOwnEndpointParams() {
+			return false;
+		},
+		isSessionInvalidated() {
+			return false;
+		},
+		readOwnEndpointParams() {
+			return null;
+		},
+		renderSelectedEndpoints() {},
+		resolveNodeConfig() {
+			return {
+				baseUrl: '',
+				isFullUrl: false,
+				key: '',
+				params: {},
+				style: 'openai'
+			};
+		},
+		setOwnEnumerableDataProperty(target, key, value) {
+			target[key] = value;
+		},
+		updateCardStatus() {}
+	});
+	const sharedSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'shared.js'), 'utf8');
+	new vm.Script(`async ${extractFunctionDeclaration(sharedSource, 'callAllModels')}\nglobalThis.__callAllModels = callAllModels;`, {
+		filename: sharedSource
+	}).runInContext(context);
+	return context.__callAllModels;
+}
+
 test('deleting a generating session invalidates it before aborting generation', () => {
 	const harness = createGenerationApiHarness();
 	const controller = new AbortController();
@@ -7620,4 +7731,599 @@ test('callAllModels applies null missing and own session parameter decisions ove
 		assert.equal(Object.hasOwn(body, 'temperature'), expected !== null);
 		if (expected !== null) assert.equal(body.temperature, expected);
 	}
+});
+
+test('handleSend keeps unified file content through chat provider dispatch', async () => {
+	const file = { type: 'file', name: 'report.pdf', source: { type: 'base64', media_type: 'application/pdf', data: 'JVBERi0xLjQ=' } };
+	const generationStarts = [];
+	const controller = new AbortController();
+	const context = vm.createContext({
+		console,
+		AbortController,
+		currentSession: { id: 'session-1', messages: [] },
+		defaultSelectedEndpointParams: {},
+		pendingAttachments: [],
+		selectedEndpoints: ['endpoint-1'],
+		sessionGenerations: new Map(),
+		addMessage: async function(sessionId, role, content) { if (role === 'user') context.currentSession.messages.push({ role, content }); },
+		appendUserMessage() {},
+		callAllModels: async function(groups, endpointIds, messages) { generationStarts.push(messages); return []; },
+		clearAttachments() {},
+		clearInput() {},
+		createSession: async function() { throw new Error('existing session must be reused'); },
+		findModelById() { return null; },
+		getGroups() { return []; },
+		getInputMessage: async function() { return [{ type: 'text', text: 'Review this file' }, file]; },
+		getSessionAbortController() { return controller; },
+		loadSession: async function() { return context.currentSession; },
+		normalizeMessageContent(message) { return message.content; },
+		renderSelectedEndpoints() {},
+		resolveNodeConfig() { return { type: 'chat' }; },
+		reorderCardsBySpeed() {},
+		reorderSelectorTagsBySpeed() {},
+		setButtonState() {},
+		showThinkingCards() {},
+		toOpenAIContent(content) { return content.map(function(item) { return item.type === 'file' ? { type: 'image_url', image_url: { url: 'wrong' } } : item; }); },
+		updateStreamingCard() {},
+		refreshUI: async function() {},
+		$$() { return []; }
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	new vm.Script([extractFunctionDeclaration(apiSource, 'isSessionInvalidated'), 'const invalidatedSessionIds = new Set();', 'async ' + extractFunctionDeclaration(mainSource, 'handleSend'), 'globalThis.__handleSend = handleSend;'].join('\n'), { filename: mainSourcePath }).runInContext(context);
+	await context.__handleSend();
+	assert.deepEqual(cloneJson(generationStarts[0][0].content), [{ type: 'text', text: 'Review this file' }, file]);
+});
+
+test('handleSend routes normalized audio attachments to ASR even when File.type is unreliable', async () => {
+	const audioFile = { name: 'clip.wav', type: 'application/octet-stream' };
+	const asrCalls = [];
+	const controller = new AbortController();
+	const context = vm.createContext({
+		AbortController,
+		console: { error() {} },
+		currentSession: { id: 'session-1', messages: [], modelParams: {} },
+		defaultSelectedEndpointParams: {},
+		pendingAttachments: [{ file: audioFile, mediaType: 'audio/wav' }],
+		selectedEndpoints: ['asr-1'],
+		sessionGenerations: new Map(),
+		addMessage: async function(sessionId, role, content) { if (role === 'user') context.currentSession.messages.push({ role, content }); },
+		appendUserMessage() {},
+		callASR: async function(style, baseUrl, key, model, file) { asrCalls.push(file); return { text: 'transcript' }; },
+		clearAttachments() {},
+		clearInput() {},
+		createSession: async function() { throw new Error('existing session must be reused'); },
+		findModelById() { return { node: { name: 'ASR model' } }; },
+		finishSessionAbortController() {},
+		getGroups() { return []; },
+		getInputMessage: async function() { return [{ type: 'text', text: 'Transcribe this' }]; },
+		getSessionAbortController() { return controller; },
+		hasOwnEndpointParams() { return false; },
+		isSessionInvalidated() { return false; },
+		loadSession: async function() { return context.currentSession; },
+		normalizeMessageContent(message) { return message.content; },
+		readOwnEndpointParams() { return {}; },
+		renderSelectedEndpoints() {},
+		resolveNodeConfig() { return { type: 'asr', style: 'openai', baseUrl: '', key: '', params: {}, isFullUrl: false }; },
+		reorderCardsBySpeed() {},
+		reorderSelectorTagsBySpeed() {},
+		setButtonState() {},
+		showThinkingCards() {},
+		updateCardAsText() {},
+		updateCardStatus() {},
+		updateStreamingCard() {},
+		refreshUI: async function() {},
+		$$() { return []; }
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	new vm.Script([extractFunctionDeclaration(apiSource, 'isSessionInvalidated'), 'const invalidatedSessionIds = new Set();', 'async ' + extractFunctionDeclaration(mainSource, 'handleSend'), 'globalThis.__handleSend = handleSend;'].join('\n'), { filename: mainSourcePath }).runInContext(context);
+	await context.__handleSend();
+	assert.deepEqual(asrCalls, [audioFile]);
+});
+
+test('attachments preserve reliable browser MIME types and recognize PowerPoint extensions', async () => {
+	const attachmentsSource = fs.readFileSync(attachmentsSourcePath, 'utf8');
+	const pendingAttachments = [];
+	const context = vm.createContext({
+        Blob: Blob,
+
+        FileReader: class FileReader {
+			readAsDataURL() {
+				this.result = 'data:audio/mpeg;base64,SUQz';
+				this.onload();
+			}
+		},
+
+        generateUUID() {
+			return 'attachment-1';
+		},
+
+        pendingAttachments,
+        renderPendingAttachments() {}
+    });
+	new vm.Script([
+		extractFunctionDeclaration(attachmentsSource, 'isTextFile'),
+		extractFunctionDeclaration(attachmentsSource, 'getMediaType'),
+		'async ' + extractFunctionDeclaration(attachmentsSource, 'addAttachment'),
+		'globalThis.__attachments = { addAttachment, getMediaType };'
+	].join('\n'), { filename: attachmentsSourcePath }).runInContext(context);
+	assert.equal(context.__attachments.getMediaType('slides.ppt'), 'application/vnd.ms-powerpoint');
+	assert.equal(context.__attachments.getMediaType('slides.pptx'), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+	await context.__attachments.addAttachment({
+		name: 'slides.pptx',
+		type: 'application/x-browser-specific-presentation'
+	});
+	assert.equal(pendingAttachments[0].mediaType, 'application/x-browser-specific-presentation');
+	for (const file of [
+		{ name: 'clip.mp3', type: '' },
+		{ name: 'clip.wav', type: 'application/octet-stream' }
+	]) {
+		await context.__attachments.addAttachment(file);
+		const attachment = pendingAttachments[pendingAttachments.length - 1];
+		assert.match(attachment.mediaType, /^audio\//);
+		assert.ok(attachment.previewUrl, `${file.name} should have an audio preview`);
+	}
+});
+
+test('providers encode unified attachments by their documented protocols', () => {
+	const context = vm.createContext({ document: {}, HTMLElement: function HTMLElement() {}, Document: function Document() {} });
+	context.HTMLElement.prototype = {};
+	context.Document.prototype = {};
+	const providersSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'providers.js'), 'utf8');
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	new vm.Script([extractFunctionDeclaration(apiSource, 'toOpenAIContent'), extractFunctionDeclaration(apiSource, 'toClaudeContent'), extractFunctionDeclaration(apiSource, 'toGeminiContent'), providersSource, 'globalThis.__providers = providers;'].join('\n'), { filename: path.join(__dirname, '..', 'src', 'modules', 'providers.js') }).runInContext(context);
+	const text = { type: 'text', text: 'Please inspect these attachments.' };
+	const image = { type: 'image', name: 'photo.png', source: { type: 'base64', media_type: 'image/png', data: 'aW1hZ2U=' } };
+	const svgImage = { type: 'image', name: 'diagram.svg', source: { type: 'base64', media_type: 'image/svg+xml', data: 'PHN2Zy8+' } };
+	const pdf = { type: 'file', name: 'report.pdf', source: { type: 'base64', media_type: 'application/pdf', data: 'JVBERi0xLjQ=' } };
+	const docx = { type: 'file', name: 'report.docx', source: { type: 'base64', media_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', data: 'ZG9jeA==' } };
+	const xlsx = { type: 'file', name: 'data.xlsx', source: { type: 'base64', media_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data: 'eGxzeA==' } };
+	const ppt = { type: 'file', name: 'slides.ppt', source: { type: 'base64', media_type: 'application/vnd.ms-powerpoint', data: 'cHB0' } };
+	const pptx = { type: 'file', name: 'slides.pptx', source: { type: 'base64', media_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', data: 'cHB0eA==' } };
+	const mp3 = { type: 'file', name: 'clip.mp3', source: { type: 'base64', media_type: 'audio/mpeg', data: 'SUQz' } };
+	const wav = { type: 'file', name: 'clip.wav', source: { type: 'base64', media_type: 'audio/wav', data: 'UklGRg==' } };
+	const webm = { type: 'file', name: 'clip.webm', source: { type: 'base64', media_type: 'audio/webm', data: 'R29nZw==' } };
+	const openaiMessages = [{ role: 'user', content: [text, image, pdf, docx, xlsx, ppt, pptx, mp3, wav] }];
+	const openai = context.__providers.openai.buildRequest('https://example.test', 'key', 'model', openaiMessages).body.messages[0].content;
+	assert.deepEqual(cloneJson(openai), [
+		{ type: 'text', text: 'Please inspect these attachments.' },
+		{ type: 'image_url', image_url: { url: 'data:image/png;base64,aW1hZ2U=' } },
+		{ type: 'file', file: { filename: 'report.pdf', file_data: 'data:application/pdf;base64,JVBERi0xLjQ=' } },
+		{ type: 'file', file: { filename: 'report.docx', file_data: 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,ZG9jeA==' } },
+		{ type: 'file', file: { filename: 'data.xlsx', file_data: 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,eGxzeA==' } },
+		{ type: 'file', file: { filename: 'slides.ppt', file_data: 'data:application/vnd.ms-powerpoint;base64,cHB0' } },
+		{ type: 'file', file: { filename: 'slides.pptx', file_data: 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,cHB0eA==' } },
+		{ type: 'input_audio', input_audio: { format: 'mp3', data: 'SUQz' } },
+		{ type: 'input_audio', input_audio: { format: 'wav', data: 'UklGRg==' } }
+	]);
+	assert.throws(() => context.__providers.openai.buildRequest('https://example.test', 'key', 'model', [{ role: 'user', content: [webm] }]), /不支持音频附件/);
+	assert.throws(() => context.__providers.openai.buildRequest('https://example.test', 'key', 'model', [{ role: 'user', content: [svgImage] }]), /不支持图片附件/);
+
+	const claude = context.__providers.claude.buildRequest('https://example.test', 'key', 'model', [{ role: 'user', content: [text, image, pdf] }]).body.messages[0].content;
+	assert.deepEqual(cloneJson(claude), [
+		{ type: 'text', text: 'Please inspect these attachments.' },
+		{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'aW1hZ2U=' } },
+		{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: 'JVBERi0xLjQ=' } }
+	]);
+	for (const unsupported of [docx, xlsx, ppt, pptx, mp3, wav, webm]) {
+		assert.throws(() => context.__providers.claude.buildRequest('https://example.test', 'key', 'model', [{ role: 'user', content: [unsupported] }]), /不支持/);
+	}
+	assert.throws(() => context.__providers.claude.buildRequest('https://example.test', 'key', 'model', [{ role: 'user', content: [svgImage] }]), /不支持图片附件/);
+
+	const responses = context.__providers.responses.buildRequest('https://example.test', 'key', 'model', [{ role: 'user', content: [text, image, pdf, docx, xlsx, ppt, pptx] }]).body.input[0].content;
+	assert.deepEqual(cloneJson(responses), [
+		{ type: 'input_text', text: 'Please inspect these attachments.' },
+		{ type: 'input_image', image_url: 'data:image/png;base64,aW1hZ2U=' },
+		{ type: 'input_file', filename: 'report.pdf', file_data: 'data:application/pdf;base64,JVBERi0xLjQ=' },
+		{ type: 'input_file', filename: 'report.docx', file_data: 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,ZG9jeA==' },
+		{ type: 'input_file', filename: 'data.xlsx', file_data: 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,eGxzeA==' },
+		{ type: 'input_file', filename: 'slides.ppt', file_data: 'data:application/vnd.ms-powerpoint;base64,cHB0' },
+		{ type: 'input_file', filename: 'slides.pptx', file_data: 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,cHB0eA==' }
+	]);
+	for (const unsupported of [mp3, wav, webm]) {
+		assert.throws(() => context.__providers.responses.buildRequest('https://example.test', 'key', 'model', [{ role: 'user', content: [unsupported] }]), /不支持音频附件/);
+	}
+
+	const promptParts = [{ type: 'file_text', text: 'Text extracted from a file' }];
+	assert.equal(context.__providers.openai.buildImageRequest('https://example.test', 'key', 'model', [{ role: 'user', content: promptParts }]).body.prompt, 'Text extracted from a file');
+	assert.equal(context.__providers.gemini.buildImageRequest('https://example.test', 'key', 'model', [{ role: 'user', content: promptParts }]).body.contents[0].parts[0].text, 'Text extracted from a file');
+	assert.equal(context.__providers.openai.buildVideoRequest('https://example.test', 'key', 'model', [{ role: 'user', content: promptParts }]).body.prompt, 'Text extracted from a file');
+	assert.equal(context.__providers.jimeng.buildVideoRequest('https://example.test', 'key', 'model', [{ role: 'user', content: promptParts }]).body.prompt, 'Text extracted from a file');
+	assert.equal(context.__providers.openai.buildTTSRequest('https://example.test', 'key', 'model', promptParts.filter(function(part) {
+		return part.type === 'text' || part.type === 'file_text';
+	}).map(function(part) {
+		return part.text || '';
+	}).join('\n')).body.input, 'Text extracted from a file');
+
+	const gemini = context.__providers.gemini.buildRequest('https://example.test', 'key', 'unsupported-model', [{ role: 'user', content: [text, image, pdf, docx, xlsx, mp3, wav] }]).body.contents[0].parts;
+	assert.deepEqual(cloneJson(gemini), [
+		{ text: 'Please inspect these attachments.' },
+		{ inline_data: { mime_type: 'image/png', data: 'aW1hZ2U=' } },
+		{ inline_data: { mime_type: 'application/pdf', data: 'JVBERi0xLjQ=' } },
+		{ inline_data: { mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', data: 'ZG9jeA==' } },
+		{ inline_data: { mime_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data: 'eGxzeA==' } },
+		{ inline_data: { mime_type: 'audio/mpeg', data: 'SUQz' } },
+		{ inline_data: { mime_type: 'audio/wav', data: 'UklGRg==' } }
+	]);
+});
+
+
+test('providers classify explicit terminal outcomes without rejecting unknown finish reasons', () => {
+	const stream = createTerminalStreamHarness('');
+	const cases = [{
+		style: 'openai',
+		json: {
+			choices: [{
+				finish_reason: 'length'
+			}]
+		},
+		outcome: 'incomplete',
+		reason: 'length'
+	}, {
+		style: 'openai',
+		json: {
+			choices: [{
+				finish_reason: 'content_filter'
+			}]
+		},
+		outcome: 'refused',
+		reason: 'content_filter'
+	}, {
+		style: 'claude',
+		json: {
+			type: 'message_delta',
+			delta: {
+				stop_reason: 'max_tokens'
+			}
+		},
+		outcome: 'incomplete',
+		reason: 'max_tokens'
+	}, {
+		style: 'claude',
+		json: {
+			type: 'error',
+			error: {
+				message: 'upstream error'
+			}
+		},
+		outcome: 'failed'
+	}, {
+		style: 'responses',
+		json: {
+			type: 'response.incomplete',
+			response: {
+				incomplete_details: {
+					reason: 'max_output_tokens'
+				}
+			}
+		},
+		outcome: 'incomplete',
+		reason: 'max_output_tokens'
+	}, {
+		style: 'gemini',
+		json: {
+			promptFeedback: {
+				blockReason: 'SAFETY'
+			}
+		},
+		outcome: 'refused',
+		reason: 'SAFETY'
+	}, {
+		style: 'gemini',
+		json: {
+			candidates: [{
+				finishReason: 'MAX_TOKENS'
+			}]
+		},
+		outcome: 'incomplete',
+		reason: 'MAX_TOKENS'
+	}];
+	for (const item of cases) {
+		const parsed = stream.providers[item.style].parseChunk(item.json);
+		assert.equal(parsed.terminal.outcome, item.outcome);
+		if (item.reason) assert.equal(parsed.terminal.reason, item.reason);
+	}
+	assert.equal(stream.providers.gemini.parseChunk({
+		candidates: [{
+			finishReason: 'THIRD_PARTY_EXTENSION'
+		}]
+	}), null);
+});
+
+test('explicit failed, refused, and incomplete streams reject with their partial state', async () => {
+	const streams = [{
+		style: 'openai',
+		outcome: 'incomplete',
+		data: 'data: {"choices":[{"delta":{"content":"OpenAI partial"}}]}\n\ndata: {"choices":[{"finish_reason":"length"}]}\n\n'
+	}, {
+		style: 'claude',
+		outcome: 'refused',
+		data: 'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"Claude partial"}}\n\ndata: {"type":"message_delta","delta":{"stop_reason":"refusal"}}\n\n'
+	}, {
+		style: 'responses',
+		outcome: 'failed',
+		data: 'data: {"type":"response.output_text.delta","delta":"Responses partial"}\n\ndata: {"type":"response.failed","response":{"error":{"message":"upstream failed"}}}\n\n'
+	}, {
+		style: 'gemini',
+		outcome: 'incomplete',
+		data: 'data: {"candidates":[{"content":{"parts":[{"text":"Gemini partial"}]}}]}\n\ndata: {"candidates":[{"finishReason":"MAX_TOKENS"}]}\n\n'
+	}];
+	for (const item of streams) {
+		const stream = createTerminalStreamHarness(item.data);
+		await assert.rejects(stream.callProvider(stream.providers[item.style], '', '', '', [], () => {}, null, item.style, {}, false), function(error) {
+			assert.equal(error.terminal.outcome, item.outcome);
+			assert.ok(error.state.content.includes('partial'));
+			return true;
+		});
+	}
+});
+
+test('SSE parsing skips invalid JSON but propagates provider exceptions', async () => {
+	const stream = createTerminalStreamHarness('data: not-json\n\ndata: {"content":"valid"}\n\n');
+	const state = {
+		content: '',
+		thinking: '',
+		phase: 'content',
+		thinkingStartTime: null,
+		firstContentTokenTime: null,
+		thinkingDuration: null
+	};
+	await stream.processSSEStream(new Response('data: not-json\n\ndata: {"content":"valid"}\n\n'), {
+		parseChunk(json) {
+			return json;
+		}
+	}, state, null, () => {});
+	assert.equal(state.content, 'valid');
+	await assert.rejects(stream.processSSEStream(new Response('data: {"content":"valid"}\n\n'), {
+		parseChunk() {
+			throw new Error('provider parser failed');
+		}
+	}, state, null, () => {}), /provider parser failed/);
+});
+
+test('callAllModels reports terminal failures without discarding streamed partial content', async () => {
+	const callAllModels = createCallAllModelsTerminalHarness();
+	const [result] = await callAllModels([], ['endpoint-1'], [], () => {}, 'session-1');
+	assert.equal(result.status, 'failed');
+	assert.equal(result.error, '响应因输出长度限制而不完整');
+	assert.equal(result.content, 'partial answer');
+	assert.equal(result.thinking, 'partial reasoning');
+	assert.equal(result.thinkingDuration, 12);
+});
+
+
+test('bug4 Responses files, audio validation, refusal errors, and EOF SSE events follow protocol', async () => {
+	const context = vm.createContext({ document: {}, HTMLElement: function HTMLElement() {}, Document: function Document() {} });
+	context.HTMLElement.prototype = {};
+	context.Document.prototype = {};
+	const providersSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'providers.js'), 'utf8');
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	new vm.Script([extractFunctionDeclaration(apiSource, 'toOpenAIContent'), extractFunctionDeclaration(apiSource, 'toClaudeContent'), extractFunctionDeclaration(apiSource, 'toGeminiContent'), providersSource, 'globalThis.__providers = providers;'].join('\n'), { filename: path.join(__dirname, '..', 'src', 'modules', 'providers.js') }).runInContext(context);
+	const zip = { type: 'file', name: 'archive.zip', source: { type: 'base64', media_type: 'application/zip', data: 'UEsDBA==' } };
+	const octetStream = { type: 'file', name: 'payload.bin', source: { type: 'base64', media_type: 'application/octet-stream', data: 'AAE=' } };
+	const responseFiles = context.__providers.responses.buildRequest('https://example.test', 'key', 'model', [{ role: 'user', content: [zip, octetStream] }]).body.input[0].content;
+	assert.deepEqual(cloneJson(responseFiles), [
+		{ type: 'input_file', filename: 'archive.zip', file_data: 'data:application/zip;base64,UEsDBA==' },
+		{ type: 'input_file', filename: 'payload.bin', file_data: 'data:application/octet-stream;base64,AAE=' }
+	]);
+	for (const file of [
+		{ type: 'file', name: 'wrong.wav', source: { type: 'base64', media_type: 'audio/mpeg', data: 'SUQz' } },
+		{ type: 'file', name: 'wrong.mp3', source: { type: 'base64', media_type: 'audio/wav', data: 'UklGRg==' } },
+		{ type: 'file', name: 'clip.ogg', source: { type: 'base64', media_type: 'audio/ogg', data: 'T2dnUw==' } }
+	]) {
+		assert.throws(() => context.__providers.openai.buildRequest('https://example.test', 'key', 'model', [{ role: 'user', content: [file] }]), /不支持音频附件/);
+	}
+	const stream = createTerminalStreamHarness('');
+	for (const json of [
+		{ type: 'response.refusal.delta', delta: 'policy refusal' },
+		{ type: 'response.refusal.done', response: { status_details: { reason: 'safety' } } },
+		{ type: 'error', error: { message: 'event failure' } },
+		{ error: { message: 'top-level failure' } }
+	]) {
+		const parsed = stream.providers.responses.parseChunk(json);
+		assert.ok(parsed.terminal);
+	}
+	const refusal = stream.providers.responses.parseChunk({ type: 'response.refusal.delta', delta: 'policy refusal' }).terminal;
+	assert.equal(refusal.outcome, 'refused');
+	assert.equal(refusal.message, 'policy refusal');
+	const failure = stream.providers.responses.parseChunk({ error: { message: 'top-level failure' } }).terminal;
+	assert.equal(failure.outcome, 'failed');
+	assert.equal(failure.message, 'top-level failure');
+	const eofStream = createTerminalStreamHarness('data:{"type":"response.output_text.delta","delta":"EOF content"}\n\ndata:{"type":"response.refusal.done","response":{"status_details":{"reason":"safety"}}}\n\ndata:{"type":"response.completed"}');
+	await assert.rejects(eofStream.callProvider(eofStream.providers.responses, '', '', '', [], () => {}, null, 'responses', {}, false), error => {
+		assert.equal(error.terminal.outcome, 'refused');
+		assert.equal(error.terminal.reason, 'safety');
+		assert.equal(error.state.content, 'EOF content');
+		return true;
+	});
+});
+
+
+test('bug5 provider terminal contracts preserve protocol data and partial responses', async () => {
+	const stream = createTerminalStreamHarness('');
+	const responseInput = stream.providers.responses.buildRequest('https://example.test', 'key', 'model', [
+		{ role: 'user', content: 'first question' },
+		{ role: 'assistant', content: 'previous answer' },
+		{ role: 'user', content: [{ type: 'text', text: 'next question' }] }
+	]).body.input;
+	assert.deepEqual(cloneJson(responseInput), [
+		{ type: 'message', role: 'user', content: [{ type: 'input_text', text: 'first question' }] },
+		{ type: 'message', role: 'assistant', content: 'previous answer' },
+		{ type: 'message', role: 'user', content: [{ type: 'input_text', text: 'next question' }] }
+	]);
+
+	const chatRefusal = stream.providers.openai.parseChunk({
+		choices: [{ delta: { refusal: 'Cannot help with that.' } }]
+	});
+	assert.equal(chatRefusal.terminal.outcome, 'refused');
+	assert.equal(chatRefusal.terminal.message, 'Cannot help with that.');
+	assert.equal(chatRefusal.refusalDelta, 'Cannot help with that.');
+
+	const chatRefusalStream = createTerminalStreamHarness(`data: {"choices":[{"delta":{"refusal":"Policy "}}]}
+
+data: {"choices":[{"delta":{"refusal":"refusal"},"finish_reason":"stop"}]}
+
+`);
+	await assert.rejects(chatRefusalStream.callProvider(chatRefusalStream.providers.openai, '', '', '', [], () => {}, null, 'openai', {}, false), error => {
+		assert.equal(error.terminal.outcome, 'refused');
+		assert.equal(error.terminal.message, 'Policy refusal');
+		assert.match(error.message, /Policy refusal/);
+		return true;
+	});
+
+	for (const reason of ['RECITATION', 'LANGUAGE', 'IMAGE_SAFETY', 'IMAGE_PROHIBITED_CONTENT', 'IMAGE_RECITATION']) {
+		assert.equal(stream.providers.gemini.parseChunk({ candidates: [{ finishReason: reason }] }).terminal.outcome, 'refused');
+	}
+	for (const reason of ['MALFORMED_FUNCTION_CALL', 'MALFORMED_RESPONSE', 'UNEXPECTED_TOOL_CALL', 'TOO_MANY_TOOL_CALLS', 'MISSING_THOUGHT_SIGNATURE']) {
+		assert.equal(stream.providers.gemini.parseChunk({ candidates: [{ finishReason: reason }] }).terminal.outcome, 'failed');
+	}
+	assert.equal(stream.providers.gemini.parseChunk({ candidates: [{ finishReason: 'OTHER' }] }), null);
+
+	const officialError = stream.providers.responses.parseChunk({
+		type: 'error',
+		message: 'Invalid input',
+		code: 'invalid_request',
+		param: 'input[0]'
+	}).terminal;
+	assert.equal(officialError.outcome, 'failed');
+	assert.match(officialError.message, /Invalid input/);
+	assert.match(officialError.message, /invalid_request/);
+	assert.match(officialError.message, /input\[0\]/);
+	const refusalDone = stream.providers.responses.parseChunk({
+		type: 'response.refusal.done',
+		refusal: 'Policy refusal'
+	}).terminal;
+	assert.equal(refusalDone.outcome, 'refused');
+	assert.equal(refusalDone.message, 'Policy refusal');
+
+	const refusalStream = createTerminalStreamHarness(`data: {"type":"response.refusal.delta","delta":"Policy "}
+
+data: {"type":"response.refusal.delta","delta":"refusal"}
+
+data: {"type":"response.refusal.done"}
+
+data: {"type":"response.completed"}
+
+`);
+	await assert.rejects(refusalStream.callProvider(refusalStream.providers.responses, '', '', '', [], () => {}, null, 'responses', {}, false), error => {
+		assert.equal(error.terminal.outcome, 'refused');
+		assert.equal(error.terminal.message, 'Policy refusal');
+		return true;
+	});
+
+	for (const reason of ['pause_turn', 'tool_use']) {
+		const parsed = stream.providers.claude.parseChunk({ type: 'message_delta', delta: { stop_reason: reason } });
+		assert.equal(parsed.terminal.outcome, 'incomplete');
+		assert.equal(parsed.terminal.reason, reason);
+	}
+});
+
+test('bug5 failed card keeps streamed response text while showing the failure state', () => {
+	const harness = createUpdateCardStatusHarness();
+	harness.api.updateCardStatus('endpoint-1', 'failed', 'upstream failed', null, 'session-1');
+	harness.runNextAnimationFrame();
+	assert.equal(harness.contentEl.textContent, 'already rendered');
+	assert.equal(harness.bodyContent.innerHTML, '');
+	assert.equal(harness.bodyContent.children.length, 2);
+	assert.equal(harness.bodyContent.children[1].textContent, 'upstream failed');
+});
+
+test('SSE terminal priority lets upstream failures replace refusal and preserves complete refusal text', async () => {
+	for (const failedEvent of [
+		'data: {"type":"error","error":{"message":"top-level upstream error"}}\n\n',
+		'data: {"type":"response.failed","response":{"error":{"message":"response failed upstream"}}}\n\n'
+	]) {
+		const stream = createTerminalStreamHarness(
+			'data: {"type":"response.refusal.delta","delta":"Policy "}\n\n'
+			+ 'data: {"type":"response.refusal.delta","delta":"refusal"}\n\n'
+			+ 'data: {"type":"response.refusal.done"}\n\n'
+			+ failedEvent
+		);
+		await assert.rejects(stream.callProvider(stream.providers.responses, '', '', '', [], () => {}, null, 'responses', {}, false), error => {
+			assert.equal(error.terminal.outcome, 'failed');
+			assert.match(error.terminal.message, /upstream/);
+			return true;
+		});
+	}
+
+	const refusalStream = createTerminalStreamHarness(
+		'data: {"choices":[{"delta":{"refusal":"Policy "}}]}\n\n'
+		+ 'data: {"choices":[{"delta":{"refusal":"refusal"}}]}\n\n'
+		+ 'data: {"choices":[{"finish_reason":"stop"}]}\n\n'
+		+ 'data: {"choices":[{"finish_reason":"refusal"}]}\n\n'
+	);
+	await assert.rejects(refusalStream.callProvider(refusalStream.providers.openai, '', '', '', [], () => {}, null, 'openai', {}, false), error => {
+		assert.equal(error.terminal.outcome, 'refused');
+		assert.equal(error.terminal.message, 'Policy refusal');
+		return true;
+	});
+});
+
+test('attachment previews and ASR uploads use extension-normalized audio MIME types', async () => {
+	const attachmentsSource = fs.readFileSync(attachmentsSourcePath, 'utf8');
+	const pendingAttachments = [];
+	const previewTypes = [];
+	const context = vm.createContext({
+		Blob,
+		FileReader: class FileReader {
+			readAsDataURL(blob) {
+				previewTypes.push(blob.type);
+				this.result = 'data:' + blob.type + ';base64,SUQz';
+				this.onload();
+			}
+		},
+		generateUUID() { return 'attachment-1'; },
+		pendingAttachments,
+		renderPendingAttachments() {}
+	});
+	new vm.Script([
+		extractFunctionDeclaration(attachmentsSource, 'isTextFile'),
+		extractFunctionDeclaration(attachmentsSource, 'getMediaType'),
+		'async ' + extractFunctionDeclaration(attachmentsSource, 'addAttachment'),
+		'globalThis.__attachments = { addAttachment };'
+	].join('\n'), { filename: attachmentsSourcePath }).runInContext(context);
+	const wav = new Blob(['RIFF'], { type: 'application/octet-stream' });
+	Object.defineProperty(wav, 'name', { value: 'clip.wav' });
+	await context.__attachments.addAttachment(wav);
+	assert.equal(pendingAttachments[0].mediaType, 'audio/wav');
+	assert.deepEqual(previewTypes, ['audio/wav']);
+	assert.match(pendingAttachments[0].previewUrl, /^data:audio\/wav;base64,/);
+
+	const mp3 = new Blob(['ID3'], { type: '' });
+	Object.defineProperty(mp3, 'name', { value: 'clip.mp3' });
+	const asrCalls = [];
+	const controller = new AbortController();
+	const mainContext = vm.createContext({
+		AbortController,
+		Blob,
+		console: { error() {} },
+		currentSession: { id: 'session-1', messages: [], modelParams: {} },
+		defaultSelectedEndpointParams: {},
+		pendingAttachments: [{ file: mp3, mediaType: 'audio/mpeg' }],
+		selectedEndpoints: ['asr-1'],
+		sessionGenerations: new Map(),
+		addMessage: async function(sessionId, role, content) { if (role === 'user') mainContext.currentSession.messages.push({ role, content }); },
+		appendUserMessage() {},
+		callASR: async function(style, baseUrl, key, model, file) { asrCalls.push(file); return { text: 'transcript' }; },
+		clearAttachments() {}, clearInput() {},
+		createSession: async function() { throw new Error('existing session must be reused'); },
+		findModelById() { return { node: { name: 'ASR model' } }; },
+		finishSessionAbortController() {}, getGroups() { return []; },
+		getInputMessage: async function() { return [{ type: 'text', text: 'Transcribe this' }]; },
+		getSessionAbortController() { return controller; }, hasOwnEndpointParams() { return false; },
+		isSessionInvalidated() { return false; }, loadSession: async function() { return mainContext.currentSession; },
+		normalizeMessageContent(message) { return message.content; }, readOwnEndpointParams() { return {}; },
+		renderSelectedEndpoints() {}, resolveNodeConfig() { return { type: 'asr', style: 'openai', baseUrl: '', key: '', params: {}, isFullUrl: false }; },
+		reorderCardsBySpeed() {}, reorderSelectorTagsBySpeed() {}, setButtonState() {}, showThinkingCards() {},
+		updateCardAsText() {}, updateCardStatus() {}, updateStreamingCard() {}, refreshUI: async function() {}, $$() { return []; }
+	});
+	const apiSource = fs.readFileSync(apiSourcePath, 'utf8');
+	const mainSource = fs.readFileSync(mainSourcePath, 'utf8');
+	new vm.Script([extractFunctionDeclaration(apiSource, 'isSessionInvalidated'), 'const invalidatedSessionIds = new Set();', 'async ' + extractFunctionDeclaration(mainSource, 'handleSend'), 'globalThis.__handleSend = handleSend;'].join('\n'), { filename: mainSourcePath }).runInContext(mainContext);
+	await mainContext.__handleSend();
+	assert.equal(asrCalls.length, 1);
+	assert.equal(asrCalls[0].type, 'audio/mpeg');
+	assert.equal(asrCalls[0].name, 'clip.mp3');
+	assert.equal(asrCalls[0].size, mp3.size);
 });

@@ -89,52 +89,65 @@ function stopAllGenerations() {
 }
 
 function toOpenAIContent(contentArray) {
+	const isDocumentMime = mime => [
+		'application/pdf',
+		'application/msword',
+		'application/vnd.ms-word',
+		'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+		'application/vnd.ms-excel',
+		'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		'application/vnd.ms-powerpoint',
+		'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+	].includes(mime);
+	const dataUrl = source => source.type === 'url'
+		? source.url
+		: `data:${source.media_type};base64,${source.data}`;
+	const audioFormat = item => {
+		const mime = item.source?.media_type || '';
+		const extension = (item.name || '').toLowerCase().match(/\.([^.]+)$/)?.[1] || '';
+		if (mime === 'audio/mpeg' && (!extension || extension === 'mp3')) return 'mp3';
+		if ((mime === 'audio/wav' || mime === 'audio/x-wav') && (!extension || extension === 'wav')) return 'wav';
+		return null;
+	};
 	return contentArray.map(item => {
 		if (item.type === 'text' || item.type === 'file_text') {
-			return {
-				type: 'text',
-				text: item.text || ''
-			};
+			return { type: 'text', text: item.text || '' };
+		}
+		if (item.type === 'image_url' || item.type === 'input_audio' || (item.type === 'file' && item.file)) {
+			return item;
 		}
 		if (item.type === 'image') {
 			if (!item.source) {
-				return {
-					type: 'text',
-					text: `[图片 ${item.name || '未知'}，数据缺失]`
-				};
+				return { type: 'text', text: `[图片 ${item.name || '未知'}，数据缺失]` };
 			}
-			let imageUrl;
-			if (item.source.type === 'url') {
-				imageUrl = item.source.url;
-			} else {
-				imageUrl = `data:${item.source.media_type};base64,${item.source.data}`;
+			if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(item.source.media_type)) {
+				throw new Error(`OpenAI Chat 不支持图片附件 ${item.name || '未知'}`);
 			}
 			return {
 				type: 'image_url',
-				image_url: {
-					url: imageUrl
-				}
+				image_url: { url: dataUrl(item.source) }
 			};
 		}
 		if (item.type === 'file') {
 			if (!item.source) {
+				return { type: 'text', text: `[文件 ${item.name || '未知'}，数据缺失]` };
+			}
+			const mime = item.source.media_type || '';
+			if (mime.startsWith('audio/')) {
+				const format = audioFormat(item);
+				if (!format) throw new Error(`OpenAI Chat 不支持音频附件 ${item.name || '未知'}`);
 				return {
-					type: 'text',
-					text: `[文件 ${item.name || '未知'}，数据缺失]`
+					type: 'input_audio',
+					input_audio: { format, data: item.source.data }
 				};
 			}
-			const url = `data:${item.source.media_type};base64,${item.source.data}`;
+			if (!isDocumentMime(mime)) throw new Error(`OpenAI Chat 不支持文件附件 ${item.name || '未知'}`);
 			return {
-				type: 'image_url',
-				image_url: {
-					url
-				}
+				type: 'file',
+				file: { filename: item.name || '未知', file_data: dataUrl(item.source) }
 			};
 		}
-		return {
-			type: 'text',
-			text: `[附件 ${item.name || '未知'}，不支持此类型]`
-		};
+		return { type: 'text', text: `[附件 ${item.name || '未知'}，不支持此类型]` };
 	});
 }
 function toClaudeContent(contentArray) {
@@ -142,8 +155,14 @@ function toClaudeContent(contentArray) {
 		if (item.type === 'text' || item.type === 'file_text') {
 			return { type: 'text', text: item.text || '' };
 		}
+		if (item.type === 'image_url') {
+			return { type: 'image', source: { type: 'url', url: item.image_url?.url || item.image_url } };
+		}
 		if (item.type === 'image') {
 			if (!item.source) return { type: 'text', text: `[图片 ${item.name || '未知'}，数据缺失]` };
+			if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(item.source.media_type)) {
+				throw new Error(`Claude 不支持图片附件 ${item.name || '未知'}`);
+			}
 			if (item.source.type === 'url') {
 				return { type: 'image', source: { type: 'url', url: item.source.url } };
 			}
@@ -151,16 +170,21 @@ function toClaudeContent(contentArray) {
 		}
 		if (item.type === 'file') {
 			if (!item.source) return { type: 'text', text: `[文件 ${item.name || '未知'}，数据缺失]` };
-			return { type: 'image', source: { type: 'base64', media_type: item.source.media_type, data: item.source.data } };
+			const mime = item.source.media_type || '';
+			if (mime.startsWith('audio/')) throw new Error(`Claude 不支持音频附件 ${item.name || '未知'}`);
+			if (mime !== 'application/pdf') throw new Error(`Claude 不支持文件附件 ${item.name || '未知'}`);
+			return { type: 'document', source: { type: 'base64', media_type: mime, data: item.source.data } };
 		}
 		return { type: 'text', text: `[附件 ${item.name || '未知'}，不支持此类型]` };
 	});
 }
-
 function toGeminiContent(contentArray) {
 	return contentArray.map(item => {
 		if (item.type === 'text' || item.type === 'file_text') {
 			return { text: item.text || '' };
+		}
+		if (item.type === 'image_url') {
+			return { text: `[图片 URL: ${item.image_url?.url || item.image_url}]` };
 		}
 		if (item.type === 'image') {
 			if (!item.source) return { text: `[图片 ${item.name || '未知'}，数据缺失]` };
@@ -168,8 +192,8 @@ function toGeminiContent(contentArray) {
 			return { inline_data: { mime_type: item.source.media_type, data: item.source.data } };
 		}
 		if (item.type === 'file') {
-			if (!item.source) return { text: `[文件 ${item.name || '未知'}，数据缺失]` };
-			return { inline_data: { mime_type: item.source.media_type, data: item.source.data } };
+			if (item.source) return { inline_data: { mime_type: item.source.media_type, data: item.source.data } };
+			return { text: `[文件 ${item.name || '未知'}，数据缺失]` };
 		}
 		return { text: `[附件 ${item.name || '未知'}，不支持此类型]` };
 	});

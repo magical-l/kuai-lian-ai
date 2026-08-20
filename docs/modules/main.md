@@ -3,7 +3,7 @@ title: 主模块（编排层）
 covers_file: [src/modules/main.js]
 depends_on: [store.md, api.md, ui.md, endpoint-tree.md]
 api_signature: init, handleSend, refreshUI, handleSessionSelect, updateCardAsEmbedding
-last_updated: 2026-08-13
+last_updated: 2026-08-20
 why_exists: 应用编排层——初始化、事件路由、多模型流式编排、状态同步
 ---
 
@@ -131,8 +131,8 @@ why_exists: 应用编排层——初始化、事件路由、多模型流式编�
 ```
 
 **多模型消息构建**：
-- 历史 assistant 消息：将多条 `responses` 合并为 `content.join('\n\n---\n\n')`
-- 用户消息：`normalizeMessageContent` → `toOpenAIContent` 标准化为 OpenAI 格式（即使目标 endpoint 用 Claude/Gemini 协议，格式转换在 shared.js 的 callAllModels 内部完成）
+- 历史 assistant 消息：每条 assistant 消息直接使用其 `content` 字符串；Responses Provider 维持简单 `message` string 契约，不包装为 `output_text` 部件
+- 用户消息：`normalizeMessageContent` 保留内部 `text`/`file_text`/`image`/`file` 结构（附件 MIME 已在添加时归一）；各 Provider 在 API 调用链内转换为目标协议
 
 `main` 只传递 `resolveNodeConfig` 已归一化的 `isFullUrl`，不读取旧 `directUrl`，也不在编排层拼接或覆盖请求 URL；URL 分支由 API 层执行。
 
@@ -165,7 +165,7 @@ showThinkingCards(idList, groups, sessionId)
       └─ requestAnimationFrame 内执行（批量 DOM 写入）
 ```
 
-每个端点完成后立即更新自己的卡片。生图端点在图片 URL 或 base64 初始结果解析后先显示预览；URL 的图片下载和 base64 持久化完成后再更新最终完成状态。所有端点结果仍由 `handleSend` 在整轮完成后统一持久化，最终 `refreshUI` 通过 `renderMessages` 全量重建。
+每个端点完成后立即更新自己的卡片。生图端点在图片 URL 或 base64 初始结果解析后先显示预览；URL 的图片下载和 base64 持久化完成后再更新最终完成状态。聊天 Provider 报告 `failed`、`incomplete` 或 `refused` 时，卡片显示失败状态并保留已收到的 thinking/正文；`completed` 才显示完成。所有端点结果仍由 `handleSend` 在整轮完成后统一持久化，最终 `refreshUI` 通过 `renderMessages` 全量重建。
 
 `handleSend` 发送消息时不再调用 `renderMessages` 全量重建，改用 `appendUserMessage` 只追加新用户消息，并清除旧回复卡片的 `data-endpoint-id`/`data-session-id` 防止冲突。
 
@@ -276,7 +276,8 @@ radio change → setThemePref(mode)
 | `callImageGeneration(style, url, key, model, messages, isFullUrl, params, signal)` | main → shared | 生图调用和会话取消 |
 | `callVideoGeneration(style, url, key, model, messages, isFullUrl, params, signal)` | main → shared | 视频调用和会话取消 |
 | `callTTS(style, url, key, model, input, voice, instruction, isFullUrl, signal)` | main → shared | TTS 调用和会话取消 |
-| `callASR(style, url, key, model, audio, params, isFullUrl, signal)` | main → shared | ASR 调用和会话取消 |
+| `callASR(style, url, key, model, audio, params, isFullUrl, signal)` | main → shared | ASR 调用和会话取消；上传前使用附件层归一后的音频 MIME |
+| `testConnection(nodeId)` | main/UI → attachments | 合并节点 customParams 与 workspace 参数后测试；chat 最后固定 3 token，非 chat 不注入聊天上限 |
 | `getSessionGenerations(sid)` | main → api | 获取 chat 生成状态 Map |
 | `getSessionAbortController(sid)` | main → api | 获取本轮非流式请求共享 AbortController |
 | `finishSessionAbortController(sid, controller)` | main → api | 正常完成后按引用计数释放 controller |
@@ -329,3 +330,4 @@ radio change → setThemePref(mode)
 | 2026-08-11 | 流式卡片清理限定在消息容器内 | 会话列表项与回复卡片都带有 `data-session-id`；清理旧回复时必须限定 `.msg.list`，避免误删会话记录项。 |
 | 2026-08-11 | 端点删除成功后再清理 UI 副作用 | `deleteNode()` 负责端点树和选中列表的持久化事务；删除失败时主流程不应提前移除 DOM、连接状态或折叠状态。 |
 | 2026-08-12 | 端点删除成功后清理整个子树的 workspace 参数覆盖 | 删除前保存 `collectDescendantIds()` 结果，只有 `deleteNode()` 返回非 false/null 且未抛异常时才逐个清理根节点及全部后代的 workspace 覆盖；删除失败时保留这些参数，且不修改会话级 `modelParams`。 |
+| 2026-08-20 | 编排层按最终链路记录附件、终态和连接测试行为 | 用户消息保留内部附件结构并由 Provider 转换；Responses assistant 历史使用简单 string。聊天非正常终态保留 partial 内容并显示失败；连接测试合并 custom/workspace 参数后再固定 chat 输出上限。 |

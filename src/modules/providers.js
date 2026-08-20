@@ -17,7 +17,7 @@ const providers = {
                 }
 
                 if (Array.isArray(m.content)) {
-                    const text = m.content.filter(c => c.type === "text").map(c => c.text).join("\n");
+                    const text = m.content.filter(c => c.type === 'text' || c.type === 'file_text').map(c => c.text || '').join('\n');
 
                     if (text) {
                         prompt = text;
@@ -49,7 +49,7 @@ const providers = {
 				if (m.role !== "user") continue;
 				if (typeof m.content === "string") { prompt = m.content; break; }
 				if (Array.isArray(m.content)) {
-					const text = m.content.filter(c => c.type === "text").map(c => c.text).join("\n");;
+					const text = m.content.filter(c => c.type === "text" || c.type === "file_text").map(c => c.text || '').join("\n");;
 					if (text) { prompt = text; break; }
 				}
 			}
@@ -78,18 +78,58 @@ const providers = {
 				},
 				body: {
 					model,
-					messages,
+					messages: this.transformMessages(messages),
 					stream: true
 				}
 			};
 		},
+		transformMessages(messages) {
+			return messages.map(message => {
+				if (typeof message.content === 'string' || !Array.isArray(message.content)) {
+					return { role: message.role, content: message.content };
+				}
+				return {
+					role: message.role,
+					content: toOpenAIContent(message.content)
+				};
+			});
+		},
 		parseChunk(json) {
-			const delta = json.choices && json.choices[0] && json.choices[0].delta;
-			if (!delta) return null;
-			return {
+			if (json.error) return {
+				terminal: {
+					outcome: 'failed',
+					message: json.error.message || JSON.stringify(json.error)
+				}
+			};
+			const choice = json.choices && json.choices[0];
+			if (!choice) return null;
+			const delta = choice.delta || {};
+			const parsed = {
 				content: delta.content || null,
 				reasoning: delta.reasoning_content || null
 			};
+			if (delta.refusal) {
+				parsed.refusalDelta = delta.refusal;
+				parsed.terminal = {
+					outcome: 'refused',
+					message: delta.refusal,
+					reason: 'refusal'
+				};
+			}
+			const reason = choice.finish_reason;
+			if (reason === 'stop' && !delta.refusal) parsed.terminal = {
+				outcome: 'completed',
+				reason
+			};
+			if (reason === 'length') parsed.terminal = {
+				outcome: 'incomplete',
+				reason
+			};
+			if (reason === 'content_filter' || reason === 'refusal') parsed.terminal = {
+				outcome: 'refused',
+				reason
+			};
+			return parsed.content || parsed.reasoning || parsed.terminal ? parsed : null;
 		},
 		testConfig(baseUrl, apiKey, model) {
             baseUrl = baseUrl.replace(/\/+$/, '');
@@ -210,7 +250,7 @@ const providers = {
 				if (m.role !== "user") continue;
 				if (typeof m.content === "string") { prompt = m.content; break; }
 				if (Array.isArray(m.content)) {
-					const text = m.content.filter(c => c.type === "text").map(c => c.text).join("\n");;
+					const text = m.content.filter(c => c.type === "text" || c.type === "file_text").map(c => c.text || '').join("\n");;
 					if (text) { prompt = text; break; }
 				}
 			}
@@ -267,6 +307,18 @@ const providers = {
 			});
 		},
 		parseChunk(json) {
+			if (json.type === 'error') return {
+				terminal: {
+					outcome: 'failed',
+					message: json.error && (json.error.message || json.error.type) || 'Claude 流式请求失败'
+				}
+			};
+			if (json.type === 'message_delta' && json.delta && json.delta.stop_reason) {
+				const reason = json.delta.stop_reason;
+				if (reason === 'end_turn' || reason === 'stop_sequence') return { terminal: { outcome: 'completed', reason } };
+				if (reason === 'max_tokens' || reason === 'model_context_window_exceeded' || reason === 'pause_turn' || reason === 'tool_use') return { terminal: { outcome: 'incomplete', reason } };
+				if (reason === 'refusal') return { terminal: { outcome: 'refused', reason } };
+			}
 			if (json.type === 'content_block_start' && json.content_block && json.content_block.type === 'thinking') {
 				return {
 					event: 'thinking_start'
@@ -348,10 +400,19 @@ const providers = {
 			return contents;
 		},
 		parseChunk(json) {
-			const text = json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts && json.candidates[0].content.parts[0] && json.candidates[0].content.parts[0].text;
-			return text ? {
-				content: text
-			} : null;
+			if (json.error) return { terminal: { outcome: 'failed', message: json.error.message || JSON.stringify(json.error) } };
+			if (json.promptFeedback && json.promptFeedback.blockReason) return { terminal: { outcome: 'refused', reason: json.promptFeedback.blockReason } };
+			const candidate = json.candidates && json.candidates[0];
+			if (!candidate) return null;
+			const parts = candidate.content && candidate.content.parts || [];
+			const text = parts.map(part => part.text || '').join('');
+			const parsed = text ? { content: text } : {};
+			const reason = candidate.finishReason;
+			if (reason === 'STOP') parsed.terminal = { outcome: 'completed', reason };
+			if (reason === 'MAX_TOKENS') parsed.terminal = { outcome: 'incomplete', reason };
+			if (['SAFETY', 'BLOCKLIST', 'PROHIBITED_CONTENT', 'SPII', 'RECITATION', 'LANGUAGE', 'IMAGE_SAFETY', 'IMAGE_PROHIBITED_CONTENT', 'IMAGE_RECITATION'].includes(reason)) parsed.terminal = { outcome: 'refused', reason };
+			if (['MALFORMED_FUNCTION_CALL', 'MALFORMED_RESPONSE', 'UNEXPECTED_TOOL_CALL', 'TOO_MANY_TOOL_CALLS', 'MISSING_THOUGHT_SIGNATURE'].includes(reason)) parsed.terminal = { outcome: 'failed', reason };
+			return parsed.content || parsed.terminal ? parsed : null;
 		},
 		testConfig(baseUrl, apiKey, model) {
 			baseUrl = baseUrl.replace(/\/+$/, '');
@@ -457,6 +518,10 @@ const providers = {
 		transformMessages(messages) {
 			const input = [];
 			const instructions = [];
+			const sourceUrl = source => source.type === 'url'
+				? source.url
+				: `data:${source.media_type};base64,${source.data}`;
+			const isAudioFile = (mime, name) => mime.startsWith('audio/') || /\.(mp3|wav|webm)$/i.test(name || '');
 			messages.forEach(m => {
 				if (m.role === 'system') {
 					if (typeof m.content === 'string') instructions.push(m.content);
@@ -467,39 +532,87 @@ const providers = {
 					return;
 				}
 				const isAssistant = m.role === 'assistant';
+				if (isAssistant) {
+					const content = typeof m.content === 'string'
+						? m.content
+						: Array.isArray(m.content)
+							? m.content.filter(p => p.type === 'text' || p.type === 'file_text').map(p => p.text || '').join('\n')
+							: String(m.content == null ? '' : m.content);
+					input.push({ type: 'message', role: 'assistant', content });
+					return;
+				}
 				let parts;
 				if (typeof m.content === 'string') {
-					parts = [{ type: isAssistant ? 'output_text' : 'input_text', text: m.content }];
+					parts = [{ type: 'input_text', text: m.content }];
 				} else if (Array.isArray(m.content)) {
 					parts = m.content.map(p => {
 						if (p.type === 'text' || p.type === 'file_text') {
-							return { type: isAssistant ? 'output_text' : 'input_text', text: p.text || '' };
+							return { type: 'input_text', text: p.text || '' };
 						}
 						if (p.type === 'image_url' && p.image_url) {
 							return { type: 'input_image', image_url: typeof p.image_url === 'string' ? p.image_url : p.image_url.url };
 						}
-						if (p.type === 'image' || p.type === 'file') {
-							const src = p.source;
-							if (!src) return { type: 'input_text', text: '[附件 数据缺失]' };
-							const url = src.type === 'url' ? src.url : `data:${src.media_type};base64,${src.data}`;
-							return { type: 'input_image', image_url: url };
+						if (p.type === 'image') {
+							if (!p.source) return { type: 'input_text', text: '[附件 数据缺失]' };
+							return { type: 'input_image', image_url: sourceUrl(p.source) };
 						}
-						return { type: isAssistant ? 'output_text' : 'input_text', text: '[附件 不支持的类型]' };
+						if (p.type === 'file' && p.file) {
+							if (isAudioFile('', p.file.filename)) throw new Error(`Responses 不支持音频附件 ${p.file.filename || '未知'}`);
+							return { type: 'input_file', ...p.file };
+						}
+						if (p.type === 'file') {
+							if (!p.source) return { type: 'input_text', text: '[附件 数据缺失]' };
+							const mime = p.source.media_type || '';
+							if (isAudioFile(mime, p.name)) throw new Error(`Responses 不支持音频附件 ${p.name || '未知'}`);
+							return { type: 'input_file', filename: p.name || '未知', file_data: sourceUrl(p.source) };
+						}
+						return { type: 'input_text', text: '[附件 不支持的类型]' };
 					});
 				} else {
-					parts = [{ type: isAssistant ? 'output_text' : 'input_text', text: String(m.content == null ? '' : m.content) }];
+					parts = [{ type: 'input_text', text: String(m.content == null ? '' : m.content) }];
 				}
 				input.push({ type: 'message', role: m.role, content: parts });
 			});
 			return { input, instructions: instructions.join('\n') };
 		},
 		parseChunk(json) {
-			if (json.type === 'response.output_text.delta' && json.delta) {
-				return { content: json.delta };
+			const response = json.response || {};
+			const error = json.error || response.error;
+			const errorMessage = source => {
+				const parts = [source && source.message || json.message, source && source.code || json.code, source && source.param || json.param].filter(Boolean);
+				return parts.length ? parts.join('；') : 'Responses 流式请求失败';
+			};
+			if (json.type === 'error' || error) return {
+				terminal: {
+					outcome: 'failed',
+					message: errorMessage(error)
+				}
+			};
+			if (json.type === 'response.completed') return { terminal: { outcome: 'completed' } };
+			if (json.type === 'response.failed') return {
+				terminal: {
+					outcome: 'failed',
+					message: errorMessage(response.error)
+				}
+			};
+			if (json.type === 'response.incomplete') return { terminal: { outcome: 'incomplete', reason: response.incomplete_details && response.incomplete_details.reason } };
+			if (json.type === 'response.refusal.delta' || json.type === 'response.refusal.done') {
+				const refusal = typeof json.refusal === 'string'
+					? json.refusal
+					: typeof json.delta === 'string'
+						? json.delta
+						: response.refusal && (response.refusal.message || response.refusal);
+				return {
+					refusalDelta: json.type === 'response.refusal.delta' && typeof refusal === 'string' ? refusal : null,
+					terminal: {
+						outcome: 'refused',
+						message: typeof refusal === 'string' ? refusal : null,
+						reason: response.status_details && response.status_details.reason || response.refusal && response.refusal.reason
+					}
+				};
 			}
-			if ((json.type === 'response.reasoning_summary_text.delta' || json.type === 'response.reasoning_text.delta') && json.delta) {
-				return { reasoning: json.delta };
-			}
+			if (json.type === 'response.output_text.delta' && json.delta) return { content: json.delta };
+			if ((json.type === 'response.reasoning_summary_text.delta' || json.type === 'response.reasoning_text.delta') && json.delta) return { reasoning: json.delta };
 			return null;
 		},
 		testConfig(baseUrl, apiKey, model) {

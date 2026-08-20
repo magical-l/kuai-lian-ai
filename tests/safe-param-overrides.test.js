@@ -380,7 +380,7 @@ function createChatRequestHarness(sessionParams, workspaceParams, endpointId = '
 	};
 }
 
-function createConnectionTestHarness(workspaceParams, endpointId = 'endpoint-1') {
+function createConnectionTestHarness(workspaceParams, endpointId = 'endpoint-1', style = 'openai', type = 'chat') {
 	const selectedSource = fs.readFileSync(selectedEndpointsSourcePath, 'utf8');
 	const attachmentsSource = fs.readFileSync(attachmentsSourcePath, 'utf8');
 	const sharedSource = fs.readFileSync(sharedSourcePath, 'utf8');
@@ -389,12 +389,53 @@ function createConnectionTestHarness(workspaceParams, endpointId = 'endpoint-1')
 		attachmentsSource.indexOf('let attachmentTooltip = null;')
 	);
 	const requests = [];
+	const testBodies = {
+		openai: {
+			chat: { model: 'model-1', messages: [{ role: 'user', content: 'hi' }], max_tokens: 3 },
+			embedding: { model: 'model-1', input: 'hi' },
+			tts: { model: 'model-1', input: '.' }
+		},
+		claude: {
+			chat: { model: 'model-1', max_tokens: 3, messages: [{ role: 'user', content: 'hi' }] }
+		},
+		gemini: {
+			chat: { contents: [{ role: 'user', parts: [{ text: 'hi' }] }] }
+		},
+		responses: {
+			chat: { model: 'model-1', input: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: 'hi' }] }], max_output_tokens: 3 }
+		}
+	};
+	const providers = {};
+	Object.keys(testBodies).forEach(function(providerStyle) {
+		providers[providerStyle] = {};
+		Object.keys(testBodies[providerStyle]).forEach(function(providerType) {
+			const methodName = providerType === 'chat'
+				? 'testConfig'
+				: providerType === 'tts' ? 'testTTSConfig' : 'test' + providerType[0].toUpperCase() + providerType.slice(1) + 'Config';
+			providers[providerStyle][methodName] = function() {
+				return {
+					url: 'https://example.test',
+					headers: {},
+					body: JSON.parse(JSON.stringify(testBodies[providerStyle][providerType]))
+				};
+			};
+		});
+	});
+	providers.openai.testASRConfig = function() {
+		const body = new FormData();
+		body.append('file', 'test');
+		return {
+			url: 'https://example.test',
+			headers: {},
+			body
+		};
+	};
 	const context = vm.createContext({
 		Date,
 		FormData,
 		defaultSelectedEndpointParams: workspaceParams,
 		fetchWithTimeout: async function(url, options) {
-			requests.push(JSON.parse(options.body));
+			requests.push(options.body instanceof FormData ? options.body : JSON.parse(options.body));
 			return {
 				ok: true,
 				headers: {
@@ -405,29 +446,21 @@ function createConnectionTestHarness(workspaceParams, endpointId = 'endpoint-1')
 			};
 		},
 		getNode(nodeId) {
-			return nodeId === endpointId ? {} : null;
+			return nodeId === endpointId ? {
+				customParams: [{ key: 'vendor_option', value: 'enabled' }]
+			} : null;
 		},
 		isEndpointTestable() {
 			return true;
 		},
-		providers: {
-			openai: {
-				testConfig() {
-					return {
-						url: 'https://example.test',
-						headers: {},
-						body: {}
-					};
-				}
-			}
-		},
+		providers,
 		resolveNodeConfig() {
 			return {
 				baseUrl: 'https://example.test',
 				key: 'key',
 				modelId: 'model-1',
-				type: 'chat',
-				style: 'openai',
+				type,
+				style,
 				params: {}
 			};
 		},
@@ -599,6 +632,7 @@ test('connection testing reads workspace overrides for special endpoint ids', as
 		});
 		const body = await createConnectionTestHarness(workspaceParams, endpointId).request();
 		assert.equal(body.frequency_penalty, 0.37);
+		assert.equal(body.vendor_option, 'enabled');
 	}
 });
 
@@ -671,4 +705,59 @@ test('connection testing retains a workspace own __proto__ override in its final
 	assert.equal(Object.hasOwn(body, '__proto__'), true);
 	assert.deepEqual(body.__proto__, workspaceValue);
 	assert.equal(Object.getPrototypeOf(body), Object.prototype);
+});
+
+
+test('connection testing applies protocol-specific chat token limits after workspace overrides', async () => {
+	const cases = [
+		{ style: 'openai', tokenPath: ['max_completion_tokens'], excludes: 'max_tokens' },
+		{ style: 'claude', tokenPath: ['max_tokens'] },
+		{ style: 'responses', tokenPath: ['max_output_tokens'] },
+		{ style: 'gemini', tokenPath: ['generationConfig', 'maxOutputTokens'] }
+	];
+	for (const testCase of cases) {
+		const workspaceParams = endpointOverrideMap('endpoint-1', {
+			max_tokens: 999,
+			max_completion_tokens: 999,
+			max_output_tokens: 999,
+			temperature: 0.42,
+			_custom: [{ key: 'custom_flag', value: 'preserved' }]
+		});
+		const body = await createConnectionTestHarness(workspaceParams, 'endpoint-1', testCase.style, 'chat').request();
+		let target = body;
+		for (const key of testCase.tokenPath) target = target[key];
+		assert.equal(target, 3, `${testCase.style} test token limit`);
+		if (testCase.excludes) assert.equal(Object.hasOwn(body, testCase.excludes), false, `${testCase.style} must not send conflicting ${testCase.excludes}`);
+		const params = testCase.style === 'gemini' ? body.generationConfig : body;
+		assert.equal(params.temperature, 0.42);
+		assert.equal(params.custom_flag, 'preserved');
+	}
+});
+
+test('connection testing does not inject chat token limits into embedding, TTS, or ASR requests', async () => {
+	const cases = [
+		{ style: 'openai', type: 'embedding', assertBody(body) {
+			assert.equal(body.max_tokens, 999);
+			assert.equal(body.max_output_tokens, 999);
+		} },
+		{ style: 'openai', type: 'tts', assertBody(body) {
+			assert.equal(body.max_tokens, 999);
+			assert.equal(body.max_output_tokens, 999);
+		} },
+		{ style: 'openai', type: 'asr', assertBody(body) {
+			assert.notEqual(body.get('max_tokens'), '3');
+			assert.notEqual(body.get('max_output_tokens'), '3');
+		} }
+	];
+	for (const testCase of cases) {
+		const workspaceParams = endpointOverrideMap('endpoint-1', {
+			max_tokens: 999,
+			max_completion_tokens: 999,
+			max_output_tokens: 999,
+			temperature: 0.42,
+			_custom: [{ key: 'custom_flag', value: 'preserved' }]
+		});
+		const body = await createConnectionTestHarness(workspaceParams, 'endpoint-1', testCase.style, testCase.type).request();
+		testCase.assertBody(body);
+	}
 });

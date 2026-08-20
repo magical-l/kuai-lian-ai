@@ -126,6 +126,7 @@ function getMediaType(filename) {
 		'.ogg': 'audio/ogg',
 		'.webm': 'audio/webm',
 		'.m4a': 'audio/mp4',
+		'.mp4': 'audio/mp4',
 		'.flac': 'audio/flac',
 		'.aac': 'audio/aac',
 		'.wma': 'audio/x-ms-wma'
@@ -146,7 +147,9 @@ function getMediaType(filename) {
 		'.doc': 'application/msword',
 		'.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 		'.xls': 'application/vnd.ms-excel',
-		'.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+		'.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		'.ppt': 'application/vnd.ms-powerpoint',
+		'.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 	};
 	if (fileTypes[ext]) return fileTypes[ext];
 	return 'application/octet-stream';
@@ -191,23 +194,30 @@ async function fileToText(file) {
 	});
 }
 async function addAttachment(file, source) {
-	const isImage = getMediaType(file.name).startsWith('image/');
+	const normalizedFileType = (file.type || '').split(';')[0].trim().toLowerCase();
+	const mediaType = normalizedFileType && normalizedFileType !== 'application/octet-stream'
+		? normalizedFileType
+		: getMediaType(file.name);
+	const isImage = mediaType.startsWith('image/');
 	const isText = isTextFile(file.name);
 	const attachment = {
 		id: generateUUID(),
 		name: file.name,
 		type: isImage ? 'image' : (isText ? 'file_text' : 'file'),
-		file: file, // 临时存储 File 对象，用于缩略图和预览
-		mediaType: getMediaType(file.name),
-		previewUrl: null, // 缩略图 URL（图片用）
-		source: source || null // 来源标记：'recording' | null
+		file: file,
+		mediaType,
+		previewUrl: null,
+		source: source || null
 	};
-	if (isImage || file.type.startsWith('audio/')) {
+	if (isImage || mediaType.startsWith('audio/')) {
+		const previewFile = normalizedFileType === mediaType
+			? file
+			: new Blob([file], { type: mediaType });
 		attachment.previewUrl = await new Promise((resolve, reject) => {
 			const reader = new FileReader();
 			reader.onload = () => resolve(reader.result);
 			reader.onerror = reject;
-			reader.readAsDataURL(file);
+			reader.readAsDataURL(previewFile);
 		});
 	}
 	pendingAttachments.push(attachment);
@@ -1242,6 +1252,25 @@ const connectionStatus = new Map(); // nodeId -> { status, timestamp }
 const connectionTestInFlight = new Map(); // nodeId -> Promise
 const connectionTestGenerations = new Map(); // nodeId -> generation
 
+function applyConnectionTestLimits(body, style, type) {
+	if (type !== 'chat' || !body || body instanceof FormData) return;
+	if (style === 'gemini') {
+		body.generationConfig = body.generationConfig || {};
+		body.generationConfig.maxOutputTokens = 3;
+	} else if (style === 'responses') {
+		body.max_output_tokens = 3;
+	} else if (style === 'openai') {
+		if (Object.hasOwn(body, 'max_completion_tokens')) {
+			delete body.max_tokens;
+			body.max_completion_tokens = 3;
+		} else {
+			body.max_tokens = 3;
+		}
+	} else if (style === 'claude') {
+		body.max_tokens = 3;
+	}
+}
+
 function invalidateConnectionTest(nodeId) {
 	connectionTestGenerations.set(nodeId, (connectionTestGenerations.get(nodeId) || 0) + 1);
 }
@@ -1279,10 +1308,18 @@ function testConnection(nodeId) {
 			if (!node) return;
 			var rcfg = resolveNodeConfig(nodeId);
 			if (!isEndpointTestable(nodeId)) return;
+			rcfg.params = rcfg.params || {};
+			var customParams = node.customParams;
+			if (customParams && customParams.length) {
+				customParams.forEach(function(cp) {
+					if (cp && cp.key && cp.key.trim()) setOwnEnumerableDataProperty(rcfg.params, cp.key.trim(), cp.value);
+				});
+			}
 			var modelName = rcfg.modelId;
-			var provider = providers[rcfg.style || 'openai'];
+			var effectiveStyle = rcfg.style || 'openai';
+			var provider = providers[effectiveStyle];
 			setConnectionTestResult(key, generation, { status: 'testing', timestamp: null });
-			if (!provider) throw new Error('未找到接口格式: ' + (rcfg.style || 'openai'));
+			if (!provider) throw new Error('未找到接口格式: ' + effectiveStyle);
 			var testFn = null;
 			if (rcfg.type === 'embedding' || rcfg.type === 'embed')
 				testFn = provider.testEmbeddingConfig;
@@ -1306,7 +1343,8 @@ function testConnection(nodeId) {
 					ovr2._custom.forEach(function(cp) { if (cp && cp.key && cp.key.trim()) setOwnEnumerableDataProperty(rcfg.params, cp.key.trim(), cp.value); });
 				}
 			}
-			mergeParams(tcfg.body, rcfg.params, rcfg.style);
+			mergeParams(tcfg.body, rcfg.params, effectiveStyle);
+			applyConnectionTestLimits(tcfg.body, effectiveStyle, rcfg.type);
 			var fetchOpts = {
 				method: 'POST',
 				headers: tcfg.headers,
@@ -1424,7 +1462,7 @@ function renderPendingAttachments() {
 	row.innerHTML = '';
 	pendingAttachments.forEach(att => {
 		var typeClass = att.type;
-		if (att.file && att.file.type && att.file.type.indexOf('audio/') === 0) typeClass = 'audio';
+		if (att.mediaType && att.mediaType.indexOf('audio/') === 0) typeClass = 'audio';
 		else if (typeClass !== 'image') typeClass = 'file';
 		const el = mk('div', `one attachment ${typeClass} , flex items-go-x`);
 		el.dataset.id = att.id;
@@ -1465,7 +1503,7 @@ function showAttachmentPreview(att) {
 		overlay.onclick = function() { overlay.remove(); };
 		overlay.appendChild(img);
 		document.body.appendChild(overlay);
-	} else if (att.file && att.file.type && att.file.type.indexOf('audio/') === 0) {
+	} else if (att.mediaType && att.mediaType.indexOf('audio/') === 0) {
 		// 音频预览弹窗
 		var overlay = fromTemplate('audio-preview', '.preview-overlay');
 		var audio = overlay.querySelector('audio');

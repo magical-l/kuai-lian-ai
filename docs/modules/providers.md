@@ -3,7 +3,7 @@ title: Provider 抽象层 + DOM 工具集
 covers_file: [src/modules/providers.js]
 depends_on: []
 api_signature: providers.openai, providers.jimeng, providers.claude, providers.gemini, providers.responses, $, $$, mk, fromTemplate, setValues, onClick, createTooltip, handleCopyValueClick
-last_updated: 2026-08-18
+last_updated: 2026-08-20
 why_exists: 五种 Provider 格式差异的封装（Jimeng 专用于视频生成）和公共 DOM 辅助函数的复用
 ---
 
@@ -14,8 +14,8 @@ why_exists: 五种 Provider 格式差异的封装（Jimeng 专用于视频生成
 `providers` 对象将 API 格式差异封装在五个 provider 内部：`openai`、`jimeng`、`claude`、`gemini`、`responses`。其中 Jimeng 目前只提供视频生成请求构造，聊天/连接测试等通用方法不在该 provider 中；API 层（`callProvider`/`callAllModels`）无需感知具体格式。通用聊天 provider 通常实现以下核心方法：
 
 - **`buildRequest`** — 将通用参数（baseUrl, apiKey, model, messages）转换为该 API 的 fetch 请求结构 `{url, headers, body}`
-- **`parseChunk`** — 将 SSE 流中的单行 JSON 解析为统一结构 `{content?, reasoning?, event?}`
-- **`testConfig`** — 构建轻量测试请求，不流式、max_tokens=3，用于"测试连接"功能
+- **`parseChunk`** — 将 SSE 流中的单行 JSON 解析为统一结构 `{content?, reasoning?, event?, terminal?}`；`terminal.outcome` 可为 `completed`、`failed`、`incomplete` 或 `refused`，未知 reason 或没有 terminal 时保持兼容
+- **`testConfig`** — 构建轻量测试请求；实际请求会先合并节点 customParams 与 workspace 参数，再对 chat 施加 3 token 上限，非 chat 不注入该上限
 
 嵌入能力通过可选方法 `testEmbeddingConfig` / `buildEmbeddingRequest` / `parseEmbeddingResponse` 扩展，provider 可以不实现（嵌入功能对其不可用）。
 
@@ -64,14 +64,15 @@ claude provider 不实现此方法，`callImageGeneration` 通过 `if (!provider
 
 `responses` provider 面向 OpenAI 的 `/v1/responses` 端点，只实现聊天能力（`buildRequest` / `parseChunk` / `testConfig` / `transformMessages`），不实现生图/视频/嵌入/TTS。当前 `responses` 不是参数注册表的独立全量集合，而是 `chat.common + chat.responses`。
 
-与 OpenAI 聊天格式的关键差异在于消息体：
+与 OpenAI 聊天格式的关键差异在于消息体和附件部件：
 
 - 端点：`{baseUrl}/v1/responses`，认证同 openai（`Authorization: Bearer {key}`）
 - Body：`{ model, input, stream: true }`，system 角色消息提取到顶层 `instructions` 字段；API 层随后把 `chat.common` 参数注入同一 body
-- **消息变换 `transformMessages`**：内部消息是 OpenAI 聊天格式（content 为 string 或 `[{type:'text'|'image_url'}]`），Responses API 要求 content 部件用 `input_text` / `input_image` / `output_text` 类型，且每条 input item 带 `type: 'message'`：
-  - user / 非 assistant → `{type:'input_text', text}`，图片 → `{type:'input_image', image_url}`
-  - assistant → `{type:'output_text', text}`
+- **消息变换 `transformMessages`**：内部消息是统一内部格式（文本 `text`/`file_text`，二进制 `image`/`file`），Responses API 要求 content 部件用 `input_text` / `input_image` / `input_file` 类型，且每条 input item 带 `type: 'message'`：
+  - user / 非 assistant → 文本为 `{type:'input_text', text}`，图片为 `{type:'input_image', image_url}`，文档为 `{type:'input_file', filename, file_data}`
+  - assistant → 使用简单 `{type:'message', role:'assistant', content: string}` 契约，历史正文不转换为 `output_text` 部件
   - system → 不进 input，拼接进 `instructions`
+  - 音频明确失败，避免将 MP3/WAV 伪装为可读文件
 - `needsTagParsing: false`：reasoning 通过 SSE 事件流式返回，无需 text 标签扫描
 
 Responses 的参数由 API 层 `mergeParams(body, params, 'responses')` 处理：`max_tokens` 映射到 `max_output_tokens`，具体 `reasoning_effort` 合并到 `body.reasoning.effort`；`null` 和空字符串不创建空 reasoning，已有普通 reasoning 对象的自有字段保留。参数合并使用 own-property 判断特殊键，避免 `__proto__`/`constructor` 等键被误当作继承属性。
@@ -80,10 +81,11 @@ Responses 的参数由 API 层 `mergeParams(body, params, 'responses')` 处理�
 
 - `response.output_text.delta` → `{content: delta}`
 - `response.reasoning_summary_text.delta` / `response.reasoning_text.delta` → `{reasoning: delta}`
+- `response.completed` / `response.failed` / `response.incomplete` / `response.refusal.*` → 对应 `terminal`；终态包含正文增量时由 API 层保留 partial 内容，`failed` 优先
 
-`testConfig` 非流式，body `{model, input:[{type:'message', role:'user', content:[{type:'input_text', text:'hi'}]}], max_output_tokens:3}`。
+`testConfig` 构造非流式最小请求，body 初始为 `{model, input:[{type:'message', role:'user', content:[{type:'input_text', text:'hi'}]}]}`；连接测试流程合并 customParams 与 workspace 参数后，再把 chat 的 `max_output_tokens` 固定为 `3`。
 
-注意：Responses API 无历史 `system` 消息字段，多轮对话里旧 assistant 回复以 `output_text` 回传，供 API 维护上下文。
+注意：Responses API 无历史 `system` 消息字段，多轮对话里旧 assistant 回复使用简单 `content: string` 契约，不包装为 `output_text` 部件；当前实现明确拒绝音频附件。
 
 ## 聊天/生图 Provider 对比
 
@@ -97,7 +99,7 @@ Responses 的参数由 API 层 `mergeParams(body, params, 'responses')` 处理�
 | 认证方式 | `Authorization: Bearer {key}` | `x-api-key: {key}` + `Authorization: Bearer {key}` | `X-Goog-Api-Key` header | `Authorization: Bearer {key}` |
 | 额外头 | 无 | `anthropic-version: 2023-06-01`<br>`anthropic-dangerous-direct-browser-access: true` | 无 | 无 |
 | 消息体 | `{model, messages, stream:true}` | `{model, max_tokens:4096, messages: transformMessages(msg), stream:true}` | `{contents: transformMessages(msg)}` | `{model, input: transformMessages(msg).input, stream:true}`<br>system → 顶层 `instructions` |
-| 消息变换 | 直接透传 | `toClaudeContent` 转换 content 数组 | `toGeminiContent` 转换 + 相邻同角色合并 | `input_text`/`input_image`/`output_text` + item `type:'message'` |
+| 消息变换 | `toOpenAIContent` 转换附件 | `toClaudeContent` 转换 content 数组 | `toGeminiContent` 转换 + 相邻同角色合并 | `input_text`/`input_image`/`input_file`；assistant 历史为简单 message string |
 | stream 标记 | `stream: true` | `stream: true` | URL 参数 `alt=sse`（非 body 字段） | `stream: true` |
 
 Claude 的 `transformMessages` 将内部消息格式转为 claude 期望的角色 + content 格式，content 数组通过 `toClaudeContent`（见 api.md）转换。
@@ -111,20 +113,22 @@ Gemini 的 `transformMessages` 额外做了**相邻同角色合并**：如果连
 | 输入 JSON | `choices[0].delta` | `type: 'content_block_delta'` 等事件 | `candidates[0].content.parts[0].text` | `response.output_text.delta` 等事件 |
 | content 来源 | `delta.content` | `delta.type==='text_delta' -> delta.text` | `parts[0].text` | `json.delta` |
 | reasoning 来源 | `delta.reasoning_content` | `delta.type==='thinking_delta' -> delta.thinking` | 不支持 | `response.reasoning_summary_text.delta` / `response.reasoning_text.delta` 的 `delta` |
-| 事件标记 | 无 | `content_block_start(type:'thinking')` → `{event:'thinking_start'}`<br>`content_block_start(type:'text')` → `{event:'content_start'}` | 无 | 无 |
+| 事件标记 | finish/refusal → `terminal` | `content_block_start` → `thinking_start`/`content_start`；`message_delta.stop_reason` / error → `terminal` | finishReason / blockReason → `terminal` | response terminal/refusal/error → `terminal` |
 | 空 chunk | `json.choices[0].delta` 为空时返回 null | 不匹配的事件返回 null | `candidates[0].content` 不存在时返回 null | 不匹配的事件返回 null |
 
-OpenAI、Claude、Gemini、Responses 四个聊天 provider 的 `parseChunk` 输出格式统一为 `{content: string|null, reasoning: string|null, event: string|null}`，使 `handleParsedChunk` 可以统一处理；Jimeng 不提供聊天流解析。
+OpenAI、Claude、Gemini、Responses 四个聊天 provider 的 `parseChunk` 输出格式统一为 `{content: string|null, reasoning: string|null, event: string|null, terminal?: {outcome, reason?, message?}}`，使 `handleParsedChunk` 可以统一处理；`failed` 终态优先于其他终态；无 terminal 或未知 reason 不破坏旧响应兼容。Jimeng 不提供聊天流解析。
 
 ### testConfig
 
 | 维度 | openai | claude | gemini | responses |
 |---|---|---|---|---|
 | URL | `{baseUrl}/v1/chat/completions` | `{baseUrl}/v1/messages` | `{baseUrl}/v1beta/models/{model}:generateContent` | `{baseUrl}/v1/responses` |
-| body | `{model, messages:[{role:'user', content:'hi'}], max_tokens:3}` | 同 buildRequest 但 `max_tokens:3` | `{contents:[{role:'user', parts:[{text:'hi'}]}]}` | `{model, input:[{type:'message', role:'user', content:[{type:'input_text', text:'hi'}]}], max_output_tokens:3}` |
+| body（Provider 初始） | `{model, messages:[{role:'user', content:'hi'}], max_tokens:3}` | `{model, messages:[{role:'user', content:'hi'}], max_tokens:3}` | `{contents:[{role:'user', parts:[{text:'hi'}]}]}` | `{model, input:[{type:'message', role:'user', content:[{type:'input_text', text:'hi'}]}]}` |
+| chat 上限 | `max_tokens:3`；若已有 `max_completion_tokens` 则使用该键并删除 `max_tokens` | `max_tokens:3` | `generationConfig.maxOutputTokens:3` | `max_output_tokens:3` |
+| 非 chat | 不注入测试长度上限 | 不注入测试长度上限 | 不注入测试长度上限 | 不注入测试长度上限 |
 | stream | 否（不设 stream） | 否（不设 stream） | 否（用 `generateContent` 而非 `streamGenerateContent`） | 否（不设 stream） |
 
-四个 testConfig 均设置 `max_tokens:3` 或等价最小输出，确保测试轻量快速。
+连接测试先合并节点 `customParams` 与 workspace 参数，再施加 chat 上限，因此用户参数不会覆盖测试限制；embedding、TTS、ASR 等非 chat 测试不注入聊天长度字段。
 
 ### 嵌入方法
 
@@ -157,23 +161,23 @@ OpenAI、Claude、Gemini、Responses 四个聊天 provider 的 `parseChunk` 输�
 | `buildVideoRequest` | gemini | `(baseUrl, apiKey, model, messages, params?) => {url, headers, body}` |
 | `buildImageRequest` | openai | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `buildTTSRequest` | openai | `(baseUrl, apiKey, model, input, voice?, instruction?) => {url, headers, body}` |
-| `parseChunk` | openai | `(json) => {content?, reasoning?} | null` |
+| `parseChunk` | openai | `(json) => {content?, reasoning?, terminal?} | null` |
 | `testConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `testTTSConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `testASRConfig` | openai | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `buildRequest` | claude | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `transformMessages` | claude | `(messages) => Array` |
-| `parseChunk` | claude | `(json) => {content?, reasoning?, event?} | null` |
+| `parseChunk` | claude | `(json) => {content?, reasoning?, event?, terminal?} | null` |
 | `testConfig` | claude | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `buildRequest` | gemini | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `transformMessages` | gemini | `(messages) => Array` |
-| `parseChunk` | gemini | `(json) => {content?} | null` |
+| `parseChunk` | gemini | `(json) => {content?, terminal?} | null` |
 | `testConfig` | gemini | `(baseUrl, apiKey, model) => {url, headers, body}` |
 | `buildImageRequest` | gemini | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `parseImageResponse` | gemini | `(data) => {imageData, revised_prompt} | null` |
 | `buildRequest` | responses | `(baseUrl, apiKey, model, messages) => {url, headers, body}` |
 | `transformMessages` | responses | `(messages) => {input, instructions}` |
-| `parseChunk` | responses | `(json) => {content?, reasoning?} | null` |
+| `parseChunk` | responses | `(json) => {content?, reasoning?, terminal?} | null` |
 | `testConfig` | responses | `(baseUrl, apiKey, model) => {url, headers, body}` |
 
 ### 嵌入方法
@@ -250,5 +254,6 @@ tooltip 内含 copy 按钮（`button.copy`），复制按钮由 `createTooltip()
 | 2026-07-20 | Gemini 新增 `buildImageRequest` / `parseImageResponse` | 支持 Gemini 生图模型（如 gemini-3.1-flash-lite-image），使用同 `generateContent` 端点 + `response_modalities: ["IMAGE"]` |
 | 2026-07-24 | 新增 `jimeng` provider + `buildVideoRequest` | 即梦/Seedance 视频生成用 `/v1/videos/generations`；openai 视频用 `/v1/videos`；gemini 用 `:generateContent` + `VIDEO` |
 | 2026-08-12 | 明确 Jimeng 的 provider 边界 | `jimeng` 只实现视频生成构造器，不实现聊天或连接测试方法；视频发送可用，但连接测试不会把 `video-generation` 当作 chat 测试 |
-| 2026-08-14 | 新增 `responses` provider | 支持 OpenAI 新一代 `/v1/responses` 接口；`transformMessages` 将内部 OpenAI 聊天格式转为 `input_text`/`input_image`/`output_text`，system 提取到 `instructions`；`parseChunk` 解析 `output_text.delta` 与 `reasoning_summary_text.delta`/`reasoning_text.delta`；只实现聊天能力 |
+| 2026-08-14 | 新增 `responses` provider | 支持 OpenAI 新一代 `/v1/responses` 接口；`transformMessages` 将内部消息转为 `input_text`/`input_image`，system 提取到 `instructions`；`parseChunk` 解析 `output_text.delta` 与 `reasoning_summary_text.delta`/`reasoning_text.delta`；只实现聊天能力 |
 | 2026-08-18 | 按最终代码补齐 Responses 参数映射与 DOM tooltip 契约 | Responses 请求复用 `chat.common`，`max_tokens` 映射到 `max_output_tokens`，`reasoning_effort` 合并到 `reasoning.effort`；`createTooltip(id, triggerEl, populate)` 通过事件监听器绑定复制行为。明确 TTS `speed`、ASR `response_format` 等注册项不代表所有 provider 方法都已完整透传，并记录 Gemini 视频响应尚未接入通用解析。 |
+| 2026-08-20 | 按实际 Provider 行为修正附件、终态和连接测试契约 | OpenAI Chat 文档与 MP3/WAV 音频分别使用 `file` 与 `input_audio`，Claude 仅接受 PDF，Responses 使用 `input_file` 并以简单 message string 保存 assistant 历史；Gemini 保留归一 MIME。四种聊天 Provider 都能返回终态，连接测试合并覆盖参数后再固定 chat 输出上限，非 chat 不注入。 |

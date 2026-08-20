@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js, src/modules/main.js, src/modules/endpoint-tree.js, src/modules/providers.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-08-18
+last_updated: 2026-08-20
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -192,11 +192,11 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 
 文件：`attachments.js`
 
-**数据结构**：`pendingAttachments: [{ id, name, type: 'image'|'file_text'|'file', file, mediaType, previewUrl, source: 'recording'|null }]`
+**数据结构**：`pendingAttachments: [{ id, name, type: 'image'|'file_text'|'file', file, mediaType, previewUrl, source: 'recording'|null }]`。`text`/`file_text` 保持文本；二进制 `image`/`file` 的 `mediaType` 先取可靠的 `File.type`（去参数并小写），无效或 `application/octet-stream` 时按扩展名归一，再同时用于预览 MIME 和会话/API 上传载荷。PPT/PPTX 分别映射为 `application/vnd.ms-powerpoint` 与 `application/vnd.openxmlformats-officedocument.presentationml.presentation`。
 
 **文件分类**：
 - `isTextFile` — 按约 40 种文本扩展名判定
-- `getMediaType` — 返回 MIME（图片 → image/*，文档 → application/*，否则 `application/octet-stream`）
+- `getMediaType` — 按扩展名返回归一 MIME（图片 → image/*，MP3/WAV 等音频 → audio/*，PDF/Word/Excel/PPT → application/*，否则 `application/octet-stream`）
 - `fileToBase64` / `fileToText` — FileReader 封装
 
 **UI**：
@@ -209,12 +209,14 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 
 ### 7. 连接测试 (testConnection)
 
+聊天响应测试的长度限制在所有 endpoint/workspace 参数合并后最后施加，防止用户设置的普通 `max_tokens` 或 `max_completion_tokens` 覆盖测试上限。
+
 文件：`attachments.js`（连接测试状态区）
 
 流程：
 1. `resolveNodeConfig` 获取解析后的端点配置，并由 `isEndpointTestable` 统一判断资格。
 2. 同一 `nodeId` 已有进行中的测试时复用同一个 Promise，避免节点按钮、父级批量按钮和全局按钮重复发请求；失效仅递增 generation，不取消 fetch 或移除该 Promise，因此清除后对同节点的再测仍复用 P1，待 P1 settled 的 `finally` 清理记录后才可发起 P2。
-3. 根据解析后的类型选择 chat、embedding、TTS 或 ASR 测试函数，发起 POST 请求（30s 超时 + AbortController）；video/image/reranking 不进入连接测试集合，provider 缺少对应测试函数时进入失败状态。
+3. 根据解析后的类型选择 chat、embedding、TTS 或 ASR 测试函数，发起 POST 请求（30s 超时 + AbortController）；video/image/reranking 不进入连接测试集合，provider 缺少对应测试函数时进入失败状态。节点 `customParams` 与 workspace 参数先合并进测试 body；随后仅对 chat 施加长度上限：OpenAI 使用 `max_tokens:3` 或 `max_completion_tokens:3`，Claude 使用 `max_tokens:3`，Responses 使用 `max_output_tokens:3`，Gemini 使用 `generationConfig.maxOutputTokens:3`。非 chat 测试不注入聊天上限。
 4. 响应验证：
    - HTTP 非 200 → 提取错误信息
    - content-type `text/html` → 提取 `<title>` 或截取 < 100 字符
@@ -334,3 +336,4 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 | 2026-08-13 | 新增 `syncSelectedAreaLimit()` 动态设置已选区 max-height；消息区 clamp 下限从 100 统一改为 50 | 用户要求已选区"撑到极限"：尽可能向上撑（挤压消息区），消息区压缩到仅剩 streaming-hint（约 50px）才让已选区滚动。`.msg.list` min-height 100→50；已选区 max-height = `.main-content` 高 − toolbar − 50 − 输入区其他部分，由 resize + ResizeObserver 双触发同步。 |
 | 2026-08-14 | 编辑/批量创建弹窗新增 Responses式 风格选项 | 单节点对话框（layout.html radio）与批量创建（buildBatchFields options）均加 `responses` 选项，路径后缀映射 `chat→/v1/responses`（attachments.js `apiPath` 的 paths 表）；`styleLabels` 显示名加 "Responses"。 |
 | 2026-08-18 | 端点和会话参数 UI 统一为缺失/具体值/`null` 三态，严格分离 `ownParams` 与 `fallbackParams` | 建议值只在用户选择“自己设置”时出现；保存仅处理 `changed` 行，避免只改名称时固化默认参数。会话事务继续按快照 session/workspace 保存并由 dialog generation 隔离旧操作；端点 dialog 每次打开重建草稿并兼容旧 TTS 顶层字段，但端点保存异步回调当前没有同等 generation guard。 |
+| 2026-08-20 | UI 文档同步附件 MIME、Provider 终态与连接测试边界 | 附件预览和上传共用归一 MIME，协议层按文档/MP3/WAV/不支持类型分别转换或失败；流式非正常终态保留 partial 内容；连接测试合并覆盖参数后再固定 chat 输出长度，非 chat 不套用聊天限制。 |

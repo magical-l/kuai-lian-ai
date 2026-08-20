@@ -103,32 +103,66 @@ async function processSSEStream(res, provider, state, tagParser, onChunk) {
 	const reader = res.body.getReader();
 	const decoder = new TextDecoder();
 	let buffer = '';
+	const terminalPriority = {
+		completed: 0,
+		incomplete: 1,
+		refused: 1,
+		failed: 2
+	};
+	const setTerminal = terminal => {
+		const next = { ...terminal };
+		if (next.outcome === 'refused' && state.refusal) {
+			next.message = state.refusal;
+		}
+		const current = state.terminal;
+		const nextPriority = terminalPriority[next.outcome] ?? -1;
+		const currentPriority = current ? (terminalPriority[current.outcome] ?? -1) : -1;
+		const hasMoreCompleteMessage = next.message
+			&& (!current?.message || next.message.length > current.message.length);
+		if (!current
+			|| nextPriority > currentPriority
+			|| (nextPriority === currentPriority
+				&& next.outcome === current.outcome
+				&& hasMoreCompleteMessage)) {
+			state.terminal = next;
+		}
+	};
+	const processLine = line => {
+		if (!line.startsWith('data:')) return;
+		const data = line.slice(5).startsWith(' ')
+			? line.slice(6)
+			: line.slice(5);
+		if (data === '[DONE]') return;
+		let json;
+		try {
+			json = JSON.parse(data);
+		} catch (e) {
+			return;
+		}
+		const parsed = provider.parseChunk(json);
+		if (!parsed) return;
+		if (parsed.refusalDelta) {
+			state.refusal = (state.refusal || '') + parsed.refusalDelta;
+		}
+		if (parsed.terminal) {
+			setTerminal(parsed.terminal);
+		}
+		handleParsedChunk(parsed, state, tagParser, onChunk);
+	};
 	while (true) {
-		const {
-			done,
-			value
-		} = await reader.read();
+		const { done, value } = await reader.read();
 		if (done) break;
-		buffer += decoder.decode(value, {
-			stream: true
-		});
+		buffer += decoder.decode(value, { stream: true });
 		const lines = buffer.split('\n');
 		buffer = lines.pop() || '';
-		for (const line of lines) {
-			if (!line.startsWith('data: ')) continue;
-			const data = line.slice(6);
-			if (data === '[DONE]') continue;
-			try {
-				const json = JSON.parse(data);
-				const parsed = provider.parseChunk(json);
-				if (!parsed) continue;
-				handleParsedChunk(parsed, state, tagParser, onChunk);
-			} catch (e) {}
-		}
+		lines.forEach(processLine);
 	}
+	buffer += decoder.decode();
+	if (buffer) processLine(buffer);
 	if (tagParser && tagParser.inThinking && tagParser.buffer) {
 		state.thinking += tagParser.buffer;
 	}
+	return state.terminal || null;
 }
 
 function finalizeState(state) {
@@ -183,7 +217,25 @@ async function callProvider(provider, baseUrl, apiKey, model, messages, onChunk,
 			throw new Error('Response body is empty');
 		}
 		await processSSEStream(res, provider, state, tagParser, onChunk);
-		finalizeState(state);
+		if (typeof finalizeState === 'function') finalizeState(state);
+		else if (state.thinkingStartTime && state.thinkingDuration === null) {
+			state.thinkingDuration = Date.now() - state.thinkingStartTime;
+		}
+		if (state.terminal && state.terminal.outcome !== 'completed') {
+			const terminal = state.terminal;
+			const outcomeText = {
+				failed: '生成失败',
+				incomplete: '响应未完成',
+				refused: '请求被拒绝'
+			}[terminal.outcome] || '响应异常';
+			const details = [];
+			if (terminal.reason) details.push('reason=' + terminal.reason);
+			if (terminal.message) details.push('message=' + terminal.message);
+			const error = new Error(outcomeText + (details.length ? '（' + details.join('；') + '）' : ''));
+			error.terminal = terminal;
+			error.state = state;
+			throw error;
+		}
 		return state;
 	} finally {
 		if (!signal) currentAbortController = null;
@@ -607,8 +659,22 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 					timestamp: completionTime
 				};
 			}
+			const failureState = err.state || {};
+			const failureContent = failureState.content || genState?.content || '';
+			const failureThinking = failureState.thinking || genState?.thinking || '';
+			const failureThinkingDuration = failureState.thinkingDuration ?? genState?.thinkingDuration;
+			const failureFirstTokenTime = failureState.firstTokenTime ?? genState?.firstTokenTime;
+			if (genState) {
+				genState.content = failureContent;
+				genState.thinking = failureThinking;
+				genState.thinkingDuration = failureThinkingDuration;
+				genState.firstTokenTime = failureFirstTokenTime;
+			}
 			state.status = 'failed';
 			state.error = err.message;
+			state.content = failureContent;
+			state.thinking = failureThinking;
+			state.thinkingDuration = failureThinkingDuration;
 			if (!isSessionInvalidated(sessionId)) {
 				// Immediately update UI for this specific model
 				renderSelectedEndpoints(groups, selectedEndpoints, true);
@@ -618,7 +684,10 @@ async function callAllModels(groups, endpointIds, messages, onChunk, sessionId) 
 				endpointId: endpointId,
 				status: 'failed',
 				error: err.message,
-				content: '',
+				thinking: failureThinking,
+				content: failureContent,
+				thinkingDuration: failureThinkingDuration,
+				firstTokenTime: failureFirstTokenTime,
 				totalDuration: completionTime - startTime,
 				timestamp: completionTime
 			};

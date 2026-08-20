@@ -503,8 +503,32 @@ async function handleSend() {
 	const textContent = content.filter(c => c.type === 'text' || c.type === 'file_text').map(c => c.text || '').join('\n');
 	lastUserMessage = textContent;
 	clearInput();
-	// Save audio files for ASR before clearing attachments
-	var asrAudioFiles = pendingAttachments.filter(function(a) { return a.file && a.file.type && a.file.type.indexOf('audio/') === 0; }).map(function(a) { return a.file; });
+	var asrAudioFiles = pendingAttachments.filter(function(attachment) {
+	    return attachment.file && attachment.mediaType && attachment.mediaType.indexOf('audio/') === 0;
+	}).map(function(attachment) {
+	    return { file: attachment.file, mediaType: attachment.mediaType };
+	});
+	const createNormalizedASRAudioFile = function(audio) {
+        const file = audio.file;
+        const normalizedFileType = (file.type || '').split(';')[0].trim().toLowerCase();
+        if (!file || normalizedFileType === audio.mediaType) return file;
+        if (typeof File === 'function') {
+	        return new File([file], file.name || 'audio.wav', {
+	            type: audio.mediaType,
+	            lastModified: file.lastModified || Date.now()
+	        });
+	    }
+        if (typeof Blob === 'function') {
+	        const blob = new Blob([file], { type: audio.mediaType });
+	        try {
+	            Object.defineProperty(blob, 'name', { value: file.name || 'audio.wav' });
+	        } catch (e) {
+	            // Blob name is optional; callASR supplies an audio fallback filename.
+	        }
+	        return blob;
+	    }
+        return file;
+    };
 	clearAttachments();
 	setButtonState(true, true);
 	renderSelectedEndpoints(getGroups(), selectedEndpoints, true);
@@ -514,7 +538,7 @@ async function handleSend() {
 			return { role: m.role, content: m.content || '' };
 		}
 		const normalized = normalizeMessageContent(m);
-		return { role: m.role, content: toOpenAIContent(normalized) };
+		return { role: m.role, content: normalized };
 	});
 	appendUserMessage(currentSession.messages[currentSession.messages.length - 1]);
 	// 清除旧回复卡片的 data-endpoint-id 和 data-session-id，
@@ -526,7 +550,7 @@ async function handleSend() {
 	const targetSessionId = currentSession.id;
 	const sessionAbortController = getSessionAbortController(targetSessionId);
 	const signal = sessionAbortController.signal;
-	
+
 	// 按端点类型分流
 	const chatIds = [];
 	const embedIds = [];
@@ -684,8 +708,12 @@ async function handleSend() {
 				for (var i = messages.length - 1; i >= 0; i--) {
 					if (messages[i].role === 'user') {
 						var c = messages[i].content;
-						if (Array.isArray(c) && c.length > 0 && c[0].type === 'text') {
-							input = c[0].text || '';
+						if (Array.isArray(c)) {
+							input = c.filter(function(part) {
+								return part.type === 'text' || part.type === 'file_text';
+							}).map(function(part) {
+								return part.text || '';
+							}).join('\n');
 						} else if (typeof c === 'string') {
 							input = c;
 						}
@@ -740,7 +768,7 @@ async function handleSend() {
 				var transcriptions = [];
 				for (var fi = 0; fi < asrAudioFiles.length; fi++) {
 					if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
-					var af = asrAudioFiles[fi];
+					var af = createNormalizedASRAudioFile(asrAudioFiles[fi]);
 					var result = await callASR(cfg.style || 'openai', cfg.baseUrl, cfg.key,
 						(info.node.modelId || info.node.name), af, cfg.params, cfg.isFullUrl, signal);
 					if (signal.aborted || isSessionInvalidated(targetSessionId)) return { endpointId: id, status: 'stopped', content: '' };
@@ -949,7 +977,6 @@ function updateCardStatus(endpointId, status, error, state = null, sessionId = n
 		if (status === 'failed') {
 			const cw = $('.one.response.msg > .content', card);
 			if (cw) {
-				cw.innerHTML = '';
 				cw.classList.add('failed');
 				const icon = mk('span', 'fail-icon');
 				icon.textContent = '✗';
