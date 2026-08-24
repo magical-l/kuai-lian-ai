@@ -9,6 +9,7 @@ const vm = require('node:vm');
 const storageSourcePath = path.join(__dirname, '..', 'src', 'modules', 'storage-core.js');
 const extensionStorageSourcePath = path.join(__dirname, '..', 'src', 'extension', 'storage-core.js');
 const storeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'store.js');
+const sharedSourcePath = path.join(__dirname, '..', 'src', 'modules', 'shared.js');
 
 function createIndexedDBStub(options = {}) {
     const values = new Map();
@@ -219,9 +220,12 @@ function createStoreHarness(options = {}) {
         structuredClone
     });
 
+    const sharedSource = fs.readFileSync(sharedSourcePath, "utf8");
     const source = fs.readFileSync(storeSourcePath, "utf8");
+    const helperMatch = sharedSource.match(/function setOwnEnumerableDataProperty\(target, key, value\) \{[\s\S]*?\r?\n\}/);
+    assert.ok(helperMatch, "Could not find shared setOwnEnumerableDataProperty");
 
-    const exposedSource = `${source}\n
+    const exposedSource = `${helperMatch[0]}\n${source}\n
 globalThis.__storeTestApi = {
     addMessage,
     addNode,

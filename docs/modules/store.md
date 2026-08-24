@@ -1,9 +1,9 @@
 ---
 title: 数据管理层
 covers_file: [src/modules/store.js]
-depends_on: [storage-core.md]
+depends_on: [storage-core.md, api.md]
 api_signature: getGroups, getNode, addNode, updateNode, deleteNode, cloneNode, reorderNode, moveNodeAsChild, resolveNodeConfig, createSession, updateSession, addMessage, getAllSessions, loadSession, saveSession, deleteSession
-last_updated: 2026-08-18
+last_updated: 2026-08-24
 why_exists: DB 式数据 CRUD 接口、端点树继承链解析、会话生命周期管理
 ---
 
@@ -192,3 +192,4 @@ Root (baseUrl: "https://api.openai.com/v1", style: "openai")
 | 2026-08-07 | 端点加载时递归归一化并持久化完整 URL 字段 | `loadEndpoints` 与 `tryRestoreDirectory` 共用加载后处理；检测到旧 `directUrl` 或非布尔 `isFullUrl` 时原地修复并尝试保存，保存失败不阻塞加载，保留内存结果供下次重试。 |
 | 2026-08-11 | restoreEndpoints 防御 checkpoint/live reference 不一致 | 已有节点原地恢复并保留 children 引用；缺失 live reference 的 snapshot 节点独立重建，避免回滚异常遮蔽原始持久化错误。 |
 | 2026-08-18 | 节点参数容器与动态属性按存在性保真 | `params` 在 add/clone 中保留字段缺失、`null`、空对象和普通对象；`customParams` 是数组，缺失/null 在 add/clone 中归一为空数组。参数按 key 使用缺失/具体值/`null` 三态解析，旧顶层 TTS 字段只在解析边界兼容；update/restore 与 endpoint 覆盖使用 own-property 判断，避免特殊动态键触发原型链语义。 |
+| 2026-08-24 | 动态属性写入 helper 保留单一公共定义 | 删除 store.js 中与 shared.js 完全相同的 `setOwnEnumerableDataProperty` 副本；生产初始化在 shared.js 加载后触发，store 回滚路径复用 shared.js 定义，避免两份实现后续漂移。 |

@@ -41,7 +41,7 @@ UI Layer（分隔条布局/消息渲染/端点树）→ Store Layer（数据CRUD
 | [CSS 体系](design/css-architecture.md) | 需要改样式时——变量体系、布局系统、类名命名 |
 | [Chrome 扩展架构](extension/overview.md) | 处理扩展相关的问题——环境检测、CORS 代理、权限 |
 
-当前版本: 6.33.2
+当前版本: 6.33.3
 
 ## 决策日志
 
@@ -53,3 +53,4 @@ UI Layer（分隔条布局/消息渲染/端点树）→ Store Layer（数据CRUD
 - 2026-08-13: 修复 bug3（发送按钮行/streaming-hint 被挤出视口）。输入区布局从 `flex:1` 撑满改为 `flex:0 0 auto` 纯"向上撑"（输入区完整、绝不滚动，消息区让位）；已选区 `max-height` 由 JS `syncSelectedAreaLimit()` 动态设置（消息区压缩到仅剩提示行后剩余全给已选区），CSS 200px 兜底；消息区 `min-height` 100→50；新增 `clampMessagesHeight()`（拖拽固定消息区后输入区增高时自动收紧）、`stickyMinHeight()` 简化为 `max(minHeight, scrollHeight)`。发布 v6.32.14
 - 2026-08-18: 验收大功能 9，发布 v6.33.0：新增 OpenAI `/v1/responses` 接口格式；端点和会话参数改为“继承/沿用、自己设置、由模型决定”三态，未明确设置的建议值不保存、不发送；补齐参数空值过滤、Responses `reasoning` 合并、特殊参数键及持久化失败回滚安全。
 - 2026-08-24: 修复远程 CSS 路径，恢复 `/css/common.css` 和 `/css/layout.css`，发布 v6.33.2。
+- 2026-08-24: 去除 `setOwnEnumerableDataProperty` 重复顶层声明，统一由 `shared.js` 提供公共实现，并新增生产模块顶层函数唯一性回归检查，发布 v6.33.3。

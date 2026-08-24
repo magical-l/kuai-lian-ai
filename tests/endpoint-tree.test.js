@@ -7,6 +7,7 @@ const vm = require('node:vm');
 const endpointTreeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'endpoint-tree.js');
 const mainSourcePath = path.join(__dirname, '..', 'src', 'modules', 'main.js');
 const storeSourcePath = path.join(__dirname, '..', 'src', 'modules', 'store.js');
+const sharedSourcePath = path.join(__dirname, '..', 'src', 'modules', 'shared.js');
 const sessionListSourcePath = path.join(__dirname, '..', 'src', 'modules', 'session-list.js');
 const selectedEndpointsSourcePath = path.join(__dirname, '..', 'src', 'modules', 'selected-endpoints.js');
 const attachmentsSourcePath = path.join(__dirname, '..', 'src', 'modules', 'attachments.js');
@@ -1242,8 +1243,9 @@ function createStoreHarness(initialTree) {
 			}
 		}
 	});
+	const sharedSource = fs.readFileSync(sharedSourcePath, 'utf8');
 	const source = fs.readFileSync(storeSourcePath, 'utf8');
-	const exposedSource = `${source}\n
+	const exposedSource = `${extractFunctionDeclaration(sharedSource, 'setOwnEnumerableDataProperty')}\n${source}\n
 globalThis.__storeTestApi = {
 	addNode,
 	batchAddNodes,

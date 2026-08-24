@@ -7,7 +7,8 @@ const { execSync, spawn } = require('node:child_process');
 const test = require('node:test');
 const vm = require('node:vm');
 
-const buildSource = fs.readFileSync(path.join(__dirname, '..', 'build.js'), 'utf8').replace(/\r\n/g, '\n');
+const projectRoot = path.join(__dirname, '..');
+const buildSource = fs.readFileSync(path.join(projectRoot, 'build.js'), 'utf8').replace(/\r\n/g, '\n');
 const syncGetURLSource = buildSource.match(/function syncGetURL\(url\) \{[\s\S]*?\n\}\n\nfunction tryInlineLocalCSS/)[0]
 	.replace(/\n\nfunction tryInlineLocalCSS$/, '');
 
@@ -46,4 +47,21 @@ test('Windows remote CSS fetch preserves UTF-8 icon characters', { skip: process
 	} finally {
 		fixture.server.kill();
 	}
+});
+
+test('production modules declare each top-level function once', () => {
+	const moduleDir = path.join(projectRoot, 'src', 'modules');
+	const declarations = new Map();
+	for (const file of fs.readdirSync(moduleDir).filter(file => file.endsWith('.js'))) {
+		const source = fs.readFileSync(path.join(moduleDir, file), 'utf8');
+		for (const match of source.matchAll(/^function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) {
+			const files = declarations.get(match[1]) || [];
+			files.push(file);
+			declarations.set(match[1], files);
+		}
+	}
+	const duplicates = [...declarations]
+		.filter(([, files]) => files.length > 1)
+		.map(([name, files]) => `${name}: ${files.join(', ')}`);
+	assert.deepEqual(duplicates, []);
 });

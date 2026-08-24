@@ -3,7 +3,7 @@ title: 存储层核心
 covers_file: [src/modules/storage-core.js, src/extension/storage-core.js]
 depends_on: []
 api_signature: storage 对象（init/selectMode/switchMode/loadEndpoints/saveEndpoints/loadSessions/...）
-last_updated: 2026-08-03
+last_updated: 2026-08-24
 why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+File System Access）
 ---
 
@@ -122,9 +122,9 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 3. **`_saveModePref()` 条件写入**：扩展版通过 `chrome.storage.local.set` 存模式偏好，标准版用 IndexedDB。
 4. **`_requireDir()`**：扩展版 DirectoryStorage 有显式的目录检查守卫。
 5. **`try-catch` 粒度更细**：扩展版在 `saveSession`/`deleteSession` 等操作中区分了 `NotFoundError` 和其他错误。
-6. **`window.__IS_EXTENSION__` 和 `window.__STORAGE__`**：扩展版由 `boot.js` 在环境检测后挂载，非扩展版直接在全局作用域定义 `storage` 变量。
+6. **`window.__IS_EXTENSION__` 和 `window.__STORAGE__`**：`boot.js` 在 head 中先设置扩展环境标志；扩展版 `storage-core.js` 随页面底部模块脚本加载时挂载 `window.__STORAGE__`，标准版直接在全局作用域定义 `storage` 变量。
 
-构建时 `build.js` 的扩展构建路径将 `extension/storage-core.js` 作为独立 `<script src>` 插入 HTML，并在 `boot.js` 之前加载，确保扩展页启动时 `window.__STORAGE__` 已就绪。
+构建时 `build.js` 的扩展构建路径将 `extension/storage-core.js` 作为独立 `<script src>` 插入页面底部模块区。`boot.js` 已在 head 中完成环境检测；后续 `storage-core.js`、`cors-proxy.js`、`app.js` 依次加载，`main.js` 最后启动应用。
 
 ## 常量
 
@@ -146,3 +146,4 @@ why_exists: 双后端存储抽象（BrowserStorage+IndexedDB / DirectoryStorage+
 | `migrateEndpoints` 不在 storage-core 中 | 数据格式迁移是业务逻辑，在 `store.js` 中处理；storage-core 只负责读写原始 JSON |
 | 2026-08-03: 同步会话 keyspace 拆分、兼容迁移和批量回滚实现 | 文档原先描述与当前代码不符 |
 | 2026-08-11: facade `importAll` 委托后端公共事务入口；mode 仅接受 browser/directory；导入先校验 session 对象与唯一非空字符串 ID | 防止导入失败无法回滚、非法模式污染偏好和无效 session 写入存储 |
+| 2026-08-24: 修正扩展启动顺序说明 | boot.js 在 head 先检测环境；storage-core.js 在页面底部模块区随后挂载存储对象，main.js 最后启动应用。 |

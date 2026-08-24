@@ -312,15 +312,6 @@ function snapshotData(value) {
 		return JSON.parse(JSON.stringify(value));
 }
 
-function setOwnEnumerableDataProperty(target, key, value) {
-		Object.defineProperty(target, key, {
-				value,
-				writable: true,
-				enumerable: true,
-				configurable: true
-		});
-}
-
 function enqueueMutation(queue, operation) {
 		const result = queue.then(operation, operation);
 		return {

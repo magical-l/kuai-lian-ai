@@ -100,8 +100,8 @@ cors-proxy.js 使用 `chrome.runtime.connect({ name: 'cors-proxy' })` 建立命�
 `src/modules/boot.js` 在页面加载时立即执行：
 
 1. **检测扩展环境**：检查 `chrome.runtime?.id` 是否存在。若存在，设置 `window.__IS_EXTENSION__ = true`。
-2. **设置 CORS 代理钩子**：扩展环境下将 `window.__EXTENSION_FETCH__` 设为 `extensionFetch()`（来自 cors-proxy.js），供 API 层在需要时通过 Service Worker 中转请求。
-3. **字体处理**：扩展环境下 DOM 中已有 Google Fonts 链接（由 boot.js 构建时内联或预留），检测到非扩展环境时动态注入 `<link href="...Plus+Jakarta+Sans...">`。扩展版构建时跳过字体注入以减少包体积。
+2. **字体处理**：扩展环境下移除已有的 Google Fonts 节点；非扩展环境动态注入字体样式。
+3. **CORS 代理钩子随后注册**：页面底部加载 `cors-proxy.js` 时，将 `window.__EXTENSION_FETCH__` 设为 `extensionFetch()`，供需要 Service Worker 中转的路径使用。
 
 这两个标志影响其他模块的行为：
 - **存储层**：扩展模式下 `storage-core.js` 使用 `chrome.storage.local` 替代 IndexedDB
@@ -167,3 +167,4 @@ cors-proxy.js 使用 `chrome.runtime.connect({ name: 'cors-proxy' })` 建立命�
 | 2025-Q2 | 扩展版跳过 Google Fonts 加载 | 扩展包体积约束，且 Web Store 审核要求无外部字体引用 |
 | 2025-Q3 | extensionFetch 当前未被模块代码消费 | cors-proxy.js 注册的 `window.__EXTENSION_FETCH__` 是预留钩子，模块代码当前使用原生 `fetch()` 通过扩展页面的特权上下文直接跨域访问。此钩子可用于需要 Service Worker 中介的特定场景 |
 | 2026-07-18 | 远程 CSS 域名切换 | 从 `css.lwj621.workers.dev` 切换到 `css.document.cool`，manifest.json 和文档中 CSP 同步更新 |
+| 2026-08-24 | 修正环境标志与代理钩子的注册归属 | boot.js 只负责 `__IS_EXTENSION__` 和字体处理；`cors-proxy.js` 随页面底部模块加载时注册 `__EXTENSION_FETCH__`。 |

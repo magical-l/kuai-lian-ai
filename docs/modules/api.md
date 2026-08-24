@@ -3,7 +3,7 @@ title: API 层
 covers_file: [src/modules/api.js, src/modules/shared.js]
 depends_on: [providers.md]
 api_signature: callAllModels, callAPI, callProvider, callEmbedding, stopAllGenerations
-last_updated: 2026-08-20
+last_updated: 2026-08-24
 why_exists: 流式 SSE 处理、多模型并发调度、停止机制和 Provider 格式转换
 ---
 
@@ -46,6 +46,7 @@ callAllModels → callAPI → callProvider → mergeParams(config.body, params, 
 | `handleParsedChunk` | shared.js | `(parsed, state, tagParser, onChunk) => void` |
 | `createInitialState` | shared.js | `() => ThinkingState` |
 | `finalizeState` | shared.js | `(state) => void` |
+| `setOwnEnumerableDataProperty` | shared.js | `(target, key, value) => void`；跨模块安全写入动态自有属性，保持单一公共定义 |
 
 `processSSEStream` 从 `ReadableStream<Uint8Array>` 逐块读取，按 `\n` 分行，过滤 `data:` 前缀，兼容 `data:` 后可选空格，跳过 `[DONE]`，并在 EOF 时处理最后一条无换行残行。坏 JSON 行静默跳过；`provider.parseChunk` 的异常不在此处吞掉，会沿请求链路传播。每行 JSON 传给 `provider.parseChunk` 得到结构化的 `parsed` 对象（`{content?, reasoning?, event?, terminal?}`），再交 `handleParsedChunk` 写入 state。`terminal` 支持 `completed`、`failed`、`incomplete`、`refused`；终态按优先级聚合，`failed` 优先于其他终态，未提供终态或未知 reason 保持兼容。
 
