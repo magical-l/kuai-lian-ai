@@ -3,7 +3,7 @@ title: 构建流程
 covers_file: [build.js, src/layout.html, src/extension/manifest.json]
 depends_on: [architecture.md, data-model.md]
 api_signature: node build.js / MODULE_ORDER / DEV_MODE
-last_updated: 2026-08-18
+last_updated: 2026-08-24
 why_exists: 定义从源码到双产物的构建流程，确保构建可复现、产物可预测
 ---
 
@@ -28,8 +28,9 @@ layout.html 包含三个占位符系统和外部引用：
 2. **highlight-github.min.css**：同上（vendor 目录）
 3. **common.css / layout.css**（远程CSS）：
    - 开发模式（`--dev` 参数）：优先读取本地 `../css/css/common.css` / `layout.css`
-   - 单页面构建：从 `css.document.cool` 构建时 fetch 内联（确保单页不依赖外网）
-   - 扩展构建：保留 `<link>` 外链，运行时从 `css.document.cool` 加载
+   - 单页面构建：从 `https://css.document.cool/css/common.css` 和 `https://css.document.cool/css/layout.css` 构建时 fetch 内联（确保单页不依赖外网）
+   - 扩展构建：保留 `<link>` 外链，运行时从 `http://css.document.cool/css/common.css` 和 `http://css.document.cool/css/layout.css` 加载
+   - Windows 下载链路读取 `RawContentStream` 原始字节，以 Base64 跨 PowerShell/Node 进程边界后按 UTF-8 解码，避免 CSS 字符图标乱码
    - fetch 失败：保留外部 `<link>` 引用（仅单页面模式有 fallback）
 
 #### 第3步：JS 处理
@@ -60,7 +61,7 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 | 输出路径 | dist/kuai-lian-ai.html + 根目录副本 | dist/extension/ 目录 + dist/kuai-lian-ai.zip |
 | vendor JS | 全部内联 | 复制为独立文件 |
 | vendor CSS (highlight) | 内联 | 内联 |
-| remote CSS | 构建时 fetch 内联 | `<link>` 外链，运行时加载 |
+| remote CSS | 构建时 fetch 内联 | `<link>` 外链，运行时加载 `/css/*.css` |
 | boot.js | 头部内联 | extension/boot.js 外部引用 |
 | modules | 全部内联到 HTML | 拼接为 extension/app.js |
 | storage-core.js | 全部内联 | 独立文件 storage-core.js |
@@ -92,9 +93,8 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 ### 版本管理
 
 - 发布版本涉及三处：`src/extension/manifest.json` 的 `version` 字段、`src/layout.html` 中 `<span class="version">vX.Y.Z</span>`、构建后的根目录单页面 `kuai-lian-ai.html`
-- 当前源码页面与源码 manifest 版本：`6.33.0`
-- 当前工作树根目录构建单页仍显示 `6.32.14`，尚未按本次源码重建；本轮仅同步文档，不改构建产物
-- 下次构建后需核对源码 manifest、`dist/extension/manifest.json`、`dist/kuai-lian-ai.html` 与根目录单页面版本一致
+- 当前源码页面与源码 manifest 版本：`6.33.2`
+- 构建后需核对源码 manifest、`dist/extension/manifest.json`、`dist/kuai-lian-ai.html` 与根目录单页面版本一致
 - 每次正式发布验收后三处均需同步更新
 - 版本号递增遵循语义化版本（MAJOR.MINOR.PATCH）
 
@@ -106,7 +106,7 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 | compressCSS | build.js | 去空行、trim 行 | 内部 | 不压缩声明（仅去除空白行） |
 | validateCSS | build.js | CSS 花括号平衡 + 声明语法校验 | 内部 | 花括号/属性名/声明格式 |
 | compressJS | build.js | 去空行 | 内部 | 不压缩变量名 |
-| syncGetURL | build.js | 幂等 fetch（支持 Win32/Unix） | 内部 | 用于构建时内联远程CSS |
+| syncGetURL | build.js | 幂等 fetch（支持 Win32/Unix） | 内部 | Windows 以原始字节跨进程传输，统一按 UTF-8 解码 |
 | tryInlineLocalCSS | build.js | 内联远程 CSS（common.css + layout.css） | 内部 | 开发模式优先本地 |
 | buildSinglePage | build.js | 构建单页HTML | 内部 | 全部内联 |
 | buildExtension | build.js | 构建扩展版HTML | 内部 | 拆分为外部JS |
@@ -120,7 +120,8 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 - 2026-07-15: 筛选按钮 class 从 `endpoint-type.chat`/`embedding`/`image-generation`/`reranking` 改为 `chat`/`digits`/`palette`/`chart`，对齐 common.css 抽象图标
 
 - 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`（路径从 `/css/name.css` 简化为 `/name.css`）
+- 2026-08-24: 远程 CSS 路径恢复为 `/css/common.css` 和 `/css/layout.css`，与当前资源布局及源码、构建脚本保持一致；Windows 构建改为传输响应原始字节后按 UTF-8 解码，避免内联字符图标乱码
 - 2026-07-28: 当时验收后将页面、扩展 manifest 和文档版本同步到 v6.32.4（历史记录）
 - 2026-08-12: 同步 v6.32.11 的清空屏障、端点回滚防御和存储审查修复产物；根单页与 dist 单页构建后保持一致
 - 2026-08-12: 验收 workspace 参数生命周期修复并发布 v6.32.12；页面、扩展 manifest 与构建产物版本一致
-- 2026-08-18: 源码页面与源码 extension manifest 已为 v6.33.0；Responses、参数注册表和三态 UI 随现有模块顺序进入双产物，无需新增构建分支。当前根目录构建单页仍为 v6.32.14，记录为待下次构建同步的真实状态。
+- 2026-08-18: 源码页面与源码 extension manifest 已为 v6.33.0；Responses、参数注册表和三态 UI 随现有模块顺序进入双产物，无需新增构建分支。当时根目录构建单页仍为 v6.32.14，作为待下次构建同步的真实状态记录。

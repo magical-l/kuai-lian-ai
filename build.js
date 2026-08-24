@@ -128,10 +128,11 @@ function isSourceAsset(src) {
 function syncGetURL(url) {
 	try {
 		if (process.platform === 'win32') {
-			return execSync(
-				`powershell -Command "(Invoke-WebRequest -Uri '${url}' -UseBasicParsing).Content"`,
+			const encoded = execSync(
+				`powershell -Command "$response = Invoke-WebRequest -Uri '${url}' -UseBasicParsing; $stream = New-Object System.IO.MemoryStream; $response.RawContentStream.CopyTo($stream); [Convert]::ToBase64String($stream.ToArray())"`,
 				{ encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] }
 			).trim();
+			return Buffer.from(encoded, 'base64').toString('utf8').trim();
 		}
 		return execSync(`curl -sf "${url}"`, { encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 	} catch {
@@ -141,8 +142,8 @@ function syncGetURL(url) {
 
 function tryInlineLocalCSS(html) {
 	const remoteCSSFiles = [
-		{ url: 'css.document.cool/common.css', label: 'common.css' },
-		{ url: 'css.document.cool/layout.css', label: 'layout.css' },
+		{ url: 'css.document.cool/css/common.css', label: 'common.css' },
+		{ url: 'css.document.cool/css/layout.css', label: 'layout.css' },
 	];
 	for (const { url, label } of remoteCSSFiles) {
 		let content = null;

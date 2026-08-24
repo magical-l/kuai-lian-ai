@@ -3,7 +3,7 @@ title: Chrome Extension 概览
 covers_file: [src/extension/manifest.json, src/extension/background.js, src/extension/storage-core.js, src/extension/_locales/zh_CN/messages.json, src/modules/boot.js]
 depends_on: []
 api_signature: chrome.runtime, chrome.action, chrome.runtime.connect
-last_updated: 2026-07-02
+last_updated: 2026-08-24
 why_exists: 双产物中 Chrome 扩展的生命周期、权限模型和 CORS 代理架构概览
 ---
 
@@ -130,7 +130,7 @@ cors-proxy.js 使用 `chrome.runtime.connect({ name: 'cors-proxy' })` 建立命�
 | `<!-- app-modules -->` | 逐个内联所有模块 `.js` | 替换为 3 个 `<script src>`：`storage-core.js`、`cors-proxy.js`、`app.js` |
 | `vendor/` JS | 内联 | 保持 `<script src>` 引用 |
 | 高亮 CSS | 内联 | 同（内联） |
-| 远程 CSS | 构建时 fetch 内联 | 构建时 fetch 内联 |
+| 远程 CSS | 构建时 fetch 内联 | 保留 `<link>` 外链，运行时从 `http://css.document.cool/css/*.css` 加载 |
 | SVG logo | Base64 内联 | 保持文件引用 |
 
 决定：扩展版不内联 vendor JS 的原因是 `script-src 'self'` 不允许内联脚本，所以 vendor JS 必须以外部文件形式存在于扩展包中。
