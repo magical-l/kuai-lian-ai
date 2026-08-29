@@ -6222,6 +6222,212 @@ test('switching definitions restores only that definitions independent unsaved d
 	});
 	assert.equal(Object.hasOwn(saveData.params, 'presence_penalty'), false);
 });
+function createHelpDialogHarness() {
+	const closeButton = {
+		hidden: false
+	};
+	const warning = {
+		hidden: false
+	};
+	const recover = {
+		hidden: false
+	};
+	const current = {
+		textContent: '',
+		title: ''
+	};
+	const selectDirectory = {
+		textContent: ''
+	};
+	const dialog = {
+		dataset: {},
+		style: {},
+		open: false,
+		showModal() {
+			this.open = true;
+		},
+		querySelector(selector) {
+			return {
+				'.close': closeButton,
+				'.workspace-setting .warning': warning,
+				'.recover': recover,
+				'.cur': current,
+				'.select-dir': selectDirectory
+			}[selector] || null;
+		}
+	};
+	const attachmentsSource = fs.readFileSync(attachmentsSourcePath, 'utf8');
+	const context = vm.createContext({
+		storage: {
+			mode: null,
+			getDisplayInfo() {
+				return {
+					text: '未选择',
+					title: '未选择存储方式'
+				};
+			}
+		},
+		$(selector, scope) {
+			if (selector === 'dialog.help') return dialog;
+			return scope.querySelector(selector);
+		}
+	});
+	const helpDialogSource = attachmentsSource.slice(attachmentsSource.indexOf('function showHelpDialog'));
+	new vm.Script(extractFunctionDeclaration(helpDialogSource, 'showHelpDialog') + '\nglobalThis.__showHelpDialog = showHelpDialog;', {
+		filename: attachmentsSourcePath
+	}).runInContext(context);
+	return {
+		showHelpDialog: context.__showHelpDialog,
+		dialog,
+		closeButton
+	};
+}
+
+function createDividerHarness() {
+	const handlers = {};
+	const windowHandlers = {};
+	const storage = new Map();
+	function element(properties = {}) {
+		return Object.assign({
+			style: {},
+			classList: {
+				contains() {
+					return false;
+				}
+			},
+			on(type, handler) {
+				this.handlers = this.handlers || {};
+				this.handlers[type] = handler;
+			}
+		}, properties);
+	}
+	const divider = element();
+	const messages = element({
+		offsetHeight: 624
+	});
+	const mainContent = element({
+		offsetHeight: 864
+	});
+	const toolbar = element({
+		offsetHeight: 40
+	});
+	const inputArea = element({
+		offsetHeight: 200,
+		scrollHeight: 200
+	});
+	const input = element({
+		offsetHeight: 82
+	});
+	const elements = {
+		'.divider.go-x': divider,
+		'.msg.list': messages,
+		'.main-content': mainContent,
+		'.toolbar': toolbar,
+		'.chat-input-area': inputArea,
+		'#chat-input': input,
+		'aside.endpoint.list:not(.divider)': element(),
+		'aside.session.list:not(.divider)': element()
+	};
+	const document = {
+		body: {
+			style: {}
+		},
+		querySelector(selector) {
+			return elements[selector] || null;
+		},
+		querySelectorAll() {
+			return [];
+		},
+		on(type, handler) {
+			handlers[type] = handler;
+		}
+	};
+	const uiUtilsSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'ui-utils.js'), 'utf8');
+	const context = vm.createContext({
+		document,
+		doc: document,
+		$(selector) {
+			return document.querySelector(selector);
+		},
+		$$(selector) {
+			return document.querySelectorAll(selector);
+		},
+		getComputedStyle(target) {
+			return {
+				minHeight: target === inputArea ? '160px' : '56px'
+			};
+		},
+		localStorage: {
+			getItem(key) {
+				return storage.get(key) || null;
+			},
+			removeItem(key) {
+				storage.delete(key);
+			},
+			setItem(key, value) {
+				storage.set(key, value);
+			}
+		},
+		window: {
+			addEventListener(type, handler) {
+				windowHandlers[type] = handler;
+			}
+		},
+		syncSelectedAreaLimit() {}
+	});
+	const functionSource = [extractFunctionDeclaration(uiUtilsSource, 'inputHeightBounds'), extractFunctionDeclaration(uiUtilsSource, 'clampInputHeight'), extractFunctionDeclaration(uiUtilsSource, 'initDividers'), uiUtilsSource.slice(uiUtilsSource.indexOf("window.addEventListener('resize', () => {"), uiUtilsSource.indexOf('// 已选区')), 'globalThis.__initDividers = initDividers;'].join('\n');
+	new vm.Script(functionSource, {
+		filename: path.join(__dirname, '..', 'src', 'modules', 'ui-utils.js')
+	}).runInContext(context);
+	return {
+		initDividers: context.__initDividers,
+		divider,
+		handlers,
+		messages,
+		input,
+		storage,
+		mainContent,
+		windowHandlers
+	};
+}
+
+test('first-run storage prompt keeps its close button visible', () => {
+	const harness = createHelpDialogHarness();
+	harness.showHelpDialog(true, false);
+	assert.equal(harness.dialog.open, true);
+	assert.equal(harness.dialog.dataset.forceSelect, true);
+	assert.equal(harness.closeButton.hidden, false);
+});
+
+test('dragging the input divider upward gives the released height to the textarea', () => {
+	const harness = createDividerHarness();
+	harness.initDividers();
+	harness.divider.handlers.mousedown({
+		target: harness.divider,
+		clientY: 700
+	});
+	harness.handlers.mousemove({
+		clientY: 520
+	});
+	harness.handlers.mouseup();
+	assert.equal(harness.messages.style.height, undefined);
+	assert.equal(harness.messages.style.flex, undefined);
+	assert.equal(harness.input.style.height, '262px');
+	assert.equal(harness.storage.get('chat-input-height'), '262px');
+});
+
+test('initialization and resize clamping preserve the saved input height preference', () => {
+	const harness = createDividerHarness();
+	harness.storage.set('chat-input-height', '700px');
+	harness.initDividers();
+	assert.equal(harness.input.style.height, '656px');
+	assert.equal(harness.storage.get('chat-input-height'), '700px');
+	harness.mainContent.offsetHeight = 1000;
+	harness.windowHandlers.resize();
+	assert.equal(harness.input.style.height, '700px');
+	assert.equal(harness.storage.get('chat-input-height'), '700px');
+});
+
 test('unknown own __proto__ survives dialog save, storage snapshot, resolution, and the final request body as a plain JSON property', async () => {
 	const protoValue = {
 		source: 'unknown-param'

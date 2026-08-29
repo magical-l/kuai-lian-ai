@@ -3,7 +3,7 @@ title: UI 层
 covers_file: [src/modules/ui-utils.js, src/modules/messages.js, src/modules/session-list.js, src/modules/selected-endpoints.js, src/modules/attachments.js, src/modules/main.js, src/modules/endpoint-tree.js, src/modules/providers.js]
 depends_on: [providers.md]
 api_signature: 无（各函数在模块内部使用）
-last_updated: 2026-08-20
+last_updated: 2026-08-28
 why_exists: UI 组件渲染和交互——分隔条拖拽、消息渲染、流式卡片、会话列表、端点标签、附件、连接测试、对话框/tooltip
 ---
 
@@ -23,10 +23,10 @@ UI 层由 `ui-utils.js` `messages.js` `session-list.js` `selected-endpoints.js` 
 
 | 函数 | 文件 | 用途 |
 |------|------|------|
-| `initDividers` | ui-utils.js | 初始化 3 个分隔条（左/右/水平）的拖动系统 |
-| `clampSavedHeight` | ui-utils.js | 视口变化时重新钳制消息区高度 |
-| `clampMessagesHeight` | ui-utils.js | 输入区内容增高（选端点/加附件）时，重新收紧被拖拽固定的消息区高度，防止输入区向上撑溢出盖住 streaming-hint |
-| `syncSelectedAreaLimit` | ui-utils.js | 动态设置已选区 `.selected.endpoint.list` 的 max-height：消息区压缩到仅剩 streaming-hint（50px）后，剩余高度全给已选区；resize / 输入区内容变化时同步 |
+| `initDividers` | ui-utils.js | 初始化 3 个分隔条（左/右/水平）的拖动系统；启动时清理旧消息区布局键 |
+| `inputHeightBounds` | ui-utils.js | 计算输入框可拖拽的高度边界，预留 50px 布局空间 |
+| `clampInputHeight` | ui-utils.js | 将输入框高度钳制到当前边界内，并在视口变化时恢复已保存高度 |
+| `syncSelectedAreaLimit` | ui-utils.js | 动态设置已选区 `.selected.endpoint.list` 的 max-height：按 50px 布局预留计算剩余空间，极矮视口时已选区的 100px 下限可优先；resize / 输入区内容变化时同步 |
 | `scrollToBottom` | ui-utils.js | 消息容器滚动到底部 |
 | `initScrollNav` | ui-utils.js | 绑定滚动导航按钮（top/bottom） |
 | `syncScrollPadding` | ui-utils.js | 同步 sticky 区高度到 messages scroll-padding |
@@ -112,7 +112,7 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 
 ### 1. 分隔条拖拽系统 (initDividers)
 
-文件：`ui-utils.js:9-142`
+文件：`ui-utils.js`
 
 **架构**：
 - 3 个分隔条：左侧面板（endpoint tree）、右侧面板（session list）、水平分隔（消息区/输入区）
@@ -121,27 +121,28 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 
 **关键设计决策**：
 - 左右面板以 `flex: none` + 显式 `width` 锁定，避免 flex 容器 shrink/ grow 干扰
-- 水平分隔使用 `flex: 0 0 auto` + `height`，同理避免 flex 撑满
+- 水平分隔条直接调整 `#chat-input` 高度；`.msg.list` 始终保持 `flex: 1`，由布局占用剩余空间
 - 右侧面板支持 `viewTransition` 动画切换隐藏/显示
-- `clampSavedHeight` 在 `resize` 事件中重新钳制，防止 F12 打开时输入区被挤出
+- `inputHeightBounds()` 与 `clampInputHeight()` 在拖拽和 `resize` 时重新计算、恢复并钳制输入框高度；其 50px 扣除值是拖拽边界预留，不表示消息区在极端视口下一定保有 50px。
 
 **localStorage 键**：
 - `sidebar-left-width`
 - `sidebar-right-width`
 - `sidebar-right-hidden`
-- `chat-messages-height`
+- `chat-input-height`
+- `chat-messages-height`、`chat-messages-flex` 为旧键，`initDividers()` 启动时删除，避免旧布局状态继续生效
 
 ### 2. 消息渲染 (renderMarkdown / renderMessages / renderResponse)
 
 文件：`messages.js`
 
-**renderMarkdown** (行 2)：封装 `marked.parse`，开启 `breaks` 和 `gfm`。
+**renderMarkdown**：封装 `marked.parse`，开启 `breaks` 和 `gfm`。
 
-**renderMessages** (行 30)：清空 `.msg.list`，遍历 `messages` 数组。用户消息渲染为 `.msg.request.one` 结构（含头像、meta 时间、复制按钮、分叉按钮、文本内容、附件栏），article 设 `data-msg-index` 供分叉定位。响应消息委托给 `renderResponse`（调用前清除所有已有响应卡片的 `data-endpoint-id`，确保每条 assistant 消息都创建独立卡片，不互相覆盖）。
+**renderMessages**：清空 `.msg.list`，遍历 `messages` 数组。用户消息渲染为 `.msg.request.one` 结构（含头像、meta 时间、复制按钮、分叉按钮、文本内容、附件栏），article 设 `data-msg-index` 供分叉定位。响应消息委托给 `renderResponse`（调用前清除所有已有响应卡片的 `data-endpoint-id`，确保每条 assistant 消息都创建独立卡片，不互相覆盖）。
 
-**appendUserMessage** (行 63)：从 `renderMessages` 中提取的单条用户消息渲染函数，只追加不重建。发送消息时 `handleSend` 改用此函数替代 `renderMessages`，避免清空已有消息列表。旧回复卡片保留在 DOM 中（仅清除 `data-endpoint-id` / `data-session-id` 防止冲突）。通过 `currentSession.messages.indexOf(msg)` 定位消息索引，article 设 `data-msg-index` 供分叉按钮使用。
+**appendUserMessage**：从 `renderMessages` 中提取的单条用户消息渲染函数，只追加不重建。发送消息时 `handleSend` 改用此函数替代 `renderMessages`，避免清空已有消息列表。旧回复卡片保留在 DOM 中（仅清除 `data-endpoint-id` / `data-session-id` 防止冲突）。通过 `currentSession.messages.indexOf(msg)` 定位消息索引，article 设 `data-msg-index` 供分叉按钮使用。
 
-**renderResponse** (行 120)：按 `firstTokenTime` 排序后端响应。对每个 response：
+**renderResponse**：按 `firstTokenTime` 排序后端响应。对每个 response：
 - 复用已有的 streaming card（`data-endpoint-id` 匹配），或从 template 新建
 - 更新 header：name + remark + 时间 + 反应耗时 + 总耗时 + 状态 + 复制按钮
 - 错误信息渲染到 `.content` 中（`.say` 后面），有错误时隐藏复制按钮
@@ -152,19 +153,19 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 - 端点树类型筛选栏（`endpoint-tree.js`）：端点树顶部有筛选按钮（全部/嵌入/生图/重排序），点击后遍历端点 li 按类型显示/隐藏
 ### 3. 流式响应卡片渲染
 
-文件：`main.js:538-695`
+文件：`main.js`
 
 - `ensureStreamingHint`：初始化/重建 `.msg.list` 中的静态提示栏（默认显示"内容由AI生成，请仔细甄别使用"），页面初始化及 session 切换后调用。
 - `showThinkingCards`：在静态提示栏的免责声明后追加流式状态（"N个端点思考中" + 全部停止按钮）+ N 张 `fromTemplate("response-card-streaming")` 卡片。每张卡片有单端点停止按钮。
 - `resetStreamingHint`：移除提示栏中的流式状态信息（仅保留免责声明），会话切换时调用。
-- `updateStreamingCard`（行 583）：按 `sessionId + endpointId` 定位卡片，更新 thinking 块（content + duration）、`.say` 内容、header 反应耗时（首次 token 时间）。
-- `updateCardStatus`（行 625）：更新卡片状态 UI：停止按钮隐藏、status-icon 文本切换（spin → status）、失败时显示 error、完成时显示 totalDuration。
-- `reorderCardsBySpeed`（行 682）：按 `firstTokenTime` 对 DOM 中卡片重新排列（最快的在最前）。
-- `reorderSelectorTagsBySpeed`（行 697）：同步重排选中端点标签顺序。
+- `updateStreamingCard`：按 `sessionId + endpointId` 定位卡片，更新 thinking 块（content + duration）、`.say` 内容、header 反应耗时（首次 token 时间）。
+- `updateCardStatus`：更新卡片状态 UI：停止按钮隐藏、status-icon 文本切换（spin → status）、失败时显示 error、完成时显示 totalDuration。
+- `reorderCardsBySpeed`：按 `firstTokenTime` 对 DOM 中卡片重新排列（最快的在最前）。
+- `reorderSelectorTagsBySpeed`：同步重排选中端点标签顺序。
 
 ### 4. 会话列表 (renderSessionList)
 
-文件：`session-list.js:2-60`
+文件：`session-list.js`
 
 从 `<aside.session.list > ol>` 清空并克隆 `<template id="one-session">`。按 `createdAt` 降序排列。每个会话项：
 
@@ -176,9 +177,9 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 
 文件：`selected-endpoints.js`
 
-**renderSelectedEndpoints** (行 2)：根据 `selectedEndpoints` 数组生成 `<li>` 列表。每个标签显示完整路径（`ancestors + node.name`）、remark、移除按钮。空状态显示 `<span class="empty hint">请选择端点`。
+**renderSelectedEndpoints**：根据 `selectedEndpoints` 数组生成 `<li>` 列表。每个标签显示完整路径（`ancestors + node.name`）、remark、移除按钮。空状态显示 `<span class="empty hint">请选择端点`。
 
-**toggleEndpointSelection** (行 55)：在 `selectedEndpoints` 中添加/移除 ID。正在生成时阻止操作；取消端点时调用 `removeWorkspaceEndpointParams` 清理对应 workspace 覆盖，但不修改已有会话的 `modelParams`。触发 `syncJoinBtnState` 同步树中 checkbox。
+**toggleEndpointSelection**：在 `selectedEndpoints` 中添加/移除 ID。正在生成时阻止操作；取消端点时调用 `removeWorkspaceEndpointParams` 清理对应 workspace 覆盖，但不修改已有会话的 `modelParams`。触发 `syncJoinBtnState` 同步树中 checkbox。
 
 标签由模板克隆后通过 `addEventListener` 绑定 click/mouseover/mouseleave，对应 handler 为 `handleSelectedEndpointClick` / `handleSelectedEndpointRemoveClick` / `handleSelectedEndpointMouseover` / `handleSelectedEndpointMouseleave`。标签内容含 tooltip（`createTooltip`），hover 显示节点配置。
 
@@ -227,7 +228,7 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 
 ### 8. 端点编辑对话框 (showEditGroupDialog)
 
-文件：`attachments.js:139-278`
+文件：`attachments.js`
 
 直接操作 DOM 中的 `<dialog class="editing endpoint" id="edit-group-dialog">`（非 template 非 clone）。用 `show()`（非 `showModal()`）打开，不阻塞页面交互，可在编辑时点击后面端点复制字段值。功能：
 
@@ -252,17 +253,17 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 
 ### 9. 帮助/存储对话框 (showHelpDialog / showDirectoryPrompt)
 
-文件：`attachments.js:289-386`
+文件：`attachments.js`
 
-- `showHelpDialog` 直接操作 DOM 中的 `<dialog class="help" id="help-dialog">`（非 template 非 clone），用 `showModal()` 打开
-- 按钮 onclick 直接写在 HTML 中，三个具名函数（`onRecoverDirectory`、`onSelectDirectory`、`onUseBrowserStorage`）通过 `dataset` 读取状态
+- `showHelpDialog` 直接操作 DOM 中的 `<dialog class="help">`（无 `id`，非 template 非 clone），用 `showModal()` 打开
+- `main.js` 在初始化时为帮助按钮、关闭按钮和目录操作按钮绑定事件，以兼容扩展 CSP；`showHelpDialog` 只通过 `dataset` 保存对话框状态
 - 显示当前存储位置、恢复按钮（`restoreDirectory`）、选择目录、使用浏览器存储
-- 首次启动时 `showDirectoryPrompt`（forceSelectDirectory = true，禁止关闭）
-- `closeHelpDialog` 带飞入动画：计算按钮中心到对话框中心的偏移，`translate + scale(0.05)` 缩小消失
+- 首次启动时 `showDirectoryPrompt` 以 `forceSelectDirectory = true` 显示目录选择提示；关闭按钮始终可见，点击遮罩仍调用 `closeHelpDialog()`
+- `closeHelpDialog` 同时处理关闭按钮和遮罩点击；普通关闭带飞入动画：计算按钮中心到对话框中心的偏移，`translate + scale(0.05)` 缩小消失
 
 ### 10. Tooltip (createTooltip)
 
-文件：`providers.js:284-324`
+文件：`providers.js`
 
 工厂函数，返回 `{ show(triggerEl), hide() }`：
 
@@ -313,7 +314,7 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 | 2026-07-10 | 图标切换规则 `.on`/`.off` 提升到 common.css | `toggle > input:checked ~ .icon.on { display:none }` + `input:not(:checked) ~ .icon.off { display:none }`，所有 toggle 共享，无需在项目 CSS 中重复 |
 | 2026-07-11 | 新增 `appendUserMessage` 替代 `handleSend` 中的 `renderMessages` 调用 | 发送消息时不清空 `.msg.list`，只追加新用户消息；旧回复卡片保留并清除 `data-endpoint-id`/`data-session-id` 防止冲突 |
 | 2026-07-11 | 代码块复制按钮图标从 `text(mk(…), '⧉')` 改为空 `mk(…)`，利用 CSS `.icon:empty::before` 渲染 | 与 common.css 图标体系对齐，移除手写字符；`done` 状态图标同理 |
-| 2026-07-12 | 事件绑定从 JS 移到 HTML 内联属性 | bindSelectorEvents 移除，tag 事件改为 HTML onclick/onmouseover/onmouseleave 直接引用 handler；会话列表 click/edit/delete 同理；消息区复制/展开/代码块复制/滚动按钮事件同上 |
+| 2026-07-12 | 事件绑定从委托式 JS 绑定改为逐元素绑定 | `bindSelectorEvents` 移除；动态端点标签、会话列表和消息区控件由创建/渲染函数以事件监听器绑定，避免依赖 HTML 内联事件属性，并兼容扩展 CSP。 |
 | 2026-07-17 | streaming-hint 从动态创建/移除改为静态常驻 + 内容切换 | 默认显示免责声明"内容由AI生成，请仔细甄别使用"；发起请求后在免责声明后追加流式状态（N个端点思考中 + 全部停止）；会话切换时恢复免责声明。新增 ensureStreamingHint / resetStreamingHint。 |
 | 2026-07-14 | `#template-selected-endpoint` 删除按钮补上 `char-style` 类 | common.css 将 `:empty::before` 移入 `&.char-style`，按钮缺少此类导致 ✕ 图标不显示 |
 | 2026-07-14 | 附件添加按钮从 `<button>` + 独立 `<input class="file-input">` 改为 `<label>` 包裹 `<input type="file" hidden>` | 精简冗余 JS 桥接（click→触发隐藏 input），利用 label 语义原生触发文件选择 |
@@ -330,10 +331,11 @@ Chat 请求会处理 endpoint、workspace 和 session 的普通参数以及 Chat
 | 2026-08-12 | 取消端点选择时清理 workspace 参数覆盖 | 标签栏移除和端点树 checkbox 取消必须保持一致；清理按 endpointId 进行，不影响已有会话的 `modelParams`。 |
 | 2026-08-06 | 编辑对话框的完整 URL 直连开关统一写入 `isFullUrl` | `isFullUrl` 明确表达 Base URL 已是最终请求 URL；旧 `directUrl` 仅由配置读取层兼容，UI 和连接测试请求链路不再写入或使用它。 |
 | 2026-08-06 | 编辑未改完整 URL 开关时保留字段缺失 | 弹窗必须回显有效继承值，但不能把它固化为子节点覆盖；仅在节点原有字段或用户实际修改 checkbox 时写入显式布尔值。 |
-| 2026-08-13 | `stickyMinHeight()` 从只读 CSS min-height 改为 `max(CSS min-height, 内容所需高度)` | 输入区内容（选中端点列表/附件/发送按钮行）可超过 160px，拖到 CSS min-height 时发送按钮行被挤出视口；内容所需用 scrollHeight 测并减去 textarea 被 flex:1 撑满的部分，避免未拖拽时高估。拖拽 clamp（doDrag / clampSavedHeight）自动受益。 |
-| 2026-08-13 | 输入区布局改为"内容自适应"模型：`.chat-input-area` 从 `flex:1` 改为 `flex:0 0 auto`，`stickyMinHeight()` 移除 textarea 补偿、简化为 `max(minHeight, scrollHeight)` | 用户确认布局模型：输入区（输入框+发送按钮行）固定高度、已选区由内容撑住（限高滚动兜底）、剩余高度全归消息区 `.msg.list`。输入区不再 flex:1 撑满、textarea 高度固定，原"减去 textarea 被撑满部分"的补偿逻辑已无意义，移除。 |
-| 2026-08-13 | 新增 `clampMessagesHeight()`，`initScrollPaddingObserver` 的 ResizeObserver 回调同时调用它 | 用户拖拽分隔条把消息区设为固定高度后，继续选端点/加附件使输入区向上撑高，但消息区高度未重新收紧，总高度超出视口 → 输入区（sticky bottom）侵入消息区盖住 `.streaming-hint`。输入区高度变化时（ResizeObserver）重新 clamp 消息区到 `可用空间 - 输入区内容高`；仅对拖拽固定（flex:0 0 auto）生效，未拖拽（flex:1）由布局自动伸缩。 |
-| 2026-08-13 | 新增 `syncSelectedAreaLimit()` 动态设置已选区 max-height；消息区 clamp 下限从 100 统一改为 50 | 用户要求已选区"撑到极限"：尽可能向上撑（挤压消息区），消息区压缩到仅剩 streaming-hint（约 50px）才让已选区滚动。`.msg.list` min-height 100→50；已选区 max-height = `.main-content` 高 − toolbar − 50 − 输入区其他部分，由 resize + ResizeObserver 双触发同步。 |
+| 2026-08-13 | 输入区最小高度按内容计算 | 输入区内容（选中端点列表/附件/发送按钮行）可超过 CSS 最小高度；后续输入区拖拽与高度恢复由 `inputHeightBounds()` / `clampInputHeight()` 统一处理。 |
+| 2026-08-13 | 输入区布局改为"内容自适应"模型：`.chat-input-area` 从 `flex:1` 改为 `flex:0 0 auto` | 用户确认布局模型：输入区（输入框+发送按钮行）固定高度、已选区由内容撑住（限高滚动兜底）、剩余高度全归消息区 `.msg.list`。输入区不再 flex:1 撑满、textarea 高度固定，原补偿逻辑已移除。 |
+| 2026-08-13 | 输入区与消息区的可用高度由布局和输入区边界统一约束 | `.msg.list` 保持 `flex: 1`，输入区高度变化时由布局让消息区自动收缩；后续以 `inputHeightBounds()` / `clampInputHeight()` 为输入框拖拽边界预留 50px，不再固定消息区高度。 |
+| 2026-08-13 | 新增 `syncSelectedAreaLimit()` 动态设置已选区 max-height；50px 预留替代此前 100px 消息区限制 | 用户要求已选区"撑到极限"：尽可能向上撑（挤压消息区）。`.msg.list` CSS `min-height` 为 50px；已选区 max-height = `.main-content` 高 − toolbar − 50 − 输入区其他部分，且会以 100px 为最小值，因此极矮视口不承诺消息区仍有 50px。 |
 | 2026-08-14 | 编辑/批量创建弹窗新增 Responses式 风格选项 | 单节点对话框（layout.html radio）与批量创建（buildBatchFields options）均加 `responses` 选项，路径后缀映射 `chat→/v1/responses`（attachments.js `apiPath` 的 paths 表）；`styleLabels` 显示名加 "Responses"。 |
 | 2026-08-18 | 端点和会话参数 UI 统一为缺失/具体值/`null` 三态，严格分离 `ownParams` 与 `fallbackParams` | 建议值只在用户选择“自己设置”时出现；保存仅处理 `changed` 行，避免只改名称时固化默认参数。会话事务继续按快照 session/workspace 保存并由 dialog generation 隔离旧操作；端点 dialog 每次打开重建草稿并兼容旧 TTS 顶层字段，但端点保存异步回调当前没有同等 generation guard。 |
 | 2026-08-20 | UI 文档同步附件 MIME、Provider 终态与连接测试边界 | 附件预览和上传共用归一 MIME，协议层按文档/MP3/WAV/不支持类型分别转换或失败；流式非正常终态保留 partial 内容；连接测试合并覆盖参数后再固定 chat 输出长度，非 chat 不套用聊天限制。 |
+| 2026-08-28 | 源码版本已同步 v6.33.4，修正输入区拖拽与首次目录提示事实 | 水平分隔条直接调整并持久化 `#chat-input` 高度，`.msg.list` 保持 `flex: 1`；`inputHeightBounds()` / `clampInputHeight()` 为输入框拖拽边界预留 50px，并在 `resize` 恢复高度，极矮视口时已选区的 100px 下限可优先；`initDividers()` 清理旧消息区键。帮助按钮及弹窗操作由 `main.js` 绑定，首次目录提示的关闭按钮与遮罩关闭路径均保留。 |

@@ -1,40 +1,28 @@
 // ========== UI Functions ==========
-// .chat-input-area 的最小高度，作为布局约束的单一数据源
-// 输入区是 flex:0 0 auto（高度=内容，不撑满不收缩）。拖拽分隔条 clamp 时，
-// 输入区至少需要内容所需高度，否则发送按钮行会被挤出视口。
-// 实际下限 = max(CSS minHeight, 内容所需高度 = scrollHeight)。
-// 不需要减 textarea 撑满部分——输入区不再 flex:1 撑满，textarea 高度固定（3 行自然高）。
-function stickyMinHeight() {
-	const sb = $('.chat-input-area');
-	if (!sb) return 126;
-	return Math.max(parseInt(getComputedStyle(sb).minHeight) || 160, sb.scrollHeight);
-}
-
 function initDividers() {
-	// 水平分隔线
 	const dividerHorizontal = $('.divider.go-x');
-	const chatMsg = $('.msg.list');
-	const mainContent = $('.main-content');
-	const chatHeader = $('.toolbar');
+	const chatInput = $('#chat-input');
 	const savedLeftWidth = localStorage.getItem('sidebar-left-width');
 	const savedRightWidth = localStorage.getItem('sidebar-right-width');
-	if (savedLeftWidth) { const el = $("aside.endpoint.list:not(.divider)"); el.style.width = savedLeftWidth; el.style.flex = "none"; }
-	if (savedRightWidth) { const el = $("aside.session.list:not(.divider)"); el.style.width = savedRightWidth; el.style.flex = "none"; }
-	localStorage.removeItem('chat-messages-flex');
-	const savedMessagesHeight = localStorage.getItem('chat-messages-height');
-	if (savedMessagesHeight) {
-		const maxH = mainContent.offsetHeight - chatHeader.offsetHeight - stickyMinHeight();
-		const clamped = Math.max(50, Math.min(parseInt(savedMessagesHeight), maxH));
-		chatMsg.style.height = clamped + 'px';
-		chatMsg.style.flex = '0 0 auto';
+	if (savedLeftWidth) {
+		const el = $('aside.endpoint.list:not(.divider)');
+		el.style.width = savedLeftWidth;
+		el.style.flex = 'none';
 	}
+	if (savedRightWidth) {
+		const el = $('aside.session.list:not(.divider)');
+		el.style.width = savedRightWidth;
+		el.style.flex = 'none';
+	}
+	localStorage.removeItem('chat-messages-flex');
+	localStorage.removeItem('chat-messages-height');
+	clampInputHeight();
 	let isDragging = false;
 	let curDiv = null;
 	let startX = 0;
 	let startWidth = 0;
 	let startY = 0;
-	let startMessagesHeight = 0;
-	let startMainHeight = 0;
+	let startInputHeight = 0;
 
 	function startDragHorizontal(e) {
 		const divider = e.target;
@@ -54,14 +42,14 @@ function initDividers() {
 	}
 
 	function startDragVertical(e) {
+		if (!chatInput) return;
 		isDragging = true;
 		curDiv = {
 			divider: dividerHorizontal,
 			type: 'vertical'
 		};
 		startY = e.clientY;
-		startMessagesHeight = chatMsg.offsetHeight;
-		startMainHeight = mainContent.offsetHeight - chatHeader.offsetHeight;
+		startInputHeight = chatInput.offsetHeight;
 		doc.body.style.cursor = 'row-resize';
 		doc.body.style.userSelect = 'none';
 	}
@@ -70,12 +58,10 @@ function initDividers() {
 		if (!isDragging || !curDiv) return;
 		if (curDiv.type === 'vertical') {
 			const dy = e.clientY - startY;
-			const newHeight = startMessagesHeight + dy;
-			const minMessages = 100;
-			const maxMessages = startMainHeight - stickyMinHeight();
-			const clamped = Math.max(minMessages, Math.min(maxMessages, newHeight));
-			chatMsg.style.height = clamped + 'px';
-			chatMsg.style.flex = '0 0 auto';
+			const bounds = inputHeightBounds();
+			const newHeight = startInputHeight - dy;
+			const clamped = Math.max(bounds.min, Math.min(bounds.max, newHeight));
+			chatInput.style.height = clamped + 'px';
 		} else {
 			const dx = e.clientX - startX;
 			const newWidth = curDiv.isLeft ? startWidth + dx : startWidth - dx;
@@ -86,14 +72,14 @@ function initDividers() {
 			const maxWidth = containerWidth * 0.45;
 			const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 			curDiv.sidebar.style.width = clampedWidth + 'px';
-				curDiv.sidebar.style.flex = 'none';
+			curDiv.sidebar.style.flex = 'none';
 		}
 	}
 
 	function stopDrag() {
 		if (isDragging && curDiv) {
 			if (curDiv.type === 'vertical') {
-				localStorage.setItem('chat-messages-height', chatMsg.style.height);
+				localStorage.setItem('chat-input-height', chatInput.style.height);
 			} else {
 				localStorage.setItem(curDiv.storageKey, curDiv.sidebar.style.width);
 			}
@@ -119,37 +105,33 @@ function initDividers() {
 	doc.on('mousemove', doDrag);
 	doc.on('mouseup', stopDrag);
 }
-// 视口变化时重新 clamp 拖拽高度，防止 F12 等场景下输入区被挤出
-function clampSavedHeight() {
-	const savedH = localStorage.getItem('chat-messages-height');
-	if (!savedH) return;
-	const cm = $('.msg.list');
-	const mc = $('.main-content');
-	const ch = $('.toolbar');
-	if (!cm || !mc || !ch) return;
-	const maxH = mc.offsetHeight - ch.offsetHeight - stickyMinHeight();
-	cm.style.height = Math.max(50, Math.min(parseInt(savedH), maxH)) + 'px';
-	cm.style.flex = '0 0 auto';
+// 视口变化时重新 clamp 输入框高度，防止 F12 等场景下发送行被挤出
+function inputHeightBounds() {
+	const input = $('#chat-input');
+	if (!input) return { min: 56, max: 56 };
+	const area = $('.chat-input-area');
+	const mainContent = $('.main-content');
+	const chatHeader = $('.toolbar');
+	const min = parseInt(getComputedStyle(input).minHeight) || 56;
+	if (!area || !mainContent || !chatHeader) return { min, max: min };
+	const otherInputAreaHeight = Math.max(0, area.offsetHeight - input.offsetHeight);
+	const max = Math.max(min, mainContent.offsetHeight - chatHeader.offsetHeight - 50 - otherInputAreaHeight);
+	return { min, max };
+}
+
+function clampInputHeight() {
+	const savedHeight = localStorage.getItem('chat-input-height');
+	const input = $('#chat-input');
+	if (!savedHeight || !input) return;
+	const bounds = inputHeightBounds();
+	const requested = parseInt(savedHeight);
+	const clamped = Math.max(bounds.min, Math.min(bounds.max, Number.isFinite(requested) ? requested : bounds.min));
+	input.style.height = clamped + 'px';
 }
 window.addEventListener('resize', () => {
-	clampSavedHeight();
+	clampInputHeight();
 	syncSelectedAreaLimit();
 });
-// 输入区内容增高（选中/移除端点、加附件）时，重新收紧被拖拽固定的消息区高度，
-// 防止输入区向上撑时超出视口、盖住消息区底部的 streaming-hint。
-// 仅对拖拽后固定的 msg.list（flex:0 0 auto）生效；未拖拽时 flex:1 由布局自动伸缩。
-function clampMessagesHeight() {
-	const cm = $('.msg.list');
-	if (!cm || getComputedStyle(cm).flex !== '0 0 auto') return;
-	const mc = $('.main-content');
-	const ch = $('.toolbar');
-	if (!mc || !ch) return;
-	const maxH = mc.offsetHeight - ch.offsetHeight - stickyMinHeight();
-	const cur = parseInt(cm.style.height) || 0;
-	if (cur > maxH) {
-		cm.style.height = Math.max(50, maxH) + 'px';
-	}
-}
 // 已选区（.selected.endpoint.list）向上撑到极限：消息区压缩到仅容纳 streaming-hint（50px）后，
 // 剩余高度全给已选区。动态设置已选区 max-height = 可用高度 - 输入区其他部分（textarea+menu+divider）。
 // 视口 resize / 输入区内容变化时同步，使已选区持续向上撑，只有真正放不下才滚动。
@@ -195,7 +177,7 @@ function initScrollPaddingObserver() {
 	syncSelectedAreaLimit();
 	new ResizeObserver(() => {
 		syncScrollPadding();
-		clampMessagesHeight();
+		clampInputHeight();
 		syncSelectedAreaLimit();
 	}).observe(sticky);
 }

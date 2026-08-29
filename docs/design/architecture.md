@@ -3,7 +3,7 @@ title: 技术架构
 covers_file: [src/layout.html, src/style.css, src/modules/storage-core.js, src/modules/providers.js, src/modules/boot.js, src/modules/main.js, src/modules/shared.js, src/modules/attachments.js, src/modules/messages.js, src/modules/params-registry.js, src/modules/selected-endpoints.js, src/modules/endpoint-tree.js, src/modules/store.js]
 depends_on: []
 api_signature: window.__STORAGE__ / window.__IS_EXTENSION__ / window.__EXTENSION_FETCH__
-last_updated: 2026-08-18
+last_updated: 2026-08-28
 why_exists: 定义快连AI的技术选型、模块依赖关系和数据流向，作为所有代码改动的架构参照
 ---
 
@@ -117,3 +117,4 @@ CSS 变量驱动模式（CLAUDE.md 中的约定）：基类按钮声明 --hover-
 - 2026-07-15: icon 系统 bug 修复：选中端点类型图标补 `char-style` 类；3 处 SVG 补 `viewBox`；嵌入结果展开按钮替换为原生 `<details>/<summary>`，删除 `handleExpandJsonClick` 及相关 JS
 - 2026-07-23: 新增 asr 端点类型（OpenAI Whisper API），支持音频文件上传和麦克风录制转写；新增 --char-mic 图标；录音按钮放"添加附件"右侧
 - 2026-08-18: 架构纳入 OpenAI Responses，聊天接口现为 OpenAI Chat/Responses/Claude/Gemini 四种；参数注册表与端点/会话共用参数 UI 独立成层，特殊 endpointId/参数键由 own-property helper 保护。按最终代码记录已有会话缺少 endpoint 覆盖时仍回退 workspace，以及非聊天 `_custom`/embedding 覆盖尚未统一的边界。
+- 2026-08-28: 发布 v6.33.4；消息区与输入区分隔条的尺寸职责留在 UI 层，架构层仅维持模块依赖与数据流边界。

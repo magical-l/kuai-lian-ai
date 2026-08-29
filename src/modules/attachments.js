@@ -1207,7 +1207,7 @@ function showHelpDialog(forceSelectDirectory = false, hasPendingHandle = false) 
 	// 条件显隐
 	$('.workspace-setting .warning', dialog).hidden = !forceSelectDirectory;
 	$('.recover', dialog).hidden = !hasPendingHandle;
-	$('.close', dialog).hidden = forceSelectDirectory;
+	$('.close', dialog).hidden = false;
 	// 点击遮罩关闭
 	dialog.onclick = function(e) {
 		if (e.target === this) closeHelpDialog();

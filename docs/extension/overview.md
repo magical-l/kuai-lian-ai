@@ -3,7 +3,7 @@ title: Chrome Extension 概览
 covers_file: [src/extension/manifest.json, src/extension/background.js, src/extension/storage-core.js, src/extension/_locales/zh_CN/messages.json, src/modules/boot.js]
 depends_on: []
 api_signature: chrome.runtime, chrome.action, chrome.runtime.connect
-last_updated: 2026-08-24
+last_updated: 2026-08-28
 why_exists: 双产物中 Chrome 扩展的生命周期、权限模型和 CORS 代理架构概览
 ---
 
@@ -16,7 +16,7 @@ why_exists: 双产物中 Chrome 扩展的生命周期、权限模型和 CORS 代
 扩展版相对于单页面版的关键差异：
 
 1. **CORS 代理**：通过 Service Worker + 端口通信，使页面可以调用跨域 AI API
-2. **存储扩展**：扩展版存储层使用 `chrome.storage.local` 替代纯浏览器的 IndexedDB，支持更多存储空间和自动同步
+2. **存储扩展**：扩展版存储层使用 `chrome.storage.local` 替代纯浏览器的 IndexedDB，在本机 Chrome 配置文件中持久化数据；不使用跨设备同步
 3. **独立分发**：打包为 `.zip`，可发布到 Chrome Web Store
 
 ## Manifest V3 配置详解
@@ -114,7 +114,7 @@ cors-proxy.js 使用 `chrome.runtime.connect({ name: 'cors-proxy' })` 建立命�
 | 源码 | `src/modules/*`（共享） | `src/modules/*`（共享） |
 | 存储层 | `src/modules/storage-core.js`（IndexedDB） | `src/extension/storage-core.js`（chrome.storage） |
 | 加载方式 | 全部内联到 HTML | 外部 `script src` |
-| fetch 路径 | 原生 `fetch()`（受 CORS 限制） | CORS 代理优先（端口通信） |
+| fetch 路径 | 原生 `fetch()`（受 CORS 限制） | 当前模块代码使用扩展页特权上下文中的原生 `fetch()`；`__EXTENSION_FETCH__` 保留为按需走 Service Worker 代理的钩子 |
 | 字体加载 | Google Fonts 内联 | 跳过（扩展包内无 Google Fonts） |
 | 分发形态 | 单文件 `.html` | `.zip` 扩展包 |
 | 更新 | 替换 HTML | 通过 Chrome Web Store |
@@ -168,3 +168,4 @@ cors-proxy.js 使用 `chrome.runtime.connect({ name: 'cors-proxy' })` 建立命�
 | 2025-Q3 | extensionFetch 当前未被模块代码消费 | cors-proxy.js 注册的 `window.__EXTENSION_FETCH__` 是预留钩子，模块代码当前使用原生 `fetch()` 通过扩展页面的特权上下文直接跨域访问。此钩子可用于需要 Service Worker 中介的特定场景 |
 | 2026-07-18 | 远程 CSS 域名切换 | 从 `css.lwj621.workers.dev` 切换到 `css.document.cool`，manifest.json 和文档中 CSP 同步更新 |
 | 2026-08-24 | 修正环境标志与代理钩子的注册归属 | boot.js 只负责 `__IS_EXTENSION__` 和字体处理；`cors-proxy.js` 随页面底部模块加载时注册 `__EXTENSION_FETCH__`。 |
+| 2026-08-28 | 发布 v6.33.4 | 共享 UI 的输入区拖拽、持久化键与帮助弹窗关闭行为不改变扩展的 CORS、存储或权限边界。 |

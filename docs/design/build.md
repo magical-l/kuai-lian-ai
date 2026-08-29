@@ -3,7 +3,7 @@ title: 构建流程
 covers_file: [build.js, src/layout.html, src/extension/manifest.json]
 depends_on: [architecture.md, data-model.md]
 api_signature: node build.js / MODULE_ORDER / DEV_MODE
-last_updated: 2026-08-24
+last_updated: 2026-08-28
 why_exists: 定义从源码到双产物的构建流程，确保构建可复现、产物可预测
 ---
 
@@ -92,10 +92,10 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 
 ### 版本管理
 
-- 发布版本涉及三处：`src/extension/manifest.json` 的 `version` 字段、`src/layout.html` 中 `<span class="version">vX.Y.Z</span>`、构建后的根目录单页面 `kuai-lian-ai.html`
-- 当前源码页面与源码 manifest 版本：`6.33.3`
+- 发布版本涉及四处：`src/extension/manifest.json` 的 `version` 字段、`src/layout.html` 中 `<span class="version">vX.Y.Z</span>`、构建后的根目录单页面 `kuai-lian-ai.html` 与 `dist/kuai-lian-ai.html`；扩展构建还会将 manifest 同步到 `dist/extension/manifest.json`
+- 当前源码页面版本：`v6.33.4`；源码 manifest 版本：`6.33.4`
 - 构建后需核对源码 manifest、`dist/extension/manifest.json`、`dist/kuai-lian-ai.html` 与根目录单页面版本一致
-- 每次正式发布验收后三处均需同步更新
+- 每次正式发布验收后，上述四处页面/manifest 版本均需同步更新
 - 版本号递增遵循语义化版本（MAJOR.MINOR.PATCH）
 
 ## 函数索引
@@ -122,6 +122,7 @@ logo.svg 转为 base64 data URI 内联（单页产物独立分发需要）。
 - 2026-07-18: 远程 CSS 域名从 `css.lwj621.workers.dev` 切换到 `css.document.cool`（路径从 `/css/name.css` 简化为 `/name.css`）
 - 2026-08-24: 远程 CSS 路径恢复为 `/css/common.css` 和 `/css/layout.css`，与当前资源布局及源码、构建脚本保持一致；Windows 构建改为传输响应原始字节后按 UTF-8 解码，避免内联字符图标乱码
 - 2026-08-24: 生产模块顶层函数新增唯一性回归检查；去除 store/shared 重复 helper 后发布 v6.33.3
+- 2026-08-28: 发布 v6.33.4；构建仍从同一源码读取输入区高度持久化与帮助弹窗行为，不增加构建分支。
 - 2026-07-28: 当时验收后将页面、扩展 manifest 和文档版本同步到 v6.32.4（历史记录）
 - 2026-08-12: 同步 v6.32.11 的清空屏障、端点回滚防御和存储审查修复产物；根单页与 dist 单页构建后保持一致
 - 2026-08-12: 验收 workspace 参数生命周期修复并发布 v6.32.12；页面、扩展 manifest 与构建产物版本一致
